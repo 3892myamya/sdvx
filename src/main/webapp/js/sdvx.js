@@ -100,13 +100,13 @@ $(function() {
     });
     $('#sel_lvl_min').change(function(){
         var newVal = $('#sel_lvl_min').val();
-        if (newVal > $('#sel_lvl_max').val()) {
+        if (parseInt(newVal, 10) > parseInt($('#sel_lvl_max').val(), 10)) {
             $('#sel_lvl_max').val(newVal);
         } 
     });
     $('#sel_lvl_max').change(function(){
         var newVal = $('#sel_lvl_max').val();
-        if (newVal < $('#sel_lvl_min').val()) {
+        if (parseInt(newVal, 10) < parseInt($('#sel_lvl_min').val(), 10)) {
             $('#sel_lvl_min').val(newVal);
         } 
     });
