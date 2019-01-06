@@ -98,6 +98,18 @@ $(function() {
     $('#sel_mode').change(function(){
         showhide();
     });
+    $('#sel_lvl_min').change(function(){
+        var newVal = $('#sel_lvl_min').val();
+        if (newVal > $('#sel_lvl_max').val()) {
+            $('#sel_lvl_max').val(newVal);
+        } 
+    });
+    $('#sel_lvl_max').change(function(){
+        var newVal = $('#sel_lvl_max').val();
+        if (newVal < $('#sel_lvl_min').val()) {
+            $('#sel_lvl_min').val(newVal);
+        } 
+    });
     var showhide = function () {
         var mode = $('#sel_mode').val();
         if (mode == 4) {
