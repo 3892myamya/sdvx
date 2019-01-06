@@ -1,12 +1,20 @@
 package myamya.sdvx;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.net.ProtocolException;
+import java.net.URL;
+import java.time.DayOfWeek;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+
+import org.supercsv.io.CsvListReader;
+import org.supercsv.prefs.CsvPreference;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -80,6 +88,82 @@ public class KadaiGeneratorClasses {
 				score = ((BigDecimal) map.get("score")).intValue();
 			}
 		}
+	}
+
+	/**
+	 * スコアツール統計情報全体
+	 */
+	@ToString
+	static class StatusInfoAll {
+		private LocalDateTime lastUpdate;
+		private Map<String, Map<EffectDiv, StatusInfo>> statusInfoMap;
+
+		/**
+		 * スコアツールの統計情報をチェックし、必要があれば更新して返します。
+		 */
+		public Map<String, Map<EffectDiv, StatusInfo>> checkAndGetStatusInfoMap()
+				throws IOException {
+			LocalDateTime nowTime = LocalDateTime.now();
+			if ((statusInfoMap == null) || ((nowTime.getDayOfWeek() == DayOfWeek.TUESDAY
+					|| nowTime.getDayOfWeek() == DayOfWeek.FRIDAY) &&
+					(lastUpdate.getDayOfYear() != nowTime.getDayOfYear()))) {
+				// 統計情報の取得に1回も成功していない、または
+				// 今日が火曜日か金曜日で、その日最初の実行であればデータ更新
+				this.lastUpdate = nowTime;
+				try {
+					this.statusInfoMap = getStatusInfoMapFromScoreTool();
+				} catch (IOException e) {
+					// 一時的なネットワーク寸断かもしれないので、一応先に進ませるが、
+					// statusInfoMapがnullのままだったらもはやこれまで
+					if (statusInfoMap == null) {
+						throw e;
+					}
+					e.printStackTrace();
+				}
+			}
+			return statusInfoMap;
+		}
+
+		/**
+		 * 課題曲算出向けに整形された統計情報を返す
+		 */
+		private Map<String, Map<EffectDiv, StatusInfo>> getStatusInfoMapFromScoreTool()
+				throws IOException {
+			List<List<String>> statusList = getStatusList();
+			Map<String, Map<EffectDiv, StatusInfo>> result = new HashMap<>();
+			boolean firstFlg = true;
+			for (List<String> oneStatusList : statusList) {
+				if (firstFlg) {
+					firstFlg = false;
+					continue;
+				}
+				StatusInfo statusInfo = new StatusInfo(oneStatusList);
+				Map<EffectDiv, StatusInfo> innerMap = result.get(statusInfo.getTitle());
+				if (innerMap == null) {
+					innerMap = new HashMap<>();
+					result.put(statusInfo.getTitle(), innerMap);
+				}
+				innerMap.put(statusInfo.getEffectDiv(), statusInfo);
+			}
+			return result;
+		}
+
+		/**
+		 * 統計情報ファイルをプレーンな文字列リスト情報として読み込む。
+		 */
+		private List<List<String>> getStatusList() throws ProtocolException, IOException {
+			List<List<String>> result = new ArrayList<>();
+			URL url = new URL("https://nearnoah.net/csv/nearnoah_stats.csv");
+			try (CsvListReader csvReader = new CsvListReader(KadaiGeneratorUtil.getReader(url),
+					CsvPreference.STANDARD_PREFERENCE)) {
+				List<String> oneStatusList;
+				while ((oneStatusList = csvReader.read()) != null) {
+					result.add(oneStatusList);
+				}
+			}
+			return result;
+		}
+
 	}
 
 	/**

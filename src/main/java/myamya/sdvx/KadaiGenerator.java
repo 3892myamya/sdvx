@@ -2,23 +2,17 @@ package myamya.sdvx;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
-
-import org.supercsv.io.CsvListReader;
-import org.supercsv.prefs.CsvPreference;
 
 import myamya.sdvx.KadaiGeneratorClasses.EffectInfo;
 import myamya.sdvx.KadaiGeneratorClasses.EstimateInfo;
@@ -26,6 +20,7 @@ import myamya.sdvx.KadaiGeneratorClasses.ProfileInfo;
 import myamya.sdvx.KadaiGeneratorClasses.RatePair;
 import myamya.sdvx.KadaiGeneratorClasses.ResponseInfo;
 import myamya.sdvx.KadaiGeneratorClasses.StatusInfo;
+import myamya.sdvx.KadaiGeneratorClasses.StatusInfoAll;
 import myamya.sdvx.KadaiGeneratorClasses.TrackInfo;
 import myamya.sdvx.KadaiGeneratorEnums.EffectDiv;
 import myamya.sdvx.KadaiGeneratorEnums.Mode;
@@ -34,6 +29,9 @@ import myamya.sdvx.KadaiGeneratorEnums.ScoreDiv;
 import net.arnx.jsonic.JSON;
 
 public class KadaiGenerator {
+
+	private static final StatusInfoAll statusInfoAll = new StatusInfoAll();
+	private static final Object locker = new Object();
 
 	/**
 	 * userIdを利用してスコアツールのデータを取得し、
@@ -50,8 +48,11 @@ public class KadaiGenerator {
 		}
 		// 自身の情報を整形
 		ProfileInfo profileInfo = new ProfileInfo(profileMap);
-		// 整形された統計情報を取得
-		Map<String, Map<EffectDiv, StatusInfo>> statusInfoMap = getStatusInfoMap();
+		Map<String, Map<EffectDiv, StatusInfo>> statusInfoMap;
+		synchronized (locker) {
+			// 整形された統計情報を取得
+			statusInfoMap = statusInfoAll.checkAndGetStatusInfoMap();
+		}
 		//曲ごとにマッチングして譜面ごとに上位何%か推定
 		List<EstimateInfo> estimateInfoList = getEstimateInfoList(profileInfo, statusInfoMap, mode, boader);
 		// estimateRateMapを降順ソートし、レベルでフィルター
@@ -68,59 +69,13 @@ public class KadaiGenerator {
 			throws MalformedURLException, IOException, ProtocolException {
 		StringBuilder sb = new StringBuilder();
 		URL url = new URL("https://nearnoah.net/api/showUserData.json?username=" + userId);
-		try (BufferedReader reader = getReader(url)) {
+		try (BufferedReader reader = KadaiGeneratorUtil.getReader(url)) {
 			String line;
 			while ((line = reader.readLine()) != null) {
 				sb.append(line);
 			}
 		}
 		return JSON.decode(sb.toString(), Map.class);
-	}
-
-	private static BufferedReader getReader(URL url) throws IOException, ProtocolException {
-		HttpURLConnection http = (HttpURLConnection) url.openConnection();
-		http.setRequestMethod("GET");
-		http.connect();
-		return new BufferedReader(new InputStreamReader(http.getInputStream(), "UTF-8"));
-	}
-
-	/**
-	 * 課題曲算出向けに整形された統計情報を返す
-	 */
-	private Map<String, Map<EffectDiv, StatusInfo>> getStatusInfoMap() throws ProtocolException, IOException {
-		List<List<String>> statusList = getStatusList();
-		Map<String, Map<EffectDiv, StatusInfo>> result = new HashMap<>();
-		boolean firstFlg = true;
-		for (List<String> oneStatusList : statusList) {
-			if (firstFlg) {
-				firstFlg = false;
-				continue;
-			}
-			StatusInfo statusInfo = new StatusInfo(oneStatusList);
-			Map<EffectDiv, StatusInfo> innerMap = result.get(statusInfo.getTitle());
-			if (innerMap == null) {
-				innerMap = new HashMap<>();
-				result.put(statusInfo.getTitle(), innerMap);
-			}
-			innerMap.put(statusInfo.getEffectDiv(), statusInfo);
-		}
-		return result;
-	}
-
-	/**
-	 * 統計情報ファイルをプレーンな文字列リスト情報として読み込む。
-	 */
-	private List<List<String>> getStatusList() throws ProtocolException, IOException {
-		List<List<String>> result = new ArrayList<>();
-		try (CsvListReader csvReader = new CsvListReader(
-				new InputStreamReader(this.getClass().getResourceAsStream("nearnoah_stats.csv")),
-				CsvPreference.STANDARD_PREFERENCE)) {
-			List<String> oneStatusList;
-			while ((oneStatusList = csvReader.read()) != null) {
-				result.add(oneStatusList);
-			}
-		}
-		return result;
 	}
 
 	/**
