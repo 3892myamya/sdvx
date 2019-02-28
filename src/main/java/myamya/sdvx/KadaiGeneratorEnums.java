@@ -21,7 +21,6 @@ public class KadaiGeneratorEnums {
 		FOR_SCORE(1, new ScoreEstimateRateCalculator()) {
 			@Override
 			public String getDispEstimateRate(BigDecimal estimateRate) {
-				// TODO 自動生成されたメソッド・スタブ
 				return estimateRate.toPlainString() + "%";
 			}
 
@@ -30,7 +29,6 @@ public class KadaiGeneratorEnums {
 		FOR_WEAPON(2, new ScoreEstimateRateCalculator()) {
 			@Override
 			public String getDispEstimateRate(BigDecimal estimateRate) {
-				// TODO 自動生成されたメソッド・スタブ
 				return estimateRate.toPlainString() + "%";
 			}
 
@@ -50,6 +48,14 @@ public class KadaiGeneratorEnums {
 
 		/** ボーダーモード */
 		FOR_BORDER(4, null) {
+			@Override
+			public String getDispEstimateRate(BigDecimal estimateRate) {
+				return estimateRate.toPlainString();
+			}
+		},
+
+		/** クリア達成状況モード */
+		FOR_CLEAR(5, null) {
 			@Override
 			public String getDispEstimateRate(BigDecimal estimateRate) {
 				return estimateRate.toPlainString();
@@ -112,27 +118,45 @@ public class KadaiGeneratorEnums {
 	@Getter
 	enum ClearLamp {
 		/** */
-		NOPLAY("NOPLAY"),
+		NOPLAY("NOPLAY",6),
 		/** */
-		CRASH("CRASH"),
+		CRASH("CRASH",5),
 		/** */
-		COMP("COMP"),
+		COMP("COMP",4),
 		/** */
-		EX_COMP("EX COMP"),
+		EX_COMP("EX COMP",3),
 		/** */
-		UC("UC"),
+		UC("UC",2),
 		/** */
-		PER("PER");
+		PER("PER",1);
 
 		private final String str;
+		private final int val;
 
-		public static ClearLamp getByStr(String key) {
+		public static ClearLamp getByVal(int val) {
 			for (ClearLamp clearLamp : ClearLamp.values()) {
-				if (clearLamp.getStr().equalsIgnoreCase(key)) {
+				if (clearLamp.getVal() == val) {
 					return clearLamp;
 				}
 			}
 			return null;
+		}
+
+		public static ClearLamp getByStr(String str) {
+			for (ClearLamp clearLamp : ClearLamp.values()) {
+				if (clearLamp.getStr().equalsIgnoreCase(str)) {
+					return clearLamp;
+				}
+			}
+			return null;
+		}
+
+		/**
+		 * 自身のクリア状況がotherを上回っているかを返す。
+		 */
+		public boolean isClear (ClearLamp other) {
+			// 値が小さいほうが格上なので
+			return this.val <= other.val;
 		}
 	}
 

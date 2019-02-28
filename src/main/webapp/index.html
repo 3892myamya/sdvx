@@ -17,7 +17,7 @@
     <link rel="stylesheet" href="css/sdvx.css"/>
     <script src="js/jquery-3.3.1.min.js"></script>
     <script src="js/jsgrid.min.js"></script>
-    <script src="js/sdvx.js?ver=20190106"></script>
+    <script src="js/sdvx.js?ver=20190228"></script>
 </head>
 <body>
 <div id="div_title">SDVX 課題曲ジェネレータ</div>
@@ -37,7 +37,7 @@ Q:「表示する」を押したのに課題曲が表示されません。<br>
 A:端末がインターネットに接続しているか、スコアツールユーザ名を正しく入力したか、表示レベルを正しく設定したか（左側 &lt;= 右側になっているか）などを確認してください。<br>
 <br>
 Q:モードとは何ですか？<br>
-A:「課題曲」だとスコアが伸びそうな曲、「武器曲」だと他の人より高めのスコアが出ている曲、「課題曲（PERFECT狙い）」だとPERFECTが近そうな曲、「ボーダー」だと指定した割合のボーダースコアの目安を表示します。<br>
+A:「課題曲」だとスコアが伸びそうな曲、「武器曲」だと他の人より高めのスコアが出ている曲、「課題曲（PERFECT狙い）」だとPERFECTが近そうな曲、「ボーダー」だと指定した割合のボーダースコアの目安、「クリア達成状況」だとクリア達成状況の把握に役立つ情報を表示します。<br>
 <br>
 Q:(課題曲、武器曲モード)上位とは何ですか？<br>
 A:スコアツールの登録者数のうちだいたい上位何%にいるかを示します。値が大きいと課題曲、小さいと武器曲とみなされます。厳密な値ではありませんので参考程度にご利用ください。<br>
@@ -48,14 +48,17 @@ A:その譜面がどれだけPに近いかを示します。値が小さいほ�
 Q:(ボーダーモード)ボーダーとは何ですか？<br>
 A:表示ボーダーに指定した割合に達するために必要なスコアを示します。厳密な値ではありませんので目安とお考えください。差分の列にはボーダースコアとあなたのスコアの差分を表示します。<br>
 <br>
-Q:(ボーダーモード)到達率とは何ですか？<br>
-A:表示ボーダーに指定した割合に達している譜面の割合を集計したものです。プレイ済み譜面のみを集計対象としていますのでご注意ください。<br>
+Q:(クリア達成状況モード)xxx率、状況とは何ですか？<br>
+A:xxx率は目標に指定したクリア区分のスコアツール上での達成率を示し、状況は指定したクリア区分を自身が達成しているかを示します。<br>
 <br>
-Q:(ボーダーモード)表示レベルの上限、表示曲数の入力欄が表示されません。<br>
-A:ボーダーモードは、各Lvにおけるボーダー到達状況を把握することを主な目的と想定しているため、複数レベルの選択機能はなく、表示対象は固定で選択レベルの全譜面としております。<br>
+Q:(ボーダーモード、クリア達成状況モード)到達率(達成率)とは何ですか？<br>
+A:表示ボーダーに指定した割合に達している(目標に指定したクリア区分を達成した)譜面の割合を集計したものです。プレイ済み譜面のみを集計対象としていますのでご注意ください。<br>
+<br>
+Q:(ボーダーモード、クリア達成状況モード)表示レベルの上限、表示曲数の入力欄が表示されません。<br>
+A:これらのモードは各Lvにおける達成状況を把握することを主な目的と想定しているため、複数レベルの選択機能はなく、表示対象は固定で選択レベルの全譜面としております。<br>
 <br>
 Q:APIはありますか？<br>
-A:URLのドメイン以降を「KadaiGeneratorWeb?userid=3892myamya&amp;lvl_min=17&amp;lvl_max=20&amp;mode=1&amp;disp_cnt=20&amp;border=20」のようにするとJSON形式の結果が取得できます。modeは1・2・3・4がそれぞれ課題曲・武器曲・PERFECT狙い・ボーダーに対応します。各パラメータでモード依存の値は不要な場合無視されます。なお、このAPIは予告なく仕様を変更する可能性があるので不安な場合は事前に後述の問い合わせ先までご相談ください。<br>
+A:後述の問い合わせ先までご相談ください。<br>
 <div class="subtitle">■4.免責■</div>
 <p>本ツールの利用によって生じたいかなる問題についても作者は責任を負わないものとします。また、本ツールについて以下に記載した先以外への問い合わせはご遠慮ください。</p>
 <div class="subtitle">■5.問い合わせ■</div>
@@ -73,6 +76,7 @@ A:URLのドメイン以降を「KadaiGeneratorWeb?userid=3892myamya&amp;lvl_min=
 	<option value="2">武器曲</option>
 	<option value="3">課題曲(PERFECT狙い)</option>
 	<option value="4">ボーダー</option>
+	<option value="5">クリア達成状況</option>
 </select>
 </div>
 
@@ -150,6 +154,14 @@ A:URLのドメイン以降を「KadaiGeneratorWeb?userid=3892myamya&amp;lvl_min=
 	<option value="70">70%</option>
 	<option value="80">80%</option>
 	<option value="90">90%</option>
+</select>
+
+<label id="lbl_clear" for="sel_clear">目標</label>
+<select id="sel_clear" name="sel_clear">
+	<option value="1">PUC</option>
+	<option value="2">UC</option>
+	<option value="3">EX_COMP</option>
+	<option value="4">COMP</option>
 </select>
 
 <button type="button" id="btn_submit">表示する</button>

@@ -20,6 +20,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 import lombok.Value;
+import myamya.sdvx.KadaiGeneratorEnums.ClearLamp;
 import myamya.sdvx.KadaiGeneratorEnums.EffectDiv;
 import myamya.sdvx.KadaiGeneratorEnums.ResponseDiv;
 import myamya.sdvx.KadaiGeneratorEnums.ScoreDiv;
@@ -78,14 +79,17 @@ public class KadaiGeneratorClasses {
 	@ToString
 	static class EffectInfo {
 		private final int level;
+		private final ClearLamp clear;
 		private final int score;
 
 		EffectInfo(Map<String, Object> map) {
 			level = ((BigDecimal) map.get("level")).intValue();
 			if (map.size() == 1) {
 				score = 0;
+				clear = ClearLamp.NOPLAY;
 			} else {
 				score = ((BigDecimal) map.get("score")).intValue();
+				clear = ClearLamp.getByStr((String) map.get("clearlamp"));
 			}
 		}
 	}
@@ -175,6 +179,10 @@ public class KadaiGeneratorClasses {
 	static class StatusInfo {
 		private final String title;
 		private final EffectDiv effectDiv;
+		private final BigDecimal pPlayed;
+		private final BigDecimal pComp;
+		private final BigDecimal pExComp;
+		private final BigDecimal pUc;
 		private final BigDecimal pPer;
 		private final BigDecimal pGradeA;
 		private final BigDecimal pGradeAp;
@@ -192,6 +200,20 @@ public class KadaiGeneratorClasses {
 
 			BigDecimal count = new BigDecimal(oneStatusList.get(4));
 
+			pPlayed = new BigDecimal(oneStatusList.get(5)).add(new BigDecimal(oneStatusList.get(6)))
+					.add(new BigDecimal(oneStatusList.get(7))).add(new BigDecimal(oneStatusList.get(8)))
+					.add(new BigDecimal(oneStatusList.get(9))).divide(count, 4, RoundingMode.DOWN)
+					.multiply(new BigDecimal(100));
+			pComp = new BigDecimal(oneStatusList.get(6)).add(new BigDecimal(oneStatusList.get(7)))
+					.add(new BigDecimal(oneStatusList.get(8))).add(new BigDecimal(oneStatusList.get(9)))
+					.divide(count, 4, RoundingMode.DOWN)
+					.multiply(new BigDecimal(100));
+			pExComp = new BigDecimal(oneStatusList.get(7)).add(new BigDecimal(oneStatusList.get(8)))
+					.add(new BigDecimal(oneStatusList.get(9))).divide(count, 4, RoundingMode.DOWN)
+					.multiply(new BigDecimal(100));
+			pUc = new BigDecimal(oneStatusList.get(8))
+					.add(new BigDecimal(oneStatusList.get(9))).divide(count, 4, RoundingMode.DOWN)
+					.multiply(new BigDecimal(100));
 			pPer = new BigDecimal(oneStatusList.get(9)).divide(count, 4, RoundingMode.DOWN)
 					.multiply(new BigDecimal(100));
 			pGradeA = new BigDecimal(oneStatusList.get(12)).divide(count, 4, RoundingMode.DOWN)
@@ -245,6 +267,23 @@ public class KadaiGeneratorClasses {
 			}
 		}
 
+		/**
+		 * 指定されたクリアランプに対応する割合を返す
+		 */
+		public BigDecimal getClearPercent(ClearLamp clear) {
+			if (clear == ClearLamp.PER) {
+				return pPer.setScale(2, RoundingMode.DOWN);
+			} else if (clear == ClearLamp.UC) {
+				return pUc.setScale(2, RoundingMode.DOWN);
+			} else if (clear == ClearLamp.EX_COMP) {
+				return pExComp.setScale(2, RoundingMode.DOWN);
+			} else if (clear == ClearLamp.COMP) {
+				return pComp.setScale(2, RoundingMode.DOWN);
+			} else {
+				return null;
+			}
+		}
+
 	}
 
 	/**
@@ -266,7 +305,8 @@ public class KadaiGeneratorClasses {
 	static class EstimateInfo {
 		private final String title;
 		private final EffectDiv effectDiv;
-		private final int score;
+		private final BigDecimal score;
+		private final String scoreString;
 		private final int level;
 		private final BigDecimal estimateRate;
 		private final String estimateRateString;
@@ -278,8 +318,8 @@ public class KadaiGeneratorClasses {
 			Map<String, Object> result = new HashMap<>();
 			result.put("title", title);
 			result.put("effect_div", effectDiv.getShortStr());
-			result.put("score", score);
 			result.put("level", level);
+			result.put("score", scoreString);
 			result.put("estimate_rate", estimateRateString);
 			return result;
 		}

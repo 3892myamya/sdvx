@@ -22,6 +22,7 @@ import myamya.sdvx.KadaiGeneratorClasses.ResponseInfo;
 import myamya.sdvx.KadaiGeneratorClasses.StatusInfo;
 import myamya.sdvx.KadaiGeneratorClasses.StatusInfoAll;
 import myamya.sdvx.KadaiGeneratorClasses.TrackInfo;
+import myamya.sdvx.KadaiGeneratorEnums.ClearLamp;
 import myamya.sdvx.KadaiGeneratorEnums.EffectDiv;
 import myamya.sdvx.KadaiGeneratorEnums.Mode;
 import myamya.sdvx.KadaiGeneratorEnums.ResponseDiv;
@@ -38,7 +39,7 @@ public class KadaiGenerator {
 	 * minLevel, maxLevelの条件に合致する分析結果を
 	 * modeで指定した内容に沿ったソート順のListで返す。
 	 */
-	public ResponseInfo execute(String userId, int minLevel, int maxLevel, Mode mode, int boader)
+	public ResponseInfo execute(String userId, int minLevel, int maxLevel, Mode mode, int boader, ClearLamp clear)
 			throws MalformedURLException, ProtocolException, IOException {
 		// 自分の情報を取る
 		Map<String, Object> profileMap = getProfileMap(userId);
@@ -54,7 +55,7 @@ public class KadaiGenerator {
 			statusInfoMap = statusInfoAll.checkAndGetStatusInfoMap();
 		}
 		//曲ごとにマッチングして譜面ごとに上位何%か推定
-		List<EstimateInfo> estimateInfoList = getEstimateInfoList(profileInfo, statusInfoMap, mode, boader);
+		List<EstimateInfo> estimateInfoList = getEstimateInfoList(profileInfo, statusInfoMap, mode, boader, clear);
 		// estimateRateMapを降順ソートし、レベルでフィルター
 		estimateInfoList = getEstimateInfoList(minLevel, maxLevel, estimateInfoList, mode);
 		if (estimateInfoList.isEmpty()) {
@@ -82,7 +83,7 @@ public class KadaiGenerator {
 	 * 自身の情報と統計情報より上位何%か推定
 	 */
 	private List<EstimateInfo> getEstimateInfoList(ProfileInfo profileInfo,
-			Map<String, Map<EffectDiv, StatusInfo>> statusInfoMap, Mode mode, int border) {
+			Map<String, Map<EffectDiv, StatusInfo>> statusInfoMap, Mode mode, int border, ClearLamp clear) {
 		List<EstimateInfo> estimateInfoList = new ArrayList<>();
 		for (TrackInfo trackInfo : profileInfo.getTrackList()) {
 			Map<EffectDiv, StatusInfo> oneStatusInfoMap = statusInfoMap.get(trackInfo.getTitle());
@@ -107,16 +108,26 @@ public class KadaiGenerator {
 							int borderScore = getBorderScore(border, statusInfo);
 							estimateInfoList.add(
 									new EstimateInfo(trackInfo.getTitle(), statusInfo.getEffectDiv(),
-											borderScore,
+											BigDecimal.valueOf(borderScore), String.valueOf(borderScore),
 											entry.getValue().getLevel(),
 											BigDecimal.valueOf(entry.getValue().getScore() - borderScore),
 											String.valueOf(entry.getValue().getScore() - borderScore)));
+						} else if (mode == Mode.FOR_CLEAR) {
+							estimateInfoList.add(
+									new EstimateInfo(trackInfo.getTitle(), statusInfo.getEffectDiv(),
+											statusInfo.getClearPercent(clear),
+											statusInfo.getClearPercent(clear).toPlainString() + "%",
+											entry.getValue().getLevel(),
+											entry.getValue().getClear().isClear(clear) ? BigDecimal.valueOf(0)
+													: BigDecimal.valueOf(-1),
+											entry.getValue().getClear().isClear(clear) ? "達成" : "未達成"));
 						} else {
 							BigDecimal estimateRate = mode.getEstimateRateCalculator().getEstimateRate(statusInfo,
 									entry.getValue().getScore());
 							estimateInfoList.add(
 									new EstimateInfo(trackInfo.getTitle(), statusInfo.getEffectDiv(),
-											entry.getValue().getScore(),
+											BigDecimal.valueOf(entry.getValue().getScore()),
+											String.valueOf(entry.getValue().getScore()),
 											entry.getValue().getLevel(), estimateRate,
 											mode.getDispEstimateRate(estimateRate)));
 						}
@@ -142,6 +153,15 @@ public class KadaiGenerator {
 				return o1.getEstimateRate().compareTo(o2.getEstimateRate());
 			}
 		};
+		/**
+		 * スコアでの降順ソート
+		 */
+		Comparator<EstimateInfo> sc = new Comparator<EstimateInfo>() {
+			@Override
+			public int compare(EstimateInfo o1, EstimateInfo o2) {
+				return o2.getScore().compareTo(o1.getScore());
+			}
+		};
 
 		/**
 		 * 曲名と譜面名区分でのソート
@@ -163,7 +183,8 @@ public class KadaiGenerator {
 		List<EstimateInfo> result = estimateInfoList.stream().sorted(
 				// 推定率のソート
 				// 今回やりたいことをやるには先にComparatorを作っておかないとだめっぽい
-				mode == Mode.FOR_BORDER ? c : mode == Mode.FOR_SCORE ? c.reversed() : c).filter(
+				mode == Mode.FOR_CLEAR ? sc : mode == Mode.FOR_BORDER ? c : mode == Mode.FOR_SCORE ? c.reversed() : c)
+				.filter(
 						o -> {
 							// レベルによる絞り込み
 							boolean b = minLevel <= o.getLevel() && o.getLevel() <= maxLevel;
@@ -172,7 +193,7 @@ public class KadaiGenerator {
 								return b && o.getEstimateRate().compareTo(BigDecimal.ZERO) != 0;
 							} else if (mode == Mode.FOR_SCORE) {
 								// スコア狙いの場合、すでにPUC済みの曲は表示しない
-								return b && o.getScore() != 10000000;
+								return b && o.getScore().compareTo(BigDecimal.valueOf(1000000)) != 0;
 							} else {
 								return b;
 							}

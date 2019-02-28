@@ -22,7 +22,12 @@ import myamya.sdvx.KadaiGeneratorEnums.EffectDiv;
 public class KadaiGeneratorClassesTest {
 
 	private static final StatusInfo STATUSINFO_FOR_TAST = new StatusInfo("test",
-			EffectDiv.NOVICE, new BigDecimal(5),
+			EffectDiv.NOVICE,
+			new BigDecimal(45),
+			new BigDecimal(35),
+			new BigDecimal(25),
+			new BigDecimal(15),
+			new BigDecimal(5),
 			new BigDecimal(95),
 			new BigDecimal(90),
 			new BigDecimal(81),

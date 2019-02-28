@@ -15,6 +15,7 @@ $(function() {
         param.lvl_max = $('#sel_lvl_max').val();
         param.disp_cnt = $('#sel_disp_cnt').val();
         param.border = $('#sel_border').val();
+        param.clear = $('#sel_clear').val();
         // 条件をローカルストレージ保存
         var cond = JSON.stringify(param);
         localStorage.setItem('cond', cond);
@@ -27,11 +28,13 @@ $(function() {
             var resultObj = JSON.parse(result);
             $('#caption').text(resultObj.error_msg);
             if (resultObj.error_msg == ''){
-                if (param.mode == 4) {
+                if (param.mode == 4 ) {
                     $('#achieve_info').text(' 到達率: ' + resultObj.achieve_info);
+                } else if (param.mode == 5 ) {
+                    $('#achieve_info').text(' 達成率: ' + resultObj.achieve_info);
                 }
                 var tweetTxt = '私の';
-                if (param.mode != 4) {
+                if (param.mode != 4 && param.mode != 5) {
                     var baseInfo = resultObj.result[0];
                     tweetTxt = tweetTxt + 'Lv' + baseInfo.level + 'の';
                     if (param.mode == 1) {
@@ -43,12 +46,16 @@ $(function() {
                     }
                     tweetTxt = tweetTxt + baseInfo.title + '(' + baseInfo.effect_div + ')';
                     tweetTxt = tweetTxt + ' です。'
-                    if (param.mode != 3) {
+                    if (param.mode != 3 ) {
                         tweetTxt = tweetTxt + '(' + baseInfo.score + ':上位' + baseInfo.estimate_rate + ')';
                     }
                 } else {
                     tweetTxt = tweetTxt + 'Lv' + param.lvl_min + 'の';
-                    tweetTxt = tweetTxt + param.border +'%ボーダー達成状況は ';
+                    if (param.mode == 4 ) {
+                        tweetTxt = tweetTxt + param.border +'%ボーダー達成状況は ';
+                    } else {
+                        tweetTxt = tweetTxt + $('#sel_clear option[value=' + param.clear +']').text() + '達成状況は ';
+                    }
                     tweetTxt = tweetTxt + resultObj.achieve_info;
                     tweetTxt = tweetTxt + ' です。'
                 }
@@ -70,12 +77,25 @@ $(function() {
                             }
                         },
                         {title:'Lv', name:'level', type: 'number', width: 20 },
-                        {title:param.mode == 4 ? 'ボーダー' : 'スコア', name:'score', type: 'number', width: 55 },
-                        {title:param.mode == 4 ? '差分' : param.mode == 3 ? '指数':'上位', name:'estimate_rate', type: 'number', width: 53
+                        {title:param.mode == 5 ? $('#sel_clear option[value=' + param.clear +']').text() + '率' :
+                               param.mode == 4 ? 'ボーダー' : 'スコア', name:'score', type: 'number', width: 57
+                        ,sorter:
+                            function(s1, s2) {
+                                return Number(s1.replace('%','')) - Number(s2.replace('%',''))
+                            }
+                        },
+                        {title:param.mode == 5 ? '状況' : param.mode == 4 ? '差分' : param.mode == 3 ? '指数':'上位', name:'estimate_rate',
+                               type: param.mode == 5 ? 'text' : 'number', width: 51, align: 'right'
                         ,itemTemplate:
                             function(value, item) {
                                if (param.mode == 4) {
                                    if (item.estimate_rate < 0) {
+                                       return "<div style='color:red'>" + value + "</div>";
+                                   } else {
+                                       return value;
+                                   }
+                               } else if (param.mode == 5) {
+                                   if (value == '未達成') {
                                        return "<div style='color:red'>" + value + "</div>";
                                    } else {
                                        return value;
@@ -102,13 +122,13 @@ $(function() {
         var newVal = $('#sel_lvl_min').val();
         if (parseInt(newVal, 10) > parseInt($('#sel_lvl_max').val(), 10)) {
             $('#sel_lvl_max').val(newVal);
-        } 
+        }
     });
     $('#sel_lvl_max').change(function(){
         var newVal = $('#sel_lvl_max').val();
         if (parseInt(newVal, 10) < parseInt($('#sel_lvl_min').val(), 10)) {
             $('#sel_lvl_min').val(newVal);
-        } 
+        }
     });
     var showhide = function () {
         var mode = $('#sel_mode').val();
@@ -119,6 +139,17 @@ $(function() {
             $('#sel_disp_cnt').hide();
             $('#lbl_border').show();
             $('#sel_border').show();
+            $('#lbl_clear').hide();
+            $('#sel_clear').hide();
+        } else if (mode == 5) {
+            $('#lbl_lvl_kara').hide();
+            $('#sel_lvl_max').hide();
+            $('#lbl_disp_cnt').hide();
+            $('#sel_disp_cnt').hide();
+            $('#lbl_border').hide();
+            $('#sel_border').hide();
+            $('#lbl_clear').show();
+            $('#sel_clear').show();
         } else {
             $('#lbl_lvl_kara').show();
             $('#sel_lvl_max').show();
@@ -126,6 +157,8 @@ $(function() {
             $('#sel_disp_cnt').show();
             $('#lbl_border').hide();
             $('#sel_border').hide();
+            $('#lbl_clear').hide();
+            $('#sel_clear').hide();
         }
         $('#tweetbtn').hide();
         $('#achieve_info').text('');
@@ -145,6 +178,11 @@ $(function() {
         } else {
             $('#sel_border').val(50);
         }
+        if (condObj.clear != null) {
+            $('#sel_clear').val(condObj.clear);
+        } else {
+            $('#sel_clear').val(2);
+        }
     } else {
         // 初期条件。おそらく一番使われそうである値を入れておく
         $('#sel_lvl_min').val(17);
@@ -152,6 +190,7 @@ $(function() {
         $('#sel_mode').val(1);
         $('#sel_disp_cnt').val(20);
         $('#sel_border').val(50);
+        $('#sel_clear').val(2);
     }
     showhide();
 });
