@@ -36,18 +36,24 @@ $(function() {
                 var tweetTxt = '私の';
                 if (param.mode != 4 && param.mode != 5) {
                     var baseInfo = resultObj.result[0];
-                    tweetTxt = tweetTxt + 'Lv' + baseInfo.level + 'の';
+                    tweetTxt = tweetTxt + 'Lv' + baseInfo.level;
                     if (param.mode == 1) {
-                        tweetTxt = tweetTxt + '課題曲は ';
+                        tweetTxt = tweetTxt + 'の課題曲は ';
                     } else if (param.mode == 2) {
-                        tweetTxt = tweetTxt + '武器曲は ';
+                        tweetTxt = tweetTxt + 'の武器曲は ';
                     } else if (param.mode == 3) {
-                        tweetTxt = tweetTxt + '課題曲(PERFECT狙い)は ';
+                        tweetTxt = tweetTxt + 'の課題曲(PERFECT狙い)は ';
+                    } else if (param.mode == 6) {
+                        tweetTxt = tweetTxt + 'でのVOLFORCE更新できそうな曲は ';
                     }
                     tweetTxt = tweetTxt + baseInfo.title + '(' + baseInfo.effect_div + ')';
                     tweetTxt = tweetTxt + ' です。'
                     if (param.mode != 3 ) {
-                        tweetTxt = tweetTxt + '(' + baseInfo.score + ':上位' + baseInfo.estimate_rate + ')';
+                    	if (param.mode == 6){
+                    		tweetTxt = tweetTxt + '(目標:' + baseInfo.score + ')';
+                    	} else {
+                    		tweetTxt = tweetTxt + '(' + baseInfo.score + ':上位' + baseInfo.estimate_rate + ')';
+                    	}
                     }
                 } else {
                     tweetTxt = tweetTxt + 'Lv' + param.lvl_min + 'の';
@@ -77,15 +83,16 @@ $(function() {
                             }
                         },
                         {title:'Lv', name:'level', type: 'number', width: 20 },
-                        {title:param.mode == 5 ? $('#sel_clear option[value=' + param.clear +']').text() + '率' :
-                               param.mode == 4 ? 'ボーダー' : 'スコア', name:'score', type: 'number', width: 57
+                        {title:param.mode == 6 ? '目標' :
+                        	   param.mode == 5 ? $('#sel_clear option[value=' + param.clear +']').text() + '率' :
+                               param.mode == 4 ? 'ボーダー' : 'スコア', name:'score', type: 'number', width: 58
                         ,sorter:
                             function(s1, s2) {
                                 return Number(s1.replace('%','')) - Number(s2.replace('%',''))
                             }
                         },
-                        {title:param.mode == 5 ? '状況' : param.mode == 4 ? '差分' : param.mode == 3 ? '指数':'上位', name:'estimate_rate',
-                               type: param.mode == 5 ? 'text' : 'number', width: 51, align: 'right'
+                        {title:param.mode == 5 ? '状況' : param.mode == 4 ? '差分' : (param.mode == 3 || param.mode == 6) ? '指数':'上位', name:'estimate_rate',
+                               type: param.mode == 5 ? 'text' : 'number', width: 50, align: 'right'
                         ,itemTemplate:
                             function(value, item) {
                                if (param.mode == 4) {

@@ -8,7 +8,9 @@ import java.net.MalformedURLException;
 import java.net.ProtocolException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -16,6 +18,7 @@ import java.util.stream.Collectors;
 
 import myamya.sdvx.KadaiGeneratorClasses.EffectInfo;
 import myamya.sdvx.KadaiGeneratorClasses.EstimateInfo;
+import myamya.sdvx.KadaiGeneratorClasses.EstimateRateCalculator.ScoreEstimateRateCalculator;
 import myamya.sdvx.KadaiGeneratorClasses.ProfileInfo;
 import myamya.sdvx.KadaiGeneratorClasses.RatePair;
 import myamya.sdvx.KadaiGeneratorClasses.ResponseInfo;
@@ -33,6 +36,7 @@ public class KadaiGenerator {
 
 	private static final StatusInfoAll statusInfoAll = new StatusInfoAll();
 	private static final Object locker = new Object();
+	private static final Map<Integer, Map<Integer, Map<ClearLamp, Integer>>> volforceTargetMap = getVolforceTargetMap();
 
 	/**
 	 * userIdを利用してスコアツールのデータを取得し、
@@ -84,6 +88,7 @@ public class KadaiGenerator {
 	 */
 	private List<EstimateInfo> getEstimateInfoList(ProfileInfo profileInfo,
 			Map<String, Map<EffectDiv, StatusInfo>> statusInfoMap, Mode mode, int border, ClearLamp clear) {
+		int volForceMin = -1;
 		List<EstimateInfo> estimateInfoList = new ArrayList<>();
 		for (TrackInfo trackInfo : profileInfo.getTrackList()) {
 			Map<EffectDiv, StatusInfo> oneStatusInfoMap = statusInfoMap.get(trackInfo.getTitle());
@@ -121,6 +126,14 @@ public class KadaiGenerator {
 											entry.getValue().getClear().isClear(clear) ? BigDecimal.valueOf(0)
 													: BigDecimal.valueOf(-1),
 											entry.getValue().getClear().isClear(clear) ? "達成" : "未達成"));
+						} else if (mode == Mode.FOR_VOLFORCE) {
+							if (volForceMin == -1) {
+								volForceMin = profileInfo.getVolForceInfo().getVolForceMin();
+							}
+							List<EstimateInfo> recommendVolforceInfo = getRecommendVolforceInfo(trackInfo.getTitle(),
+									entry.getValue(),
+									statusInfo, volForceMin);
+							estimateInfoList.addAll(recommendVolforceInfo);
 						} else {
 							BigDecimal estimateRate = mode.getEstimateRateCalculator().getEstimateRate(statusInfo,
 									entry.getValue().getScore());
@@ -137,6 +150,133 @@ public class KadaiGenerator {
 
 		}
 		return estimateInfoList;
+	}
+
+	private List<EstimateInfo> getRecommendVolforceInfo(String title, EffectInfo effectInfo, StatusInfo statusInfo,
+			int volForceMin) {
+		List<EstimateInfo> result = new ArrayList<>();
+		// PUCならvolforce伸びる余地なし
+		if (effectInfo.getClear() == ClearLamp.PER) {
+			return result;
+		}
+		// 現在以上のクリアランプでボルフォース更新に必要な点数を計算
+		int volForceTarget = effectInfo.getOneVolForce() + 1;
+		if (volForceTarget <= volForceMin) {
+			volForceTarget = volForceMin + 1;
+		}
+		Map<ClearLamp, Integer> targetMap = volforceTargetMap.get(volForceTarget).get(effectInfo.getLevel());
+		if (targetMap == null) {
+			return result;
+		}
+		for (Entry<ClearLamp, Integer> e : targetMap.entrySet()) {
+			ClearLamp targetClearLamp = e.getKey();
+			int scoreTarget = e.getValue();
+			if (targetClearLamp.getVal() > effectInfo.getClear().getVal()) {
+				continue;
+			}
+			// VFが伸びるものがあれば、統計情報と比較して狙い目指数を計算
+			// 狙い目指数の計算式は((現在スコアレート + 50)/2/目標スコアレート)
+			// または、((現在スコアレート + 50)/2/目標クリアレート)。
+			// どっちも足りてない場合は簡単な方を1/2掛けで計算する
+			// 現在のスコアが上位30%で、目標スコアが上位10%ならば指数は4。
+			// 現在のスコアが上位50%で、目標スコアが上位10%ならば指数は5。
+			// 現在のスコアが上位30%で、目標クリアレートが上位40%ならば指数は2。
+			// 現在のスコアが上位50%で、目標クリアレートが上位40%ならば指数は2.5。
+			// 現在のスコアが上位30%で、目標スコアが上位10%かつ目標クリアレートが上位40%ならば指数は5。
+			BigDecimal scoreBase = new ScoreEstimateRateCalculator()
+					.getEstimateRate(statusInfo, effectInfo.getScore()).add(new BigDecimal(50))
+					.divide(new BigDecimal(2));
+			BigDecimal targetScoreRate = new ScoreEstimateRateCalculator().getEstimateRate(statusInfo,
+					scoreTarget * 10000);
+			BigDecimal targetClearRate = statusInfo.getClearPercent(targetClearLamp);
+			BigDecimal rate = null;
+			String scoreString = null;
+			if (effectInfo.getClear() == targetClearLamp || targetClearLamp == ClearLamp.PER) {
+				// スコア更新でボルフォース対象入り
+				if (targetClearLamp == ClearLamp.PER) {
+					scoreString = ClearLamp.PER.getShortStr();
+				} else {
+					scoreString = String.valueOf(scoreTarget);
+				}
+				if (targetScoreRate.compareTo(BigDecimal.ZERO) != 0) {
+					rate = scoreBase.divide(targetScoreRate, 3, RoundingMode.DOWN);
+				}
+			} else if (effectInfo.getScore() > scoreTarget * 10000) {
+				scoreString = targetClearLamp.getShortStr();
+				if (targetClearRate.compareTo(BigDecimal.ZERO) != 0) {
+					rate = scoreBase.divide(targetClearRate, 3, RoundingMode.DOWN);
+				}
+			} else {
+				if ((targetClearRate.compareTo(BigDecimal.ZERO) != 0)
+						&& (targetScoreRate.compareTo(BigDecimal.ZERO) != 0)) {
+					scoreString = String.valueOf(scoreTarget)
+							+ " + " + targetClearLamp.getShortStr();
+					BigDecimal a = scoreBase.divide(targetScoreRate, 3, RoundingMode.DOWN);
+					BigDecimal b = scoreBase.divide(targetClearRate, 3, RoundingMode.DOWN);
+					if (a.compareTo(b) < 0) {
+						a = a.divide(new BigDecimal(2));
+					} else {
+						b = b.divide(new BigDecimal(2));
+					}
+					rate = a.add(b).setScale(3, RoundingMode.DOWN);
+				}
+			}
+			if (rate != null) {
+				result.add(new EstimateInfo(title, statusInfo.getEffectDiv(), new BigDecimal(0), scoreString,
+						effectInfo.getLevel(),
+						rate, String.valueOf(rate)));
+			}
+		}
+		return result;
+	}
+
+	private static Map<Integer, Map<Integer, Map<ClearLamp, Integer>>> getVolforceTargetMap() {
+		Map<Integer, Map<Integer, Map<ClearLamp, Integer>>> map = new HashMap<>();
+		List<ScoreDiv> scoreDivList = Arrays
+				.asList(new ScoreDiv[] { ScoreDiv.S_998, ScoreDiv.S_995, ScoreDiv.S,
+						ScoreDiv.AAA_PLUS, ScoreDiv.AAA, ScoreDiv.AA_PLUS, ScoreDiv.AA,
+						ScoreDiv.A_PLUS, ScoreDiv.A });
+		for (int targetVolForce = 1; targetVolForce <= 50; targetVolForce++) {
+			Map<Integer, Map<ClearLamp, Integer>> mapA = map.get(targetVolForce);
+			if (mapA == null) {
+				mapA = new HashMap<>();
+				map.put(targetVolForce, mapA);
+			}
+			for (int level = 1; level <= 20; level++) {
+				Map<ClearLamp, Integer> mapB = mapA.get(level);
+				if (mapB == null) {
+					mapB = new HashMap<>();
+					mapA.put(level, mapB);
+				}
+				for (ClearLamp targetClearLamp : ClearLamp.values()) {
+					if (targetClearLamp == ClearLamp.NOPLAY) {
+						continue;
+					}
+					if (targetClearLamp == ClearLamp.PER) {
+						int candidateVolForce = new BigDecimal(level).multiply(new BigDecimal(2))
+								.multiply(ClearLamp.PER.getVolForceBase())
+								.multiply(ScoreDiv.PER.getVolForceBase()).intValue();
+						if (targetVolForce == candidateVolForce) {
+							mapB.put(targetClearLamp, 1000);
+						}
+						continue;
+					}
+					for (ScoreDiv scoreDiv : scoreDivList) {
+						BigDecimal clearVolForceBase = new BigDecimal(level)
+								.multiply(targetClearLamp.getVolForceBase());
+						int scoreCandidate = new BigDecimal(targetVolForce).multiply(new BigDecimal(500))
+								.divide(clearVolForceBase.multiply(scoreDiv.getVolForceBase()), 100, RoundingMode.DOWN)
+								.setScale(0, RoundingMode.UP).intValue() * 10000;
+						if (scoreCandidate <= scoreDiv.getMax()) {
+							int scoreTarget = (scoreDiv.getMin() > scoreCandidate ? scoreDiv.getMin() : scoreCandidate)
+									/ 10000;
+							mapB.put(targetClearLamp, scoreTarget);
+						}
+					}
+				}
+			}
+		}
+		return map;
 	}
 
 	/**

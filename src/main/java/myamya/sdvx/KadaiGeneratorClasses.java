@@ -8,6 +8,8 @@ import java.net.URL;
 import java.time.DayOfWeek;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,6 +48,53 @@ public class KadaiGeneratorClasses {
 			}
 			name = (String) map.get("name");
 		}
+
+		VolForceInfo getVolForceInfo() {
+			List<Integer> wk = new ArrayList<>();
+			// ボルフォース下限を計算
+			for (TrackInfo trackInfo : trackList) {
+				for (EffectInfo effectInfo : trackInfo.getEffectMap().values()) {
+					wk.add(effectInfo.getOneVolForce());
+				}
+			}
+			Collections.sort(wk, Comparator.reverseOrder());
+			int volForceTargetCount = wk.size() < 50 ? wk.size() : 50;
+			int volForceMin = wk.get(volForceTargetCount - 1);
+			// 下限でもう一回対象曲を調べる
+			List<OneEffectInfo> volForceList = new ArrayList<>();
+			for (TrackInfo trackInfo : trackList) {
+				for (Entry<EffectDiv, EffectInfo> entry : trackInfo.getEffectMap().entrySet()) {
+					if (entry.getValue().getOneVolForce() >= volForceMin) {
+						volForceList.add(new OneEffectInfo(trackInfo.getId(), trackInfo.getTitle(), entry.getKey(),
+								entry.getValue()));
+					}
+				}
+			}
+			Collections.sort(volForceList, new Comparator<OneEffectInfo>() {
+				@Override
+				public int compare(OneEffectInfo o1, OneEffectInfo o2) {
+					return o2.getEffectInfo().getOneVolForce() - o1.getEffectInfo().getOneVolForce();
+				}
+			});
+			int totalVolForce = 0;
+			for (int i = 0; i < volForceTargetCount; i++) {
+				totalVolForce = totalVolForce + volForceList.get(i).getEffectInfo().getOneVolForce();
+			}
+			return new VolForceInfo(totalVolForce, volForceMin, volForceList);
+		}
+
+	}
+
+	/**
+	 * ボルフォースに関する情報
+	 */
+	@ToString
+	@Value
+	@RequiredArgsConstructor
+	static class VolForceInfo {
+		private final int totalVolForce;
+		private final int volForceMin;
+		private final List<OneEffectInfo> volForceList;
 	}
 
 	/**
@@ -73,10 +122,25 @@ public class KadaiGeneratorClasses {
 	}
 
 	/**
-	 * 1譜面分の詳細データを示すクラス
+	 * 1曲の1譜面のデータを示すクラス
+	 * EffectInfoと違い、自身がIDを持っている
 	 */
 	@Getter
 	@ToString
+	@RequiredArgsConstructor
+	static class OneEffectInfo {
+		private final int id;
+		private final String title;
+		private final EffectDiv EffectDiv;
+		private final EffectInfo EffectInfo;
+	}
+
+	/**
+	 * 1譜面分の詳細データを示すクラス
+	 */
+	@ToString
+	@Value
+	@RequiredArgsConstructor
 	static class EffectInfo {
 		private final int level;
 		private final ClearLamp clear;
@@ -91,6 +155,12 @@ public class KadaiGeneratorClasses {
 				score = ((BigDecimal) map.get("score")).intValue();
 				clear = ClearLamp.getByStr((String) map.get("clearlamp"));
 			}
+		}
+
+		int getOneVolForce() {
+			BigDecimal scoreBase = new BigDecimal(score / 10000);
+			return new BigDecimal(level).multiply(scoreBase).multiply(clear.getVolForceBase())
+					.multiply(ScoreDiv.getByScore(score).getVolForceBase()).divide(new BigDecimal(500)).intValue();
 		}
 	}
 

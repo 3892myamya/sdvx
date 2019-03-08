@@ -17,50 +17,58 @@ public class KadaiGeneratorEnums {
 	@RequiredArgsConstructor
 	@Getter
 	enum Mode {
-		/** スコアが伸びそうな曲 */
-		FOR_SCORE(1, new ScoreEstimateRateCalculator()) {
-			@Override
-			public String getDispEstimateRate(BigDecimal estimateRate) {
-				return estimateRate.toPlainString() + "%";
-			}
+	/** スコアが伸びそうな曲 */
+	FOR_SCORE(1, new ScoreEstimateRateCalculator()) {
+		@Override
+		public String getDispEstimateRate(BigDecimal estimateRate) {
+			return estimateRate.toPlainString() + "%";
+		}
 
-		},
-		/** 武器曲 */
-		FOR_WEAPON(2, new ScoreEstimateRateCalculator()) {
-			@Override
-			public String getDispEstimateRate(BigDecimal estimateRate) {
-				return estimateRate.toPlainString() + "%";
-			}
+	},
+	/** 武器曲 */
+	FOR_WEAPON(2, new ScoreEstimateRateCalculator()) {
+		@Override
+		public String getDispEstimateRate(BigDecimal estimateRate) {
+			return estimateRate.toPlainString() + "%";
+		}
 
-		},
-		/** PERFECTが狙えそうな曲 */
-		FOR_PERFECT(3, new PerfectEstimateRateCalculator()) {
-			@Override
-			public String getDispEstimateRate(BigDecimal estimateRate) {
-				// TODO 自動生成されたメソッド・スタブ
-				if (estimateRate.compareTo(new BigDecimal("100000")) >= 0) {
-					return "99999.99";
-				} else {
-					return estimateRate.toPlainString();
-				}
-			}
-		},
-
-		/** ボーダーモード */
-		FOR_BORDER(4, null) {
-			@Override
-			public String getDispEstimateRate(BigDecimal estimateRate) {
+	},
+	/** PERFECTが狙えそうな曲 */
+	FOR_PERFECT(3, new PerfectEstimateRateCalculator()) {
+		@Override
+		public String getDispEstimateRate(BigDecimal estimateRate) {
+			// TODO 自動生成されたメソッド・スタブ
+			if (estimateRate.compareTo(new BigDecimal("100000")) >= 0) {
+				return "99999.99";
+			} else {
 				return estimateRate.toPlainString();
 			}
-		},
+		}
+	},
 
-		/** クリア達成状況モード */
-		FOR_CLEAR(5, null) {
-			@Override
-			public String getDispEstimateRate(BigDecimal estimateRate) {
-				return estimateRate.toPlainString();
-			}
-		};
+	/** ボーダーモード */
+	FOR_BORDER(4, null) {
+		@Override
+		public String getDispEstimateRate(BigDecimal estimateRate) {
+			return estimateRate.toPlainString();
+		}
+	},
+
+	/** クリア達成状況モード */
+	FOR_CLEAR(5, null) {
+		@Override
+		public String getDispEstimateRate(BigDecimal estimateRate) {
+			return estimateRate.toPlainString();
+		}
+	},
+
+	/** ボルフォースモード */
+	FOR_VOLFORCE(6, null) {
+		@Override
+		public String getDispEstimateRate(BigDecimal estimateRate) {
+			return estimateRate.toPlainString();
+		}
+	};
 
 		private final int value;
 		private final EstimateRateCalculator estimateRateCalculator;
@@ -118,20 +126,22 @@ public class KadaiGeneratorEnums {
 	@Getter
 	enum ClearLamp {
 		/** */
-		NOPLAY("NOPLAY",6),
+		NOPLAY("NOPLAY", "NOPLAY", 6, new BigDecimal(0)),
 		/** */
-		CRASH("CRASH",5),
+		CRASH("CRASH", "CRASH", 5, new BigDecimal(0.5)),
 		/** */
-		COMP("COMP",4),
+		COMP("COMP", "COMP", 4, new BigDecimal(1)),
 		/** */
-		EX_COMP("EX COMP",3),
+		EX_COMP("EX COMP", "EXCOMP", 3, new BigDecimal(1.02)),
 		/** */
-		UC("UC",2),
+		UC("UC", "UC", 2, new BigDecimal(1.05)),
 		/** */
-		PER("PER",1);
+		PER("PER", "PER", 1, new BigDecimal(1.1));
 
 		private final String str;
+		private final String shortStr;
 		private final int val;
+		private final BigDecimal volForceBase;
 
 		public static ClearLamp getByVal(int val) {
 			for (ClearLamp clearLamp : ClearLamp.values()) {
@@ -154,50 +164,9 @@ public class KadaiGeneratorEnums {
 		/**
 		 * 自身のクリア状況がotherを上回っているかを返す。
 		 */
-		public boolean isClear (ClearLamp other) {
+		public boolean isClear(ClearLamp other) {
 			// 値が小さいほうが格上なので
 			return this.val <= other.val;
-		}
-	}
-
-	/**
-	 * グレード区分を示す列挙型
-	 */
-	@RequiredArgsConstructor
-	@Getter
-	enum Grade {
-		/** */
-		NOPLAY("NOPLAY"),
-		/** */
-		D("D"),
-		/** */
-		C("C"),
-		/** */
-		B("B"),
-		/** */
-		A("A"),
-		/** */
-		A_PLUS("A+"),
-		/** */
-		AA("AA"),
-		/** */
-		AA_PLUS("AA+"),
-		/** */
-		AAA("AAA"),
-		/** */
-		AAA_PLUS("AAA+"),
-		/** */
-		S("S");
-
-		private final String str;
-
-		public static Grade getByStr(String key) {
-			for (Grade grade : Grade.values()) {
-				if (grade.getStr().equalsIgnoreCase(key)) {
-					return grade;
-				}
-			}
-			return null;
 		}
 	}
 
@@ -208,30 +177,31 @@ public class KadaiGeneratorEnums {
 	@Getter
 	enum ScoreDiv {
 		/** */
-		UNDER_A(0, 8699999),
+		UNDER_A(0, 8699999, new BigDecimal(0)),
 		/** */
-		A(8700000, 8999999),
+		A(8700000, 8999999, new BigDecimal(0.88)),
 		/** */
-		A_PLUS(9000000, 9299999),
+		A_PLUS(9000000, 9299999, new BigDecimal(0.91)),
 		/** */
-		AA(9300000, 9499999),
+		AA(9300000, 9499999, new BigDecimal(0.94)),
 		/** */
-		AA_PLUS(9500000, 9699999),
+		AA_PLUS(9500000, 9699999, new BigDecimal(0.97)),
 		/** */
-		AAA(9700000, 9799999),
+		AAA(9700000, 9799999, new BigDecimal(1.00)),
 		/** */
-		AAA_PLUS(9800000, 9899999),
+		AAA_PLUS(9800000, 9899999, new BigDecimal(1.02)),
 		/** */
-		S(9900000, 9949999),
+		S(9900000, 9949999, new BigDecimal(1.05)),
 		/** */
-		S_995(9950000, 9979999),
+		S_995(9950000, 9979999, new BigDecimal(1.05)),
 		/** */
-		S_998(9980000, 9999999),
+		S_998(9980000, 9999999, new BigDecimal(1.05)),
 		/** */
-		PER(10000000, 10000000);
+		PER(10000000, 10000000, new BigDecimal(1.05));
 
 		private final int min;
 		private final int max;
+		private final BigDecimal volForceBase;
 
 		public int getRange() {
 			return max + 1 - min;
