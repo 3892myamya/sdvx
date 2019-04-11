@@ -104,7 +104,9 @@ public class KadaiGeneratorEnums {
 		/** */
 		GRAVITY("GRAVITY", "GRV"),
 		/** */
-		HEAVENLY("HEAVENLY", "HVN");
+		HEAVENLY("HEAVENLY", "HVN"),
+		/** */
+		VIVID("VIVID", "VVD");
 
 		private final String str;
 		private final String shortStr;

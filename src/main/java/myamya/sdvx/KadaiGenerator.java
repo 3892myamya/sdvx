@@ -333,7 +333,7 @@ public class KadaiGenerator {
 								return b && o.getEstimateRate().compareTo(BigDecimal.ZERO) != 0;
 							} else if (mode == Mode.FOR_SCORE) {
 								// スコア狙いの場合、すでにPUC済みの曲は表示しない
-								return b && o.getScore().compareTo(BigDecimal.valueOf(1000000)) != 0;
+								return b && o.getScore().compareTo(BigDecimal.valueOf(10000000)) != 0;
 							} else {
 								return b;
 							}

@@ -18,7 +18,7 @@ body{
 #div_title{
   font-size: 1.5em;
   font-weight: bold;
-  background: linear-gradient(#4080FF, #8040FF);
+  background: linear-gradient(#FF3070, #FF1090);
   color: #ffffff;
 }
 
@@ -55,3 +55,5 @@ body{
 .inf { color: #ff00ff; }
 .grv { color: #fa9106; }
 .hvn { color: #00b0f0; }
+.vvd { color: #f82374; }
+
