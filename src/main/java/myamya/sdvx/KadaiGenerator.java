@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 import myamya.sdvx.KadaiGeneratorClasses.EffectInfo;
@@ -164,10 +165,19 @@ public class KadaiGenerator {
 		if (volForceTarget <= volForceMin) {
 			volForceTarget = volForceMin + 1;
 		}
-		Map<ClearLamp, Integer> targetMap = volforceTargetMap.get(volForceTarget).get(effectInfo.getLevel());
-		if (targetMap == null) {
+		//		Map<ClearLamp, Integer> targetMap = volforceTargetMap.get(volForceTarget).get(effectInfo.getLevel());
+		//		if (targetMap == null) {
+		//			return result;
+		//		}
+		Map<ClearLamp, Integer> targetMap = new TreeMap<>();
+		for (int candVolForce = 50; candVolForce >= volForceTarget; candVolForce--) {
+			targetMap.putAll(volforceTargetMap.get(candVolForce).get(effectInfo.getLevel()));
+		}
+		if (targetMap.isEmpty()) {
 			return result;
 		}
+		boolean lampAndScoreUp = false;
+		boolean lampOnlyUp = false;
 		for (Entry<ClearLamp, Integer> e : targetMap.entrySet()) {
 			ClearLamp targetClearLamp = e.getKey();
 			int scoreTarget = e.getValue();
@@ -194,6 +204,10 @@ public class KadaiGenerator {
 			if (effectInfo.getClear() == targetClearLamp || targetClearLamp == ClearLamp.PER) {
 				// スコア更新でボルフォース対象入り
 				if (targetClearLamp == ClearLamp.PER) {
+					if (lampOnlyUp || lampAndScoreUp) {
+						// 既にランプ更新でVFが伸びる場合は候補から除外
+						continue;
+					}
 					scoreString = ClearLamp.PER.getShortStr();
 				} else {
 					scoreString = String.valueOf(scoreTarget);
@@ -202,11 +216,19 @@ public class KadaiGenerator {
 					rate = scoreBase.divide(targetScoreRate, 3, RoundingMode.DOWN);
 				}
 			} else if (effectInfo.getScore() > scoreTarget * 10000) {
+				// ランプ更新
+				if (lampOnlyUp) {
+					// 既にランプ更新でVFが伸びる場合は候補から除外
+					continue;
+				}
+				lampOnlyUp = true;
 				scoreString = targetClearLamp.getShortStr();
 				if (targetClearRate.compareTo(BigDecimal.ZERO) != 0) {
 					rate = scoreBase.divide(targetClearRate, 3, RoundingMode.DOWN);
 				}
 			} else {
+				// どっちも更新
+				lampAndScoreUp = true;
 				if ((targetClearRate.compareTo(BigDecimal.ZERO) != 0)
 						&& (targetScoreRate.compareTo(BigDecimal.ZERO) != 0)) {
 					scoreString = String.valueOf(scoreTarget)
@@ -230,6 +252,10 @@ public class KadaiGenerator {
 		return result;
 	}
 
+	/**
+	 * ボルフォースマップ取得
+	 * ボルフォース値 - レベル - クリアランプ - スコア上3桁 という書式
+	 */
 	private static Map<Integer, Map<Integer, Map<ClearLamp, Integer>>> getVolforceTargetMap() {
 		Map<Integer, Map<Integer, Map<ClearLamp, Integer>>> map = new HashMap<>();
 		List<ScoreDiv> scoreDivList = Arrays
