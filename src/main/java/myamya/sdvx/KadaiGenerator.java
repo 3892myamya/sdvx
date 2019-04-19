@@ -187,12 +187,12 @@ public class KadaiGenerator {
 			// VFが伸びるものがあれば、統計情報と比較して狙い目指数を計算
 			// 狙い目指数の計算式は((現在スコアレート + 50)/2/目標スコアレート)
 			// または、((現在スコアレート + 50)/2/目標クリアレート)。
-			// どっちも足りてない場合は簡単な方を1/2掛けで計算する
+			// どっちも足りてない場合は上記2つのうち大きい方を採用する
 			// 現在のスコアが上位30%で、目標スコアが上位10%ならば指数は4。
 			// 現在のスコアが上位50%で、目標スコアが上位10%ならば指数は5。
 			// 現在のスコアが上位30%で、目標クリアレートが上位40%ならば指数は2。
 			// 現在のスコアが上位50%で、目標クリアレートが上位40%ならば指数は2.5。
-			// 現在のスコアが上位30%で、目標スコアが上位10%かつ目標クリアレートが上位40%ならば指数は5。
+			// 現在のスコアが上位30%で、目標スコアが上位10%かつ目標クリアレートが上位40%ならば指数は4(クリアレート側は無視)。
 			BigDecimal scoreBase = new ScoreEstimateRateCalculator()
 					.getEstimateRate(statusInfo, effectInfo.getScore()).add(new BigDecimal(50))
 					.divide(new BigDecimal(2));
@@ -222,8 +222,8 @@ public class KadaiGenerator {
 					continue;
 				}
 				lampOnlyUp = true;
-				scoreString = targetClearLamp.getShortStr();
 				if (targetClearRate.compareTo(BigDecimal.ZERO) != 0) {
+					scoreString = targetClearLamp.getShortStr();
 					rate = scoreBase.divide(targetClearRate, 3, RoundingMode.DOWN);
 				}
 			} else {
@@ -235,12 +235,7 @@ public class KadaiGenerator {
 							+ " + " + targetClearLamp.getShortStr();
 					BigDecimal a = scoreBase.divide(targetScoreRate, 3, RoundingMode.DOWN);
 					BigDecimal b = scoreBase.divide(targetClearRate, 3, RoundingMode.DOWN);
-					if (a.compareTo(b) < 0) {
-						a = a.divide(new BigDecimal(2));
-					} else {
-						b = b.divide(new BigDecimal(2));
-					}
-					rate = a.add(b).setScale(3, RoundingMode.DOWN);
+					rate = a.compareTo(b) < 0 ? b.setScale(3, RoundingMode.DOWN) : a.setScale(3, RoundingMode.DOWN);
 				}
 			}
 			if (rate != null) {
