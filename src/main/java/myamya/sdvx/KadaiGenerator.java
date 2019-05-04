@@ -176,7 +176,7 @@ public class KadaiGenerator {
 		if (targetMap.isEmpty()) {
 			return result;
 		}
-		boolean lampAndScoreUp = false;
+		int lampAndScoreUpBefScore = 0;
 		boolean lampOnlyUp = false;
 		for (Entry<ClearLamp, Integer> e : targetMap.entrySet()) {
 			ClearLamp targetClearLamp = e.getKey();
@@ -204,7 +204,7 @@ public class KadaiGenerator {
 			if (effectInfo.getClear() == targetClearLamp || targetClearLamp == ClearLamp.PER) {
 				// スコア更新でボルフォース対象入り
 				if (targetClearLamp == ClearLamp.PER) {
-					if (lampOnlyUp || lampAndScoreUp) {
+					if (lampOnlyUp || lampAndScoreUpBefScore != 0) {
 						// 既にランプ更新でVFが伸びる場合は候補から除外
 						continue;
 					}
@@ -227,8 +227,12 @@ public class KadaiGenerator {
 					rate = scoreBase.divide(targetClearRate, 3, RoundingMode.DOWN);
 				}
 			} else {
+				if (lampAndScoreUpBefScore != 0 && scoreTarget == lampAndScoreUpBefScore) {
+					// 同一スコアでより緩いランプで更新できる場合は候補から除外
+					continue;
+				}
 				// どっちも更新
-				lampAndScoreUp = true;
+				lampAndScoreUpBefScore = scoreTarget;
 				if ((targetClearRate.compareTo(BigDecimal.ZERO) != 0)
 						&& (targetScoreRate.compareTo(BigDecimal.ZERO) != 0)) {
 					scoreString = String.valueOf(scoreTarget)

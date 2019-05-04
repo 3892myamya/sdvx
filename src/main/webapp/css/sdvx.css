@@ -4,6 +4,7 @@ body{
 
 #div_readme_head {
     background: #e9e9ff;
+    margin-bottom: 2px;
 }
 
 #div_readme_body {
@@ -24,6 +25,11 @@ body{
 
 #div_readme_body {
     font-size:.8em;
+}
+
+#grid {
+	margin-top: 2px;
+    max-width: 500px;
 }
 
 .jsgrid-header-row>.jsgrid-header-cell {
