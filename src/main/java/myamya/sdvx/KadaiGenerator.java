@@ -19,7 +19,6 @@ import java.util.stream.Collectors;
 
 import myamya.sdvx.KadaiGeneratorClasses.EffectInfo;
 import myamya.sdvx.KadaiGeneratorClasses.EstimateInfo;
-import myamya.sdvx.KadaiGeneratorClasses.EstimateRateCalculator.ScoreEstimateRateCalculator;
 import myamya.sdvx.KadaiGeneratorClasses.ProfileInfo;
 import myamya.sdvx.KadaiGeneratorClasses.RatePair;
 import myamya.sdvx.KadaiGeneratorClasses.ResponseInfo;
@@ -31,6 +30,7 @@ import myamya.sdvx.KadaiGeneratorEnums.EffectDiv;
 import myamya.sdvx.KadaiGeneratorEnums.Mode;
 import myamya.sdvx.KadaiGeneratorEnums.ResponseDiv;
 import myamya.sdvx.KadaiGeneratorEnums.ScoreDiv;
+import myamya.sdvx.KadaiGeneratorEnums.Target;
 import net.arnx.jsonic.JSON;
 
 public class KadaiGenerator {
@@ -44,7 +44,7 @@ public class KadaiGenerator {
 	 * minLevel, maxLevelの条件に合致する分析結果を
 	 * modeで指定した内容に沿ったソート順のListで返す。
 	 */
-	public ResponseInfo execute(String userId, int minLevel, int maxLevel, Mode mode, int boader, ClearLamp clear)
+	public ResponseInfo execute(String userId, int minLevel, int maxLevel, Mode mode, int boader, Target target)
 			throws MalformedURLException, ProtocolException, IOException {
 		// 自分の情報を取る
 		Map<String, Object> profileMap = getProfileMap(userId);
@@ -60,7 +60,7 @@ public class KadaiGenerator {
 			statusInfoMap = statusInfoAll.checkAndGetStatusInfoMap();
 		}
 		//曲ごとにマッチングして譜面ごとに上位何%か推定
-		List<EstimateInfo> estimateInfoList = getEstimateInfoList(profileInfo, statusInfoMap, mode, boader, clear);
+		List<EstimateInfo> estimateInfoList = getEstimateInfoList(profileInfo, statusInfoMap, mode, boader, target);
 		// estimateRateMapを降順ソートし、レベルでフィルター
 		estimateInfoList = getEstimateInfoList(minLevel, maxLevel, estimateInfoList, mode);
 		if (estimateInfoList.isEmpty()) {
@@ -88,7 +88,7 @@ public class KadaiGenerator {
 	 * 自身の情報と統計情報より上位何%か推定
 	 */
 	private List<EstimateInfo> getEstimateInfoList(ProfileInfo profileInfo,
-			Map<String, Map<EffectDiv, StatusInfo>> statusInfoMap, Mode mode, int border, ClearLamp clear) {
+			Map<String, Map<EffectDiv, StatusInfo>> statusInfoMap, Mode mode, int border, Target target) {
 		int volForceMin = -1;
 		List<EstimateInfo> estimateInfoList = new ArrayList<>();
 		for (TrackInfo trackInfo : profileInfo.getTrackList()) {
@@ -110,7 +110,31 @@ public class KadaiGenerator {
 					if (entry.getValue().getScore() == 0) {
 						// TODO 未プレイの場合
 					} else {
-						if (mode == Mode.FOR_BORDER) {
+						if (mode == Mode.FOR_TARGET) {
+							boolean isClear;
+							if (target instanceof ClearLamp) {
+								isClear = entry.getValue().getClear().isClear((ClearLamp) target);
+							} else if (target instanceof ScoreDiv) {
+								isClear = ((ScoreDiv) target).isClear(entry.getValue().getScore());
+							} else {
+								throw new IllegalArgumentException();
+							}
+							if (!isClear) {
+								BigDecimal scoreBase = KadaiGeneratorUtil
+										.getEstimateRate(statusInfo, entry.getValue().getScore())
+										.add(new BigDecimal(50));
+								if (scoreBase.compareTo(BigDecimal.ZERO) != 0) {
+									// 推奨度の計算式はVFと同じ
+									BigDecimal rate = statusInfo.getPercent(target).multiply(new BigDecimal(150))
+											.divide(scoreBase, 2, RoundingMode.DOWN);
+									estimateInfoList.add(
+											new EstimateInfo(trackInfo.getTitle(), statusInfo.getEffectDiv(),
+													BigDecimal.valueOf(entry.getValue().getScore()),
+													String.valueOf(entry.getValue().getScore()),
+													entry.getValue().getLevel(), rate, String.valueOf(rate) + " p"));
+								}
+							}
+						} else if (mode == Mode.FOR_BORDER) {
 							int borderScore = getBorderScore(border, statusInfo);
 							estimateInfoList.add(
 									new EstimateInfo(trackInfo.getTitle(), statusInfo.getEffectDiv(),
@@ -119,14 +143,21 @@ public class KadaiGenerator {
 											BigDecimal.valueOf(entry.getValue().getScore() - borderScore),
 											String.valueOf(entry.getValue().getScore() - borderScore)));
 						} else if (mode == Mode.FOR_CLEAR) {
+							boolean isClear;
+							if (target instanceof ClearLamp) {
+								isClear = entry.getValue().getClear().isClear((ClearLamp) target);
+							} else if (target instanceof ScoreDiv) {
+								isClear = ((ScoreDiv) target).isClear(entry.getValue().getScore());
+							} else {
+								throw new IllegalArgumentException();
+							}
 							estimateInfoList.add(
 									new EstimateInfo(trackInfo.getTitle(), statusInfo.getEffectDiv(),
-											statusInfo.getClearPercent(clear),
-											statusInfo.getClearPercent(clear).toPlainString() + "%",
+											statusInfo.getPercent(target),
+											statusInfo.getPercent(target).toPlainString() + "%",
 											entry.getValue().getLevel(),
-											entry.getValue().getClear().isClear(clear) ? BigDecimal.valueOf(0)
-													: BigDecimal.valueOf(-1),
-											entry.getValue().getClear().isClear(clear) ? "達成" : "未達成"));
+											isClear ? BigDecimal.valueOf(0) : BigDecimal.valueOf(-1),
+											isClear ? "達成" : "未達成"));
 						} else if (mode == Mode.FOR_VOLFORCE) {
 							if (volForceMin == -1) {
 								volForceMin = profileInfo.getVolForceInfo().getVolForceMin();
@@ -136,7 +167,7 @@ public class KadaiGenerator {
 									statusInfo, volForceMin);
 							estimateInfoList.addAll(recommendVolforceInfo);
 						} else {
-							BigDecimal estimateRate = mode.getEstimateRateCalculator().getEstimateRate(statusInfo,
+							BigDecimal estimateRate = KadaiGeneratorUtil.getEstimateRate(statusInfo,
 									entry.getValue().getScore());
 							estimateInfoList.add(
 									new EstimateInfo(trackInfo.getTitle(), statusInfo.getEffectDiv(),
@@ -165,10 +196,6 @@ public class KadaiGenerator {
 		if (volForceTarget <= volForceMin) {
 			volForceTarget = volForceMin + 1;
 		}
-		//		Map<ClearLamp, Integer> targetMap = volforceTargetMap.get(volForceTarget).get(effectInfo.getLevel());
-		//		if (targetMap == null) {
-		//			return result;
-		//		}
 		Map<ClearLamp, Integer> targetMap = new TreeMap<>();
 		for (int candVolForce = 50; candVolForce >= volForceTarget; candVolForce--) {
 			targetMap.putAll(volforceTargetMap.get(candVolForce).get(effectInfo.getLevel()));
@@ -185,20 +212,18 @@ public class KadaiGenerator {
 				continue;
 			}
 			// VFが伸びるものがあれば、統計情報と比較して狙い目指数を計算
-			// 狙い目指数の計算式は((現在スコアレート + 50)/2/目標スコアレート)
-			// または、((現在スコアレート + 50)/2/目標クリアレート)。
+			// 狙い目指数の計算式は(目標スコアレート * 150/(現在スコアレート + 50))
+			// または、(目標クリアレート * 150/(現在スコアレート + 50))。
 			// どっちも足りてない場合は上記2つのうち大きい方を採用する
 			// 現在のスコアが上位30%で、目標スコアが上位10%ならば指数は4。
 			// 現在のスコアが上位50%で、目標スコアが上位10%ならば指数は5。
 			// 現在のスコアが上位30%で、目標クリアレートが上位40%ならば指数は2。
 			// 現在のスコアが上位50%で、目標クリアレートが上位40%ならば指数は2.5。
 			// 現在のスコアが上位30%で、目標スコアが上位10%かつ目標クリアレートが上位40%ならば指数は4(クリアレート側は無視)。
-			BigDecimal scoreBase = new ScoreEstimateRateCalculator()
-					.getEstimateRate(statusInfo, effectInfo.getScore()).add(new BigDecimal(50))
-					.divide(new BigDecimal(2));
-			BigDecimal targetScoreRate = new ScoreEstimateRateCalculator().getEstimateRate(statusInfo,
-					scoreTarget * 10000);
-			BigDecimal targetClearRate = statusInfo.getClearPercent(targetClearLamp);
+			BigDecimal scoreBase = KadaiGeneratorUtil.getEstimateRate(statusInfo, effectInfo.getScore())
+					.add(new BigDecimal(50));
+			BigDecimal targetScoreRate = KadaiGeneratorUtil.getEstimateRate(statusInfo, scoreTarget * 10000);
+			BigDecimal targetClearRate = statusInfo.getPercent(targetClearLamp);
 			BigDecimal rate = null;
 			String scoreString = null;
 			if (effectInfo.getClear() == targetClearLamp || targetClearLamp == ClearLamp.PER) {
@@ -212,8 +237,8 @@ public class KadaiGenerator {
 				} else {
 					scoreString = String.valueOf(scoreTarget);
 				}
-				if (targetScoreRate.compareTo(BigDecimal.ZERO) != 0) {
-					rate = scoreBase.divide(targetScoreRate, 3, RoundingMode.DOWN);
+				if (scoreBase.compareTo(BigDecimal.ZERO) != 0) {
+					rate = targetScoreRate.multiply(new BigDecimal(150)).divide(scoreBase, 2, RoundingMode.DOWN);
 				}
 			} else if (effectInfo.getScore() > scoreTarget * 10000) {
 				// ランプ更新
@@ -222,9 +247,9 @@ public class KadaiGenerator {
 					continue;
 				}
 				lampOnlyUp = true;
-				if (targetClearRate.compareTo(BigDecimal.ZERO) != 0) {
+				if (scoreBase.compareTo(BigDecimal.ZERO) != 0) {
 					scoreString = targetClearLamp.getShortStr();
-					rate = scoreBase.divide(targetClearRate, 3, RoundingMode.DOWN);
+					rate = targetClearRate.multiply(new BigDecimal(150)).divide(scoreBase, 2, RoundingMode.DOWN);
 				}
 			} else {
 				if (lampAndScoreUpBefScore != 0 && scoreTarget == lampAndScoreUpBefScore) {
@@ -233,19 +258,20 @@ public class KadaiGenerator {
 				}
 				// どっちも更新
 				lampAndScoreUpBefScore = scoreTarget;
-				if ((targetClearRate.compareTo(BigDecimal.ZERO) != 0)
-						&& (targetScoreRate.compareTo(BigDecimal.ZERO) != 0)) {
+				if (scoreBase.compareTo(BigDecimal.ZERO) != 0) {
 					scoreString = String.valueOf(scoreTarget)
 							+ " + " + targetClearLamp.getShortStr();
-					BigDecimal a = scoreBase.divide(targetScoreRate, 3, RoundingMode.DOWN);
-					BigDecimal b = scoreBase.divide(targetClearRate, 3, RoundingMode.DOWN);
-					rate = a.compareTo(b) < 0 ? b.setScale(3, RoundingMode.DOWN) : a.setScale(3, RoundingMode.DOWN);
+					BigDecimal a = targetScoreRate.multiply(new BigDecimal(150)).divide(scoreBase, 3,
+							RoundingMode.DOWN);
+					BigDecimal b = targetClearRate.multiply(new BigDecimal(150)).divide(scoreBase, 3,
+							RoundingMode.DOWN);
+					rate = a.compareTo(b) > 0 ? b.setScale(2, RoundingMode.DOWN) : a.setScale(2, RoundingMode.DOWN);
 				}
 			}
 			if (rate != null) {
 				result.add(new EstimateInfo(title, statusInfo.getEffectDiv(), new BigDecimal(0), scoreString,
 						effectInfo.getLevel(),
-						rate, String.valueOf(rate)));
+						rate, String.valueOf(rate) + " p"));
 			}
 		}
 		return result;
@@ -348,15 +374,14 @@ public class KadaiGenerator {
 		List<EstimateInfo> result = estimateInfoList.stream().sorted(
 				// 推定率のソート
 				// 今回やりたいことをやるには先にComparatorを作っておかないとだめっぽい
-				mode == Mode.FOR_CLEAR ? sc : mode == Mode.FOR_BORDER ? c : mode == Mode.FOR_SCORE ? c.reversed() : c)
+				mode == Mode.FOR_CLEAR ? sc
+						: mode == Mode.FOR_SCORE || mode == Mode.FOR_TARGET || mode == Mode.FOR_VOLFORCE ? c.reversed()
+								: c)
 				.filter(
 						o -> {
 							// レベルによる絞り込み
 							boolean b = minLevel <= o.getLevel() && o.getLevel() <= maxLevel;
-							if (mode == Mode.FOR_PERFECT) {
-								// PER狙いの場合、指数が0(まだP者がいないもしくは既にPUC済み)は表示しない
-								return b && o.getEstimateRate().compareTo(BigDecimal.ZERO) != 0;
-							} else if (mode == Mode.FOR_SCORE) {
+							if (mode == Mode.FOR_SCORE) {
 								// スコア狙いの場合、すでにPUC済みの曲は表示しない
 								return b && o.getScore().compareTo(BigDecimal.valueOf(10000000)) != 0;
 							} else {

@@ -14,7 +14,6 @@ import org.junit.Test;
 import mockit.Deencapsulation;
 import mockit.Mock;
 import mockit.MockUp;
-import myamya.sdvx.KadaiGeneratorClasses.EstimateRateCalculator.ScoreEstimateRateCalculator;
 import myamya.sdvx.KadaiGeneratorClasses.StatusInfo;
 import myamya.sdvx.KadaiGeneratorClasses.StatusInfoAll;
 import myamya.sdvx.KadaiGeneratorEnums.EffectDiv;
@@ -157,95 +156,93 @@ public class KadaiGeneratorClassesTest {
 	 */
 	@Test
 	public void ScoreEstimateRateCalculatorTest() {
-		ScoreEstimateRateCalculator scoreEstimateRateCalculator = new ScoreEstimateRateCalculator();
+		assertEquals(KadaiGeneratorUtil.getEstimateRate(STATUSINFO_FOR_TAST, 0), new BigDecimal("100.00"));
 
-		assertEquals(scoreEstimateRateCalculator.getEstimateRate(STATUSINFO_FOR_TAST, 0), new BigDecimal("100.00"));
-
-		assertEquals(scoreEstimateRateCalculator.getEstimateRate(STATUSINFO_FOR_TAST, 8500000),
+		assertEquals(KadaiGeneratorUtil.getEstimateRate(STATUSINFO_FOR_TAST, 8500000),
 				new BigDecimal("95.11"));
 
-		assertEquals(scoreEstimateRateCalculator.getEstimateRate(STATUSINFO_FOR_TAST, 8600000),
+		assertEquals(KadaiGeneratorUtil.getEstimateRate(STATUSINFO_FOR_TAST, 8600000),
 				new BigDecimal("95.06"));
 
-		assertEquals(scoreEstimateRateCalculator.getEstimateRate(STATUSINFO_FOR_TAST, 8700000),
+		assertEquals(KadaiGeneratorUtil.getEstimateRate(STATUSINFO_FOR_TAST, 8700000),
 				new BigDecimal("95.00"));
 
-		assertEquals(scoreEstimateRateCalculator.getEstimateRate(STATUSINFO_FOR_TAST, 8800000),
+		assertEquals(KadaiGeneratorUtil.getEstimateRate(STATUSINFO_FOR_TAST, 8800000),
 				new BigDecimal("93.33"));
 
-		assertEquals(scoreEstimateRateCalculator.getEstimateRate(STATUSINFO_FOR_TAST, 8900000),
+		assertEquals(KadaiGeneratorUtil.getEstimateRate(STATUSINFO_FOR_TAST, 8900000),
 				new BigDecimal("91.67"));
 
-		assertEquals(scoreEstimateRateCalculator.getEstimateRate(STATUSINFO_FOR_TAST, 9000000),
+		assertEquals(KadaiGeneratorUtil.getEstimateRate(STATUSINFO_FOR_TAST, 9000000),
 				new BigDecimal("90.00"));
 
-		assertEquals(scoreEstimateRateCalculator.getEstimateRate(STATUSINFO_FOR_TAST, 9050000),
+		assertEquals(KadaiGeneratorUtil.getEstimateRate(STATUSINFO_FOR_TAST, 9050000),
 				new BigDecimal("88.50"));
 
-		assertEquals(scoreEstimateRateCalculator.getEstimateRate(STATUSINFO_FOR_TAST, 9100000),
+		assertEquals(KadaiGeneratorUtil.getEstimateRate(STATUSINFO_FOR_TAST, 9100000),
 				new BigDecimal("87.00"));
 
-		assertEquals(scoreEstimateRateCalculator.getEstimateRate(STATUSINFO_FOR_TAST, 9150000),
+		assertEquals(KadaiGeneratorUtil.getEstimateRate(STATUSINFO_FOR_TAST, 9150000),
 				new BigDecimal("85.50"));
 
-		assertEquals(scoreEstimateRateCalculator.getEstimateRate(STATUSINFO_FOR_TAST, 9200000),
+		assertEquals(KadaiGeneratorUtil.getEstimateRate(STATUSINFO_FOR_TAST, 9200000),
 				new BigDecimal("84.00"));
 
-		assertEquals(scoreEstimateRateCalculator.getEstimateRate(STATUSINFO_FOR_TAST, 9250000),
+		assertEquals(KadaiGeneratorUtil.getEstimateRate(STATUSINFO_FOR_TAST, 9250000),
 				new BigDecimal("82.50"));
 
-		assertEquals(scoreEstimateRateCalculator.getEstimateRate(STATUSINFO_FOR_TAST, 9300000),
+		assertEquals(KadaiGeneratorUtil.getEstimateRate(STATUSINFO_FOR_TAST, 9300000),
 				new BigDecimal("81.00"));
 
-		assertEquals(scoreEstimateRateCalculator.getEstimateRate(STATUSINFO_FOR_TAST, 9350000),
+		assertEquals(KadaiGeneratorUtil.getEstimateRate(STATUSINFO_FOR_TAST, 9350000),
 				new BigDecimal("78.25"));
 
-		assertEquals(scoreEstimateRateCalculator.getEstimateRate(STATUSINFO_FOR_TAST, 9400000),
+		assertEquals(KadaiGeneratorUtil.getEstimateRate(STATUSINFO_FOR_TAST, 9400000),
 				new BigDecimal("75.50"));
 
-		assertEquals(scoreEstimateRateCalculator.getEstimateRate(STATUSINFO_FOR_TAST, 9450000),
+		assertEquals(KadaiGeneratorUtil.getEstimateRate(STATUSINFO_FOR_TAST, 9450000),
 				new BigDecimal("72.75"));
 
-		assertEquals(scoreEstimateRateCalculator.getEstimateRate(STATUSINFO_FOR_TAST, 9500000),
+		assertEquals(KadaiGeneratorUtil.getEstimateRate(STATUSINFO_FOR_TAST, 9500000),
 				new BigDecimal("70.00"));
 
-		assertEquals(scoreEstimateRateCalculator.getEstimateRate(STATUSINFO_FOR_TAST, 9550000),
+		assertEquals(KadaiGeneratorUtil.getEstimateRate(STATUSINFO_FOR_TAST, 9550000),
 				new BigDecimal("68.25"));
 
-		assertEquals(scoreEstimateRateCalculator.getEstimateRate(STATUSINFO_FOR_TAST, 9660000),
+		assertEquals(KadaiGeneratorUtil.getEstimateRate(STATUSINFO_FOR_TAST, 9660000),
 				new BigDecimal("64.40"));
 
-		assertEquals(scoreEstimateRateCalculator.getEstimateRate(STATUSINFO_FOR_TAST, 9700000),
+		assertEquals(KadaiGeneratorUtil.getEstimateRate(STATUSINFO_FOR_TAST, 9700000),
 				new BigDecimal("63.00"));
 
-		assertEquals(scoreEstimateRateCalculator.getEstimateRate(STATUSINFO_FOR_TAST, 9760000),
+		assertEquals(KadaiGeneratorUtil.getEstimateRate(STATUSINFO_FOR_TAST, 9760000),
 				new BigDecimal("56.40"));
 
-		assertEquals(scoreEstimateRateCalculator.getEstimateRate(STATUSINFO_FOR_TAST, 9800000),
+		assertEquals(KadaiGeneratorUtil.getEstimateRate(STATUSINFO_FOR_TAST, 9800000),
 				new BigDecimal("52.00"));
 
-		assertEquals(scoreEstimateRateCalculator.getEstimateRate(STATUSINFO_FOR_TAST, 9840000),
+		assertEquals(KadaiGeneratorUtil.getEstimateRate(STATUSINFO_FOR_TAST, 9840000),
 				new BigDecimal("47.20"));
 
-		assertEquals(scoreEstimateRateCalculator.getEstimateRate(STATUSINFO_FOR_TAST, 9900000),
+		assertEquals(KadaiGeneratorUtil.getEstimateRate(STATUSINFO_FOR_TAST, 9900000),
 				new BigDecimal("40.00"));
 
-		assertEquals(scoreEstimateRateCalculator.getEstimateRate(STATUSINFO_FOR_TAST, 9920000),
+		assertEquals(KadaiGeneratorUtil.getEstimateRate(STATUSINFO_FOR_TAST, 9920000),
 				new BigDecimal("35.20"));
 
-		assertEquals(scoreEstimateRateCalculator.getEstimateRate(STATUSINFO_FOR_TAST, 9950000),
+		assertEquals(KadaiGeneratorUtil.getEstimateRate(STATUSINFO_FOR_TAST, 9950000),
 				new BigDecimal("28.00"));
 
-		assertEquals(scoreEstimateRateCalculator.getEstimateRate(STATUSINFO_FOR_TAST, 9960000),
+		assertEquals(KadaiGeneratorUtil.getEstimateRate(STATUSINFO_FOR_TAST, 9960000),
 				new BigDecimal("23.67"));
 
-		assertEquals(scoreEstimateRateCalculator.getEstimateRate(STATUSINFO_FOR_TAST, 9980000),
+		assertEquals(KadaiGeneratorUtil.getEstimateRate(STATUSINFO_FOR_TAST, 9980000),
 				new BigDecimal("15.00"));
 
-		assertEquals(scoreEstimateRateCalculator.getEstimateRate(STATUSINFO_FOR_TAST, 9999000),
+		assertEquals(KadaiGeneratorUtil.getEstimateRate(STATUSINFO_FOR_TAST, 9999000),
 				new BigDecimal("5.50"));
 
-		assertEquals(scoreEstimateRateCalculator.getEstimateRate(STATUSINFO_FOR_TAST, 10000000),
+		assertEquals(KadaiGeneratorUtil.getEstimateRate(STATUSINFO_FOR_TAST, 10000000),
 				new BigDecimal("5.00"));
 	}
 }

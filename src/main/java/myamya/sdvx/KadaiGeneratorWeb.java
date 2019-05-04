@@ -21,6 +21,7 @@ import myamya.sdvx.KadaiGeneratorClasses.ResponseInfo;
 import myamya.sdvx.KadaiGeneratorEnums.ClearLamp;
 import myamya.sdvx.KadaiGeneratorEnums.Mode;
 import myamya.sdvx.KadaiGeneratorEnums.ResponseDiv;
+import myamya.sdvx.KadaiGeneratorEnums.Target;
 import net.arnx.jsonic.JSON;
 
 /**
@@ -55,18 +56,20 @@ public class KadaiGeneratorWeb extends HttpServlet {
 			String userId = request.getParameter("userid");
 			Mode mode = Mode.getByValue(Integer.parseInt(request.getParameter("mode")));
 			int lvlMin = Integer.parseInt(request.getParameter("lvl_min"));
-			int lvlMax = mode == Mode.FOR_BORDER || mode == Mode.FOR_CLEAR ? Integer.parseInt(request.getParameter("lvl_min"))
+			int lvlMax = mode == Mode.FOR_BORDER || mode == Mode.FOR_CLEAR
+					? Integer.parseInt(request.getParameter("lvl_min"))
 					: Integer.parseInt(request.getParameter("lvl_max"));
-			int dispCnt = mode == Mode.FOR_BORDER || mode == Mode.FOR_CLEAR ? 1000 : Integer.parseInt(request.getParameter("disp_cnt"));
+			int dispCnt = mode == Mode.FOR_BORDER || mode == Mode.FOR_CLEAR ? 1000
+					: Integer.parseInt(request.getParameter("disp_cnt"));
 			int border = mode != Mode.FOR_BORDER ? 0 : Integer.parseInt(request.getParameter("border"));
-			ClearLamp clear = mode != Mode.FOR_CLEAR ? ClearLamp.NOPLAY
-					: ClearLamp.getByVal(Integer.parseInt(request.getParameter("clear")));
+			Target target = mode != Mode.FOR_TARGET && mode != Mode.FOR_CLEAR ? ClearLamp.NOPLAY
+					: Target.getByVal(Integer.parseInt(request.getParameter("clear")));
 			if (userId == null || userId.equals("")) {
 				resultMap.put("error_msg", ResponseDiv.NOT_INPUT_USER_ID.getErrorMsg());
 			} else if (lvlMin > lvlMax) {
 				resultMap.put("error_msg", ResponseDiv.REVERSE_LVL.getErrorMsg());
 			} else {
-				ResponseInfo responseInfo = new KadaiGenerator().execute(userId, lvlMin, lvlMax, mode, border, clear);
+				ResponseInfo responseInfo = new KadaiGenerator().execute(userId, lvlMin, lvlMax, mode, border, target);
 				if (responseInfo.getResponseDiv() == ResponseDiv.SUCCESS) {
 					responseInfo.getEstimateInfoList().forEach(new Consumer<EstimateInfo>() {
 						// dispCntに達するまで表示

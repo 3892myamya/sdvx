@@ -4,9 +4,6 @@ import java.math.BigDecimal;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import myamya.sdvx.KadaiGeneratorClasses.EstimateRateCalculator;
-import myamya.sdvx.KadaiGeneratorClasses.EstimateRateCalculator.PerfectEstimateRateCalculator;
-import myamya.sdvx.KadaiGeneratorClasses.EstimateRateCalculator.ScoreEstimateRateCalculator;
 
 public class KadaiGeneratorEnums {
 
@@ -18,7 +15,7 @@ public class KadaiGeneratorEnums {
 	@Getter
 	enum Mode {
 	/** スコアが伸びそうな曲 */
-	FOR_SCORE(1, new ScoreEstimateRateCalculator()) {
+	FOR_SCORE(1) {
 		@Override
 		public String getDispEstimateRate(BigDecimal estimateRate) {
 			return estimateRate.toPlainString() + "%";
@@ -26,15 +23,15 @@ public class KadaiGeneratorEnums {
 
 	},
 	/** 武器曲 */
-	FOR_WEAPON(2, new ScoreEstimateRateCalculator()) {
+	FOR_WEAPON(2) {
 		@Override
 		public String getDispEstimateRate(BigDecimal estimateRate) {
 			return estimateRate.toPlainString() + "%";
 		}
 
 	},
-	/** PERFECTが狙えそうな曲 */
-	FOR_PERFECT(3, new PerfectEstimateRateCalculator()) {
+	/** 課題曲(目標設定) */
+	FOR_TARGET(3) {
 		@Override
 		public String getDispEstimateRate(BigDecimal estimateRate) {
 			// TODO 自動生成されたメソッド・スタブ
@@ -47,7 +44,7 @@ public class KadaiGeneratorEnums {
 	},
 
 	/** ボーダーモード */
-	FOR_BORDER(4, null) {
+	FOR_BORDER(4) {
 		@Override
 		public String getDispEstimateRate(BigDecimal estimateRate) {
 			return estimateRate.toPlainString();
@@ -55,7 +52,7 @@ public class KadaiGeneratorEnums {
 	},
 
 	/** クリア達成状況モード */
-	FOR_CLEAR(5, null) {
+	FOR_CLEAR(5) {
 		@Override
 		public String getDispEstimateRate(BigDecimal estimateRate) {
 			return estimateRate.toPlainString();
@@ -63,7 +60,7 @@ public class KadaiGeneratorEnums {
 	},
 
 	/** ボルフォースモード */
-	FOR_VOLFORCE(6, null) {
+	FOR_VOLFORCE(6) {
 		@Override
 		public String getDispEstimateRate(BigDecimal estimateRate) {
 			return estimateRate.toPlainString();
@@ -71,7 +68,6 @@ public class KadaiGeneratorEnums {
 	};
 
 		private final int value;
-		private final EstimateRateCalculator estimateRateCalculator;
 
 		public static Mode getByValue(int value) {
 			for (Mode mode : Mode.values()) {
@@ -122,11 +118,38 @@ public class KadaiGeneratorEnums {
 	}
 
 	/**
+	 * 目標となりうる指標。
+	 */
+	interface Target {
+
+		// 自身を表す数値を返す
+		int getVal();
+
+		/**
+		 * 自身を表す数値を返す。
+		 */
+		public static Target getByVal(int val) {
+			for (ClearLamp clearLamp : ClearLamp.values()) {
+				if (clearLamp.getVal() == val) {
+					return clearLamp;
+				}
+			}
+			for (ScoreDiv scoreDiv : ScoreDiv.values()) {
+				if (scoreDiv.getVal() == val) {
+					return scoreDiv;
+				}
+			}
+			return null;
+		}
+	}
+
+	/**
 	 * クリアランプ区分を示す列挙型
+	 * valはClearLampとScoreDivで重複させないこと
 	 */
 	@RequiredArgsConstructor
 	@Getter
-	enum ClearLamp {
+	enum ClearLamp implements Target {
 		/** */
 		NOPLAY("NOPLAY", "NOPLAY", 6, new BigDecimal(0)),
 		/** */
@@ -145,15 +168,6 @@ public class KadaiGeneratorEnums {
 		private final int val;
 		private final BigDecimal volForceBase;
 
-		public static ClearLamp getByVal(int val) {
-			for (ClearLamp clearLamp : ClearLamp.values()) {
-				if (clearLamp.getVal() == val) {
-					return clearLamp;
-				}
-			}
-			return null;
-		}
-
 		public static ClearLamp getByStr(String str) {
 			for (ClearLamp clearLamp : ClearLamp.values()) {
 				if (clearLamp.getStr().equalsIgnoreCase(str)) {
@@ -168,7 +182,7 @@ public class KadaiGeneratorEnums {
 		 */
 		public boolean isClear(ClearLamp other) {
 			// 値が小さいほうが格上なので
-			return this.val <= other.val;
+			return this.getVal() <= other.getVal();
 		}
 	}
 
@@ -177,32 +191,33 @@ public class KadaiGeneratorEnums {
 	 */
 	@RequiredArgsConstructor
 	@Getter
-	enum ScoreDiv {
+	enum ScoreDiv implements Target {
 		/** */
-		UNDER_A(0, 8699999, new BigDecimal(0)),
+		UNDER_A(0, 8699999, 20, new BigDecimal(0)),
 		/** */
-		A(8700000, 8999999, new BigDecimal(0.88)),
+		A(8700000, 8999999, 19, new BigDecimal(0.88)),
 		/** */
-		A_PLUS(9000000, 9299999, new BigDecimal(0.91)),
+		A_PLUS(9000000, 9299999, 18, new BigDecimal(0.91)),
 		/** */
-		AA(9300000, 9499999, new BigDecimal(0.94)),
+		AA(9300000, 9499999, 17, new BigDecimal(0.94)),
 		/** */
-		AA_PLUS(9500000, 9699999, new BigDecimal(0.97)),
+		AA_PLUS(9500000, 9699999, 16, new BigDecimal(0.97)),
 		/** */
-		AAA(9700000, 9799999, new BigDecimal(1.00)),
+		AAA(9700000, 9799999, 15, new BigDecimal(1.00)),
 		/** */
-		AAA_PLUS(9800000, 9899999, new BigDecimal(1.02)),
+		AAA_PLUS(9800000, 9899999, 14, new BigDecimal(1.02)),
 		/** */
-		S(9900000, 9949999, new BigDecimal(1.05)),
+		S(9900000, 9949999, 13, new BigDecimal(1.05)),
 		/** */
-		S_995(9950000, 9979999, new BigDecimal(1.05)),
+		S_995(9950000, 9979999, 12, new BigDecimal(1.05)),
 		/** */
-		S_998(9980000, 9999999, new BigDecimal(1.05)),
+		S_998(9980000, 9999999, 11, new BigDecimal(1.05)),
 		/** */
-		PER(10000000, 10000000, new BigDecimal(1.05));
+		PER(10000000, 10000000, 10, new BigDecimal(1.05));
 
 		private final int min;
 		private final int max;
+		private final int val;
 		private final BigDecimal volForceBase;
 
 		public int getRange() {
@@ -216,6 +231,14 @@ public class KadaiGeneratorEnums {
 				}
 			}
 			return null;
+		}
+
+		/**
+		 * スコアがScoreDivを上回っているかを返す。
+		 */
+		public boolean isClear(int score) {
+			// 値が小さいほうが格上なので
+			return getByScore(score).getVal() <= this.getVal();
 		}
 	}
 

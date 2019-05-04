@@ -26,6 +26,7 @@ import myamya.sdvx.KadaiGeneratorEnums.ClearLamp;
 import myamya.sdvx.KadaiGeneratorEnums.EffectDiv;
 import myamya.sdvx.KadaiGeneratorEnums.ResponseDiv;
 import myamya.sdvx.KadaiGeneratorEnums.ScoreDiv;
+import myamya.sdvx.KadaiGeneratorEnums.Target;
 
 public class KadaiGeneratorClasses {
 	/**
@@ -338,17 +339,35 @@ public class KadaiGeneratorClasses {
 		}
 
 		/**
-		 * 指定されたクリアランプに対応する割合を返す
+		 * 指定された目標に対応する割合を返す
 		 */
-		public BigDecimal getClearPercent(ClearLamp clear) {
-			if (clear == ClearLamp.PER) {
+		public BigDecimal getPercent(Target target) {
+			if (target == ClearLamp.PER) {
 				return pPer.setScale(2, RoundingMode.DOWN);
-			} else if (clear == ClearLamp.UC) {
+			} else if (target == ClearLamp.UC) {
 				return pUc.setScale(2, RoundingMode.DOWN);
-			} else if (clear == ClearLamp.EX_COMP) {
+			} else if (target == ClearLamp.EX_COMP) {
 				return pExComp.setScale(2, RoundingMode.DOWN);
-			} else if (clear == ClearLamp.COMP) {
+			} else if (target == ClearLamp.COMP) {
 				return pComp.setScale(2, RoundingMode.DOWN);
+			} else if (target == ScoreDiv.S_998) {
+				return pGrade998.setScale(2, RoundingMode.DOWN);
+			} else if (target == ScoreDiv.S_995) {
+				return pGrade995.setScale(2, RoundingMode.DOWN);
+			} else if (target == ScoreDiv.S) {
+				return pGradeS.setScale(2, RoundingMode.DOWN);
+			} else if (target == ScoreDiv.AAA_PLUS) {
+				return pGradeAAAp.setScale(2, RoundingMode.DOWN);
+			} else if (target == ScoreDiv.AAA) {
+				return pGradeAAA.setScale(2, RoundingMode.DOWN);
+			} else if (target == ScoreDiv.AA_PLUS) {
+				return pGradeAAp.setScale(2, RoundingMode.DOWN);
+			} else if (target == ScoreDiv.AA) {
+				return pGradeAA.setScale(2, RoundingMode.DOWN);
+			} else if (target == ScoreDiv.A_PLUS) {
+				return pGradeAp.setScale(2, RoundingMode.DOWN);
+			} else if (target == ScoreDiv.A) {
+				return pGradeA.setScale(2, RoundingMode.DOWN);
 			} else {
 				return null;
 			}
@@ -394,54 +413,6 @@ public class KadaiGeneratorClasses {
 			return result;
 		}
 
-	}
-
-	/**
-	 * 上位何%かを計算する機能を持つインタフェース
-	 * TODO …とするつもりだったがP機能とボーダー機能を付けたため扱いが微妙に…
-	 */
-	public interface EstimateRateCalculator {
-
-		BigDecimal getEstimateRate(StatusInfo statusInfo, int score);
-
-		public class ScoreEstimateRateCalculator implements EstimateRateCalculator {
-
-			/**
-			 * 自身のスコアから、そのスコアがスコアツール登録者内で何%の位置にいるか推定して返す
-			 */
-			@Override
-			public BigDecimal getEstimateRate(StatusInfo statusInfo, int score) {
-				ScoreDiv scoreDiv = ScoreDiv.getByScore(score);
-				int diff = score - scoreDiv.getMin();
-				BigDecimal adjustRate = BigDecimal.valueOf(diff).divide(BigDecimal.valueOf(scoreDiv.getRange()), 3,
-						RoundingMode.DOWN);
-				RatePair ratePair = statusInfo.getRatePair(scoreDiv);
-				BigDecimal range = ratePair.getSelfRate().subtract(ratePair.getNextRate());
-				BigDecimal adjust = range.multiply(adjustRate);
-				return ratePair.getSelfRate().subtract(adjust).setScale(2, RoundingMode.DOWN);
-			}
-
-		}
-
-		public class PerfectEstimateRateCalculator implements EstimateRateCalculator {
-
-			/**
-			 * (10000000 - 自身のスコア) / ((PERFECT率)^2)を狙い目指数として返す。
-			 */
-			@Override
-			public BigDecimal getEstimateRate(StatusInfo statusInfo, int score) {
-				if (statusInfo.getPPer().compareTo(BigDecimal.ZERO) == 0) {
-					// TODO 誰もPしていない場合0とし、別途フィルタリング処理で表示されなくなるがもろもろびみょい…
-					return BigDecimal.ZERO;
-				} else {
-					return BigDecimal.valueOf(10000000 - score)
-							.divide(statusInfo.getPPer(), 2,
-									RoundingMode.DOWN)
-							.divide(statusInfo.getPPer(), 2,
-									RoundingMode.DOWN);
-				}
-			}
-		}
 	}
 
 	/**

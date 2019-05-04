@@ -42,7 +42,7 @@ $(function() {
                     } else if (param.mode == 2) {
                         tweetTxt = tweetTxt + 'の武器曲は ';
                     } else if (param.mode == 3) {
-                        tweetTxt = tweetTxt + 'の課題曲(PERFECT狙い)は ';
+                        tweetTxt = tweetTxt + 'で' + $('#sel_clear option[value=' + param.clear +']').text() + 'が達成できそうな曲は';
                     } else if (param.mode == 6) {
                         tweetTxt = tweetTxt + 'でのVOLFORCE更新できそうな曲は ';
                     }
@@ -91,7 +91,7 @@ $(function() {
                                 return Number(s1.replace('%','')) - Number(s2.replace('%',''))
                             }
                         },
-                        {title:param.mode == 5 ? '状況' : param.mode == 4 ? '差分' : (param.mode == 3 || param.mode == 6) ? '指数':'上位', name:'estimate_rate',
+                        {title:param.mode == 5 ? '状況' : param.mode == 4 ? '差分' : (param.mode == 3 || param.mode == 6) ? '推奨度' : '上位', name:'estimate_rate',
                                type: param.mode == 5 ? 'text' : 'number', width: 50, align: 'right'
                         ,itemTemplate:
                             function(value, item) {
@@ -139,7 +139,16 @@ $(function() {
     });
     var showhide = function () {
         var mode = $('#sel_mode').val();
-        if (mode == 4) {
+        if (mode == 3) {
+            $('#lbl_lvl_kara').show();
+            $('#sel_lvl_max').show();
+            $('#lbl_disp_cnt').show();
+            $('#sel_disp_cnt').show();
+            $('#lbl_border').hide();
+            $('#sel_border').hide();
+            $('#lbl_clear').show();
+            $('#sel_clear').show();
+        } else if (mode == 4) {
             $('#lbl_lvl_kara').hide();
             $('#sel_lvl_max').hide();
             $('#lbl_disp_cnt').hide();
