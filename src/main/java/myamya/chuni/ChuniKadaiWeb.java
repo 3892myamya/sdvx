@@ -59,6 +59,7 @@ public class ChuniKadaiWeb extends HttpServlet {
 			BigDecimal lvlMax = mode == Mode.FOR_BORDER || mode == Mode.FOR_CLEAR
 					? new BigDecimal(request.getParameter("lvl_min"))
 					: new BigDecimal(request.getParameter("lvl_max"));
+			boolean masterOnly = new Boolean(request.getParameter("master_only")).booleanValue();
 			int dispCnt = mode == Mode.FOR_BORDER || mode == Mode.FOR_CLEAR ? 1000
 					: Integer.parseInt(request.getParameter("disp_cnt"));
 			int border = mode != Mode.FOR_BORDER ? 0 : Integer.parseInt(request.getParameter("border"));
@@ -69,8 +70,8 @@ public class ChuniKadaiWeb extends HttpServlet {
 			} else if (lvlMin.compareTo(lvlMax) > 0) {
 				resultMap.put("error_msg", ResponseDiv.REVERSE_LVL.getErrorMsg());
 			} else {
-				ResponseInfo responseInfo = new ChuniKadaiGenerator().execute(userId, lvlMin, lvlMax, mode, border,
-						target);
+				ResponseInfo responseInfo = new ChuniKadaiGenerator().execute(userId, lvlMin, lvlMax, masterOnly, mode,
+						border, target);
 				if (responseInfo.getResponseDiv() == ResponseDiv.SUCCESS) {
 					responseInfo.getEstimateInfoList().forEach(new Consumer<EstimateInfo>() {
 						// dispCntに達するまで表示

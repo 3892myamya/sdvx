@@ -45,8 +45,8 @@ public class ChuniKadaiGenerator {
 	 * minLevel, maxLevelの条件に合致する分析結果を
 	 * modeで指定した内容に沿ったソート順のListで返す。
 	 */
-	public ResponseInfo execute(String userId, BigDecimal minLevel, BigDecimal maxLevel, Mode mode, int boader,
-			Target target)
+	public ResponseInfo execute(String userId, BigDecimal minLevel, BigDecimal maxLevel, boolean masterOnly, Mode mode,
+			int boader, Target target)
 			throws MalformedURLException, ProtocolException, IOException {
 		// 自分の情報を取る
 		Map<String, Object> profileMap = getProfileMap(userId);
@@ -65,7 +65,7 @@ public class ChuniKadaiGenerator {
 		//曲ごとにマッチングして譜面ごとに上位何%か推定
 		List<EstimateInfo> estimateInfoList = getEstimateInfoList(profileInfo, statusInfoMap, mode, boader, target);
 		// estimateRateMapを降順ソートし、レベルでフィルター
-		estimateInfoList = getEstimateInfoList(minLevel, maxLevel, estimateInfoList, mode);
+		estimateInfoList = getEstimateInfoList(minLevel, maxLevel, masterOnly, estimateInfoList, mode);
 		if (estimateInfoList.isEmpty()) {
 			return new ResponseInfo(ResponseDiv.NOT_FOUND, estimateInfoList);
 		} else {
@@ -207,7 +207,7 @@ public class ChuniKadaiGenerator {
 	 * 上位何%かという情報を検索条件でソート＆フィルタリング
 	 */
 	private List<EstimateInfo> getEstimateInfoList(BigDecimal minLevel, BigDecimal maxLevel,
-			List<EstimateInfo> estimateInfoList, Mode mode) {
+			boolean masterOnly, List<EstimateInfo> estimateInfoList, Mode mode) {
 		/**
 		 * 率でのソート
 		 */
@@ -252,6 +252,10 @@ public class ChuniKadaiGenerator {
 								: c)
 				.filter(
 						o -> {
+							// マスター譜面のみモード
+							if (masterOnly && o.getEffectDiv() != EffectDiv.MAS) {
+								return false;
+							}
 							// レベルによる絞り込み
 							boolean b = minLevel.compareTo(o.getLevel()) <= 0 && o.getLevel().compareTo(maxLevel) <= 0;
 							if (mode == Mode.FOR_SCORE) {

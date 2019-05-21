@@ -147,7 +147,6 @@ public class ChuniKadaiEnums {
 		FC("FC", "FC", 3),
 		/** */
 		AJ("AJ", "AJ", 2);
-		/** */
 
 		private final String str;
 		private final String shortStr;
@@ -177,10 +176,10 @@ public class ChuniKadaiEnums {
 		/** */
 		SS_PLUS(1005000, 1007499, 14),
 		/** */
-		SSS(1007500, 1009799, 12),
+		SSS(1007500, 1009749, 12),
 		/** */
-		// SSS_PLUSは公式の分類ではない。ざっくり1009800率 = AJ率として計算する用
-		SSS_PLUS(1009800, 1009999, 11),
+		// SSS_PLUSは公式の分類ではない。ざっくり1009750率 = AJ率として計算する用
+		SSS_PLUS(1009750, 1009999, 11),
 		/** */
 		MAX(1010000, 1010000, 10);
 

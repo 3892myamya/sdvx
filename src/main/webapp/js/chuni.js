@@ -13,6 +13,7 @@ $(function() {
         param.mode = $('#sel_mode').val();
         param.lvl_min = $('#sel_lvl_min').val();
         param.lvl_max = $('#sel_lvl_max').val();
+        param.master_only = $('#cb_master_only').prop('checked');
         param.disp_cnt = $('#sel_disp_cnt').val();
         param.border = $('#sel_border').val();
         param.clear = $('#sel_clear').val();
@@ -37,6 +38,9 @@ $(function() {
                 if (param.mode != 4 && param.mode != 5) {
                     var baseInfo = resultObj.result[0];
                     tweetTxt = tweetTxt + 'Lv' + baseInfo.level;
+                    if (param.master_only){
+                        tweetTxt = tweetTxt + 'のMAS譜面';
+                    }
                     if (param.mode == 1) {
                         tweetTxt = tweetTxt + 'の課題曲は ';
                     } else if (param.mode == 2) {
@@ -44,13 +48,20 @@ $(function() {
                     } else if (param.mode == 3) {
                         tweetTxt = tweetTxt + 'で' + $('#sel_clear option[value=' + param.clear +']').text() + 'が達成できそうな曲は ';
                     }
-                    tweetTxt = tweetTxt + baseInfo.title + '(' + baseInfo.effect_div + ')';
+                    tweetTxt = tweetTxt + baseInfo.title;
+                    if (!param.master_only){
+                        tweetTxt = tweetTxt + '(' + baseInfo.effect_div + ')'
+                    }
                     tweetTxt = tweetTxt + ' です。'
                     if (param.mode != 3 ) {
                     	tweetTxt = tweetTxt + '(' + baseInfo.score + ':上位' + baseInfo.estimate_rate + ')';
                     }
                 } else {
-                    tweetTxt = tweetTxt + 'Lv' + param.lvl_min + 'の';
+                    tweetTxt = tweetTxt + 'Lv' + $('#sel_lvl_min option[value="' + param.lvl_min +'"]').text();
+                    if (param.master_only){
+                        tweetTxt = tweetTxt + 'のMAS譜面';
+                    }
+                    tweetTxt = tweetTxt + 'の';
                     if (param.mode == 4 ) {
                         tweetTxt = tweetTxt + param.border +'%ボーダー達成状況は ';
                     } else {
@@ -125,13 +136,13 @@ $(function() {
     });
     $('#sel_lvl_min').change(function(){
         var newVal = $('#sel_lvl_min').val();
-        if (parseInt(newVal, 10) > parseInt($('#sel_lvl_max').val(), 10)) {
+        if (parseFloat(newVal) > parseFloat($('#sel_lvl_max').val())) {
             $('#sel_lvl_max').val(newVal);
         }
     });
     $('#sel_lvl_max').change(function(){
         var newVal = $('#sel_lvl_max').val();
-        if (parseInt(newVal, 10) < parseInt($('#sel_lvl_min').val(), 10)) {
+        if (parseFloat(newVal) < parseFloat($('#sel_lvl_min').val())) {
             $('#sel_lvl_min').val(newVal);
         }
     });
@@ -189,6 +200,7 @@ $(function() {
         $('#sel_disp_cnt').val(condObj.disp_cnt);
         $('#sel_border').val(condObj.border);
         $('#sel_clear').val(condObj.clear);
+        $('#cb_master_only').prop('checked', condObj.master_only);
     } else {
         // 初期条件。おそらく一番使われそうである値を入れておく
         $('#sel_lvl_min').val(12);

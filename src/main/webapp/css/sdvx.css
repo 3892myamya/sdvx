@@ -32,6 +32,10 @@ body{
     max-width: 500px;
 }
 
+#tweetpng {
+    vertical-align: middle;
+}
+
 .jsgrid-header-row>.jsgrid-header-cell {
     background: #d9d9ff;
 }

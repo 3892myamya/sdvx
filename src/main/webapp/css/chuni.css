@@ -27,6 +27,10 @@ body{
     font-size:.8em;
 }
 
+#tweetpng {
+    vertical-align: middle;
+}
+
 #grid {
 	margin-top: 2px;
     max-width: 500px;
