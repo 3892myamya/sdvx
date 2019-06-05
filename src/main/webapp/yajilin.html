@@ -1,0 +1,63 @@
+<html>
+<head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-121350239-1"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'UA-121350239-1');
+    </script>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ヤジリンソルバー＋etc(β)</title>
+    <meta name="keywords" content="ヤジリン, yajilin, ソルバー, ぱずぷれ, ニコリ, ぬりかべ, nurikabe, ストストーン, へやわけ, LITS, のりのり, 島国, 四角に切れ, ぬりみさき, ひとりにしてくれ, しろまるくろまる, パズル, ペンシルパズル, ペンパ, パズルスクエア"/>
+    <meta name="description" content="「ぱずぷれ v3」さんで公開されているヤジリンやぬりかべ等のパズルを解くことができるかもしれないツールです。"/>
+    <link rel="stylesheet" href="css/yajilin.css?ver=20190502"/>
+    <script src="js/jquery-3.3.1.min.js"></script>
+    <script src="js/yajilin.js?ver=20190502"></script>
+</head>
+<body>
+<div id="div_title">ヤジリンソルバー＋etc(β)</div>
+<div id="div_readme_head">説明書(クリックorタップで開閉)</div>
+<div id="div_readme_body" style="display: none;">
+<div class="subtitle">■1.初めに■</div>
+<p>当ツールは、「<a href="http://pzv.jp/" target="_blank">ぱずぷれ v3</a>」さんや「<a href="http://puzsq.sakura.ne.jp/main/index.php" target="_blank">パズルスクエア</a>」さんで公開されているパズルを解くことができるかもしれないツールです。<br>
+今のところ、ヤジリン・へやわけ・ぬりかべ・美術館・四角に切れ・のりのり・LITS・ひとりにしてくれ・ぬりみさき・ストストーン・島国・しろまるくろまるに対応しています。<br>
+解きたいけど解くことができない問題があった場合等にご利用ください。<br>
+また、各ソルバーは一意に定まるまで確定しないロジックを採用しているため、一意解の確認にもご利用いただけます。<br>
+※各パズルのルール等に関しては当サイトでは説明しませんので、各種外部サイト等を参照してください。<br>
+</p>
+<div class="subtitle">■2.使い方■</div>
+<p>「解きたい問題のURL」にぱずぷれv3もしくはパズルスクエアの問題のURLを入力して「実行」を実行してください。</p>
+<div class="subtitle">■3.よくある質問■</div>
+<p>
+Q:実行を押したのに解くことができません。<br>
+A:30秒以内に分からなかった問題、矛盾した問題、複数解答のある問題等は解くことができない場合があります。また、ヤジリンはサーバー負荷の観点より、現在は最大400マスの問題しか解くことができません。<br>
+<br>
+Q:エラーが表示されます。<br>
+A:端末がインターネットに接続しているか、URLを正しく入力したかなどを確認してください。短縮URLでは認識できないことがあります。また、パズルスクエアは内部でぱずぷれv3にリンクしているURLのみ対応しています。<br>
+<br>
+Q:推定難易度とは何ですか？<br>
+A:問題を解くことに成功した場合に表示されます。目安として基本ルールのみで解ければ「らくらく」、一手先読みが必要なものは「おてごろ」、仮置きが必要なものは「たいへん」、深い仮置きが必要なものは「アゼン」と表示します。あくまでソルバーが判定した難易度であり、厳密なものではありませんので参考程度にお考えください。なお、ヤジリンは現状では推定難易度に未対応です。<br>
+</p>
+<div class="subtitle">■4.免責■</div>
+<p>本ツールの利用によって生じたいかなる問題についても作者は責任を負わないものとします。また、本ツールについて以下に記載した先以外への問い合わせはご遠慮ください。</p>
+<div class="subtitle">■5.問い合わせ■</div>
+<p>本ツールについてお気づきの点や要望があれば<a href="https://twitter.com/3892myamya/" target="_blank">@3892myamya</a>までご連絡ください。</p>
+</div>
+<div>
+<label id="lbl_args" for="text_args">解きたい問題のURL</label>
+</div>
+<div>
+<input type="text" id="edt_url">
+</div>
+
+<div>
+<button type="button" id="btn_submit">実行</button>
+<label id="caption"></label>
+</div>
+
+<div id="div_result">
+</div>
+</html>
