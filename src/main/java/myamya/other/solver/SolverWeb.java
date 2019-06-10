@@ -21,8 +21,11 @@ import javax.servlet.http.HttpServletResponse;
 
 import myamya.other.solver.Common.Position;
 import myamya.other.solver.akari.AkariSolver;
+import myamya.other.solver.dosufuwa.DosufuwaSolver;
 import myamya.other.solver.heyawake.HeyawakeSolver;
 import myamya.other.solver.hitori.HitoriSolver;
+import myamya.other.solver.kurodoko.KurodokoSolver;
+import myamya.other.solver.kurodoko.KurodokoSolver.NumberMasu;
 import myamya.other.solver.lits.LitsSolver;
 import myamya.other.solver.norinori.NorinoriSolver;
 import myamya.other.solver.nurikabe.NurikabeSolver;
@@ -33,6 +36,7 @@ import myamya.other.solver.shikaku.ShikakuSolver;
 import myamya.other.solver.shikaku.ShikakuSolver.Sikaku;
 import myamya.other.solver.shikaku.ShikakuSolver.Wall;
 import myamya.other.solver.shimaguni.ShimaguniSolver;
+import myamya.other.solver.slither.SlitherSolver;
 import myamya.other.solver.stostone.StostoneSolver;
 import myamya.other.solver.yajilin.YajilinSolver;
 import myamya.other.solver.yinyang.YinyangSolver;
@@ -49,16 +53,21 @@ public class SolverWeb extends HttpServlet {
 		super();
 	}
 
-	static abstract class AbsSolveThlead extends Thread {
+	interface SolverThlead {
+		public String makeCambus();
+	}
+
+	static abstract class AbsSolverThlead extends Thread implements SolverThlead {
 		protected final Solver solver;
 		private String status = "時間切れです。途中経過を返します。";
 
-		AbsSolveThlead(int height, int width, String param) {
+		AbsSolverThlead(int height, int width, String param) {
 			solver = getSolver(height, width, param);
 		}
 
 		abstract protected Solver getSolver(int height, int width, String param);
 
+		@Override
 		public void run() {
 			status = solver.solve();
 		}
@@ -68,7 +77,7 @@ public class SolverWeb extends HttpServlet {
 		}
 	}
 
-	static class YajirinSolveThlead extends AbsSolveThlead {
+	static class YajirinSolveThlead extends AbsSolverThlead {
 		YajirinSolveThlead(int height, int width, String param) {
 			super(height, width, param);
 		}
@@ -78,6 +87,7 @@ public class SolverWeb extends HttpServlet {
 			return new YajilinSolver(height, width, param);
 		}
 
+		@Override
 		public String makeCambus() {
 			YajilinSolver.Field field = ((YajilinSolver) solver).getField();
 			int baseSize = 20;
@@ -106,7 +116,7 @@ public class SolverWeb extends HttpServlet {
 		}
 	}
 
-	static class NurikabeSolverThread extends AbsSolveThlead {
+	static class NurikabeSolverThread extends AbsSolverThlead {
 		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
 		private static final String FULL_NUMS = "０１２３４５６７８９";
 
@@ -119,6 +129,7 @@ public class SolverWeb extends HttpServlet {
 			return new NurikabeSolver(height, width, param);
 		}
 
+		@Override
 		public String makeCambus() {
 			StringBuilder sb = new StringBuilder();
 			NurikabeSolver.Field field = ((NurikabeSolver) solver).getField();
@@ -175,7 +186,7 @@ public class SolverWeb extends HttpServlet {
 		}
 	}
 
-	static class StostoneSolverThread extends AbsSolveThlead {
+	static class StostoneSolverThread extends AbsSolverThlead {
 		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
 		private static final String FULL_NUMS = "０１２３４５６７８９";
 
@@ -188,6 +199,7 @@ public class SolverWeb extends HttpServlet {
 			return new StostoneSolver(height, width, param);
 		}
 
+		@Override
 		public String makeCambus() {
 			StringBuilder sb = new StringBuilder();
 			StostoneSolver.Field field = ((StostoneSolver) solver).getField();
@@ -297,7 +309,7 @@ public class SolverWeb extends HttpServlet {
 		}
 	}
 
-	static class HeyawakeSolverThread extends AbsSolveThlead {
+	static class HeyawakeSolverThread extends AbsSolverThlead {
 		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
 		private static final String FULL_NUMS = "０１２３４５６７８９";
 
@@ -310,6 +322,7 @@ public class SolverWeb extends HttpServlet {
 			return new HeyawakeSolver(height, width, param);
 		}
 
+		@Override
 		public String makeCambus() {
 			StringBuilder sb = new StringBuilder();
 			HeyawakeSolver.Field field = ((HeyawakeSolver) solver).getField();
@@ -419,7 +432,7 @@ public class SolverWeb extends HttpServlet {
 		}
 	}
 
-	static class LitsSolverThread extends AbsSolveThlead {
+	static class LitsSolverThread extends AbsSolverThlead {
 		LitsSolverThread(int height, int width, String param) {
 			super(height, width, param);
 		}
@@ -429,6 +442,7 @@ public class SolverWeb extends HttpServlet {
 			return new LitsSolver(height, width, param);
 		}
 
+		@Override
 		public String makeCambus() {
 			StringBuilder sb = new StringBuilder();
 			LitsSolver.Field field = ((LitsSolver) solver).getField();
@@ -507,7 +521,7 @@ public class SolverWeb extends HttpServlet {
 		}
 	}
 
-	static class NorinoriSolverThread extends AbsSolveThlead {
+	static class NorinoriSolverThread extends AbsSolverThlead {
 		NorinoriSolverThread(int height, int width, String param) {
 			super(height, width, param);
 		}
@@ -517,6 +531,7 @@ public class SolverWeb extends HttpServlet {
 			return new NorinoriSolver(height, width, param);
 		}
 
+		@Override
 		public String makeCambus() {
 			StringBuilder sb = new StringBuilder();
 			NorinoriSolver.Field field = ((NorinoriSolver) solver).getField();
@@ -595,7 +610,7 @@ public class SolverWeb extends HttpServlet {
 		}
 	}
 
-	static class ShimaguniSolverThread extends AbsSolveThlead {
+	static class ShimaguniSolverThread extends AbsSolverThlead {
 		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
 		private static final String FULL_NUMS = "０１２３４５６７８９";
 
@@ -608,6 +623,7 @@ public class SolverWeb extends HttpServlet {
 			return new ShimaguniSolver(height, width, param);
 		}
 
+		@Override
 		public String makeCambus() {
 			StringBuilder sb = new StringBuilder();
 			ShimaguniSolver.Field field = ((ShimaguniSolver) solver).getField();
@@ -717,7 +733,7 @@ public class SolverWeb extends HttpServlet {
 		}
 	}
 
-	static class ShikakuSolverThread extends AbsSolveThlead {
+	static class ShikakuSolverThread extends AbsSolverThlead {
 		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
 		private static final String FULL_NUMS = "０１２３４５６７８９";
 
@@ -730,6 +746,7 @@ public class SolverWeb extends HttpServlet {
 			return new ShikakuSolver(height, width, param);
 		}
 
+		@Override
 		public String makeCambus() {
 			StringBuilder sb = new StringBuilder();
 			ShikakuSolver.Field field = ((ShikakuSolver) solver).getField();
@@ -852,7 +869,7 @@ public class SolverWeb extends HttpServlet {
 
 	}
 
-	static class AkariSolverThread extends AbsSolveThlead {
+	static class AkariSolverThread extends AbsSolverThlead {
 		AkariSolverThread(int height, int width, String param) {
 			super(height, width, param);
 		}
@@ -862,6 +879,7 @@ public class SolverWeb extends HttpServlet {
 			return new AkariSolver(height, width, param);
 		}
 
+		@Override
 		public String makeCambus() {
 			StringBuilder sb = new StringBuilder();
 			AkariSolver.Field field = ((AkariSolver) solver).getField();
@@ -924,7 +942,7 @@ public class SolverWeb extends HttpServlet {
 		}
 	}
 
-	static class NurimisakiSolverThread extends AbsSolveThlead {
+	static class NurimisakiSolverThread extends AbsSolverThlead {
 		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
 		private static final String FULL_NUMS = "０１２３４５６７８９";
 
@@ -937,6 +955,7 @@ public class SolverWeb extends HttpServlet {
 			return new NurimisakiSolver(height, width, param);
 		}
 
+		@Override
 		public String makeCambus() {
 			StringBuilder sb = new StringBuilder();
 			NurimisakiSolver.Field field = ((NurimisakiSolver) solver).getField();
@@ -1006,7 +1025,7 @@ public class SolverWeb extends HttpServlet {
 		}
 	}
 
-	static class HitoriSolverThread extends AbsSolveThlead {
+	static class HitoriSolverThread extends AbsSolverThlead {
 		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
 		private static final String FULL_NUMS = "０１２３４５６７８９";
 
@@ -1019,6 +1038,7 @@ public class SolverWeb extends HttpServlet {
 			return new HitoriSolver(height, width, param);
 		}
 
+		@Override
 		public String makeCambus() {
 			StringBuilder sb = new StringBuilder();
 			HitoriSolver.Field field = ((HitoriSolver) solver).getField();
@@ -1078,7 +1098,197 @@ public class SolverWeb extends HttpServlet {
 		}
 	}
 
-	static class YinyangSolverThread extends AbsSolveThlead {
+	static class KurodokoSolverThread extends AbsSolverThlead {
+		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
+		private static final String FULL_NUMS = "０１２３４５６７８９";
+
+		KurodokoSolverThread(int height, int width, String param) {
+			super(height, width, param);
+		}
+
+		@Override
+		protected Solver getSolver(int height, int width, String param) {
+			return new KurodokoSolver(height, width, param);
+		}
+
+		@Override
+		public String makeCambus() {
+			StringBuilder sb = new StringBuilder();
+			KurodokoSolver.Field field = ((KurodokoSolver) solver).getField();
+			int baseSize = 20;
+			sb.append(
+					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
+							+ "height=\"" + (field.getYLength() * baseSize + baseSize) + "\" width=\""
+							+ (field.getXLength() * baseSize + baseSize) + "\" >");
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					KurodokoSolver.Masu oneMasu = field.getMasu()[yIndex][xIndex];
+					if (oneMasu.toString().equals("■")) {
+						sb.append("<rect y=\"" + (yIndex * baseSize)
+								+ "\" x=\""
+								+ (xIndex * baseSize + baseSize)
+								+ "\" width=\""
+								+ (baseSize)
+								+ "\" height=\""
+								+ (baseSize)
+								+ "\">"
+								+ "</rect>");
+					} else if (oneMasu instanceof NumberMasu) {
+						sb.append("<circle cy=\"" + (yIndex * baseSize + (baseSize / 2))
+								+ "\" cx=\""
+								+ (xIndex * baseSize + baseSize + (baseSize / 2))
+								+ "\" r=\""
+								+ (baseSize / 2 - 2)
+								+ "\" fill=\"white\", stroke=\"black\">"
+								+ "</circle>");
+						if (((NumberMasu) oneMasu).getCnt() != -1) {
+							String numberStr = String.valueOf(((NumberMasu) oneMasu).getCnt());
+							int index = HALF_NUMS.indexOf(numberStr);
+							String masuStr = null;
+							if (index >= 0) {
+								masuStr = FULL_NUMS.substring(index / 2, index / 2 + 1);
+							} else {
+								masuStr = numberStr;
+							}
+							sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 4)
+									+ "\" x=\""
+									+ (xIndex * baseSize + baseSize + 2)
+									+ "\" font-size=\""
+									+ (baseSize - 5)
+									+ "\" textLength=\""
+									+ (baseSize - 5)
+									+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+									+ masuStr
+									+ "</text>");
+						}
+
+					} else {
+						sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 4)
+								+ "\" x=\""
+								+ (xIndex * baseSize + baseSize)
+								+ "\" font-size=\""
+								+ (baseSize - 2)
+								+ "\" textLength=\""
+								+ (baseSize - 2)
+								+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+								+ oneMasu.toString()
+								+ "</text>");
+					}
+				}
+			}
+			sb.append("</svg>");
+			return sb.toString();
+		}
+	}
+
+	static class DosufuwaSolverThread extends AbsSolverThlead {
+		DosufuwaSolverThread(int height, int width, String param) {
+			super(height, width, param);
+		}
+
+		@Override
+		protected Solver getSolver(int height, int width, String param) {
+			return new DosufuwaSolver(height, width, param);
+		}
+
+		@Override
+		public String makeCambus() {
+			StringBuilder sb = new StringBuilder();
+			DosufuwaSolver.Field field = ((DosufuwaSolver) solver).getField();
+			int baseSize = 20;
+			sb.append(
+					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
+							+ "height=\"" + (field.getYLength() * baseSize + 2 * baseSize) + "\" width=\""
+							+ (field.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					DosufuwaSolver.Masu oneMasu = field.getMasu()[yIndex][xIndex];
+					if (oneMasu.toString().equals("■")) {
+						sb.append("<rect y=\"" + (yIndex * baseSize)
+								+ "\" x=\""
+								+ (xIndex * baseSize + baseSize)
+								+ "\" width=\""
+								+ (baseSize)
+								+ "\" height=\""
+								+ (baseSize)
+								+ "\">"
+								+ "</rect>");
+					} else if (oneMasu.toString().equals("○")) {
+						sb.append("<circle cy=\"" + (yIndex * baseSize + (baseSize / 2))
+								+ "\" cx=\""
+								+ (xIndex * baseSize + baseSize + (baseSize / 2))
+								+ "\" r=\""
+								+ (baseSize / 2 - 2)
+								+ "\" fill=\"white\", stroke=\"black\">"
+								+ "</circle>");
+
+					} else if (oneMasu.toString().equals("●")) {
+						sb.append("<circle cy=\"" + (yIndex * baseSize + (baseSize / 2))
+								+ "\" cx=\""
+								+ (xIndex * baseSize + baseSize + (baseSize / 2))
+								+ "\" r=\""
+								+ (baseSize / 2 - 2)
+								+ "\" fill=\"black\", stroke=\"black\">"
+								+ "</circle>");
+
+					} else {
+						sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 4)
+								+ "\" x=\""
+								+ (xIndex * baseSize + baseSize)
+								+ "\" font-size=\""
+								+ (baseSize - 2)
+								+ "\" fill=\""
+								+ "lime"
+								+ "\" textLength=\""
+								+ (baseSize - 2)
+								+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+								+ oneMasu.toString()
+								+ "</text>");
+					}
+				}
+			}
+			// 横壁描画
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = -1; xIndex < field.getXLength(); xIndex++) {
+					boolean oneYokoWall = xIndex == -1 || xIndex == field.getXLength() - 1
+							|| field.getYokoWall()[yIndex][xIndex];
+					if (oneYokoWall) {
+						sb.append("<rect y=\"" + (yIndex * baseSize)
+								+ "\" x=\""
+								+ (xIndex * baseSize + 2 * baseSize)
+								+ "\" width=\""
+								+ (1)
+								+ "\" height=\""
+								+ (baseSize)
+								+ "\">"
+								+ "</rect>");
+					}
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = -1; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					boolean oneTateWall = yIndex == -1 || yIndex == field.getYLength() - 1
+							|| field.getTateWall()[yIndex][xIndex];
+					if (oneTateWall) {
+						sb.append("<rect y=\"" + (yIndex * baseSize + baseSize)
+								+ "\" x=\""
+								+ (xIndex * baseSize + baseSize)
+								+ "\" width=\""
+								+ (baseSize)
+								+ "\" height=\""
+								+ (1)
+								+ "\">"
+								+ "</rect>");
+					}
+				}
+			}
+			sb.append("</svg>");
+			return sb.toString();
+		}
+	}
+
+	static class YinyangSolverThread extends AbsSolverThlead {
 		YinyangSolverThread(int height, int width, String param) {
 			super(height, width, param);
 		}
@@ -1088,6 +1298,7 @@ public class SolverWeb extends HttpServlet {
 			return new YinyangSolver(height, width, param);
 		}
 
+		@Override
 		public String makeCambus() {
 			StringBuilder sb = new StringBuilder();
 			YinyangSolver.Field field = ((YinyangSolver) solver).getField();
@@ -1135,6 +1346,357 @@ public class SolverWeb extends HttpServlet {
 		}
 	}
 
+	static class SlitherSolverThread extends AbsSolverThlead {
+		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
+		private static final String FULL_NUMS = "０１２３４５６７８９";
+
+		SlitherSolverThread(int height, int width, String param) {
+			super(height, width, param);
+		}
+
+		@Override
+		protected Solver getSolver(int height, int width, String param) {
+			return new SlitherSolver(height, width, param);
+		}
+
+		@Override
+		public String makeCambus() {
+			StringBuilder sb = new StringBuilder();
+			SlitherSolver.Field field = ((SlitherSolver) solver).getField();
+			int baseSize = 20;
+			int margin = 5;
+			sb.append(
+					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
+							+ "height=\"" + (field.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
+							+ (field.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			Wall[][] yokoWall = new Wall[field.getYLength()][field.getXLength() - 1];
+			Wall[][] tateWall = new Wall[field.getYLength() - 1][field.getXLength()];
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength() - 1; xIndex++) {
+					yokoWall[yIndex][xIndex] = Wall.NOT_EXISTS;
+				}
+			}
+			for (int yIndex = 0; yIndex < field.getYLength() - 1; yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					tateWall[yIndex][xIndex] = Wall.NOT_EXISTS;
+				}
+			}
+			// 横壁描画
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = -1; xIndex < field.getXLength(); xIndex++) {
+					boolean oneYokoWall = (xIndex == -1 && field.getMasu()[yIndex][0].toString().equals("・"))
+							||
+							(xIndex == field.getXLength() - 1
+									&& field.getMasu()[yIndex][field.getXLength() - 1].toString().equals("・"))
+							||
+							(xIndex != -1 && xIndex != field.getXLength() - 1
+									&& field.getMasu()[yIndex][xIndex].toString().equals("・")
+									&& field.getMasu()[yIndex][xIndex + 1].toString().equals("■"))
+							||
+							(xIndex != -1 && xIndex != field.getXLength() - 1
+									&& field.getMasu()[yIndex][xIndex].toString().equals("■")
+									&& field.getMasu()[yIndex][xIndex + 1].toString().equals("・"));
+					if (oneYokoWall) {
+						sb.append("<line y1=\""
+								+ (yIndex * baseSize + margin)
+								+ "\" x1=\""
+								+ (xIndex * baseSize + 2 * baseSize)
+								+ "\" y2=\""
+								+ (yIndex * baseSize + baseSize + margin)
+								+ "\" x2=\""
+								+ (xIndex * baseSize + 2 * baseSize)
+								+ "\" stroke-width=\"1\" fill=\"none\"");
+						sb.append("stroke=\"#000\" ");
+						sb.append(">"
+								+ "</line>");
+					}
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = -1; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					boolean oneTateWall = (yIndex == -1 && field.getMasu()[0][xIndex].toString().equals("・"))
+							||
+							(yIndex == field.getYLength() - 1
+									&& field.getMasu()[field.getYLength() - 1][xIndex].toString().equals("・"))
+							||
+							(yIndex != -1 && yIndex != field.getYLength() - 1
+									&& field.getMasu()[yIndex][xIndex].toString().equals("・")
+									&& field.getMasu()[yIndex + 1][xIndex].toString().equals("■"))
+							||
+							(yIndex != -1 && yIndex != field.getYLength() - 1
+									&& field.getMasu()[yIndex][xIndex].toString().equals("■")
+									&& field.getMasu()[yIndex + 1][xIndex].toString().equals("・"));
+					if (oneTateWall) {
+						sb.append("<line y1=\""
+								+ (yIndex * baseSize + baseSize + margin)
+								+ "\" x1=\""
+								+ (xIndex * baseSize + baseSize)
+								+ "\" y2=\""
+								+ (yIndex * baseSize + baseSize + margin)
+								+ "\" x2=\""
+								+ (xIndex * baseSize + baseSize + baseSize)
+								+ "\" stroke-width=\"1\" fill=\"none\"");
+						sb.append("stroke=\"#000\" ");
+						sb.append(">"
+								+ "</line>");
+					}
+				}
+			}
+			// 数字描画
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					int number = field.getNumbers()[yIndex][xIndex];
+					if (number != -1) {
+						String numberStr;
+						String wkstr = String.valueOf(number);
+						int index = HALF_NUMS.indexOf(wkstr);
+						if (index >= 0) {
+							numberStr = FULL_NUMS.substring(index / 2,
+									index / 2 + 1);
+						} else {
+							numberStr = wkstr;
+						}
+						sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 5 + margin)
+								+ "\" x=\""
+								+ (xIndex * baseSize + baseSize + 2)
+								+ "\" font-size=\""
+								+ (baseSize - 5)
+								+ "\" textLength=\""
+								+ (baseSize - 5)
+								+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+								+ numberStr
+								+ "</text>");
+
+					}
+				}
+			}
+			sb.append("</svg>");
+			return sb.toString();
+			/*{
+				StringBuilder sb = new StringBuilder();
+				SlitherSolver.Field field = ((SlitherSolver) solver).getField();
+				int baseSize = 20;
+				sb.append(
+						"<svg xmlns=\"http://www.w3.org/2000/svg\" "
+								+ "height=\"" + ((field.getYLength() + 1) * baseSize + 2 * baseSize) + "\" width=\""
+								+ ((field.getXLength() + 1) * baseSize + 2 * baseSize) + "\" >");
+				sb.append("<rect y=\"" + 0
+						+ "\" x=\""
+						+ (baseSize)
+						+ "\" width=\""
+						+ (baseSize)
+						+ "\" height=\""
+						+ (baseSize)
+						+ "\" fill=\"gray\" >"
+						+ "</rect>");
+				sb.append("<rect y=\"" + (1)
+						+ "\" x=\""
+						+ (baseSize + 1)
+						+ "\" width=\""
+						+ (baseSize - 2)
+						+ "\" height=\""
+						+ (baseSize - 2)
+						+ "\">"
+						+ "</rect>");
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					sb.append("<rect y=\"" + 0
+							+ "\" x=\""
+							+ ((xIndex + 1) * baseSize + baseSize)
+							+ "\" width=\""
+							+ (baseSize)
+							+ "\" height=\""
+							+ (baseSize)
+							+ "\" fill=\"gray\" >"
+							+ "</rect>");
+					sb.append("<rect y=\"" + (1)
+							+ "\" x=\""
+							+ ((xIndex + 1) * baseSize + baseSize + 1)
+							+ "\" width=\""
+							+ (baseSize - 2)
+							+ "\" height=\""
+							+ (baseSize - 2)
+							+ "\">"
+							+ "</rect>");
+				}
+				sb.append("<rect y=\"" + 0
+						+ "\" x=\""
+						+ ((field.getXLength() + 1) * baseSize + baseSize)
+						+ "\" width=\""
+						+ (baseSize)
+						+ "\" height=\""
+						+ (baseSize)
+						+ "\" fill=\"gray\" >"
+						+ "</rect>");
+				sb.append("<rect y=\"" + (1)
+						+ "\" x=\""
+						+ ((field.getXLength() + 1) * baseSize + baseSize + 1)
+						+ "\" width=\""
+						+ (baseSize - 2)
+						+ "\" height=\""
+						+ (baseSize - 2)
+						+ "\">"
+						+ "</rect>");
+				for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+					sb.append("<rect y=\"" + (yIndex + 1) * baseSize
+							+ "\" x=\""
+							+ (baseSize)
+							+ "\" width=\""
+							+ (baseSize)
+							+ "\" height=\""
+							+ (baseSize)
+							+ "\" fill=\"gray\" >"
+							+ "</rect>");
+					sb.append("<rect y=\"" + ((yIndex + 1) * baseSize + 1)
+							+ "\" x=\""
+							+ (baseSize + 1)
+							+ "\" width=\""
+							+ (baseSize - 2)
+							+ "\" height=\""
+							+ (baseSize - 2)
+							+ "\">"
+							+ "</rect>");
+					for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+						Common.Masu oneMasu = field.getMasu()[yIndex][xIndex];
+						if (oneMasu.toString().equals("■")) {
+							sb.append("<rect y=\"" + ((yIndex + 1) * baseSize + 1)
+									+ "\" x=\""
+									+ ((xIndex + 1) * baseSize + baseSize + 1)
+									+ "\" width=\""
+									+ (baseSize - 2)
+									+ "\" height=\""
+									+ (baseSize - 2)
+									+ "\">"
+									+ "</rect>");
+						} else {
+							sb.append("<text y=\"" + ((yIndex + 1) * baseSize + baseSize - 4)
+									+ "\" x=\""
+									+ ((xIndex + 1) * baseSize + baseSize)
+									+ "\" font-size=\""
+									+ (baseSize - 2)
+									+ "\" fill=\""
+									+ "lime"
+									+ "\" textLength=\""
+									+ (baseSize - 2)
+									+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+									+ oneMasu.toString()
+									+ "</text>");
+						}
+					}
+					sb.append("<rect y=\"" + (yIndex + 1) * baseSize
+							+ "\" x=\""
+							+ ((field.getXLength() + 1) * baseSize + baseSize)
+							+ "\" width=\""
+							+ (baseSize)
+							+ "\" height=\""
+							+ (baseSize)
+							+ "\" fill=\"gray\" >"
+							+ "</rect>");
+					sb.append("<rect y=\"" + ((yIndex + 1) * baseSize + 1)
+							+ "\" x=\""
+							+ ((field.getXLength() + 1) * baseSize + baseSize + 1)
+							+ "\" width=\""
+							+ (baseSize - 2)
+							+ "\" height=\""
+							+ (baseSize - 2)
+							+ "\">"
+							+ "</rect>");
+				}
+				sb.append("<rect y=\"" + (field.getYLength() + 1) * baseSize
+						+ "\" x=\""
+						+ (baseSize)
+						+ "\" width=\""
+						+ (baseSize)
+						+ "\" height=\""
+						+ (baseSize)
+						+ "\" fill=\"gray\" >"
+						+ "</rect>");
+				sb.append("<rect y=\"" + ((field.getYLength() + 1) * baseSize + 1)
+						+ "\" x=\""
+						+ (baseSize + 1)
+						+ "\" width=\""
+						+ (baseSize - 2)
+						+ "\" height=\""
+						+ (baseSize - 2)
+						+ "\">"
+						+ "</rect>");
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					sb.append("<rect y=\"" + (field.getYLength() + 1) * baseSize
+							+ "\" x=\""
+							+ ((xIndex + 1) * baseSize + baseSize)
+							+ "\" width=\""
+							+ (baseSize)
+							+ "\" height=\""
+							+ (baseSize)
+							+ "\" fill=\"gray\" >"
+							+ "</rect>");
+					sb.append("<rect y=\"" + ((field.getYLength() + 1) * baseSize + 1)
+							+ "\" x=\""
+							+ ((xIndex + 1) * baseSize + baseSize + 1)
+							+ "\" width=\""
+							+ (baseSize - 2)
+							+ "\" height=\""
+							+ (baseSize - 2)
+							+ "\">"
+							+ "</rect>");
+				}
+				sb.append("<rect y=\"" + ((field.getYLength() + 1) * baseSize)
+						+ "\" x=\""
+						+ ((field.getXLength() + 1) * baseSize + baseSize)
+						+ "\" width=\""
+						+ (baseSize)
+						+ "\" height=\""
+						+ (baseSize)
+						+ "\" fill=\"gray\" >"
+						+ "</rect>");
+				sb.append("<rect y=\"" + ((field.getYLength() + 1) * baseSize + 1)
+						+ "\" x=\""
+						+ ((field.getXLength() + 1) * baseSize + baseSize + 1)
+						+ "\" width=\""
+						+ (baseSize - 2)
+						+ "\" height=\""
+						+ (baseSize - 2)
+						+ "\">"
+						+ "</rect>");
+				// 数字描画
+				for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+					for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+						int number = field.getNumbers()[yIndex][xIndex];
+						if (number != -1) {
+							String numberStr;
+							String wkstr = String.valueOf(number);
+							int index = HALF_NUMS.indexOf(wkstr);
+							if (index >= 0) {
+								numberStr = FULL_NUMS.substring(index / 2,
+										index / 2 + 1);
+							} else {
+								numberStr = wkstr;
+							}
+							String fillColor = field.getMasu()[yIndex][xIndex] == Common.Masu.BLACK ? "white"
+									: "black";
+							sb.append("<text y=\"" + ((yIndex + 1) * baseSize + baseSize - 5)
+									+ "\" x=\""
+									+ ((xIndex + 1) * baseSize + baseSize + 2)
+									+ "\" fill=\""
+									+ fillColor
+									+ "\" font-size=\""
+									+ (baseSize - 5)
+									+ "\" textLength=\""
+									+ (baseSize - 5)
+									+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+									+ numberStr
+									+ "</text>");
+
+						}
+					}
+				}
+				sb.append("</svg>");
+				return sb.toString();
+				*/
+		}
+
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -1146,86 +1708,50 @@ public class SolverWeb extends HttpServlet {
 			int width = Integer.parseInt(parts.get(parts.size() - 3));
 			String puzzleType = parts.get(parts.size() - 4);
 			String param = parts.get(parts.size() - 1).split("@")[0];
+			AbsSolverThlead t;
 			if (puzzleType.contains("yajilin") || puzzleType.contains("yajirin")) {
 				if (height * width > 400) {
 					resultMap.put("result", "");
 					resultMap.put("status", "申し訳ございません。401マス以上ある問題は解くことができません。");
+					return;
 				} else {
-					YajirinSolveThlead t = new YajirinSolveThlead(height, width, param);
-					t.start();
-					t.join(28000);
-					resultMap.put("result", t.makeCambus());
-					resultMap.put("status", t.getStatus());
+					t = new YajirinSolveThlead(height, width, param);
 				}
 			} else if (puzzleType.contains("nurikabe")) {
-				NurikabeSolverThread t = new NurikabeSolverThread(height, width, param);
-				t.start();
-				t.join(28000);
-				resultMap.put("result", t.makeCambus());
-				resultMap.put("status", t.getStatus());
+				t = new NurikabeSolverThread(height, width, param);
 			} else if (puzzleType.contains("stostone")) {
-				StostoneSolverThread t = new StostoneSolverThread(height, width, param);
-				t.start();
-				t.join(28000);
-				resultMap.put("result", t.makeCambus());
-				resultMap.put("status", t.getStatus());
+				t = new StostoneSolverThread(height, width, param);
 			} else if (puzzleType.contains("heyawake")) {
-				HeyawakeSolverThread t = new HeyawakeSolverThread(height, width, param);
-				t.start();
-				t.join(28000);
-				resultMap.put("result", t.makeCambus());
-				resultMap.put("status", t.getStatus());
+				t = new HeyawakeSolverThread(height, width, param);
 			} else if (puzzleType.contains("lits")) {
-				LitsSolverThread t = new LitsSolverThread(height, width, param);
-				t.start();
-				t.join(28000);
-				resultMap.put("result", t.makeCambus());
-				resultMap.put("status", t.getStatus());
+				t = new LitsSolverThread(height, width, param);
 			} else if (puzzleType.contains("norinori")) {
-				NorinoriSolverThread t = new NorinoriSolverThread(height, width, param);
-				t.start();
-				t.join(28000);
-				resultMap.put("result", t.makeCambus());
-				resultMap.put("status", t.getStatus());
+				t = new NorinoriSolverThread(height, width, param);
 			} else if (puzzleType.contains("shimaguni")) {
-				ShimaguniSolverThread t = new ShimaguniSolverThread(height, width, param);
-				t.start();
-				t.join(28000);
-				resultMap.put("result", t.makeCambus());
-				resultMap.put("status", t.getStatus());
+				t = new ShimaguniSolverThread(height, width, param);
 			} else if (puzzleType.contains("shikaku")) {
-				ShikakuSolverThread t = new ShikakuSolverThread(height, width, param);
-				t.start();
-				t.join(28000);
-				resultMap.put("result", t.makeCambus());
-				resultMap.put("status", t.getStatus());
+				t = new ShikakuSolverThread(height, width, param);
 			} else if (puzzleType.contains("akari") || puzzleType.contains("lightup")) {
-				AkariSolverThread t = new AkariSolverThread(height, width, param);
-				t.start();
-				t.join(28000);
-				resultMap.put("result", t.makeCambus());
-				resultMap.put("status", t.getStatus());
+				t = new AkariSolverThread(height, width, param);
 			} else if (puzzleType.contains("yinyang")) {
-				YinyangSolverThread t = new YinyangSolverThread(height, width, param);
-				t.start();
-				t.join(28000);
-				resultMap.put("result", t.makeCambus());
-				resultMap.put("status", t.getStatus());
+				t = new YinyangSolverThread(height, width, param);
 			} else if (puzzleType.contains("nurimisaki")) {
-				NurimisakiSolverThread t = new NurimisakiSolverThread(height, width, param);
-				t.start();
-				t.join(28000);
-				resultMap.put("result", t.makeCambus());
-				resultMap.put("status", t.getStatus());
+				t = new NurimisakiSolverThread(height, width, param);
 			} else if (puzzleType.contains("hitori")) {
-				HitoriSolverThread t = new HitoriSolverThread(height, width, param);
-				t.start();
-				t.join(28000);
-				resultMap.put("result", t.makeCambus());
-				resultMap.put("status", t.getStatus());
+				t = new HitoriSolverThread(height, width, param);
+			} else if (puzzleType.contains("dosufuwa")) {
+				t = new DosufuwaSolverThread(height, width, param);
+			} else if (puzzleType.contains("kurodoko")) {
+				t = new KurodokoSolverThread(height, width, param);
+			} else if (puzzleType.contains("slither")) {
+				t = new SlitherSolverThread(height, width, param);
 			} else {
 				throw new IllegalArgumentException();
 			}
+			t.start();
+			t.join(28000);
+			resultMap.put("result", t.makeCambus());
+			resultMap.put("status", t.getStatus());
 		} catch (Exception e) {
 			e.printStackTrace();
 			resultMap.put("result", "");

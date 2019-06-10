@@ -1,4 +1,4 @@
-package myamya.other.solver.norinori;
+package myamya.other.solver.dosufuwa;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -6,15 +6,28 @@ import java.util.List;
 import java.util.Set;
 
 import myamya.other.solver.Common.Difficulty;
-import myamya.other.solver.Common.Masu;
 import myamya.other.solver.Common.Position;
 import myamya.other.solver.Solver;
 
-public class NorinoriSolver implements Solver {
+public class DosufuwaSolver implements Solver {
+
+	public enum Masu {
+		SPACE("　"), WALL("■"), BALLOON("○"), IRON("●"), NOT_ITEM("・");
+
+		String str;
+
+		Masu(String str) {
+			this.str = str;
+		}
+
+		@Override
+		public String toString() {
+			return str;
+		}
+	}
 
 	public static class Field {
 		static final String ALPHABET_FROM_G = "ghijklmnopqrstuvwxyz";
-		static final int BLACK_CNT = 2;
 
 		// マスの情報
 		private Masu[][] masu;
@@ -132,6 +145,13 @@ public class NorinoriSolver implements Solver {
 					}
 				}
 			}
+			// サイズが1の部屋は黒マスにする。
+			for (Set<Position> room : rooms) {
+				if (room.size() == 1) {
+					Position pos = new ArrayList<>(room).get(0);
+					masu[pos.getyIndex()][pos.getxIndex()] = Masu.WALL;
+				}
+			}
 		}
 
 		public Field(Field other) {
@@ -147,36 +167,32 @@ public class NorinoriSolver implements Solver {
 			rooms = other.rooms;
 		}
 
-		// posを起点に上下左右に壁または白確定でないマスを無制限につなげていく。
+		// posを起点に上下左右に壁でないマスを無制限につなげていく。
 		private void setContinuePosSet(Position pos, Set<Position> continuePosSet) {
 			if (pos.getyIndex() != 0) {
 				Position nextPos = new Position(pos.getyIndex() - 1, pos.getxIndex());
-				if (!continuePosSet.contains(nextPos) && !tateWall[pos.getyIndex() - 1][pos.getxIndex()]
-						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.NOT_BLACK) {
+				if (!continuePosSet.contains(nextPos) && !tateWall[pos.getyIndex() - 1][pos.getxIndex()]) {
 					continuePosSet.add(nextPos);
 					setContinuePosSet(nextPos, continuePosSet);
 				}
 			}
 			if (pos.getxIndex() != getXLength() - 1) {
 				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() + 1);
-				if (!continuePosSet.contains(nextPos) && !yokoWall[pos.getyIndex()][pos.getxIndex()]
-						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.NOT_BLACK) {
+				if (!continuePosSet.contains(nextPos) && !yokoWall[pos.getyIndex()][pos.getxIndex()]) {
 					continuePosSet.add(nextPos);
 					setContinuePosSet(nextPos, continuePosSet);
 				}
 			}
 			if (pos.getyIndex() != getYLength() - 1) {
 				Position nextPos = new Position(pos.getyIndex() + 1, pos.getxIndex());
-				if (!continuePosSet.contains(nextPos) && !tateWall[pos.getyIndex()][pos.getxIndex()]
-						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.NOT_BLACK) {
+				if (!continuePosSet.contains(nextPos) && !tateWall[pos.getyIndex()][pos.getxIndex()]) {
 					continuePosSet.add(nextPos);
 					setContinuePosSet(nextPos, continuePosSet);
 				}
 			}
 			if (pos.getxIndex() != 0) {
 				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() - 1);
-				if (!continuePosSet.contains(nextPos) && !yokoWall[pos.getyIndex()][pos.getxIndex() - 1]
-						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.NOT_BLACK) {
+				if (!continuePosSet.contains(nextPos) && !yokoWall[pos.getyIndex()][pos.getxIndex() - 1]) {
 					continuePosSet.add(nextPos);
 					setContinuePosSet(nextPos, continuePosSet);
 				}
@@ -230,194 +246,82 @@ public class NorinoriSolver implements Solver {
 		}
 
 		/**
-		 * 部屋のマスを埋める。黒マス不足・過剰はfalseを返す。
+		 * 上が天井でないマスに風船が置かれている場合、天井にぶつかるまで風船にする。
+		 * 下が地面でないマスに鉄球が置かれている場合、地面にぶつかるまで鉄球にする。
+		 * いずれのケースでも、置けないマスがあったらfalseを返す。
+		 */
+		public boolean itemSolve() {
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					if (masu[yIndex][xIndex] == Masu.BALLOON) {
+						for (int targetY = yIndex - 1; targetY >= 0; targetY--) {
+							if (masu[targetY][xIndex] == Masu.WALL) {
+								break;
+							} else if (masu[targetY][xIndex] == Masu.SPACE) {
+								masu[targetY][xIndex] = Masu.BALLOON;
+							} else if (masu[targetY][xIndex] != Masu.BALLOON) {
+								return false;
+							}
+						}
+					}
+					if (masu[yIndex][xIndex] == Masu.IRON) {
+						for (int targetY = yIndex + 1; targetY < getYLength(); targetY++) {
+							if (masu[targetY][xIndex] == Masu.WALL) {
+								break;
+							} else if (masu[targetY][xIndex] == Masu.SPACE) {
+								masu[targetY][xIndex] = Masu.IRON;
+							} else if (masu[targetY][xIndex] != Masu.IRON) {
+								return false;
+							}
+						}
+					}
+				}
+			}
+			return true;
+		}
+
+		/**
+		 * 部屋のマスを埋める。鉄球・風船過剰・不足が起こる場合はfalseを返す。
 		 */
 		public boolean roomSolve() {
 			for (Set<Position> room : rooms) {
-				// 部屋に対する調査
-				int blackCnt = 0;
-				int spaceCnt = 0;
-				for (Position pos : room) {
-					if (masu[pos.getyIndex()][pos.getxIndex()] == Masu.BLACK) {
-						blackCnt++;
-					} else if (masu[pos.getyIndex()][pos.getxIndex()] == Masu.SPACE) {
-						spaceCnt++;
-					}
-				}
-				if (blackCnt + spaceCnt < BLACK_CNT) {
-					// 黒マス不足
-					return false;
-				}
-				// 置かねばならない黒マスの数
-				int retainBlackCnt = BLACK_CNT - blackCnt;
-				if (retainBlackCnt < 0) {
-					// 黒マス超過
-					return false;
-				} else if (retainBlackCnt == 0) {
-					// 黒マス数が既に部屋の黒マス数に等しければ、部屋の他のマスは白マス
+				if (room.size() != 1) {
+					// 部屋に対する調査
+					int balloonCnt = 0;
+					int ironCnt = 0;
+					int spaceCnt = 0;
 					for (Position pos : room) {
-						if (masu[pos.getyIndex()][pos.getxIndex()] == Masu.SPACE) {
-							masu[pos.getyIndex()][pos.getxIndex()] = Masu.NOT_BLACK;
+						if (masu[pos.getyIndex()][pos.getxIndex()] == Masu.BALLOON) {
+							balloonCnt++;
+						} else if (masu[pos.getyIndex()][pos.getxIndex()] == Masu.IRON) {
+							ironCnt++;
+						} else if (masu[pos.getyIndex()][pos.getxIndex()] == Masu.SPACE) {
+							spaceCnt++;
 						}
 					}
-				} else if (spaceCnt == retainBlackCnt) {
-					// 未確定マスが置かねばならない黒マスの数に等しければ、未確定マスは黒マス
-					for (Position pos : room) {
-						if (masu[pos.getyIndex()][pos.getxIndex()] == Masu.SPACE) {
-							masu[pos.getyIndex()][pos.getxIndex()] = Masu.BLACK;
-						}
-					}
-				}
-			}
-			return true;
-		}
-
-		/**
-		 * のりの周りを白マスに確定する。
-		 * のりの周りに黒マスがあった場合falseを返す。
-		 */
-		public boolean noriRoundSolve() {
-			// 縦ののり
-			for (int yIndex = 0; yIndex < getYLength() - 1; yIndex++) {
-				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					Masu masuPivot = masu[yIndex][xIndex];
-					Masu masuDown = masu[yIndex + 1][xIndex];
-					if (masuPivot == Masu.BLACK && masuDown == Masu.BLACK) {
-						if (yIndex != 0) {
-							if (masu[yIndex - 1][xIndex] == Masu.BLACK) {
-								return false;
-							} else {
-								masu[yIndex - 1][xIndex] = Masu.NOT_BLACK;
+					if (balloonCnt >= 2 || ironCnt >= 2) {
+						//鉄球・風船過剰
+						return false;
+					} else if (balloonCnt + ironCnt + spaceCnt < 2) {
+						//鉄球・風船不足
+						return false;
+					} else if (spaceCnt == 1 && balloonCnt == 0 && ironCnt == 1) {
+						for (Position pos : room) {
+							if (masu[pos.getyIndex()][pos.getxIndex()] == Masu.SPACE) {
+								masu[pos.getyIndex()][pos.getxIndex()] = Masu.BALLOON;
 							}
 						}
-						if (xIndex != 0) {
-							if (masu[yIndex][xIndex - 1] == Masu.BLACK) {
-								return false;
-							} else {
-								masu[yIndex][xIndex - 1] = Masu.NOT_BLACK;
-							}
-							if (masu[yIndex + 1][xIndex - 1] == Masu.BLACK) {
-								return false;
-							} else {
-								masu[yIndex + 1][xIndex - 1] = Masu.NOT_BLACK;
+					} else if (spaceCnt == 1 && balloonCnt == 1 && ironCnt == 0) {
+						for (Position pos : room) {
+							if (masu[pos.getyIndex()][pos.getxIndex()] == Masu.SPACE) {
+								masu[pos.getyIndex()][pos.getxIndex()] = Masu.IRON;
 							}
 						}
-						if (xIndex != getXLength() - 1) {
-							if (masu[yIndex][xIndex + 1] == Masu.BLACK) {
-								return false;
-							} else {
-								masu[yIndex][xIndex + 1] = Masu.NOT_BLACK;
+					} else if (spaceCnt > 1 && balloonCnt == 1 && ironCnt == 1) {
+						for (Position pos : room) {
+							if (masu[pos.getyIndex()][pos.getxIndex()] == Masu.SPACE) {
+								masu[pos.getyIndex()][pos.getxIndex()] = Masu.NOT_ITEM;
 							}
-							if (masu[yIndex + 1][xIndex + 1] == Masu.BLACK) {
-								return false;
-							} else {
-								masu[yIndex + 1][xIndex + 1] = Masu.NOT_BLACK;
-							}
-						}
-						if (yIndex != getYLength() - 2) {
-							if (masu[yIndex + 2][xIndex] == Masu.BLACK) {
-								return false;
-							} else {
-								masu[yIndex + 2][xIndex] = Masu.NOT_BLACK;
-							}
-						}
-
-					}
-				}
-			}
-
-			// 横ののり
-			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
-				for (int xIndex = 0; xIndex < getXLength() - 1; xIndex++) {
-					Masu masuPivot = masu[yIndex][xIndex];
-					Masu masuRight = masu[yIndex][xIndex + 1];
-					if (masuPivot == Masu.BLACK && masuRight == Masu.BLACK) {
-						if (yIndex != 0) {
-							if (masu[yIndex - 1][xIndex] == Masu.BLACK) {
-								return false;
-							} else {
-								masu[yIndex - 1][xIndex] = Masu.NOT_BLACK;
-							}
-							if (masu[yIndex - 1][xIndex + 1] == Masu.BLACK) {
-								return false;
-							} else {
-								masu[yIndex - 1][xIndex + 1] = Masu.NOT_BLACK;
-							}
-						}
-						if (xIndex != 0) {
-							if (masu[yIndex][xIndex - 1] == Masu.BLACK) {
-								return false;
-							} else {
-								masu[yIndex][xIndex - 1] = Masu.NOT_BLACK;
-							}
-						}
-						if (xIndex != getXLength() - 2) {
-							if (masu[yIndex][xIndex + 2] == Masu.BLACK) {
-								return false;
-							} else {
-								masu[yIndex][xIndex + 2] = Masu.NOT_BLACK;
-							}
-						}
-						if (yIndex != getYLength() - 1) {
-							if (masu[yIndex + 1][xIndex] == Masu.BLACK) {
-								return false;
-							} else {
-								masu[yIndex + 1][xIndex] = Masu.NOT_BLACK;
-							}
-							if (masu[yIndex + 1][xIndex + 1] == Masu.BLACK) {
-								return false;
-							} else {
-								masu[yIndex + 1][xIndex + 1] = Masu.NOT_BLACK;
-							}
-						}
-					}
-				}
-			}
-			return true;
-		}
-
-		/**
-		 * 1方向だけ伸ばせる黒マスをのりに、どの方向にも伸ばせない空白マスを白に確定する。
-		 * どの方向にも伸ばせない黒マスががあった場合falseを返す。
-		 */
-		public boolean noriSolve() {
-			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
-				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					Masu masuPivot = masu[yIndex][xIndex];
-					if (masuPivot == Masu.BLACK) {
-						Masu masuUp = yIndex == 0 ? Masu.NOT_BLACK : masu[yIndex - 1][xIndex];
-						Masu masuRight = xIndex == getXLength() - 1 ? Masu.NOT_BLACK : masu[yIndex][xIndex + 1];
-						Masu masuDown = yIndex == getYLength() - 1 ? Masu.NOT_BLACK : masu[yIndex + 1][xIndex];
-						Masu masuLeft = xIndex == 0 ? Masu.NOT_BLACK : masu[yIndex][xIndex - 1];
-						if (masuUp == Masu.NOT_BLACK && masuRight == Masu.NOT_BLACK && masuDown == Masu.NOT_BLACK
-								&& masuLeft == Masu.NOT_BLACK) {
-							return false;
-						}
-						if (masuUp == Masu.SPACE && masuRight == Masu.NOT_BLACK && masuDown == Masu.NOT_BLACK
-								&& masuLeft == Masu.NOT_BLACK) {
-							masu[yIndex - 1][xIndex] = Masu.BLACK;
-						}
-						if (masuUp == Masu.NOT_BLACK && masuRight == Masu.SPACE && masuDown == Masu.NOT_BLACK
-								&& masuLeft == Masu.NOT_BLACK) {
-							masu[yIndex][xIndex + 1] = Masu.BLACK;
-						}
-						if (masuUp == Masu.NOT_BLACK && masuRight == Masu.NOT_BLACK && masuDown == Masu.SPACE
-								&& masuLeft == Masu.NOT_BLACK) {
-							masu[yIndex + 1][xIndex] = Masu.BLACK;
-						}
-						if (masuUp == Masu.NOT_BLACK && masuRight == Masu.NOT_BLACK && masuDown == Masu.NOT_BLACK
-								&& masuLeft == Masu.SPACE) {
-							masu[yIndex][xIndex - 1] = Masu.BLACK;
-						}
-					}
-					if (masuPivot == Masu.SPACE) {
-						Masu masuUp = yIndex == 0 ? Masu.NOT_BLACK : masu[yIndex - 1][xIndex];
-						Masu masuRight = xIndex == getXLength() - 1 ? Masu.NOT_BLACK : masu[yIndex][xIndex + 1];
-						Masu masuDown = yIndex == getYLength() - 1 ? Masu.NOT_BLACK : masu[yIndex + 1][xIndex];
-						Masu masuLeft = xIndex == 0 ? Masu.NOT_BLACK : masu[yIndex][xIndex - 1];
-						if (masuUp == Masu.NOT_BLACK && masuRight == Masu.NOT_BLACK && masuDown == Masu.NOT_BLACK
-								&& masuLeft == Masu.NOT_BLACK) {
-							masu[yIndex][xIndex] = Masu.NOT_BLACK;
 						}
 					}
 				}
@@ -429,13 +333,10 @@ public class NorinoriSolver implements Solver {
 		 * 各種チェックを1セット実行
 		 */
 		private boolean solveAndCheck() {
+			if (!itemSolve()) {
+				return false;
+			}
 			if (!roomSolve()) {
-				return false;
-			}
-			if (!noriSolve()) {
-				return false;
-			}
-			if (!noriRoundSolve()) {
 				return false;
 			}
 			return true;
@@ -456,7 +357,7 @@ public class NorinoriSolver implements Solver {
 
 	private final Field field;
 
-	public NorinoriSolver(int height, int width, String param) {
+	public DosufuwaSolver(int height, int width, String param) {
 		field = new Field(height, width, param);
 	}
 
@@ -470,7 +371,7 @@ public class NorinoriSolver implements Solver {
 		int height = Integer.parseInt(params[params.length - 2]);
 		int width = Integer.parseInt(params[params.length - 3]);
 		String param = params[params.length - 1];
-		System.out.println(new NorinoriSolver(height, width, param).solve());
+		System.out.println(new DosufuwaSolver(height, width, param).solve());
 	}
 
 	@Override
@@ -524,31 +425,43 @@ public class NorinoriSolver implements Solver {
 	private static boolean oneCandSolve(Field field, int yIndex, int xIndex, int recursive) {
 		if (field.masu[yIndex][xIndex] == Masu.SPACE) {
 			Field virtual = new Field(field);
-			virtual.masu[yIndex][xIndex] = Masu.BLACK;
+			virtual.masu[yIndex][xIndex] = Masu.BALLOON;
 			String befStr = virtual.getStateDump();
-			boolean allowBlack = virtual.solveAndCheck()
+			boolean allowBalloon = virtual.solveAndCheck()
 					&& (befStr.equals(virtual.getStateDump()) || virtual.solveAndCheck());
-			if (allowBlack && recursive > 0) {
+			if (allowBalloon && recursive > 0) {
 				if (!candSolve(virtual, recursive - 1)) {
-					allowBlack = false;
+					allowBalloon = false;
 				}
 			}
 			Field virtual2 = new Field(field);
-			virtual2.masu[yIndex][xIndex] = Masu.NOT_BLACK;
+			virtual2.masu[yIndex][xIndex] = Masu.IRON;
 			befStr = virtual2.getStateDump();
-			boolean allowNotBlack = virtual2.solveAndCheck()
+			boolean allowIron = virtual2.solveAndCheck()
 					&& (befStr.equals(virtual2.getStateDump()) || virtual2.solveAndCheck());
-			if (allowNotBlack && recursive > 0) {
+			if (allowIron && recursive > 0) {
 				if (!candSolve(virtual2, recursive - 1)) {
-					allowNotBlack = false;
+					allowIron = false;
 				}
 			}
-			if (!allowBlack && !allowNotBlack) {
+			Field virtual3 = new Field(field);
+			virtual3.masu[yIndex][xIndex] = Masu.NOT_ITEM;
+			befStr = virtual3.getStateDump();
+			boolean allowNotItem = virtual3.solveAndCheck()
+					&& (befStr.equals(virtual3.getStateDump()) || virtual3.solveAndCheck());
+			if (allowNotItem && recursive > 0) {
+				if (!candSolve(virtual3, recursive - 1)) {
+					allowNotItem = false;
+				}
+			}
+			if (!allowBalloon && !allowIron && !allowNotItem) {
 				return false;
-			} else if (!allowBlack) {
-				field.masu = virtual2.masu;
-			} else if (!allowNotBlack) {
+			} else if (!allowIron && !allowBalloon) {
+				field.masu = virtual3.masu;
+			} else if (!allowIron && !allowNotItem) {
 				field.masu = virtual.masu;
+			} else if (!allowBalloon && !allowNotItem) {
+				field.masu = virtual2.masu;
 			}
 		}
 		return true;

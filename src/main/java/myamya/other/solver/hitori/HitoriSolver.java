@@ -238,6 +238,23 @@ public class HitoriSolver implements Solver {
 			}
 		}
 
+		/**
+		 * 各種チェックを1セット実行
+		 * @param recursive
+		 */
+		private boolean solveAndCheck() {
+			if (!numberSolve()) {
+				return false;
+			}
+			if (!nextSolve()) {
+				return false;
+			}
+			if (!connectSolve()) {
+				return false;
+			}
+			return true;
+		}
+
 		public boolean isSolved() {
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
@@ -246,7 +263,7 @@ public class HitoriSolver implements Solver {
 					}
 				}
 			}
-			return true;
+			return solveAndCheck();
 		}
 
 	}
@@ -303,8 +320,8 @@ public class HitoriSolver implements Solver {
 		while (!field.isSolved()) {
 			System.out.println(field);
 			String befStr = field.getStateDump();
-			if (!solveAndCheck(field)
-					|| (!befStr.equals(field.getStateDump()) && !solveAndCheck(field))) {
+			if (!field.solveAndCheck()
+					|| (!befStr.equals(field.getStateDump()) && !field.solveAndCheck())) {
 				return "問題に矛盾がある可能性があります。途中経過を返します。";
 			}
 			int recursiveCnt = 0;
@@ -325,23 +342,6 @@ public class HitoriSolver implements Solver {
 		System.out.println(field);
 		return "解けました。推定難易度:"
 				+ Difficulty.getByVal(difficulty).toString();
-	}
-
-	/**
-	 * 各種チェックを1セット実行
-	 * @param recursive
-	 */
-	private static boolean solveAndCheck(Field field) {
-		if (!field.numberSolve()) {
-			return false;
-		}
-		if (!field.nextSolve()) {
-			return false;
-		}
-		if (!field.connectSolve()) {
-			return false;
-		}
-		return true;
 	}
 
 	/**
@@ -366,8 +366,8 @@ public class HitoriSolver implements Solver {
 			Field virtual = new Field(field);
 			virtual.masu[yIndex][xIndex] = Masu.BLACK;
 			String befStr = virtual.getStateDump();
-			boolean allowBlack = solveAndCheck(virtual)
-					&& (befStr.equals(virtual.getStateDump()) || solveAndCheck(virtual));
+			boolean allowBlack = virtual.solveAndCheck()
+					&& (befStr.equals(virtual.getStateDump()) || virtual.solveAndCheck());
 			if (allowBlack && recursive > 0) {
 				if (!candSolve(virtual, recursive - 1)) {
 					allowBlack = false;
@@ -376,8 +376,8 @@ public class HitoriSolver implements Solver {
 			Field virtual2 = new Field(field);
 			virtual2.masu[yIndex][xIndex] = Masu.NOT_BLACK;
 			befStr = virtual2.getStateDump();
-			boolean allowNotBlack = solveAndCheck(virtual2)
-					&& (befStr.equals(virtual2.getStateDump()) || solveAndCheck(virtual2));
+			boolean allowNotBlack = virtual2.solveAndCheck()
+					&& (befStr.equals(virtual2.getStateDump()) || virtual2.solveAndCheck());
 			if (allowNotBlack && recursive > 0) {
 				if (!candSolve(virtual2, recursive - 1)) {
 					allowNotBlack = false;

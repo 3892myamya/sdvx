@@ -136,7 +136,6 @@ public class ShikakuSolver implements Solver {
 			return roomCand;
 		}
 
-
 		public Field(int height, int width, String param) {
 			this.height = height;
 			this.width = width;
@@ -330,13 +329,24 @@ public class ShikakuSolver implements Solver {
 			return sb.toString();
 		}
 
+		/**
+		 * 各種チェックを1セット実行
+		 * @param recursive
+		 */
+		private boolean solveAndCheck() {
+			if (!roomSolve()) {
+				return false;
+			}
+			return true;
+		}
+
 		public boolean isSolved() {
 			for (Set<Sikaku> sikakuSet : roomCand.values()) {
 				if (sikakuSet.size() != 1) {
 					return false;
 				}
 			}
-			return true;
+			return solveAndCheck();
 		}
 
 		/**
@@ -375,7 +385,6 @@ public class ShikakuSolver implements Solver {
 			}
 			return true;
 		}
-
 
 	}
 
@@ -431,8 +440,8 @@ public class ShikakuSolver implements Solver {
 		while (!field.isSolved()) {
 			System.out.println(field);
 			String befStr = field.getStateDump();
-			if (!solveAndCheck(field)
-					|| (!befStr.equals(field.getStateDump()) && !solveAndCheck(field))) {
+			if (!field.solveAndCheck()
+					|| (!befStr.equals(field.getStateDump()) && !field.solveAndCheck())) {
 				return "問題に矛盾がある可能性があります。途中経過を返します。";
 			}
 			if (!field.isSolved() && difficulty == -1) {
@@ -456,17 +465,6 @@ public class ShikakuSolver implements Solver {
 		System.out.println(field);
 		return "解けました。推定難易度:"
 				+ Difficulty.getByVal(difficulty + 1 > 3 ? 3 : difficulty + 1).toString();
-	}
-
-	/**
-	 * 各種チェックを1セット実行
-	 * @param recursive
-	 */
-	private static boolean solveAndCheck(Field field) {
-		if (!field.roomSolve()) {
-			return false;
-		}
-		return true;
 	}
 
 	/**
@@ -499,8 +497,8 @@ public class ShikakuSolver implements Solver {
 		sikakuSet.add(candSikaku);
 		virtual.roomCand.put(room, sikakuSet);
 		String befStr = virtual.getStateDump();
-		boolean allowCandSikaku = solveAndCheck(virtual)
-				&& (befStr.equals(virtual.getStateDump()) || solveAndCheck(virtual));
+		boolean allowCandSikaku = virtual.solveAndCheck()
+				&& (befStr.equals(virtual.getStateDump()) || virtual.solveAndCheck());
 		if (allowCandSikaku && recursive > 0) {
 			if (!candSolve(virtual, recursive - 1)) {
 				allowCandSikaku = false;

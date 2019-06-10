@@ -369,6 +369,27 @@ public class YinyangSolver implements Solver {
 			}
 		}
 
+		/**
+		 * 各種チェックを1セット実行
+		 * @param i
+		 * @param recursive
+		 */
+		private boolean solveAndCheck() {
+			if (!pondSolve()) {
+				return false;
+			}
+			if (!wallSolve()) {
+				return false;
+			}
+			if (!connectWhiteSolve()) {
+				return false;
+			}
+			if (!connectBlackSolve()) {
+				return false;
+			}
+			return true;
+		}
+
 		public boolean isSolved() {
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
@@ -377,7 +398,7 @@ public class YinyangSolver implements Solver {
 					}
 				}
 			}
-			return true;
+			return solveAndCheck();
 		}
 
 	}
@@ -408,8 +429,8 @@ public class YinyangSolver implements Solver {
 		while (!field.isSolved()) {
 			System.out.println(field);
 			String befStr = field.getStateDump();
-			if (!solveAndCheck(field)
-					|| (!befStr.equals(field.getStateDump()) && !solveAndCheck(field))) {
+			if (!field.solveAndCheck()
+					|| (!befStr.equals(field.getStateDump()) && !field.solveAndCheck())) {
 				return "問題に矛盾がある可能性があります。途中経過を返します。";
 			}
 			int recursiveCnt = 0;
@@ -430,27 +451,6 @@ public class YinyangSolver implements Solver {
 		System.out.println(field);
 		return "解けました。推定難易度:"
 				+ Difficulty.getByVal(difficulty).toString();
-	}
-
-	/**
-	 * 各種チェックを1セット実行
-	 * @param i
-	 * @param recursive
-	 */
-	private static boolean solveAndCheck(Field field) {
-		if (!field.pondSolve()) {
-			return false;
-		}
-		if (!field.wallSolve()) {
-			return false;
-		}
-		if (!field.connectWhiteSolve()) {
-			return false;
-		}
-		if (!field.connectBlackSolve()) {
-			return false;
-		}
-		return true;
 	}
 
 	/**
@@ -475,8 +475,8 @@ public class YinyangSolver implements Solver {
 			Field virtual = new Field(field);
 			virtual.masu[yIndex][xIndex] = Masu.BLACK;
 			String befStr = virtual.getStateDump();
-			boolean allowBlack = solveAndCheck(virtual)
-					&& (befStr.equals(virtual.getStateDump()) || solveAndCheck(virtual));
+			boolean allowBlack = virtual.solveAndCheck()
+					&& (befStr.equals(virtual.getStateDump()) || virtual.solveAndCheck());
 			if (allowBlack && recursive > 0) {
 				if (!candSolve(virtual, recursive - 1)) {
 					allowBlack = false;
@@ -485,8 +485,8 @@ public class YinyangSolver implements Solver {
 			Field virtual2 = new Field(field);
 			virtual2.masu[yIndex][xIndex] = Masu.WHITE;
 			befStr = virtual2.getStateDump();
-			boolean allowNotBlack = solveAndCheck(virtual2)
-					&& (befStr.equals(virtual2.getStateDump()) || solveAndCheck(virtual2));
+			boolean allowNotBlack = virtual2.solveAndCheck()
+					&& (befStr.equals(virtual2.getStateDump()) || virtual2.solveAndCheck());
 			if (allowNotBlack && recursive > 0) {
 				if (!candSolve(virtual2, recursive - 1)) {
 					allowNotBlack = false;
