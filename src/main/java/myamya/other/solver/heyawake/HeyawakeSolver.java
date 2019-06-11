@@ -1,8 +1,13 @@
 package myamya.other.solver.heyawake;
 
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import myamya.other.solver.Common.Difficulty;
@@ -25,6 +30,8 @@ public class HeyawakeSolver implements Solver {
 		private final boolean[][] tateWall;
 		// 同一グループに属するマスの情報
 		private final List<Room> rooms;
+		// 同一グループに属するマスの情報
+		private final Map<Integer, List<String>> roomsCand;
 
 		public Masu[][] getMasu() {
 			return masu;
@@ -162,8 +169,28 @@ public class HeyawakeSolver implements Solver {
 						Set<Position> continuePosSet = new HashSet<>();
 						continuePosSet.add(pos);
 						setContinuePosSet(pos, continuePosSet);
-						rooms.add(new Room(blackCntList.get(blackCntListIndex), continuePosSet));
+						rooms.add(new Room(blackCntList.get(blackCntListIndex), new ArrayList<>(continuePosSet)));
 						blackCntListIndex++;
+					}
+				}
+			}
+			// 部屋の候補を決定
+			roomsCand = new HashMap<>();
+			for (int i = 0; i < rooms.size(); i++) {
+				Room room = rooms.get(i);
+				if (room.getBlackCnt() != -1) {
+					Position leftUp = room.getMember().get(0);
+					Position rightDown = room.getMember().get(room.getMember().size() - 1);
+					int roomHeight = rightDown.getyIndex() - leftUp.getyIndex() + 1;
+					int roomWidth = rightDown.getxIndex() - leftUp.getxIndex() + 1;
+					if (roomHeight * roomWidth <= 50) {
+						HeyaSolver heyaSolver = new HeyaSolver(roomHeight, roomWidth, room.getBlackCnt(),
+								leftUp.getyIndex() == 0, rightDown.getxIndex() == getXLength() - 1,
+								rightDown.getyIndex() == getYLength() - 1, leftUp.getxIndex() == 0);
+						List<String> result = heyaSolver.solveForSolver();
+						if (!result.isEmpty()) {
+							roomsCand.put(i, result);
+						}
 					}
 				}
 			}
@@ -180,6 +207,10 @@ public class HeyawakeSolver implements Solver {
 			yokoWall = other.yokoWall;
 			tateWall = other.tateWall;
 			rooms = other.rooms;
+			roomsCand = new HashMap<>();
+			for (Entry<Integer, List<String>> entry : other.roomsCand.entrySet()) {
+				roomsCand.put(entry.getKey(), new ArrayList<>(entry.getValue()));
+			}
 		}
 
 		// posを起点に上下左右に壁または白確定でないマスを無制限につなげていく。
@@ -383,6 +414,65 @@ public class HeyawakeSolver implements Solver {
 		}
 
 		/**
+		 * 部屋の候補情報を使ってマス目を埋める。
+		 * 部屋の候補がなくなったらfalseを返す。
+		 */
+		public boolean roomCandSolve() {
+			for (int i = 0; i < rooms.size(); i++) {
+				List<String> candList = roomsCand.get(i);
+				if (candList != null) {
+					Room room = rooms.get(i);
+					StringBuilder sb = new StringBuilder();
+					Position leftUp = room.getMember().get(0);
+					Position rightDown = room.getMember().get(room.getMember().size() - 1);
+					for (int yIndex = leftUp.getyIndex(); yIndex <= rightDown.getyIndex(); yIndex++) {
+						for (int xIndex = leftUp.getxIndex(); xIndex <= rightDown.getxIndex(); xIndex++) {
+							sb.append(masu[yIndex][xIndex]);
+						}
+					}
+					String state = sb.toString();
+					for (Iterator<String> iterator = candList.iterator(); iterator.hasNext();) {
+						String cand = iterator.next();
+						if (state.length() != cand.length()) {
+							iterator.remove();
+						} else {
+							for (int idx = 0; idx < state.length(); idx++) {
+								char a = state.charAt(idx);
+								char b = cand.charAt(idx);
+								if ((a == '■' && b == '・') || (a == '・' && b == '■')) {
+									iterator.remove();
+									break;
+								}
+							}
+						}
+					}
+					if (candList.size() == 0) {
+						return false;
+					}
+					StringBuilder fixState = new StringBuilder(candList.get(0));
+					for (String cand : candList) {
+						for (int idx = 0; idx < fixState.length(); idx++) {
+							char a = fixState.charAt(idx);
+							char b = cand.charAt(idx);
+							if ((a == '■' && b == '・') || (a == '・' && b == '■')) {
+								fixState.setCharAt(idx, '　');
+							}
+						}
+					}
+					for (int idx = 0; idx < fixState.length(); idx++) {
+						masu[room.getMember().get(idx).getyIndex()][room
+								.getMember().get(idx).getxIndex()] = fixState.charAt(idx) == '■'
+										? Masu.BLACK
+										: fixState.charAt(idx) == '・'
+												? Masu.NOT_BLACK
+												: Masu.SPACE;
+					}
+				}
+			}
+			return true;
+		}
+
+		/**
 		 * 白マスが1つながりになっていない場合falseを返す。
 		 */
 		public boolean connectSolve() {
@@ -460,6 +550,9 @@ public class HeyawakeSolver implements Solver {
 			if (!continueRoomSolve()) {
 				return false;
 			}
+			if (!roomCandSolve()) {
+				return false;
+			}
 			if (!connectSolve()) {
 				return false;
 			}
@@ -488,18 +581,24 @@ public class HeyawakeSolver implements Solver {
 		// 黒マスが何マスあるか。数字がない場合は-1
 		private final int blackCnt;
 		// 部屋に属するマスの集合
-		private final Set<Position> member;
+		private final List<Position> member;
 
-		public Room(int capacity, Set<Position> member) {
+		public Room(int capacity, List<Position> member) {
 			this.blackCnt = capacity;
 			this.member = member;
+			this.member.sort(new Comparator<Position>() {
+				@Override
+				public int compare(Position o1, Position o2) {
+					return o1.getyIndex() * 100 + o1.getxIndex() - (o2.getyIndex() * 100 + o2.getxIndex());
+				}
+			});
 		}
 
 		public int getBlackCnt() {
 			return blackCnt;
 		}
 
-		public Set<Position> getMember() {
+		public List<Position> getMember() {
 			return member;
 		}
 
