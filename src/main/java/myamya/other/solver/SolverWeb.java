@@ -19,6 +19,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import myamya.other.solver.Common.Masu;
 import myamya.other.solver.Common.Position;
 import myamya.other.solver.akari.AkariSolver;
 import myamya.other.solver.dosufuwa.DosufuwaSolver;
@@ -38,6 +39,8 @@ import myamya.other.solver.shikaku.ShikakuSolver.Wall;
 import myamya.other.solver.shimaguni.ShimaguniSolver;
 import myamya.other.solver.slither.SlitherSolver;
 import myamya.other.solver.stostone.StostoneSolver;
+import myamya.other.solver.yajikazu.YajikazuSolver;
+import myamya.other.solver.yajikazu.YajikazuSolver.Arrow;
 import myamya.other.solver.yajilin.YajilinSolver;
 import myamya.other.solver.yinyang.YinyangSolver;
 import net.arnx.jsonic.JSON;
@@ -1697,6 +1700,89 @@ public class SolverWeb extends HttpServlet {
 
 	}
 
+	static class YajikazuSolverThread extends AbsSolverThlead {
+		YajikazuSolverThread(int height, int width, String param) {
+			super(height, width, param);
+		}
+
+		@Override
+		protected Solver getSolver(int height, int width, String param) {
+			return new YajikazuSolver(height, width, param);
+		}
+
+		@Override
+		public String makeCambus() {
+			YajikazuSolver.Field field = ((YajikazuSolver) solver).getField();
+			int baseSize = 20;
+			StringBuilder sb = new StringBuilder();
+			sb.append(
+					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
+							+ "height=\"" + (field.getYLength() * baseSize + baseSize) + "\" width=\""
+							+ (field.getXLength() * baseSize + baseSize) + "\" >");
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					Masu oneMasu = field.getMasu()[yIndex][xIndex];
+					Arrow oneArrow = field.getArrows()[yIndex][xIndex];
+					if (oneMasu.toString().equals("■")) {
+						sb.append("<rect y=\"" + (yIndex * baseSize)
+								+ "\" x=\""
+								+ (xIndex * baseSize + baseSize)
+								+ "\" width=\""
+								+ (baseSize)
+								+ "\" height=\""
+								+ (baseSize)
+								+ "\">"
+								+ "</rect>");
+						if (oneArrow != null) {
+							sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 4)
+									+ "\" x=\""
+									+ (xIndex * baseSize + baseSize)
+									+ "\" font-size=\""
+									+ (baseSize - 2)
+									+ "\" fill=\""
+									+ "gray"
+									+ "\" textLength=\""
+									+ (baseSize - 2)
+									+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+									+ oneArrow.toStringForweb()
+									+ "</text>");
+
+						}
+					} else {
+						if (oneArrow != null) {
+							sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 4)
+									+ "\" x=\""
+									+ (xIndex * baseSize + baseSize)
+									+ "\" font-size=\""
+									+ (baseSize - 2)
+									+ "\" textLength=\""
+									+ (baseSize - 2)
+									+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+									+ oneArrow.toStringForweb()
+									+ "</text>");
+
+						}
+						sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 4)
+								+ "\" x=\""
+								+ (xIndex * baseSize + baseSize)
+								+ "\" font-size=\""
+								+ (baseSize - 2)
+								+ "\" fill=\""
+								+ "lime"
+								+ "\" textLength=\""
+								+ (baseSize - 2)
+								+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+								+ oneMasu.toString()
+								+ "</text>");
+					}
+				}
+			}
+			sb.append("</svg>");
+			return sb.toString();
+		}
+
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -1745,6 +1831,8 @@ public class SolverWeb extends HttpServlet {
 				t = new KurodokoSolverThread(height, width, param);
 			} else if (puzzleType.contains("slither")) {
 				t = new SlitherSolverThread(height, width, param);
+			} else if (puzzleType.contains("yajikazu")) {
+				t = new YajikazuSolverThread(height, width, param);
 			} else {
 				throw new IllegalArgumentException();
 			}
