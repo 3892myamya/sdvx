@@ -17,7 +17,7 @@ public class Common {
 	}
 
 	public enum Difficulty {
-		RAKURAKU("らくらく", 0), OTEGORO("おてごろ", 1), TAIHEN("たいへん", 2), AZEN("アゼン", 3);
+		RAKURAKU("らくらく", 0), OTEGORO("おてごろ", 1), TAIHEN("たいへん", 2), AZEN("アゼン", 3), HABANERO("ハバネロ", 4);
 
 		String str;
 		int val;
@@ -39,6 +39,21 @@ public class Common {
 				}
 			}
 			return null;
+		}
+
+		public static Difficulty getByCount(int count) {
+			if (count < 50) {
+				return Difficulty.RAKURAKU;
+			} else if (count < 500) {
+				return Difficulty.OTEGORO;
+			} else if (count < 5000) {
+				return Difficulty.TAIHEN;
+			} else if (count < 50000) {
+				return Difficulty.AZEN;
+			} else {
+				return Difficulty.HABANERO;
+			}
+
 		}
 	}
 

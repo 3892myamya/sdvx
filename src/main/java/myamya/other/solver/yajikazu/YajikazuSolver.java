@@ -179,9 +179,6 @@ public class YajikazuSolver implements Solver {
 	 * 矢印のマス
 	 */
 	public static class Arrow {
-		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
-		private static final String FULL_NUMS = "０１２３４５６７８９";
-
 		private final Position position;
 		private final Direction direction;
 		private final int count;
@@ -210,13 +207,7 @@ public class YajikazuSolver implements Solver {
 		}
 
 		public String toStringForweb() {
-			String wkstr = String.valueOf(count);
-			int index = HALF_NUMS.indexOf(wkstr);
-			if (index >= 0) {
-				wkstr = FULL_NUMS.substring(index / 2,
-						index / 2 + 1);
-			}
-			return direction.getDirectString() + wkstr;
+			return direction.getDirectString() + count;
 		}
 	}
 

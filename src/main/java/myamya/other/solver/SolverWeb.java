@@ -102,6 +102,47 @@ public class SolverWeb extends HttpServlet {
 			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
 					YajilinSolver.Masu oneMasu = field.getMasu()[yIndex][xIndex];
+
+					String str = "";
+					if (oneMasu.toString().equals("・")) {
+						YajilinSolver.Wall up = yIndex == 0 ? YajilinSolver.Wall.EXISTS
+								: field.getTateWall()[yIndex - 1][xIndex];
+						YajilinSolver.Wall right = xIndex == field.getXLength() - 1 ? YajilinSolver.Wall.EXISTS
+								: field.getYokoWall()[yIndex][xIndex];
+						YajilinSolver.Wall down = yIndex == field.getYLength() - 1 ? YajilinSolver.Wall.EXISTS
+								: field.getTateWall()[yIndex][xIndex];
+						YajilinSolver.Wall left = xIndex == 0 ? YajilinSolver.Wall.EXISTS
+								: field.getYokoWall()[yIndex][xIndex - 1];
+						if (up == YajilinSolver.Wall.NOT_EXISTS && right == YajilinSolver.Wall.NOT_EXISTS
+								&& down == YajilinSolver.Wall.EXISTS &&
+								left == YajilinSolver.Wall.EXISTS) {
+							str = "└";
+						} else if (up == YajilinSolver.Wall.NOT_EXISTS && right == YajilinSolver.Wall.EXISTS
+								&& down == YajilinSolver.Wall.NOT_EXISTS &&
+								left == YajilinSolver.Wall.EXISTS) {
+							str = "│";
+						} else if (up == YajilinSolver.Wall.NOT_EXISTS && right == YajilinSolver.Wall.EXISTS
+								&& down == YajilinSolver.Wall.EXISTS &&
+								left == YajilinSolver.Wall.NOT_EXISTS) {
+							str = "┘";
+						} else if (up == YajilinSolver.Wall.EXISTS && right == YajilinSolver.Wall.NOT_EXISTS
+								&& down == YajilinSolver.Wall.NOT_EXISTS &&
+								left == YajilinSolver.Wall.EXISTS) {
+							str = "┌";
+						} else if (up == YajilinSolver.Wall.EXISTS && right == YajilinSolver.Wall.NOT_EXISTS
+								&& down == YajilinSolver.Wall.EXISTS &&
+								left == YajilinSolver.Wall.NOT_EXISTS) {
+							str = "─";
+						} else if (up == YajilinSolver.Wall.EXISTS && right == YajilinSolver.Wall.EXISTS
+								&& down == YajilinSolver.Wall.NOT_EXISTS &&
+								left == YajilinSolver.Wall.NOT_EXISTS) {
+							str = "┐";
+						} else {
+							str = oneMasu.toStringWeb();
+						}
+					} else {
+						str = oneMasu.toStringWeb();
+					}
 					sb.append("<text y=\"" + (yIndex * baseSize + baseSize)
 							+ "\" x=\""
 							+ (xIndex * baseSize + baseSize)
@@ -110,7 +151,7 @@ public class SolverWeb extends HttpServlet {
 							+ "\" textLength=\""
 							+ (baseSize)
 							+ "\" lengthAdjust=\"spacingAndGlyphs\">"
-							+ oneMasu.toStringForweb()
+							+ str
 							+ "</text>");
 				}
 			}
@@ -1796,13 +1837,7 @@ public class SolverWeb extends HttpServlet {
 			String param = parts.get(parts.size() - 1).split("@")[0];
 			AbsSolverThlead t;
 			if (puzzleType.contains("yajilin") || puzzleType.contains("yajirin")) {
-				if (height * width > 400) {
-					resultMap.put("result", "");
-					resultMap.put("status", "申し訳ございません。401マス以上ある問題は解くことができません。");
-					return;
-				} else {
-					t = new YajirinSolveThlead(height, width, param);
-				}
+				t = new YajirinSolveThlead(height, width, param);
 			} else if (puzzleType.contains("nurikabe")) {
 				t = new NurikabeSolverThread(height, width, param);
 			} else if (puzzleType.contains("stostone")) {
