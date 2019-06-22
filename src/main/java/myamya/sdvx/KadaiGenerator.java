@@ -121,11 +121,9 @@ public class KadaiGenerator {
 							}
 							if (!isClear) {
 								BigDecimal scoreBase = KadaiGeneratorUtil
-										.getEstimateRate(statusInfo, entry.getValue().getScore())
-										.add(new BigDecimal(50));
+										.getEstimateRate(statusInfo, entry.getValue().getScore());
 								if (scoreBase.compareTo(BigDecimal.ZERO) != 0) {
-									// 推奨度の計算式はVFと同じ
-									BigDecimal rate = statusInfo.getPercent(target).multiply(new BigDecimal(150))
+									BigDecimal rate = statusInfo.getPercent(target).multiply(new BigDecimal(100))
 											.divide(scoreBase, 2, RoundingMode.DOWN);
 									estimateInfoList.add(
 											new EstimateInfo(trackInfo.getTitle(), statusInfo.getEffectDiv(),
@@ -212,16 +210,10 @@ public class KadaiGenerator {
 				continue;
 			}
 			// VFが伸びるものがあれば、統計情報と比較して狙い目指数を計算
-			// 狙い目指数の計算式は(目標スコアレート * 150/(現在スコアレート + 50))
-			// または、(目標クリアレート * 150/(現在スコアレート + 50))。
+			// 狙い目指数の計算式は(目標スコアレート * 100/(現在スコアレート))
+			// または、(目標クリアレート * 100/(現在スコアレート))。
 			// どっちも足りてない場合は上記2つのうち大きい方を採用する
-			// 現在のスコアが上位30%で、目標スコアが上位10%ならば指数は4。
-			// 現在のスコアが上位50%で、目標スコアが上位10%ならば指数は5。
-			// 現在のスコアが上位30%で、目標クリアレートが上位40%ならば指数は2。
-			// 現在のスコアが上位50%で、目標クリアレートが上位40%ならば指数は2.5。
-			// 現在のスコアが上位30%で、目標スコアが上位10%かつ目標クリアレートが上位40%ならば指数は4(クリアレート側は無視)。
-			BigDecimal scoreBase = KadaiGeneratorUtil.getEstimateRate(statusInfo, effectInfo.getScore())
-					.add(new BigDecimal(50));
+			BigDecimal scoreBase = KadaiGeneratorUtil.getEstimateRate(statusInfo, effectInfo.getScore());
 			BigDecimal targetScoreRate = KadaiGeneratorUtil.getEstimateRate(statusInfo, scoreTarget * 10000);
 			BigDecimal targetClearRate = statusInfo.getPercent(targetClearLamp);
 			BigDecimal rate = null;
@@ -238,7 +230,7 @@ public class KadaiGenerator {
 					scoreString = String.valueOf(scoreTarget);
 				}
 				if (scoreBase.compareTo(BigDecimal.ZERO) != 0) {
-					rate = targetScoreRate.multiply(new BigDecimal(150)).divide(scoreBase, 2, RoundingMode.DOWN);
+					rate = targetScoreRate.multiply(new BigDecimal(100)).divide(scoreBase, 2, RoundingMode.DOWN);
 				}
 			} else if (effectInfo.getScore() > scoreTarget * 10000) {
 				// ランプ更新
@@ -249,7 +241,7 @@ public class KadaiGenerator {
 				lampOnlyUp = true;
 				if (scoreBase.compareTo(BigDecimal.ZERO) != 0) {
 					scoreString = targetClearLamp.getShortStr();
-					rate = targetClearRate.multiply(new BigDecimal(150)).divide(scoreBase, 2, RoundingMode.DOWN);
+					rate = targetClearRate.multiply(new BigDecimal(100)).divide(scoreBase, 2, RoundingMode.DOWN);
 				}
 			} else {
 				if (lampAndScoreUpBefScore != 0 && scoreTarget == lampAndScoreUpBefScore) {
@@ -261,9 +253,9 @@ public class KadaiGenerator {
 				if (scoreBase.compareTo(BigDecimal.ZERO) != 0) {
 					scoreString = String.valueOf(scoreTarget)
 							+ " + " + targetClearLamp.getShortStr();
-					BigDecimal a = targetScoreRate.multiply(new BigDecimal(150)).divide(scoreBase, 3,
+					BigDecimal a = targetScoreRate.multiply(new BigDecimal(100)).divide(scoreBase, 3,
 							RoundingMode.DOWN);
-					BigDecimal b = targetClearRate.multiply(new BigDecimal(150)).divide(scoreBase, 3,
+					BigDecimal b = targetClearRate.multiply(new BigDecimal(100)).divide(scoreBase, 3,
 							RoundingMode.DOWN);
 					rate = a.compareTo(b) > 0 ? b.setScale(2, RoundingMode.DOWN) : a.setScale(2, RoundingMode.DOWN);
 				}

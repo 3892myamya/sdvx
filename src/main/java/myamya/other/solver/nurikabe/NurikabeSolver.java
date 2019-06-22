@@ -436,6 +436,7 @@ public class NurikabeSolver implements Solver {
 		 * @param recursive
 		 */
 		private boolean solveAndCheck() {
+			String str = getStateDump();
 			if (!roomSolve()) {
 				return false;
 			}
@@ -447,6 +448,9 @@ public class NurikabeSolver implements Solver {
 			}
 			if (!farSolve()) {
 				return false;
+			}
+			if (!getStateDump().equals(str)) {
+				return solveAndCheck();
 			}
 			return true;
 		}
@@ -516,8 +520,7 @@ public class NurikabeSolver implements Solver {
 		while (!field.isSolved()) {
 			System.out.println(field);
 			String befStr = field.getStateDump();
-			if (!field.solveAndCheck()
-					|| (!befStr.equals(field.getStateDump()) && !field.solveAndCheck())) {
+			if (!field.solveAndCheck()) {
 				return "問題に矛盾がある可能性があります。途中経過を返します。";
 			}
 			int recursiveCnt = 0;
@@ -544,12 +547,16 @@ public class NurikabeSolver implements Solver {
 	 * 仮置きして調べる
 	 */
 	private static boolean candSolve(Field field, int recursive) {
+		String str = field.getStateDump();
 		for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 			for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
 				if (!oneCandSolve(field, yIndex, xIndex, recursive)) {
 					return false;
 				}
 			}
+		}
+		if (!field.getStateDump().equals(str)) {
+			return candSolve(field, recursive);
 		}
 		return true;
 	}
@@ -561,9 +568,7 @@ public class NurikabeSolver implements Solver {
 		if (field.masu[yIndex][xIndex] == Masu.SPACE) {
 			Field virtual = new Field(field);
 			virtual.masu[yIndex][xIndex] = Masu.BLACK;
-			String befStr = virtual.getStateDump();
-			boolean allowBlack = virtual.solveAndCheck()
-					&& (befStr.equals(virtual.getStateDump()) || virtual.solveAndCheck());
+			boolean allowBlack = virtual.solveAndCheck();
 			if (allowBlack && recursive > 0) {
 				if (!candSolve(virtual, recursive - 1)) {
 					allowBlack = false;
@@ -571,9 +576,7 @@ public class NurikabeSolver implements Solver {
 			}
 			Field virtual2 = new Field(field);
 			virtual2.masu[yIndex][xIndex] = Masu.NOT_BLACK;
-			befStr = virtual2.getStateDump();
-			boolean allowNotBlack = virtual2.solveAndCheck()
-					&& (befStr.equals(virtual2.getStateDump()) || virtual2.solveAndCheck());
+			boolean allowNotBlack = virtual2.solveAndCheck();
 			if (allowNotBlack && recursive > 0) {
 				if (!candSolve(virtual2, recursive - 1)) {
 					allowNotBlack = false;

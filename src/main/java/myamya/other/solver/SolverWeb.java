@@ -28,6 +28,8 @@ import myamya.other.solver.hitori.HitoriSolver;
 import myamya.other.solver.kurodoko.KurodokoSolver;
 import myamya.other.solver.kurodoko.KurodokoSolver.NumberMasu;
 import myamya.other.solver.lits.LitsSolver;
+import myamya.other.solver.masyu.MasyuSolver;
+import myamya.other.solver.masyu.MasyuSolver.Pearl;
 import myamya.other.solver.norinori.NorinoriSolver;
 import myamya.other.solver.nurikabe.NurikabeSolver;
 import myamya.other.solver.nurikabe.NurikabeSolver.Room;
@@ -1821,7 +1823,150 @@ public class SolverWeb extends HttpServlet {
 			sb.append("</svg>");
 			return sb.toString();
 		}
+	}
 
+	static class MasyuSolverThread extends AbsSolverThlead {
+		MasyuSolverThread(int height, int width, String param) {
+			super(height, width, param);
+		}
+
+		@Override
+		protected Solver getSolver(int height, int width, String param) {
+			return new MasyuSolver(height, width, param);
+		}
+
+		@Override
+		public String makeCambus() {
+			MasyuSolver.Field field = ((MasyuSolver) solver).getField();
+			int baseSize = 20;
+			int margin = 5;
+			StringBuilder sb = new StringBuilder();
+			sb.append(
+					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
+							+ "height=\"" + (field.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
+							+ (field.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			// 横壁描画
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = -1; xIndex < field.getXLength(); xIndex++) {
+					boolean oneYokoWall = xIndex == -1 || xIndex == field.getXLength() - 1;
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + margin)
+							+ "\" x1=\""
+							+ (xIndex * baseSize + 2 * baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ (xIndex * baseSize + 2 * baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneYokoWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">"
+							+ "</line>");
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = -1; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					boolean oneTateWall = yIndex == -1 || yIndex == field.getYLength() - 1;
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x1=\""
+							+ (xIndex * baseSize + baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ (xIndex * baseSize + baseSize + baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneTateWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">"
+							+ "</line>");
+				}
+			}
+
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					Pearl onePearl = field.getPearl()[yIndex][xIndex];
+					if (onePearl == Pearl.SIRO) {
+						sb.append("<circle cy=\"" + (yIndex * baseSize + (baseSize / 2) + margin)
+								+ "\" cx=\""
+								+ (xIndex * baseSize + baseSize + (baseSize / 2))
+								+ "\" r=\""
+								+ (baseSize / 2 - 3)
+								+ "\" fill=\"white\", stroke=\"black\">"
+								+ "</circle>");
+
+					} else if (onePearl == Pearl.KURO) {
+						sb.append("<circle cy=\"" + (yIndex * baseSize + (baseSize / 2) + margin)
+								+ "\" cx=\""
+								+ (xIndex * baseSize + baseSize + (baseSize / 2))
+								+ "\" r=\""
+								+ (baseSize / 2 - 3)
+								+ "\" fill=\"black\", stroke=\"black\">"
+								+ "</circle>");
+					}
+					Masu oneMasu = field.getMasu()[yIndex][xIndex];
+					if (oneMasu.toString().equals("・")) {
+						String str = "";
+						MasyuSolver.Wall up = yIndex == 0 ? MasyuSolver.Wall.EXISTS
+								: field.getTateWall()[yIndex - 1][xIndex];
+						MasyuSolver.Wall right = xIndex == field.getXLength() - 1 ? MasyuSolver.Wall.EXISTS
+								: field.getYokoWall()[yIndex][xIndex];
+						MasyuSolver.Wall down = yIndex == field.getYLength() - 1 ? MasyuSolver.Wall.EXISTS
+								: field.getTateWall()[yIndex][xIndex];
+						MasyuSolver.Wall left = xIndex == 0 ? MasyuSolver.Wall.EXISTS
+								: field.getYokoWall()[yIndex][xIndex - 1];
+						if (up == MasyuSolver.Wall.NOT_EXISTS && right == MasyuSolver.Wall.NOT_EXISTS
+								&& down == MasyuSolver.Wall.EXISTS &&
+								left == MasyuSolver.Wall.EXISTS) {
+							str = "└";
+						} else if (up == MasyuSolver.Wall.NOT_EXISTS && right == MasyuSolver.Wall.EXISTS
+								&& down == MasyuSolver.Wall.NOT_EXISTS &&
+								left == MasyuSolver.Wall.EXISTS) {
+							str = "│";
+						} else if (up == MasyuSolver.Wall.NOT_EXISTS && right == MasyuSolver.Wall.EXISTS
+								&& down == MasyuSolver.Wall.EXISTS &&
+								left == MasyuSolver.Wall.NOT_EXISTS) {
+							str = "┘";
+						} else if (up == MasyuSolver.Wall.EXISTS && right == MasyuSolver.Wall.NOT_EXISTS
+								&& down == MasyuSolver.Wall.NOT_EXISTS &&
+								left == MasyuSolver.Wall.EXISTS) {
+							str = "┌";
+						} else if (up == MasyuSolver.Wall.EXISTS && right == MasyuSolver.Wall.NOT_EXISTS
+								&& down == MasyuSolver.Wall.EXISTS &&
+								left == MasyuSolver.Wall.NOT_EXISTS) {
+							str = "─";
+						} else if (up == MasyuSolver.Wall.EXISTS && right == MasyuSolver.Wall.EXISTS
+								&& down == MasyuSolver.Wall.NOT_EXISTS &&
+								left == MasyuSolver.Wall.NOT_EXISTS) {
+							str = "┐";
+						} else {
+							str = oneMasu.toString();
+						}
+						sb.append("<text y=\"" + (yIndex * baseSize + baseSize + margin -2)
+								+ "\" x=\""
+								+ (xIndex * baseSize + baseSize)
+								+ "\" font-size=\""
+								+ (baseSize)
+								+ "\" textLength=\""
+								+ (baseSize)
+								+ "\" fill=\""
+								+ "green"
+								+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+								+ str
+								+ "</text>");
+					}
+				}
+			}
+			sb.append("</svg>");
+			return sb.toString();
+		}
 	}
 
 	@Override
@@ -1868,6 +2013,8 @@ public class SolverWeb extends HttpServlet {
 				t = new SlitherSolverThread(height, width, param);
 			} else if (puzzleType.contains("yajikazu")) {
 				t = new YajikazuSolverThread(height, width, param);
+			} else if (puzzleType.contains("mashu") || puzzleType.contains("masyu") || puzzleType.contains("pearl")) {
+				t = new MasyuSolverThread(height, width, param);
 			} else {
 				throw new IllegalArgumentException();
 			}
