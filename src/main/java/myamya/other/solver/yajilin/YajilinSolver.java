@@ -790,7 +790,7 @@ public class YajilinSolver implements Solver {
 										yokoWall[yIndex][xIndex - 1] = Wall.EXISTS;
 									}
 								}
-							} else if (existsCount == 2 && notExistsCount == 2) {
+							} else if (notExistsCount != 0) {
 								masu[yIndex][xIndex] = MasuImpl.NOT_BLACK;
 							}
 						}
@@ -994,10 +994,10 @@ public class YajilinSolver implements Solver {
 			}
 		}
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
-		System.out.println("難易度:" + (count));
+		System.out.println("難易度:" + (count * 5));
 		System.out.println(field);
 		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count).toString();
+				+ Difficulty.getByCount(count * 5).toString();
 	}
 
 	/**

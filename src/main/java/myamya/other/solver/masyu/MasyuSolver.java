@@ -412,6 +412,26 @@ public class MasyuSolver implements Solver {
 					yokoWall[yIndex][xIndex] = Wall.NOT_EXISTS;
 				}
 			}
+			if (wallUp == Wall.NOT_EXISTS) {
+				if (wallDown == Wall.SPACE) {
+					tateWall[yIndex][xIndex] = Wall.EXISTS;
+				}
+			}
+			if (wallRight == Wall.NOT_EXISTS) {
+				if (wallLeft == Wall.SPACE) {
+					yokoWall[yIndex][xIndex - 1] = Wall.EXISTS;
+				}
+			}
+			if (wallDown == Wall.NOT_EXISTS) {
+				if (wallUp == Wall.SPACE) {
+					tateWall[yIndex - 1][xIndex] = Wall.EXISTS;
+				}
+			}
+			if (wallLeft == Wall.NOT_EXISTS) {
+				if (wallRight == Wall.SPACE) {
+					yokoWall[yIndex][xIndex] = Wall.EXISTS;
+				}
+			}
 		}
 
 		/**
@@ -528,7 +548,7 @@ public class MasyuSolver implements Solver {
 										yokoWall[yIndex][xIndex - 1] = Wall.EXISTS;
 									}
 								}
-							} else if (existsCount == 2 && notExistsCount == 2) {
+							} else if (notExistsCount != 0) {
 								masu[yIndex][xIndex] = Masu.NOT_BLACK;
 							}
 						}
@@ -754,10 +774,10 @@ public class MasyuSolver implements Solver {
 			}
 		}
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
-		System.out.println("難易度:" + (count / 50));
+		System.out.println("難易度:" + (count / 2));
 		System.out.println(field);
 		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count / 50).toString();
+				+ Difficulty.getByCount(count / 2).toString();
 	}
 
 	/**
