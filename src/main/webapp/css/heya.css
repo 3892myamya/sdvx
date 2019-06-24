@@ -1,0 +1,26 @@
+body{
+  margin:0px;
+}
+
+#div_readme_head {
+    background: #e9e9ff;
+    margin-bottom: 2px;
+}
+
+.subtitle {
+  font-size: 1.25em;
+  font-weight: bold;
+}
+
+#div_title{
+  font-size: 1.5em;
+  font-weight: bold;
+  background: linear-gradient(#400080, #800040);
+  color: #ffffff;
+}
+
+#div_result{
+	height: 300px;
+	width: 300px;
+}
+

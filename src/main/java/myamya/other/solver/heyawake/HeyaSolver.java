@@ -41,8 +41,10 @@ public class HeyaSolver {
 		return masu[0].length;
 	}
 
+	private final int limit;
+
 	public HeyaSolver(int height, int width, int roomBlackCnt, boolean upWall, boolean rightWall, boolean downWall,
-			boolean leftWall) {
+			boolean leftWall, int limit) {
 		masu = new Masu[height + 2][width + 2];
 		this.roomBlackCnt = roomBlackCnt;
 		for (int yIndex = 1; yIndex < getYLength() - 1; yIndex++) {
@@ -78,6 +80,7 @@ public class HeyaSolver {
 		masu[0][getXLength() - 1] = !upWall && !rightWall ? Masu.NOT_WALL : Masu.WALL;
 		masu[getYLength() - 1][0] = !downWall && !leftWall ? Masu.NOT_WALL : Masu.WALL;
 		masu[getYLength() - 1][getXLength() - 1] = !downWall && !rightWall ? Masu.NOT_WALL : Masu.WALL;
+		this.limit = limit;
 	}
 
 	public HeyaSolver(HeyaSolver other) {
@@ -88,6 +91,7 @@ public class HeyaSolver {
 			}
 		}
 		roomBlackCnt = other.roomBlackCnt;
+		limit = other.limit;
 	}
 
 	@Override
@@ -195,7 +199,7 @@ public class HeyaSolver {
 
 	public static void main(String[] args) {
 		long start = System.nanoTime();
-		List<HeyaSolver> result = new HeyaSolver(5, 5, 9, true, true, true, true).solve();
+		List<HeyaSolver> result = new HeyaSolver(5, 5, 9, true, true, true, true, 10000).solve();
 		for (HeyaSolver field : result) {
 			System.out.println(field);
 		}
@@ -204,12 +208,10 @@ public class HeyaSolver {
 
 	}
 
-	private final static int CAND_LIMIT = 10000;
-
 	public List<String> solveForSolver() {
 		List<String> result = new ArrayList<>();
 		List<HeyaSolver> AnswarFieldList = solve();
-		if (AnswarFieldList.size() >= CAND_LIMIT) {
+		if (AnswarFieldList.size() >= limit) {
 			return result;
 		}
 		for (HeyaSolver answar : AnswarFieldList) {
@@ -230,7 +232,7 @@ public class HeyaSolver {
 	private boolean oneCandSolve(HeyaSolver field, int index, List<HeyaSolver> answarMasuList, int blackCnt,
 			int spaceCnt) {
 		//		System.out.println(field);
-		if (answarMasuList.size() >= CAND_LIMIT) {
+		if (answarMasuList.size() >= limit) {
 			// 1000通り以上見つかったら打ち切り
 			return true;
 		}

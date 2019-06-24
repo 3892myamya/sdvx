@@ -186,7 +186,7 @@ public class HeyawakeSolver implements Solver {
 					if (roomHeight * roomWidth <= 50) {
 						HeyaSolver heyaSolver = new HeyaSolver(roomHeight, roomWidth, room.getBlackCnt(),
 								leftUp.getyIndex() == 0, rightDown.getxIndex() == getXLength() - 1,
-								rightDown.getyIndex() == getYLength() - 1, leftUp.getxIndex() == 0);
+								rightDown.getyIndex() == getYLength() - 1, leftUp.getxIndex() == 0, 10000);
 						List<String> result = heyaSolver.solveForSolver();
 						if (!result.isEmpty()) {
 							roomsCand.put(i, result);
