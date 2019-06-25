@@ -35,6 +35,8 @@ import myamya.other.solver.nurikabe.NurikabeSolver;
 import myamya.other.solver.nurikabe.NurikabeSolver.Room;
 import myamya.other.solver.nurimisaki.NurimisakiSolver;
 import myamya.other.solver.nurimisaki.NurimisakiSolver.Misaki;
+import myamya.other.solver.sashigane.SashiganeSolver;
+import myamya.other.solver.sashigane.SashiganeSolver.Mark;
 import myamya.other.solver.shikaku.ShikakuSolver;
 import myamya.other.solver.shikaku.ShikakuSolver.Sikaku;
 import myamya.other.solver.shikaku.ShikakuSolver.Wall;
@@ -1949,7 +1951,7 @@ public class SolverWeb extends HttpServlet {
 						} else {
 							str = oneMasu.toString();
 						}
-						sb.append("<text y=\"" + (yIndex * baseSize + baseSize + margin -2)
+						sb.append("<text y=\"" + (yIndex * baseSize + baseSize + margin - 2)
 								+ "\" x=\""
 								+ (xIndex * baseSize + baseSize)
 								+ "\" font-size=\""
@@ -1962,6 +1964,125 @@ public class SolverWeb extends HttpServlet {
 								+ str
 								+ "</text>");
 					}
+				}
+			}
+			sb.append("</svg>");
+			return sb.toString();
+		}
+	}
+
+	static class SashiganeSolverThread extends AbsSolverThlead {
+		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
+		private static final String FULL_NUMS = "０１２３４５６７８９";
+
+		SashiganeSolverThread(int height, int width, String param) {
+			super(height, width, param);
+		}
+
+		@Override
+		protected Solver getSolver(int height, int width, String param) {
+			return new SashiganeSolver(height, width, param);
+		}
+
+		@Override
+		public String makeCambus() {
+			StringBuilder sb = new StringBuilder();
+			SashiganeSolver.Field field = ((SashiganeSolver) solver).getField();
+			int baseSize = 20;
+			int margin = 5;
+			sb.append(
+					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
+							+ "height=\"" + (field.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
+							+ (field.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					Mark oneMark = field.getMark()[yIndex][xIndex];
+					if (oneMark instanceof SashiganeSolver.Circle) {
+						sb.append("<circle cy=\"" + (yIndex * baseSize + (baseSize / 2) + margin)
+								+ "\" cx=\""
+								+ (xIndex * baseSize + baseSize + (baseSize / 2))
+								+ "\" r=\""
+								+ (baseSize / 2 - 2)
+								+ "\" fill=\"white\", stroke=\"black\">"
+								+ "</circle>");
+						if (((SashiganeSolver.Circle) oneMark).getCnt() != -1) {
+							String numberStr = String.valueOf(((SashiganeSolver.Circle) oneMark).getCnt());
+							int index = HALF_NUMS.indexOf(numberStr);
+							String masuStr = null;
+							if (index >= 0) {
+								masuStr = FULL_NUMS.substring(index / 2, index / 2 + 1);
+							} else {
+								masuStr = numberStr;
+							}
+							sb.append("<text y=\"" + (yIndex * baseSize + baseSize + margin - 4)
+									+ "\" x=\""
+									+ (xIndex * baseSize + baseSize + 2)
+									+ "\" font-size=\""
+									+ (baseSize - 5)
+									+ "\" textLength=\""
+									+ (baseSize - 5)
+									+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+									+ masuStr
+									+ "</text>");
+						}
+					} else if (oneMark != null) {
+						sb.append("<text y=\"" + (yIndex * baseSize + baseSize + margin - 4)
+								+ "\" x=\""
+								+ (xIndex * baseSize + baseSize)
+								+ "\" font-size=\""
+								+ (baseSize - 2)
+								+ "\" textLength=\""
+								+ (baseSize - 2)
+								+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+								+ oneMark.toString()
+								+ "</text>");
+					}
+				}
+			}
+			// 横壁描画
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = -1; xIndex < field.getXLength(); xIndex++) {
+					boolean oneYokoWall = xIndex == -1 || xIndex == field.getXLength() - 1
+							|| field.getYokoWall()[yIndex][xIndex] == SashiganeSolver.Wall.EXISTS;
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + margin)
+							+ "\" x1=\""
+							+ (xIndex * baseSize + 2 * baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ (xIndex * baseSize + 2 * baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneYokoWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">"
+							+ "</line>");
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = -1; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					boolean oneTateWall = yIndex == -1 || yIndex == field.getYLength() - 1
+							|| field.getTateWall()[yIndex][xIndex] == SashiganeSolver.Wall.EXISTS;
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x1=\""
+							+ (xIndex * baseSize + baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ (xIndex * baseSize + baseSize + baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneTateWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">"
+							+ "</line>");
 				}
 			}
 			sb.append("</svg>");
@@ -2013,8 +2134,11 @@ public class SolverWeb extends HttpServlet {
 				t = new SlitherSolverThread(height, width, param);
 			} else if (puzzleType.contains("yajikazu")) {
 				t = new YajikazuSolverThread(height, width, param);
-			} else if (puzzleType.contains("mashu") || puzzleType.contains("masyu") || puzzleType.contains("pearl")) {
+			} else if (puzzleType.contains("mashu") || puzzleType.contains("masyu")
+					|| puzzleType.contains("pearl")) {
 				t = new MasyuSolverThread(height, width, param);
+			} else if (puzzleType.contains("sashigane")) {
+				t = new SashiganeSolverThread(height, width, param);
 			} else {
 				throw new IllegalArgumentException();
 			}

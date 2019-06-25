@@ -822,7 +822,7 @@ public class YajilinSolver implements Solver {
 			} else {
 				Set<Position> continuePosSet = new HashSet<>();
 				continuePosSet.add(typicalWhitePos);
-				setContinuePosSet(typicalWhitePos, continuePosSet);
+				setContinuePosSet(typicalWhitePos, continuePosSet, null);
 				whitePosSet.removeAll(continuePosSet);
 				return whitePosSet.isEmpty();
 			}
@@ -831,37 +831,35 @@ public class YajilinSolver implements Solver {
 		/**
 		 * posを起点に上下左右に壁で区切られていないマスを無制限につなげていく。
 		 */
-		private void setContinuePosSet(Position pos, Set<Position> continuePosSet) {
-			if (pos.getyIndex() != 0) {
+		private void setContinuePosSet(Position pos, Set<Position> continuePosSet, Direction from) {
+			if (pos.getyIndex() != 0 && from != Direction.UP) {
 				Position nextPos = new Position(pos.getyIndex() - 1, pos.getxIndex());
-				if (!continuePosSet.contains(nextPos)
-						&& tateWall[pos.getyIndex() - 1][pos.getxIndex()] != Wall.EXISTS) {
+				if (tateWall[pos.getyIndex() - 1][pos.getxIndex()] != Wall.EXISTS
+						&& !continuePosSet.contains(nextPos)) {
 					continuePosSet.add(nextPos);
-					setContinuePosSet(nextPos, continuePosSet);
+					setContinuePosSet(nextPos, continuePosSet, Direction.DOWN);
 				}
 			}
-			if (pos.getxIndex() != getXLength() - 1) {
+			if (pos.getxIndex() != getXLength() - 1 && from != Direction.RIGHT) {
 				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() + 1);
-				if (!continuePosSet.contains(nextPos)
-						&& yokoWall[pos.getyIndex()][pos.getxIndex()] != Wall.EXISTS) {
+				if (yokoWall[pos.getyIndex()][pos.getxIndex()] != Wall.EXISTS && !continuePosSet.contains(nextPos)) {
 					continuePosSet.add(nextPos);
-					setContinuePosSet(nextPos, continuePosSet);
+					setContinuePosSet(nextPos, continuePosSet, Direction.LEFT);
 				}
 			}
-			if (pos.getyIndex() != getYLength() - 1) {
+			if (pos.getyIndex() != getYLength() - 1 && from != Direction.DOWN) {
 				Position nextPos = new Position(pos.getyIndex() + 1, pos.getxIndex());
-				if (!continuePosSet.contains(nextPos)
-						&& tateWall[pos.getyIndex()][pos.getxIndex()] != Wall.EXISTS) {
+				if (tateWall[pos.getyIndex()][pos.getxIndex()] != Wall.EXISTS && !continuePosSet.contains(nextPos)) {
 					continuePosSet.add(nextPos);
-					setContinuePosSet(nextPos, continuePosSet);
+					setContinuePosSet(nextPos, continuePosSet, Direction.UP);
 				}
 			}
-			if (pos.getxIndex() != 0) {
+			if (pos.getxIndex() != 0 && from != Direction.LEFT) {
 				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() - 1);
-				if (!continuePosSet.contains(nextPos)
-						&& yokoWall[pos.getyIndex()][pos.getxIndex() - 1] != Wall.EXISTS) {
+				if (yokoWall[pos.getyIndex()][pos.getxIndex() - 1] != Wall.EXISTS
+						&& !continuePosSet.contains(nextPos)) {
 					continuePosSet.add(nextPos);
-					setContinuePosSet(nextPos, continuePosSet);
+					setContinuePosSet(nextPos, continuePosSet, Direction.RIGHT);
 				}
 			}
 		}

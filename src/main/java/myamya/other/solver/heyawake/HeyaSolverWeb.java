@@ -20,7 +20,7 @@ public class HeyaSolverWeb extends HttpServlet {
 	static class HeyaSolverThlead extends Thread {
 		protected final HeyaSolver solver;
 		private String res = "";
-		private String status = "申し訳ございません。時間内に解析が完了しませんでした。";
+		private String status = "申し訳ございません。時間内に解析が完了しなかったため処理を中断しました。";
 
 		HeyaSolverThlead(int height, int width, int cnt, boolean up, boolean right, boolean down,
 				boolean left, int limit) {

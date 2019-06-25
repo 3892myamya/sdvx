@@ -11,6 +11,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import myamya.other.solver.Common.Difficulty;
+import myamya.other.solver.Common.Direction;
 import myamya.other.solver.Common.Masu;
 import myamya.other.solver.Common.Position;
 import myamya.other.solver.Solver;
@@ -493,7 +494,8 @@ public class HeyawakeSolver implements Solver {
 				return true;
 			} else {
 				Set<Position> continuePosSet = new HashSet<>();
-				setContinueWhitePosSet(typicalWhitePos, continuePosSet);
+				continuePosSet.add(typicalWhitePos);
+				setContinueWhitePosSet(typicalWhitePos, continuePosSet, null);
 				whitePosSet.removeAll(continuePosSet);
 				return whitePosSet.isEmpty();
 			}
@@ -502,37 +504,37 @@ public class HeyawakeSolver implements Solver {
 		/**
 		 * posを起点に上下左右に黒確定でないマスをつなげていく。壁は無視する。
 		 */
-		private void setContinueWhitePosSet(Position pos, Set<Position> continuePosSet) {
-			if (pos.getyIndex() != 0) {
+		private void setContinueWhitePosSet(Position pos, Set<Position> continuePosSet, Direction from) {
+			if (pos.getyIndex() != 0 && from != Direction.UP) {
 				Position nextPos = new Position(pos.getyIndex() - 1, pos.getxIndex());
 				if (!continuePosSet.contains(nextPos)
 						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.BLACK) {
 					continuePosSet.add(nextPos);
-					setContinueWhitePosSet(nextPos, continuePosSet);
+					setContinueWhitePosSet(nextPos, continuePosSet, Direction.DOWN);
 				}
 			}
-			if (pos.getxIndex() != getXLength() - 1) {
+			if (pos.getxIndex() != getXLength() - 1 && from != Direction.RIGHT) {
 				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() + 1);
 				if (!continuePosSet.contains(nextPos)
 						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.BLACK) {
 					continuePosSet.add(nextPos);
-					setContinueWhitePosSet(nextPos, continuePosSet);
+					setContinueWhitePosSet(nextPos, continuePosSet, Direction.LEFT);
 				}
 			}
-			if (pos.getyIndex() != getYLength() - 1) {
+			if (pos.getyIndex() != getYLength() - 1 && from != Direction.DOWN) {
 				Position nextPos = new Position(pos.getyIndex() + 1, pos.getxIndex());
 				if (!continuePosSet.contains(nextPos)
 						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.BLACK) {
 					continuePosSet.add(nextPos);
-					setContinueWhitePosSet(nextPos, continuePosSet);
+					setContinueWhitePosSet(nextPos, continuePosSet, Direction.UP);
 				}
 			}
-			if (pos.getxIndex() != 0) {
+			if (pos.getxIndex() != 0 && from != Direction.LEFT) {
 				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() - 1);
 				if (!continuePosSet.contains(nextPos)
 						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.BLACK) {
 					continuePosSet.add(nextPos);
-					setContinueWhitePosSet(nextPos, continuePosSet);
+					setContinueWhitePosSet(nextPos, continuePosSet, Direction.RIGHT);
 				}
 			}
 		}

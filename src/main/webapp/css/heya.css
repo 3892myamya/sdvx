@@ -18,6 +18,9 @@ body{
   background: linear-gradient(#400080, #800040);
   color: #ffffff;
 }
+#btn_submit{
+	width: 80px;
+}
 
 #div_result{
 	height: 300px;
