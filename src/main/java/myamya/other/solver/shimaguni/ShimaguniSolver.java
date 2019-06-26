@@ -343,12 +343,10 @@ public class ShimaguniSolver implements Solver {
 		 */
 		private Set<Integer> serveyBlackCountCandConsiderNextRoom(Room room) {
 			Set<Integer> blackCountCand = serveyBlackCountCand(room);
-			if (blackCountCand.size() != 1) {
-				for (Room nextRoom : nextRoomMap.get(room)) {
-					Set<Integer> nextRoomBlackCountCand = serveyBlackCountCand(nextRoom);
-					if (nextRoomBlackCountCand.size() == 1) {
-						blackCountCand.removeAll(nextRoomBlackCountCand);
-					}
+			for (Room nextRoom : nextRoomMap.get(room)) {
+				Set<Integer> nextRoomBlackCountCand = serveyBlackCountCand(nextRoom);
+				if (nextRoomBlackCountCand.size() == 1) {
+					blackCountCand.removeAll(nextRoomBlackCountCand);
 				}
 			}
 			return blackCountCand;
@@ -541,6 +539,7 @@ public class ShimaguniSolver implements Solver {
 		 * 各種チェックを1セット実行
 		 */
 		private boolean solveAndCheck() {
+			String str = getStateDump();
 			if (!roomSolve()) {
 				return false;
 			}
@@ -549,6 +548,9 @@ public class ShimaguniSolver implements Solver {
 			}
 			if (!capacitySolve()) {
 				return false;
+			}
+			if (!getStateDump().equals(str)) {
+				return solveAndCheck();
 			}
 			return true;
 		}
@@ -636,8 +638,7 @@ public class ShimaguniSolver implements Solver {
 		while (!field.isSolved()) {
 			System.out.println(field);
 			String befStr = field.getStateDump();
-			if (!field.solveAndCheck()
-					|| (!befStr.equals(field.getStateDump()) && !field.solveAndCheck())) {
+			if (!field.solveAndCheck()) {
 				return "問題に矛盾がある可能性があります。途中経過を返します。";
 			}
 			int recursiveCnt = 0;
@@ -681,9 +682,7 @@ public class ShimaguniSolver implements Solver {
 		if (field.masu[yIndex][xIndex] == Masu.SPACE) {
 			Field virtual = new Field(field);
 			virtual.masu[yIndex][xIndex] = Masu.BLACK;
-			String befStr = virtual.getStateDump();
-			boolean allowBlack = virtual.solveAndCheck()
-					&& (befStr.equals(virtual.getStateDump()) || virtual.solveAndCheck());
+			boolean allowBlack = virtual.solveAndCheck();
 			if (allowBlack && recursive > 0) {
 				if (!candSolve(virtual, recursive - 1)) {
 					allowBlack = false;
@@ -691,9 +690,7 @@ public class ShimaguniSolver implements Solver {
 			}
 			Field virtual2 = new Field(field);
 			virtual2.masu[yIndex][xIndex] = Masu.NOT_BLACK;
-			befStr = virtual2.getStateDump();
-			boolean allowNotBlack = virtual2.solveAndCheck()
-					&& (befStr.equals(virtual2.getStateDump()) || virtual2.solveAndCheck());
+			boolean allowNotBlack = virtual2.solveAndCheck();
 			if (allowNotBlack && recursive > 0) {
 				if (!candSolve(virtual2, recursive - 1)) {
 					allowNotBlack = false;

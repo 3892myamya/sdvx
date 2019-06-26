@@ -196,7 +196,6 @@ public class SashiganeSolver implements Solver {
 				index++;
 			}
 			// 連続する○の間に壁をいれる。これを先にやると何かと都合がいいので。
-			// TODO circleSolveをうまく作ればいらなくなる
 			for (int yIndex = 0; yIndex < getYLength() - 1; yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength() - 1; xIndex++) {
 					if (mark[yIndex][xIndex] instanceof Circle && mark[yIndex][xIndex + 1] instanceof Circle) {
@@ -506,359 +505,6 @@ public class SashiganeSolver implements Solver {
 		}
 
 		/**
-		 * 丸がついている曲がり角の方向を可能な限り確定し、その分を伸ばす。
-		 * 伸ばせないことがわかったらfalseを返す。
-		 * TODO 結構難しくて調整中
-		 */
-		private boolean circleSolve() {
-			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
-				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					if (mark[yIndex][xIndex] instanceof Circle && ((Circle) mark[yIndex][xIndex]).getCnt() != -1) {
-						boolean toUp = false, toRight = false, toDown = false, toLeft = false;
-						boolean minCountUp = false, minCountRight = false, minCountDown = false, minCountLeft = false;
-						Wall wallUp = yIndex == 0 ? Wall.EXISTS : tateWall[yIndex - 1][xIndex];
-						if (wallUp == Wall.NOT_EXISTS) {
-							minCountUp = true;
-						}
-						if (wallUp != Wall.EXISTS) {
-							toUp = true;
-						}
-						Wall wallRight = xIndex == getXLength() - 1 ? Wall.EXISTS : yokoWall[yIndex][xIndex];
-						if (wallRight == Wall.NOT_EXISTS) {
-							minCountRight = true;
-						}
-						if (wallRight != Wall.EXISTS) {
-							toRight = true;
-						}
-						Wall wallDown = yIndex == getYLength() - 1 ? Wall.EXISTS : tateWall[yIndex][xIndex];
-						if (wallDown == Wall.NOT_EXISTS) {
-							minCountDown = true;
-						}
-						if (wallDown != Wall.EXISTS) {
-							toDown = true;
-						}
-						Wall wallLeft = xIndex == 0 ? Wall.EXISTS : yokoWall[yIndex][xIndex - 1];
-						if (wallLeft == Wall.NOT_EXISTS) {
-							minCountLeft = true;
-						}
-						if (wallLeft != Wall.EXISTS) {
-							toLeft = true;
-						}
-						int fixedDirection = (minCountUp ? 1 : 0) + (minCountRight ? 1 : 0) + (minCountDown ? 1 : 0)
-								+ (minCountLeft ? 1 : 0);
-						// 確定方向が2方向を超えていたら失敗
-						if (fixedDirection > 2) {
-							return false;
-						}
-						// 確定方向が2方向なら確定方向以外の調査不要
-						if (fixedDirection == 2) {
-							if (!minCountUp) {
-								toUp = false;
-							}
-							if (!minCountRight) {
-								toRight = false;
-							}
-							if (!minCountDown) {
-								toDown = false;
-							}
-							if (!minCountLeft) {
-								toLeft = false;
-							}
-						} else {
-							// TODO ここが2以外の場合をちゃんと作りたいなあ…
-							continue;
-						}
-						// 何マス伸ばせるか、何マス伸ばさないといけないかを計測
-						int maxUp = 0, maxRight = 0, maxDown = 0, maxLeft = 0;
-						int minUp = 0, minRight = 0, minDown = 0, minLeft = 0;
-						if (toUp) {
-							for (int i = 1;; i++) {
-								maxUp++;
-								if (minCountUp) {
-									minUp++;
-								}
-								if (yIndex - i == 0 || tateWall[yIndex - i - 1][xIndex] == Wall.EXISTS
-										|| mark[yIndex - i][xIndex] != null) {
-									break;
-								} else if (tateWall[yIndex - i - 1][xIndex] == Wall.SPACE && minCountUp) {
-									minCountUp = false;
-								}
-							}
-						}
-						if (toRight) {
-							for (int i = 1;; i++) {
-								maxRight++;
-								if (minCountRight) {
-									minRight++;
-								}
-								if (xIndex + i == getXLength() - 1
-										|| yokoWall[yIndex][xIndex + i] == Wall.EXISTS
-										|| mark[yIndex][xIndex + i] != null) {
-									break;
-								} else if (yokoWall[yIndex][xIndex + i] == Wall.SPACE && minCountRight) {
-									minCountRight = false;
-								}
-							}
-						}
-						if (toDown) {
-							for (int i = 1;; i++) {
-								maxDown++;
-								if (minCountDown) {
-									minDown++;
-								}
-								if (yIndex + i == getYLength() - 1
-										|| tateWall[yIndex + i][xIndex] == Wall.EXISTS
-										|| mark[yIndex + i][xIndex] != null) {
-									break;
-								} else if (tateWall[yIndex + i][xIndex] == Wall.SPACE && minCountDown) {
-									minCountDown = false;
-								}
-							}
-						}
-						if (toLeft) {
-							for (int i = 1;; i++) {
-								maxLeft++;
-								if (minCountLeft) {
-									minLeft++;
-								}
-								if (xIndex - i == 0 || yokoWall[yIndex][xIndex - i - 1] == Wall.EXISTS
-										|| mark[yIndex][xIndex - i] != null) {
-									break;
-								} else if (yokoWall[yIndex][xIndex - i - 1] == Wall.SPACE && minCountLeft) {
-									minCountLeft = false;
-								}
-							}
-						}
-						// TODO ここを最大・最少だけじゃなくて、残りをどんなに伸ばしても足りない分みたいな考えをいれたい。
-						int maxCnt = 1 + maxUp + maxRight + maxDown + maxLeft;
-						int minCnt = 1 + minUp + minRight + minDown + minLeft;
-						if (maxCnt < ((Circle) mark[yIndex][xIndex]).getCnt()) {
-							return false;
-						}
-						if (minCnt > ((Circle) mark[yIndex][xIndex]).getCnt()) {
-							return false;
-						}
-						if (maxCnt == ((Circle) mark[yIndex][xIndex]).getCnt()) {
-							// 最大伸ばしで確定
-							if (toUp) {
-								for (int i = 1;; i++) {
-									if (xIndex != 0) {
-										if (yokoWall[yIndex - i][xIndex - 1] == Wall.NOT_EXISTS) {
-											return false;
-										} else if (yokoWall[yIndex - i][xIndex - 1] == Wall.SPACE) {
-											yokoWall[yIndex - i][xIndex - 1] = Wall.EXISTS;
-										}
-									}
-									if (xIndex != getXLength() - 1) {
-										if (yokoWall[yIndex - i][xIndex] == Wall.NOT_EXISTS) {
-											return false;
-										} else if (yokoWall[yIndex - i][xIndex] == Wall.SPACE) {
-											yokoWall[yIndex - i][xIndex] = Wall.EXISTS;
-										}
-									}
-									if (yIndex - i == 0 || tateWall[yIndex - i - 1][xIndex] == Wall.EXISTS) {
-										break;
-									}
-									if (mark[yIndex - i][xIndex] != null) {
-										tateWall[yIndex - i - 1][xIndex] = Wall.EXISTS;
-										break;
-									}
-								}
-							}
-							if (toRight) {
-								for (int i = 1;; i++) {
-									if (yIndex != 0) {
-										if (tateWall[yIndex - 1][xIndex + i] == Wall.NOT_EXISTS) {
-											return false;
-										} else if (tateWall[yIndex - 1][xIndex + i] == Wall.SPACE) {
-											tateWall[yIndex - 1][xIndex + i] = Wall.EXISTS;
-										}
-									}
-									if (yIndex != getYLength() - 1) {
-										if (tateWall[yIndex][xIndex + i] == Wall.NOT_EXISTS) {
-											return false;
-										} else if (tateWall[yIndex][xIndex + i] == Wall.SPACE) {
-											tateWall[yIndex][xIndex + i] = Wall.EXISTS;
-										}
-									}
-									if (xIndex + i == getXLength() - 1
-											|| yokoWall[yIndex][xIndex + i] == Wall.EXISTS) {
-										break;
-									}
-									if (mark[yIndex][xIndex + i] != null) {
-										yokoWall[yIndex][xIndex + i] = Wall.EXISTS;
-										break;
-									}
-								}
-							}
-							if (toDown) {
-								for (int i = 1;; i++) {
-									if (xIndex != 0) {
-										if (yokoWall[yIndex + i][xIndex - 1] == Wall.NOT_EXISTS) {
-											return false;
-										} else if (yokoWall[yIndex + i][xIndex - 1] == Wall.SPACE) {
-											yokoWall[yIndex + i][xIndex - 1] = Wall.EXISTS;
-										}
-									}
-									if (xIndex != getXLength() - 1) {
-										if (yokoWall[yIndex + i][xIndex] == Wall.NOT_EXISTS) {
-											return false;
-										} else if (yokoWall[yIndex + i][xIndex] == Wall.SPACE) {
-											yokoWall[yIndex + i][xIndex] = Wall.EXISTS;
-										}
-									}
-									if (yIndex + i == getYLength() - 1
-											|| tateWall[yIndex + i][xIndex] == Wall.EXISTS) {
-										break;
-									}
-									if (mark[yIndex + i][xIndex] != null) {
-										tateWall[yIndex + i][xIndex] = Wall.EXISTS;
-										break;
-									}
-								}
-							}
-							if (toLeft) {
-								for (int i = 1;; i++) {
-									if (yIndex != 0) {
-										if (tateWall[yIndex - 1][xIndex - i] == Wall.NOT_EXISTS) {
-											return false;
-										} else if (tateWall[yIndex - 1][xIndex - i] == Wall.SPACE) {
-											tateWall[yIndex - 1][xIndex - i] = Wall.EXISTS;
-										}
-									}
-									if (yIndex != getYLength() - 1) {
-										if (tateWall[yIndex][xIndex - i] == Wall.NOT_EXISTS) {
-											return false;
-										} else if (tateWall[yIndex][xIndex - i] == Wall.SPACE) {
-											tateWall[yIndex][xIndex - i] = Wall.EXISTS;
-										}
-									}
-									if (xIndex - i == 0 || yokoWall[yIndex][xIndex - i - 1] == Wall.EXISTS) {
-										break;
-									}
-									if (mark[yIndex][xIndex - i] != null) {
-										yokoWall[yIndex][xIndex - i - 1] = Wall.EXISTS;
-										break;
-									}
-								}
-							}
-						}
-						if (minCnt == ((Circle) mark[yIndex][xIndex]).getCnt()) {
-							// 最小伸ばしで確定
-							if (toUp) {
-								for (int i = 1;; i++) {
-									if (xIndex != 0) {
-										if (yokoWall[yIndex - i][xIndex - 1] == Wall.NOT_EXISTS) {
-											return false;
-										} else if (yokoWall[yIndex - i][xIndex - 1] == Wall.SPACE) {
-											yokoWall[yIndex - i][xIndex - 1] = Wall.EXISTS;
-										}
-									}
-									if (xIndex != getXLength() - 1) {
-										if (yokoWall[yIndex - i][xIndex] == Wall.NOT_EXISTS) {
-											return false;
-										} else if (yokoWall[yIndex - i][xIndex] == Wall.SPACE) {
-											yokoWall[yIndex - i][xIndex] = Wall.EXISTS;
-										}
-									}
-									if (yIndex - i == 0 || tateWall[yIndex - i - 1][xIndex] == Wall.EXISTS
-											|| mark[yIndex - i][xIndex] != null) {
-										break;
-									}
-									if (tateWall[yIndex - i - 1][xIndex] == Wall.SPACE) {
-										tateWall[yIndex - i - 1][xIndex] = Wall.EXISTS;
-										break;
-									}
-								}
-							}
-							if (toRight) {
-								for (int i = 1;; i++) {
-									if (yIndex != 0) {
-										if (tateWall[yIndex - 1][xIndex + i] == Wall.NOT_EXISTS) {
-											return false;
-										} else if (tateWall[yIndex - 1][xIndex + i] == Wall.SPACE) {
-											tateWall[yIndex - 1][xIndex + i] = Wall.EXISTS;
-										}
-									}
-									if (yIndex != getYLength() - 1) {
-										if (tateWall[yIndex][xIndex + i] == Wall.NOT_EXISTS) {
-											return false;
-										} else if (tateWall[yIndex][xIndex + i] == Wall.SPACE) {
-											tateWall[yIndex][xIndex + i] = Wall.EXISTS;
-										}
-									}
-									if (xIndex + i == getXLength() - 1
-											|| yokoWall[yIndex][xIndex + i] == Wall.EXISTS
-											|| mark[yIndex][xIndex + i] != null) {
-										break;
-									}
-									if (yokoWall[yIndex][xIndex + i] == Wall.SPACE) {
-										yokoWall[yIndex][xIndex + i] = Wall.EXISTS;
-										break;
-									}
-								}
-							}
-							if (toDown) {
-								for (int i = 1;; i++) {
-									if (xIndex != 0) {
-										if (yokoWall[yIndex + i][xIndex - 1] == Wall.NOT_EXISTS) {
-											return false;
-										} else if (yokoWall[yIndex + i][xIndex - 1] == Wall.SPACE) {
-											yokoWall[yIndex + i][xIndex - 1] = Wall.EXISTS;
-										}
-									}
-									if (xIndex != getXLength() - 1) {
-										if (yokoWall[yIndex + i][xIndex] == Wall.NOT_EXISTS) {
-											return false;
-										} else if (yokoWall[yIndex + i][xIndex] == Wall.SPACE) {
-											yokoWall[yIndex + i][xIndex] = Wall.EXISTS;
-										}
-									}
-									if (yIndex + i == getYLength() - 1
-											|| tateWall[yIndex + i][xIndex] == Wall.EXISTS
-											|| mark[yIndex + i][xIndex] != null) {
-										break;
-									}
-									if (tateWall[yIndex + i][xIndex] == Wall.SPACE) {
-										tateWall[yIndex + i][xIndex] = Wall.EXISTS;
-										break;
-									}
-								}
-							}
-							if (toLeft) {
-								for (int i = 1;; i++) {
-									if (yIndex != 0) {
-										if (tateWall[yIndex - 1][xIndex - i] == Wall.NOT_EXISTS) {
-											return false;
-										} else if (tateWall[yIndex - 1][xIndex - i] == Wall.SPACE) {
-											tateWall[yIndex - 1][xIndex - i] = Wall.EXISTS;
-										}
-									}
-									if (yIndex != getYLength() - 1) {
-										if (tateWall[yIndex][xIndex - i] == Wall.NOT_EXISTS) {
-											return false;
-										} else if (tateWall[yIndex][xIndex - i] == Wall.SPACE) {
-											tateWall[yIndex][xIndex - i] = Wall.EXISTS;
-										}
-									}
-									if (xIndex - i == 0 || yokoWall[yIndex][xIndex - i - 1] == Wall.EXISTS
-											|| mark[yIndex][xIndex - i] != null) {
-										break;
-									}
-									if (yokoWall[yIndex][xIndex - i - 1] == Wall.SPACE) {
-										yokoWall[yIndex][xIndex - i - 1] = Wall.EXISTS;
-										break;
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-			return true;
-		}
-
-		/**
 		 * 各マスの端からスタートして、曲がる回数が0回または2回以上が確定する場合falseを返す。
 		 */
 		public boolean shapeLSolve() {
@@ -1152,6 +798,231 @@ public class SashiganeSolver implements Solver {
 		}
 
 		/**
+		 * 数字マスから自身+上下左右にそれぞれ何マス白マスを伸ばせる可能性があるか調べ、
+		 * ある3方向を足しても満たない場合、残る1方向の不足分を伸ばす。
+		 * 4方向を足しても数字が届かない場合falseを返す。
+		 *
+		 */
+		public boolean limitSolve() {
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					if (mark[yIndex][xIndex] instanceof Circle) {
+						Circle circle = (Circle) mark[yIndex][xIndex];
+						if (circle.getCnt() == -1) {
+							continue;
+						}
+						int upSpaceCnt = 0;
+						for (int targetY = yIndex - 1; targetY >= 0; targetY--) {
+							if (tateWall[targetY][xIndex] == Wall.EXISTS) {
+								break;
+							}
+							if (mark[targetY][xIndex] instanceof Circle) {
+								break;
+							}
+							upSpaceCnt++;
+						}
+						int rightSpaceCnt = 0;
+						for (int targetX = xIndex + 1; targetX < getXLength(); targetX++) {
+							if (yokoWall[yIndex][targetX - 1] == Wall.EXISTS) {
+								break;
+							}
+							if (mark[yIndex][targetX] instanceof Circle) {
+								break;
+							}
+							rightSpaceCnt++;
+						}
+						int downSpaceCnt = 0;
+						for (int targetY = yIndex + 1; targetY < getYLength(); targetY++) {
+							if (tateWall[targetY - 1][xIndex] == Wall.EXISTS) {
+								break;
+							}
+							if (mark[targetY][xIndex] instanceof Circle) {
+								break;
+							}
+							downSpaceCnt++;
+						}
+						int leftSpaceCnt = 0;
+						for (int targetX = xIndex - 1; targetX >= 0; targetX--) {
+							if (yokoWall[yIndex][targetX] == Wall.EXISTS) {
+								break;
+							}
+							if (mark[yIndex][targetX] instanceof Circle) {
+								break;
+							}
+							leftSpaceCnt++;
+						}
+						int aroundSpaceCnt = 1 + upSpaceCnt + rightSpaceCnt + downSpaceCnt + leftSpaceCnt;
+						if (aroundSpaceCnt < circle.getCnt()) {
+							return false;
+						} else {
+							int fixedWhiteUp = circle.getCnt() - (1 + rightSpaceCnt + downSpaceCnt + leftSpaceCnt);
+							int fixedWhiteRight = circle.getCnt() - (1 + upSpaceCnt + downSpaceCnt + leftSpaceCnt);
+							int fixedWhiteDown = circle.getCnt() - (1 + upSpaceCnt + rightSpaceCnt + leftSpaceCnt);
+							int fixedWhitetLeft = circle.getCnt() - (1 + upSpaceCnt + rightSpaceCnt + downSpaceCnt);
+							if (fixedWhiteUp > 0) {
+								for (int i = 1; i <= fixedWhiteUp; i++) {
+									if (xIndex != 0) {
+										if (yokoWall[yIndex - i][xIndex - 1] == Wall.NOT_EXISTS) {
+											return false;
+										}
+										yokoWall[yIndex - i][xIndex - 1] = Wall.EXISTS;
+									}
+									if (xIndex != getXLength() - 1) {
+										if (yokoWall[yIndex - i][xIndex] == Wall.NOT_EXISTS) {
+											return false;
+										}
+										yokoWall[yIndex - i][xIndex] = Wall.EXISTS;
+									}
+									if (tateWall[yIndex - i][xIndex] == Wall.EXISTS) {
+										return false;
+									}
+									tateWall[yIndex - i][xIndex] = Wall.NOT_EXISTS;
+								}
+							}
+							if (fixedWhiteRight > 0) {
+								for (int i = 1; i <= fixedWhiteRight; i++) {
+									if (yIndex != 0) {
+										if (tateWall[yIndex - 1][xIndex + i] == Wall.NOT_EXISTS) {
+											return false;
+										}
+										tateWall[yIndex - 1][xIndex + i] = Wall.EXISTS;
+									}
+									if (yIndex != getYLength() - 1) {
+										if (tateWall[yIndex][xIndex + i] == Wall.NOT_EXISTS) {
+											return false;
+										}
+										tateWall[yIndex][xIndex + i] = Wall.EXISTS;
+									}
+									if (yokoWall[yIndex][xIndex + i - 1] == Wall.EXISTS) {
+										return false;
+									}
+									yokoWall[yIndex][xIndex + i - 1] = Wall.NOT_EXISTS;
+								}
+							}
+							if (fixedWhiteDown > 0) {
+								for (int i = 1; i <= fixedWhiteDown; i++) {
+									if (xIndex != 0) {
+										if (yokoWall[yIndex + i][xIndex - 1] == Wall.NOT_EXISTS) {
+											return false;
+										}
+										yokoWall[yIndex + i][xIndex - 1] = Wall.EXISTS;
+									}
+									if (xIndex != getXLength() - 1) {
+										if (yokoWall[yIndex + i][xIndex] == Wall.NOT_EXISTS) {
+											return false;
+										}
+										yokoWall[yIndex + i][xIndex] = Wall.EXISTS;
+									}
+									if (tateWall[yIndex + i - 1][xIndex] == Wall.EXISTS) {
+										return false;
+									}
+									tateWall[yIndex + i - 1][xIndex] = Wall.NOT_EXISTS;
+								}
+							}
+							if (fixedWhitetLeft > 0) {
+								for (int i = 1; i <= fixedWhitetLeft; i++) {
+									if (yIndex != 0) {
+										if (tateWall[yIndex - 1][xIndex - i] == Wall.NOT_EXISTS) {
+											return false;
+										}
+										tateWall[yIndex - 1][xIndex - i] = Wall.EXISTS;
+									}
+									if (yIndex != getYLength() - 1) {
+										if (tateWall[yIndex][xIndex - i] == Wall.NOT_EXISTS) {
+											return false;
+										}
+										tateWall[yIndex][xIndex - i] = Wall.EXISTS;
+									}
+									if (yokoWall[yIndex][xIndex - i] == Wall.EXISTS) {
+										return false;
+									}
+									yokoWall[yIndex][xIndex - i] = Wall.NOT_EXISTS;
+								}
+							}
+						}
+					}
+				}
+			}
+			return true;
+		}
+
+		/**
+		 * 数字マスから自身+上下左右に存在する白確定マスが数字に等しければ、
+		 * 伸ばした先のマスを閉じる。
+		 * 白確定マスが数字をオーバーしている場合falseを返す。
+		 */
+		public boolean numberSolve() {
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					if (mark[yIndex][xIndex] instanceof Circle) {
+						Circle circle = (Circle) mark[yIndex][xIndex];
+						if (circle.getCnt() == -1) {
+							continue;
+						}
+						int upWhiteCnt = 0;
+						for (int targetY = yIndex - 1; targetY >= 0; targetY--) {
+							if (tateWall[targetY][xIndex] != Wall.NOT_EXISTS) {
+								break;
+							}
+							upWhiteCnt++;
+						}
+						int rightWhiteCnt = 0;
+						for (int targetX = xIndex + 1; targetX < getXLength(); targetX++) {
+							if (yokoWall[yIndex][targetX - 1] != Wall.NOT_EXISTS) {
+								break;
+							}
+							rightWhiteCnt++;
+						}
+						int downWhiteCnt = 0;
+						for (int targetY = yIndex + 1; targetY < getYLength(); targetY++) {
+							if (tateWall[targetY - 1][xIndex] != Wall.NOT_EXISTS) {
+								break;
+							}
+							downWhiteCnt++;
+						}
+						int leftWhiteCnt = 0;
+						for (int targetX = xIndex - 1; targetX >= 0; targetX--) {
+							if (yokoWall[yIndex][targetX] != Wall.NOT_EXISTS) {
+								break;
+							}
+							leftWhiteCnt++;
+						}
+						int aroundWhiteCnt = 1 + upWhiteCnt + rightWhiteCnt + downWhiteCnt + leftWhiteCnt;
+						if (aroundWhiteCnt > circle.getCnt()) {
+							return false;
+						} else if (aroundWhiteCnt == circle.getCnt()) {
+							if (yIndex - upWhiteCnt - 1 >= 0) {
+								if (tateWall[yIndex - upWhiteCnt - 1][xIndex] == Wall.NOT_EXISTS) {
+									return false;
+								}
+								tateWall[yIndex - upWhiteCnt - 1][xIndex] = Wall.EXISTS;
+							}
+							if (xIndex + rightWhiteCnt + 1 < getXLength()) {
+								if (yokoWall[yIndex][xIndex + rightWhiteCnt] == Wall.NOT_EXISTS) {
+									return false;
+								}
+								yokoWall[yIndex][xIndex + rightWhiteCnt] = Wall.EXISTS;
+							}
+							if (yIndex + downWhiteCnt + 1 < getYLength()) {
+								if (tateWall[yIndex + downWhiteCnt][xIndex] == Wall.NOT_EXISTS) {
+									return false;
+								}
+								tateWall[yIndex + downWhiteCnt][xIndex] = Wall.EXISTS;
+							}
+							if (xIndex - leftWhiteCnt - 1 >= 0) {
+								if (yokoWall[yIndex][xIndex - leftWhiteCnt - 1] == Wall.NOT_EXISTS) {
+									return false;
+								}
+								yokoWall[yIndex][xIndex - leftWhiteCnt - 1] = Wall.EXISTS;
+							}
+						}
+					}
+				}
+			}
+			return true;
+		}
+
+		/**
 		 * 各種チェックを1セット実行
 		 * @param recursive
 		 */
@@ -1163,7 +1034,10 @@ public class SashiganeSolver implements Solver {
 			if (!curveSolve()) {
 				return false;
 			}
-			if (!circleSolve()) {
+			if (!limitSolve()) {
+				return false;
+			}
+			if (!numberSolve()) {
 				return false;
 			}
 			if (!shapeLSolve()) {

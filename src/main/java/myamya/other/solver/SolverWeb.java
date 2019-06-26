@@ -19,6 +19,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import myamya.other.solver.Common.Direction;
 import myamya.other.solver.Common.Masu;
 import myamya.other.solver.Common.Position;
 import myamya.other.solver.akari.AkariSolver;
@@ -2026,6 +2027,14 @@ public class SolverWeb extends HttpServlet {
 									+ "</text>");
 						}
 					} else if (oneMark != null) {
+						String str;
+						if (oneMark instanceof SashiganeSolver.Arrow
+								&& (((SashiganeSolver.Arrow) oneMark).getDirection() == Direction.UP
+										|| ((SashiganeSolver.Arrow) oneMark).getDirection() == Direction.DOWN)) {
+							str = " " + oneMark.toString() + " ";
+						} else {
+							str = oneMark.toString();
+						}
 						sb.append("<text y=\"" + (yIndex * baseSize + baseSize + margin - 4)
 								+ "\" x=\""
 								+ (xIndex * baseSize + baseSize)
@@ -2034,7 +2043,7 @@ public class SolverWeb extends HttpServlet {
 								+ "\" textLength=\""
 								+ (baseSize - 2)
 								+ "\" lengthAdjust=\"spacingAndGlyphs\">"
-								+ oneMark.toString()
+								+ str
 								+ "</text>");
 					}
 				}
