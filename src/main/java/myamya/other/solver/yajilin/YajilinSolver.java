@@ -716,24 +716,40 @@ public class YajilinSolver implements Solver {
 						if (wallUp == Wall.EXISTS) {
 							existsCount++;
 						} else if (wallUp == Wall.NOT_EXISTS) {
+							if (masu[yIndex - 1][xIndex] == MasuImpl.BLACK) {
+								return false;
+							}
+							masu[yIndex - 1][xIndex] = MasuImpl.NOT_BLACK;
 							notExistsCount++;
 						}
 						Wall wallRight = xIndex == getXLength() - 1 ? Wall.EXISTS : yokoWall[yIndex][xIndex];
 						if (wallRight == Wall.EXISTS) {
 							existsCount++;
 						} else if (wallRight == Wall.NOT_EXISTS) {
+							if (masu[yIndex][xIndex + 1] == MasuImpl.BLACK) {
+								return false;
+							}
+							masu[yIndex][xIndex + 1] = MasuImpl.NOT_BLACK;
 							notExistsCount++;
 						}
 						Wall wallDown = yIndex == getYLength() - 1 ? Wall.EXISTS : tateWall[yIndex][xIndex];
 						if (wallDown == Wall.EXISTS) {
 							existsCount++;
 						} else if (wallDown == Wall.NOT_EXISTS) {
+							if (masu[yIndex + 1][xIndex] == MasuImpl.BLACK) {
+								return false;
+							}
+							masu[yIndex + 1][xIndex] = MasuImpl.NOT_BLACK;
 							notExistsCount++;
 						}
 						Wall wallLeft = xIndex == 0 ? Wall.EXISTS : yokoWall[yIndex][xIndex - 1];
 						if (wallLeft == Wall.EXISTS) {
 							existsCount++;
 						} else if (wallLeft == Wall.NOT_EXISTS) {
+							if (masu[yIndex][xIndex - 1] == MasuImpl.BLACK) {
+								return false;
+							}
+							masu[yIndex][xIndex - 1] = MasuImpl.NOT_BLACK;
 							notExistsCount++;
 						}
 						// 自分が白マスなら壁は必ず2マス
@@ -756,16 +772,32 @@ public class YajilinSolver implements Solver {
 								}
 							} else if (existsCount == 2) {
 								if (wallUp == Wall.SPACE) {
+									if (masu[yIndex - 1][xIndex] == MasuImpl.BLACK) {
+										return false;
+									}
 									tateWall[yIndex - 1][xIndex] = Wall.NOT_EXISTS;
+									masu[yIndex - 1][xIndex] = MasuImpl.NOT_BLACK;
 								}
 								if (wallRight == Wall.SPACE) {
+									if (masu[yIndex][xIndex + 1] == MasuImpl.BLACK) {
+										return false;
+									}
 									yokoWall[yIndex][xIndex] = Wall.NOT_EXISTS;
+									masu[yIndex][xIndex + 1] = MasuImpl.NOT_BLACK;
 								}
 								if (wallDown == Wall.SPACE) {
+									if (masu[yIndex + 1][xIndex] == MasuImpl.BLACK) {
+										return false;
+									}
 									tateWall[yIndex][xIndex] = Wall.NOT_EXISTS;
+									masu[yIndex + 1][xIndex] = MasuImpl.NOT_BLACK;
 								}
 								if (wallLeft == Wall.SPACE) {
+									if (masu[yIndex][xIndex - 1] == MasuImpl.BLACK) {
+										return false;
+									}
 									yokoWall[yIndex][xIndex - 1] = Wall.NOT_EXISTS;
+									masu[yIndex][xIndex - 1] = MasuImpl.NOT_BLACK;
 								}
 							}
 						} else if (masu[yIndex][xIndex] == MasuImpl.SPACE) {
@@ -774,21 +806,46 @@ public class YajilinSolver implements Solver {
 									|| notExistsCount > 2) {
 								return false;
 							}
-							if (existsCount > 3) {
+							if (existsCount == 2) {
+								// 壁が2個の場合、壁のない方の白マス確定(出口理論)
+								if (wallUp != Wall.EXISTS) {
+									if (masu[yIndex - 1][xIndex] == MasuImpl.BLACK) {
+										return false;
+									}
+									masu[yIndex - 1][xIndex] = MasuImpl.NOT_BLACK;
+								}
+								if (wallRight != Wall.EXISTS) {
+									if (masu[yIndex][xIndex + 1] == MasuImpl.BLACK) {
+										return false;
+									}
+									masu[yIndex][xIndex + 1] = MasuImpl.NOT_BLACK;
+								}
+								if (wallDown != Wall.EXISTS) {
+									if (masu[yIndex + 1][xIndex] == MasuImpl.BLACK) {
+										return false;
+									}
+									masu[yIndex + 1][xIndex] = MasuImpl.NOT_BLACK;
+								}
+								if (wallLeft != Wall.EXISTS) {
+									if (masu[yIndex][xIndex - 1] == MasuImpl.BLACK) {
+										return false;
+									}
+									masu[yIndex][xIndex - 1] = MasuImpl.NOT_BLACK;
+								}
+							}
+							if (existsCount > 2) {
 								masu[yIndex][xIndex] = MasuImpl.BLACK;
-								if (existsCount == 3) {
-									if (wallUp == Wall.SPACE) {
-										tateWall[yIndex - 1][xIndex] = Wall.EXISTS;
-									}
-									if (wallRight == Wall.SPACE) {
-										yokoWall[yIndex][xIndex] = Wall.EXISTS;
-									}
-									if (wallDown == Wall.SPACE) {
-										tateWall[yIndex][xIndex] = Wall.EXISTS;
-									}
-									if (wallLeft == Wall.SPACE) {
-										yokoWall[yIndex][xIndex - 1] = Wall.EXISTS;
-									}
+								if (wallUp == Wall.SPACE) {
+									tateWall[yIndex - 1][xIndex] = Wall.EXISTS;
+								}
+								if (wallRight == Wall.SPACE) {
+									yokoWall[yIndex][xIndex] = Wall.EXISTS;
+								}
+								if (wallDown == Wall.SPACE) {
+									tateWall[yIndex][xIndex] = Wall.EXISTS;
+								}
+								if (wallLeft == Wall.SPACE) {
+									yokoWall[yIndex][xIndex - 1] = Wall.EXISTS;
 								}
 							} else if (notExistsCount != 0) {
 								masu[yIndex][xIndex] = MasuImpl.NOT_BLACK;

@@ -1126,7 +1126,7 @@ public class SashiganeSolver implements Solver {
 			for (int xIndex = 0; xIndex < field.getXLength() - 1; xIndex++) {
 				if (field.yokoWall[yIndex][xIndex] == Wall.SPACE) {
 					count++;
-					if (!oneCandYokoWallSolve(field, yIndex, xIndex, recursive - 1)) {
+					if (!oneCandYokoWallSolve(field, yIndex, xIndex, recursive)) {
 						return false;
 					}
 				}
@@ -1136,7 +1136,7 @@ public class SashiganeSolver implements Solver {
 			for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
 				if (field.tateWall[yIndex][xIndex] == Wall.SPACE) {
 					count++;
-					if (!oneCandTateWallSolve(field, yIndex, xIndex, recursive - 1)) {
+					if (!oneCandTateWallSolve(field, yIndex, xIndex, recursive)) {
 						return false;
 					}
 				}

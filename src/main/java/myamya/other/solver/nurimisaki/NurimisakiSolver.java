@@ -84,6 +84,9 @@ public class NurimisakiSolver implements Solver {
 		// マスの情報
 		private Masu[][] masu;
 
+		// ぬりみさ木モード
+		private boolean tree;
+
 		public Masu[][] getMasu() {
 			return masu;
 		}
@@ -96,7 +99,7 @@ public class NurimisakiSolver implements Solver {
 			return masu[0].length;
 		}
 
-		public Field(int height, int width, String param) {
+		public Field(int height, int width, String param, boolean tree) {
 			masu = new Masu[height][width];
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
@@ -137,6 +140,7 @@ public class NurimisakiSolver implements Solver {
 					}
 				}
 			}
+			this.tree = tree;
 		}
 
 		public Field(Field other) {
@@ -146,6 +150,7 @@ public class NurimisakiSolver implements Solver {
 					masu[yIndex][xIndex] = other.masu[yIndex][xIndex];
 				}
 			}
+			tree = other.tree;
 		}
 
 		@Override
@@ -240,6 +245,20 @@ public class NurimisakiSolver implements Solver {
 								// 伸びる方向が確定
 								misakiStretch(yIndex, xIndex, new ArrayList<>(misakiDirectionCand).get(0),
 										oneMasu.getCnt());
+							} else {
+								// 伸びない方向が確定
+								if (!misakiDirectionCand.contains(Direction.UP) && yIndex != 0) {
+									masu[yIndex - 1][xIndex] = MasuImpl.BLACK;
+								}
+								if (!misakiDirectionCand.contains(Direction.RIGHT) && xIndex != getXLength() - 1) {
+									masu[yIndex][xIndex + 1] = MasuImpl.BLACK;
+								}
+								if (!misakiDirectionCand.contains(Direction.DOWN) && yIndex != getYLength() - 1) {
+									masu[yIndex + 1][xIndex] = MasuImpl.BLACK;
+								}
+								if (!misakiDirectionCand.contains(Direction.LEFT) && xIndex != 0) {
+									masu[yIndex][xIndex - 1] = MasuImpl.BLACK;
+								}
 							}
 						}
 					} else if (masu[yIndex][xIndex] == MasuImpl.NOT_BLACK) {
@@ -471,47 +490,116 @@ public class NurimisakiSolver implements Solver {
 			if (typicalWhitePos == null) {
 				return true;
 			} else {
+				if (tree) {
+					// ぬりみさ木モードのループ禁判定
+					HashSet<Position> serveyWhitePos = new HashSet<>(whitePosSet);
+					while (!serveyWhitePos.isEmpty()) {
+						Set<Position> continuePosSet = new HashSet<>();
+						Position onePos = (Position) serveyWhitePos.toArray()[0];
+						continuePosSet.add(onePos);
+						if (!loopCheck(onePos, continuePosSet, null)) {
+							return false;
+						}
+						serveyWhitePos.removeAll(continuePosSet);
+					}
+				}
 				Set<Position> continuePosSet = new HashSet<>();
-				setContinueWhitePosSet(typicalWhitePos, continuePosSet);
+				continuePosSet.add(typicalWhitePos);
+				setContinueWhitePosSet(typicalWhitePos, continuePosSet, null);
 				whitePosSet.removeAll(continuePosSet);
 				return whitePosSet.isEmpty();
 			}
 		}
 
 		/**
+		 * 白確定マスをつなぎ、ループができてる場合falseを返す。
+		 */
+		private boolean loopCheck(Position pos, Set<Position> continuePosSet, Direction from) {
+			if (pos.getyIndex() != 0 && from != Direction.UP) {
+				Position nextPos = new Position(pos.getyIndex() - 1, pos.getxIndex());
+				if (continuePosSet.contains(nextPos)) {
+					return false;
+				}
+				if (masu[nextPos.getyIndex()][nextPos.getxIndex()] == MasuImpl.NOT_BLACK) {
+					continuePosSet.add(nextPos);
+					if (!loopCheck(nextPos, continuePosSet, Direction.DOWN)) {
+						return false;
+					}
+				}
+			}
+			if (pos.getxIndex() != getXLength() - 1 && from != Direction.RIGHT) {
+				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() + 1);
+				if (continuePosSet.contains(nextPos)) {
+					return false;
+				}
+				if (masu[nextPos.getyIndex()][nextPos.getxIndex()] == MasuImpl.NOT_BLACK) {
+					continuePosSet.add(nextPos);
+					if (!loopCheck(nextPos, continuePosSet, Direction.LEFT)) {
+						return false;
+					}
+				}
+			}
+			if (pos.getyIndex() != getYLength() - 1 && from != Direction.DOWN) {
+				Position nextPos = new Position(pos.getyIndex() + 1, pos.getxIndex());
+				if (continuePosSet.contains(nextPos)) {
+					return false;
+				}
+				if (masu[nextPos.getyIndex()][nextPos.getxIndex()] == MasuImpl.NOT_BLACK) {
+					continuePosSet.add(nextPos);
+					if (!loopCheck(nextPos, continuePosSet, Direction.UP)) {
+						return false;
+					}
+				}
+			}
+			if (pos.getxIndex() != 0 && from != Direction.LEFT) {
+				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() - 1);
+				if (continuePosSet.contains(nextPos)) {
+					return false;
+				}
+				if (masu[nextPos.getyIndex()][nextPos.getxIndex()] == MasuImpl.NOT_BLACK) {
+					continuePosSet.add(nextPos);
+					if (!loopCheck(nextPos, continuePosSet, Direction.RIGHT)) {
+						return false;
+					}
+				}
+			}
+			return true;
+		}
+
+		/**
 		 * posを起点に上下左右に黒確定でないマスをつなげていく。壁は無視する。
 		 */
-		private void setContinueWhitePosSet(Position pos, Set<Position> continuePosSet) {
-			if (pos.getyIndex() != 0) {
+		private void setContinueWhitePosSet(Position pos, Set<Position> continuePosSet, Direction from) {
+			if (pos.getyIndex() != 0 && from != Direction.UP) {
 				Position nextPos = new Position(pos.getyIndex() - 1, pos.getxIndex());
 				if (!continuePosSet.contains(nextPos)
 						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != MasuImpl.BLACK) {
 					continuePosSet.add(nextPos);
-					setContinueWhitePosSet(nextPos, continuePosSet);
+					setContinueWhitePosSet(nextPos, continuePosSet, Direction.DOWN);
 				}
 			}
-			if (pos.getxIndex() != getXLength() - 1) {
+			if (pos.getxIndex() != getXLength() - 1 && from != Direction.RIGHT) {
 				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() + 1);
 				if (!continuePosSet.contains(nextPos)
 						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != MasuImpl.BLACK) {
 					continuePosSet.add(nextPos);
-					setContinueWhitePosSet(nextPos, continuePosSet);
+					setContinueWhitePosSet(nextPos, continuePosSet, Direction.LEFT);
 				}
 			}
-			if (pos.getyIndex() != getYLength() - 1) {
+			if (pos.getyIndex() != getYLength() - 1 && from != Direction.DOWN) {
 				Position nextPos = new Position(pos.getyIndex() + 1, pos.getxIndex());
 				if (!continuePosSet.contains(nextPos)
 						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != MasuImpl.BLACK) {
 					continuePosSet.add(nextPos);
-					setContinueWhitePosSet(nextPos, continuePosSet);
+					setContinueWhitePosSet(nextPos, continuePosSet, Direction.UP);
 				}
 			}
-			if (pos.getxIndex() != 0) {
+			if (pos.getxIndex() != 0 && from != Direction.LEFT) {
 				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() - 1);
 				if (!continuePosSet.contains(nextPos)
 						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != MasuImpl.BLACK) {
 					continuePosSet.add(nextPos);
-					setContinueWhitePosSet(nextPos, continuePosSet);
+					setContinueWhitePosSet(nextPos, continuePosSet, Direction.RIGHT);
 				}
 			}
 		}
@@ -521,6 +609,7 @@ public class NurimisakiSolver implements Solver {
 		 * @param recursive
 		 */
 		private boolean solveAndCheck() {
+			String str = getStateDump();
 			if (!misakiSolve()) {
 				return false;
 			}
@@ -529,6 +618,9 @@ public class NurimisakiSolver implements Solver {
 			}
 			if (!connectSolve()) {
 				return false;
+			}
+			if (!getStateDump().equals(str)) {
+				return solveAndCheck();
 			}
 			return true;
 		}
@@ -548,8 +640,8 @@ public class NurimisakiSolver implements Solver {
 
 	private final Field field;
 
-	public NurimisakiSolver(int height, int width, String param) {
-		field = new Field(height, width, param);
+	public NurimisakiSolver(int height, int width, String param, boolean tree) {
+		field = new Field(height, width, param, tree);
 	}
 
 	public Field getField() {
@@ -562,7 +654,7 @@ public class NurimisakiSolver implements Solver {
 		int height = Integer.parseInt(params[params.length - 2]);
 		int width = Integer.parseInt(params[params.length - 3]);
 		String param = params[params.length - 1];
-		System.out.println(new NurimisakiSolver(height, width, param).solve());
+		System.out.println(new NurimisakiSolver(height, width, param, false).solve());
 	}
 
 	@Override
@@ -572,8 +664,7 @@ public class NurimisakiSolver implements Solver {
 		while (!field.isSolved()) {
 			System.out.println(field);
 			String befStr = field.getStateDump();
-			if (!field.solveAndCheck()
-					|| (!befStr.equals(field.getStateDump()) && !field.solveAndCheck())) {
+			if (!field.solveAndCheck()) {
 				return "問題に矛盾がある可能性があります。途中経過を返します。";
 			}
 			int recursiveCnt = 0;
@@ -600,12 +691,16 @@ public class NurimisakiSolver implements Solver {
 	 * 仮置きして調べる
 	 */
 	private static boolean candSolve(Field field, int recursive) {
+		String str = field.getStateDump();
 		for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 			for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
 				if (!oneCandSolve(field, yIndex, xIndex, recursive)) {
 					return false;
 				}
 			}
+		}
+		if (!field.getStateDump().equals(str)) {
+			return candSolve(field, recursive);
 		}
 		return true;
 	}
@@ -617,9 +712,7 @@ public class NurimisakiSolver implements Solver {
 		if (field.masu[yIndex][xIndex] == MasuImpl.SPACE) {
 			Field virtual = new Field(field);
 			virtual.masu[yIndex][xIndex] = MasuImpl.BLACK;
-			String befStr = virtual.getStateDump();
-			boolean allowBlack = virtual.solveAndCheck()
-					&& (befStr.equals(virtual.getStateDump()) || virtual.solveAndCheck());
+			boolean allowBlack = virtual.solveAndCheck();
 			if (allowBlack && recursive > 0) {
 				if (!candSolve(virtual, recursive - 1)) {
 					allowBlack = false;
@@ -627,9 +720,7 @@ public class NurimisakiSolver implements Solver {
 			}
 			Field virtual2 = new Field(field);
 			virtual2.masu[yIndex][xIndex] = MasuImpl.NOT_BLACK;
-			befStr = virtual2.getStateDump();
-			boolean allowNotBlack = virtual2.solveAndCheck()
-					&& (befStr.equals(virtual2.getStateDump()) || virtual2.solveAndCheck());
+			boolean allowNotBlack = virtual2.solveAndCheck();
 			if (allowNotBlack && recursive > 0) {
 				if (!candSolve(virtual2, recursive - 1)) {
 					allowNotBlack = false;

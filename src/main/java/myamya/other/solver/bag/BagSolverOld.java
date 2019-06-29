@@ -1,4 +1,4 @@
-package myamya.other.solver.slither;
+package myamya.other.solver.bag;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -8,7 +8,11 @@ import myamya.other.solver.Common.Direction;
 import myamya.other.solver.Common.Position;
 import myamya.other.solver.Solver;
 
-public class SlitherSolver implements Solver {
+/**
+ * 最初に作ったバッグのソルバー
+ * …だが、スリザー方式だと全然解けないので黒マス包囲網方式に変えることにした。
+ */
+public class BagSolverOld implements Solver {
 	public enum Wall {
 		SPACE("　"), NOT_EXISTS("・"), EXISTS("■");
 
@@ -49,14 +53,6 @@ public class SlitherSolver implements Solver {
 			return numbers[0].length;
 		}
 
-		public Wall[][] getYokoExtraWall() {
-			return yokoExtraWall;
-		}
-
-		public Wall[][] getTateExtraWall() {
-			return tateExtraWall;
-		}
-
 		public Field(int height, int width, String param) {
 			numbers = new Integer[height][width];
 			yokoExtraWall = new Wall[height][width + 1];
@@ -74,26 +70,30 @@ public class SlitherSolver implements Solver {
 			int index = 0;
 			for (int i = 0; i < param.length(); i++) {
 				char ch = param.charAt(i);
-				Position pos = new Position(index / getXLength(), index % getXLength());
-				if (ch == '.') {
-					index++;
+				int interval = ALPHABET_FROM_G.indexOf(ch);
+				if (interval != -1) {
+					index = index + interval + 1;
 				} else {
-					int interval = ALPHABET_FROM_G.indexOf(ch);
-					if (interval != -1) {
-						index = index + interval + 1;
+					//16 - 255は '-'
+					//256 - 999は '+'
+					int capacity;
+					if (ch == '-') {
+						capacity = Integer.parseInt("" + param.charAt(i + 1) + param.charAt(i + 2), 16);
+						i++;
+						i++;
+					} else if (ch == '+') {
+						capacity = Integer.parseInt(
+								"" + param.charAt(i + 1) + param.charAt(i + 2) + param.charAt(i + 3),
+								16);
+						i++;
+						i++;
+						i++;
 					} else {
-						if (ch == 'a' || ch == 'b' || ch == 'c' || ch == 'd' || ch == 'e') {
-							numbers[pos.getyIndex()][pos.getxIndex()] = ALPHABET.indexOf(ch);
-							index++;
-							index++;
-						} else if (ch == '5' || ch == '6' || ch == '7' || ch == '8' || ch == '9') {
-							numbers[pos.getyIndex()][pos.getxIndex()] = Character.getNumericValue(ch) - 5;
-							index++;
-						} else if (ch == '0' || ch == '1' || ch == '2' || ch == '3' || ch == '4') {
-							numbers[pos.getyIndex()][pos.getxIndex()] = Character.getNumericValue(ch);
-						}
-						index++;
+						capacity = Integer.parseInt(String.valueOf(ch), 16);
 					}
+					Position pos = new Position(index / getXLength(), index % getXLength());
+					numbers[pos.getyIndex()][pos.getxIndex()] = capacity;
+					index++;
 				}
 			}
 		}
@@ -114,7 +114,8 @@ public class SlitherSolver implements Solver {
 			}
 		}
 
-		private static final String FULL_NUMS = "０１２３";
+		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
+		private static final String FULL_NUMS = "０１２３４５６７８９";
 
 		@Override
 		public String toString() {
@@ -131,8 +132,16 @@ public class SlitherSolver implements Solver {
 						sb.append(yokoExtraWall[yIndex][xIndex]);
 						if (xIndex != getXLength()) {
 							if (numbers[yIndex][xIndex] != null) {
-								sb.append(FULL_NUMS.substring(numbers[yIndex][xIndex],
-										numbers[yIndex][xIndex] + 1));
+								if (numbers[yIndex][xIndex] > 99) {
+									sb.append("99");
+								}
+								String capacityStr = String.valueOf(numbers[yIndex][xIndex]);
+								int index = HALF_NUMS.indexOf(capacityStr);
+								if (index >= 0) {
+									sb.append(FULL_NUMS.substring(index / 2, index / 2 + 1));
+								} else {
+									sb.append(capacityStr);
+								}
 							} else {
 								sb.append("　");
 							}
@@ -160,70 +169,159 @@ public class SlitherSolver implements Solver {
 		}
 
 		/**
-		 * 数字の周りに壁がいつくあるか調べる。
-		 * 矛盾したらfalseを返す。
+		 * 数字と壁の関係を調べる。
+		 * 壁にぶつからないまま外に出てしまったり、矛盾した場合falseを返す。
 		 */
 		public boolean numberSolve() {
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
 					if (numbers[yIndex][xIndex] != null) {
-						int existsCount = 0;
-						int notExistsCount = 0;
-						Wall wallUp = tateExtraWall[yIndex][xIndex];
-						if (wallUp == Wall.EXISTS) {
-							existsCount++;
-						} else if (wallUp == Wall.NOT_EXISTS) {
-							notExistsCount++;
+						int upSpaceCnt = 0;
+						for (int targetY = yIndex; targetY >= 0; targetY--) {
+							if (tateExtraWall[targetY][xIndex] == Wall.EXISTS) {
+								break;
+							}
+							upSpaceCnt++;
 						}
-						Wall wallRight = yokoExtraWall[yIndex][xIndex + 1];
-						if (wallRight == Wall.EXISTS) {
-							existsCount++;
-						} else if (wallRight == Wall.NOT_EXISTS) {
-							notExistsCount++;
+						int rightSpaceCnt = 0;
+						for (int targetX = xIndex + 1; targetX <= getXLength(); targetX++) {
+							if (yokoExtraWall[yIndex][targetX] == Wall.EXISTS) {
+								break;
+							}
+							rightSpaceCnt++;
 						}
-						Wall wallDown = tateExtraWall[yIndex + 1][xIndex];
-						if (wallDown == Wall.EXISTS) {
-							existsCount++;
-						} else if (wallDown == Wall.NOT_EXISTS) {
-							notExistsCount++;
+						int downSpaceCnt = 0;
+						for (int targetY = yIndex + 1; targetY <= getYLength(); targetY++) {
+							if (tateExtraWall[targetY][xIndex] == Wall.EXISTS) {
+								break;
+							}
+							downSpaceCnt++;
 						}
-						Wall wallLeft = yokoExtraWall[yIndex][xIndex];
-						if (wallLeft == Wall.EXISTS) {
-							existsCount++;
-						} else if (wallLeft == Wall.NOT_EXISTS) {
-							notExistsCount++;
+						int leftSpaceCnt = 0;
+						for (int targetX = xIndex; targetX >= 0; targetX--) {
+							if (yokoExtraWall[yIndex][targetX] == Wall.EXISTS) {
+								break;
+							}
+							leftSpaceCnt++;
 						}
-						if (existsCount > numbers[yIndex][xIndex] ||
-								notExistsCount > 4 - numbers[yIndex][xIndex]) {
+						int aroundSpaceCnt = 1 + upSpaceCnt + rightSpaceCnt + downSpaceCnt + leftSpaceCnt;
+						if (aroundSpaceCnt < numbers[yIndex][xIndex]) {
 							return false;
 						} else {
-							if (existsCount == numbers[yIndex][xIndex]) {
-								if (wallUp == Wall.SPACE) {
-									tateExtraWall[yIndex][xIndex] = Wall.NOT_EXISTS;
-								}
-								if (wallRight == Wall.SPACE) {
-									yokoExtraWall[yIndex][xIndex + 1] = Wall.NOT_EXISTS;
-								}
-								if (wallDown == Wall.SPACE) {
-									tateExtraWall[yIndex + 1][xIndex] = Wall.NOT_EXISTS;
-								}
-								if (wallLeft == Wall.SPACE) {
-									yokoExtraWall[yIndex][xIndex] = Wall.NOT_EXISTS;
+							int fixedWhiteUp = numbers[yIndex][xIndex]
+									- (1 + rightSpaceCnt + downSpaceCnt + leftSpaceCnt);
+							int fixedWhiteRight = numbers[yIndex][xIndex]
+									- (1 + upSpaceCnt + downSpaceCnt + leftSpaceCnt);
+							int fixedWhiteDown = numbers[yIndex][xIndex]
+									- (1 + upSpaceCnt + rightSpaceCnt + leftSpaceCnt);
+							int fixedWhitetLeft = numbers[yIndex][xIndex]
+									- (1 + upSpaceCnt + rightSpaceCnt + downSpaceCnt);
+							if (fixedWhiteUp > 0) {
+								for (int i = 1; i <= fixedWhiteUp; i++) {
+									if (tateExtraWall[yIndex - i + 1][xIndex] == Wall.EXISTS) {
+										return false;
+									}
+									tateExtraWall[yIndex - i + 1][xIndex] = Wall.NOT_EXISTS;
 								}
 							}
-							if (notExistsCount == 4 - numbers[yIndex][xIndex]) {
-								if (wallUp == Wall.SPACE) {
-									tateExtraWall[yIndex][xIndex] = Wall.EXISTS;
+							if (fixedWhiteRight > 0) {
+								for (int i = 1; i <= fixedWhiteRight; i++) {
+									if (yokoExtraWall[yIndex][xIndex + i] == Wall.EXISTS) {
+										return false;
+									}
+									yokoExtraWall[yIndex][xIndex + i] = Wall.NOT_EXISTS;
 								}
-								if (wallRight == Wall.SPACE) {
-									yokoExtraWall[yIndex][xIndex + 1] = Wall.EXISTS;
+							}
+							if (fixedWhiteDown > 0) {
+								for (int i = 1; i <= fixedWhiteDown; i++) {
+									if (tateExtraWall[yIndex + i][xIndex] == Wall.EXISTS) {
+										return false;
+									}
+									tateExtraWall[yIndex + i][xIndex] = Wall.NOT_EXISTS;
 								}
-								if (wallDown == Wall.SPACE) {
-									tateExtraWall[yIndex + 1][xIndex] = Wall.EXISTS;
+							}
+							if (fixedWhitetLeft > 0) {
+								for (int i = 1; i <= fixedWhitetLeft; i++) {
+									if (yokoExtraWall[yIndex][xIndex - i + 1] == Wall.EXISTS) {
+										return false;
+									}
+									yokoExtraWall[yIndex][xIndex - i + 1] = Wall.NOT_EXISTS;
 								}
-								if (wallLeft == Wall.SPACE) {
-									yokoExtraWall[yIndex][xIndex] = Wall.EXISTS;
+							}
+						}
+					}
+				}
+			}
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					if (numbers[yIndex][xIndex] != null) {
+						int upWhiteCnt = 0;
+						for (int targetY = yIndex; targetY >= 0; targetY--) {
+							if (tateExtraWall[targetY][xIndex] != Wall.NOT_EXISTS) {
+								break;
+							}
+							if (targetY == 0) {
+								return false;
+							}
+							upWhiteCnt++;
+						}
+						int rightWhiteCnt = 0;
+						for (int targetX = xIndex + 1; targetX <= getXLength(); targetX++) {
+							if (yokoExtraWall[yIndex][targetX] != Wall.NOT_EXISTS) {
+								break;
+							}
+							if (targetX == getXLength()) {
+								return false;
+							}
+							rightWhiteCnt++;
+						}
+						int downWhiteCnt = 0;
+						for (int targetY = yIndex + 1; targetY <= getYLength(); targetY++) {
+							if (tateExtraWall[targetY][xIndex] != Wall.NOT_EXISTS) {
+								break;
+							}
+							if (targetY == getYLength()) {
+								return false;
+							}
+							downWhiteCnt++;
+						}
+						int leftWhiteCnt = 0;
+						for (int targetX = xIndex; targetX >= 0; targetX--) {
+							if (yokoExtraWall[yIndex][targetX] != Wall.NOT_EXISTS) {
+								break;
+							}
+							if (targetX == 0) {
+								return false;
+							}
+							leftWhiteCnt++;
+						}
+						int aroundWhiteCnt = 1 + upWhiteCnt + rightWhiteCnt + downWhiteCnt + leftWhiteCnt;
+						if (aroundWhiteCnt > numbers[yIndex][xIndex]) {
+							return false;
+						} else if (aroundWhiteCnt == numbers[yIndex][xIndex]) {
+							if (yIndex - upWhiteCnt - 1 >= 0) {
+								if (tateExtraWall[yIndex - upWhiteCnt][xIndex] == Wall.NOT_EXISTS) {
+									return false;
 								}
+								tateExtraWall[yIndex - upWhiteCnt][xIndex] = Wall.EXISTS;
+							}
+							if (xIndex + rightWhiteCnt + 1 < getXLength()) {
+								if (yokoExtraWall[yIndex][xIndex + rightWhiteCnt + 1] == Wall.NOT_EXISTS) {
+									return false;
+								}
+								yokoExtraWall[yIndex][xIndex + rightWhiteCnt + 1] = Wall.EXISTS;
+							}
+							if (yIndex + downWhiteCnt + 1 < getYLength()) {
+								if (tateExtraWall[yIndex + downWhiteCnt + 1][xIndex] == Wall.NOT_EXISTS) {
+									return false;
+								}
+								tateExtraWall[yIndex + downWhiteCnt + 1][xIndex] = Wall.EXISTS;
+							}
+							if (xIndex - leftWhiteCnt - 1 >= 0) {
+								if (yokoExtraWall[yIndex][xIndex - leftWhiteCnt] == Wall.NOT_EXISTS) {
+									return false;
+								}
+								yokoExtraWall[yIndex][xIndex - leftWhiteCnt] = Wall.EXISTS;
 							}
 						}
 					}
@@ -586,7 +684,7 @@ public class SlitherSolver implements Solver {
 	private final Field field;
 	private int count = 0;
 
-	public SlitherSolver(int height, int width, String param) {
+	public BagSolverOld(int height, int width, String param) {
 		field = new Field(height, width, param);
 	}
 
@@ -600,7 +698,7 @@ public class SlitherSolver implements Solver {
 		int height = Integer.parseInt(params[params.length - 2]);
 		int width = Integer.parseInt(params[params.length - 3]);
 		String param = params[params.length - 1];
-		System.out.println(new SlitherSolver(height, width, param).solve());
+		System.out.println(new BagSolverOld(height, width, param).solve());
 	}
 
 	@Override
@@ -624,10 +722,10 @@ public class SlitherSolver implements Solver {
 			}
 		}
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
-		System.out.println("難易度:" + count * 2);
+		System.out.println("難易度:" + count);
 		System.out.println(field);
 		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count * 2).toString();
+				+ Difficulty.getByCount(count).toString();
 	}
 
 	/**

@@ -93,7 +93,7 @@ public class MasyuSolver implements Solver {
 			return masu[0].length;
 		}
 
-		public Field(int height, int width, String param) {
+		public Field(int height, int width, String param, boolean ura) {
 			masu = new Masu[height][width];
 			pearl = new Pearl[height][width];
 			yokoWall = new Wall[height][width - 1];
@@ -123,21 +123,21 @@ public class MasyuSolver implements Solver {
 				if (index / getXLength() < getYLength()) {
 					if (pos1 > 0) {
 						masu[index / getXLength()][index % getXLength()] = Masu.NOT_BLACK;
-						pearl[index / getXLength()][index % getXLength()] = Pearl.getByVal(pos1);
+						pearl[index / getXLength()][index % getXLength()] = Pearl.getByVal(ura ? pos1 % 2 + 1 : pos1);
 					}
 				}
 				index++;
 				if (index / getXLength() < getYLength()) {
 					if (pos2 > 0) {
 						masu[index / getXLength()][index % getXLength()] = Masu.NOT_BLACK;
-						pearl[index / getXLength()][index % getXLength()] = Pearl.getByVal(pos2);
+						pearl[index / getXLength()][index % getXLength()] = Pearl.getByVal(ura ? pos2 % 2 + 1 : pos2);
 					}
 				}
 				index++;
 				if (index / getXLength() < getYLength()) {
 					if (pos3 > 0) {
 						masu[index / getXLength()][index % getXLength()] = Masu.NOT_BLACK;
-						pearl[index / getXLength()][index % getXLength()] = Pearl.getByVal(pos3);
+						pearl[index / getXLength()][index % getXLength()] = Pearl.getByVal(ura ? pos3 % 2 + 1 : pos3);
 					}
 				}
 				index++;
@@ -735,8 +735,8 @@ public class MasyuSolver implements Solver {
 	private final Field field;
 	private int count = 0;
 
-	public MasyuSolver(int height, int width, String param) {
-		field = new Field(height, width, param);
+	public MasyuSolver(int height, int width, String param, boolean ura) {
+		field = new Field(height, width, param, ura);
 	}
 
 	public Field getField() {
@@ -749,7 +749,7 @@ public class MasyuSolver implements Solver {
 		int height = Integer.parseInt(params[params.length - 2]);
 		int width = Integer.parseInt(params[params.length - 3]);
 		String param = params[params.length - 1];
-		System.out.println(new MasyuSolver(height, width, param).solve());
+		System.out.println(new MasyuSolver(height, width, param, false).solve());
 	}
 
 	@Override
