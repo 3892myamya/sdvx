@@ -199,6 +199,8 @@ public class HeyaSolver {
 		return true;
 	}
 
+	int cnt;
+
 	public static void main(String[] args) {
 		long start = System.nanoTime();
 		List<HeyaSolver> result = new HeyaSolver(5, 5, 9, true, true, true, true, 10000).solve();
@@ -233,6 +235,7 @@ public class HeyaSolver {
 	 */
 	private boolean oneCandSolve(HeyaSolver field, int index, List<HeyaSolver> answarMasuList, int blackCnt,
 			int spaceCnt) {
+		cnt++;
 		//		System.out.println(field);
 		if (answarMasuList.size() >= limit) {
 			// 1000通り以上見つかったら打ち切り

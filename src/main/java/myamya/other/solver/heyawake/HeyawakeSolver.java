@@ -189,13 +189,17 @@ public class HeyawakeSolver implements Solver {
 								leftUp.getyIndex() == 0, rightDown.getxIndex() == getXLength() - 1,
 								rightDown.getyIndex() == getYLength() - 1, leftUp.getxIndex() == 0, 10000);
 						List<String> result = heyaSolver.solveForSolver();
+						cnt = cnt + (heyaSolver.cnt / 10);
 						if (!result.isEmpty()) {
 							roomsCand.put(i, result);
 						}
 					}
 				}
 			}
+			System.out.println("部屋ソルバー負荷:" + cnt);
 		}
+
+		int cnt = 0;
 
 		public Field(Field other) {
 			masu = new Masu[other.getYLength()][other.getXLength()];
@@ -376,38 +380,96 @@ public class HeyawakeSolver implements Solver {
 		}
 
 		/**
-		 * 直線方向に白マスが3部屋連続する(2つの壁を跨ぐ)場合はfalseを返す。
+		 * 上下左右で白マスが3部屋連続する場所を白確定にする。
+		 * 白にできない場合はfalseを返す。
 		 */
 		public boolean continueRoomSolve() {
-			// 横のカベ
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
-				int continueWhite = masu[yIndex][0] == Masu.NOT_BLACK ? 1 : 0;
-				for (int xIndex = 1; xIndex < getXLength(); xIndex++) {
-					if (masu[yIndex][xIndex] == Masu.NOT_BLACK) {
-						if (continueWhite == 0 || yokoWall[yIndex][xIndex - 1]) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					boolean sanren = false;
+					int continueWhite = 0;
+					for (int targetY = yIndex - 1; targetY >= 0; targetY--) {
+						if (masu[targetY][xIndex] != Masu.NOT_BLACK) {
+							break;
+						}
+						if (tateWall[targetY][xIndex]) {
 							continueWhite++;
 						}
-					} else {
-						continueWhite = 0;
+						if (continueWhite == 2) {
+							sanren = true;
+							break;
+						}
 					}
-					if (continueWhite == 3) {
-						return false;
+					if (sanren == true) {
+						if (masu[yIndex][xIndex] == Masu.NOT_BLACK) {
+							return false;
+						} else {
+							masu[yIndex][xIndex] = Masu.BLACK;
+							continue;
+						}
 					}
-				}
-			}
-			// 縦のカベ
-			for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-				int continueWhite = masu[0][xIndex] == Masu.NOT_BLACK ? 1 : 0;
-				for (int yIndex = 1; yIndex < getYLength(); yIndex++) {
-					if (masu[yIndex][xIndex] == Masu.NOT_BLACK) {
-						if (continueWhite == 0 || tateWall[yIndex - 1][xIndex]) {
+					continueWhite = 0;
+					for (int targetX = xIndex; targetX < getXLength() - 1; targetX++) {
+						if (masu[yIndex][targetX + 1] != Masu.NOT_BLACK) {
+							break;
+						}
+						if (yokoWall[yIndex][targetX]) {
 							continueWhite++;
 						}
-					} else {
-						continueWhite = 0;
+						if (continueWhite == 2) {
+							sanren = true;
+							break;
+						}
 					}
-					if (continueWhite == 3) {
-						return false;
+					if (sanren == true) {
+						if (masu[yIndex][xIndex] == Masu.NOT_BLACK) {
+							return false;
+						} else {
+							masu[yIndex][xIndex] = Masu.BLACK;
+							continue;
+						}
+					}
+					continueWhite = 0;
+					for (int targetY = yIndex; targetY < getYLength() - 1; targetY++) {
+						if (masu[targetY + 1][xIndex] != Masu.NOT_BLACK) {
+							break;
+						}
+						if (tateWall[targetY][xIndex]) {
+							continueWhite++;
+						}
+						if (continueWhite == 2) {
+							sanren = true;
+							break;
+						}
+					}
+					if (sanren == true) {
+						if (masu[yIndex][xIndex] == Masu.NOT_BLACK) {
+							return false;
+						} else {
+							masu[yIndex][xIndex] = Masu.BLACK;
+							continue;
+						}
+					}
+					continueWhite = 0;
+					for (int targetX = xIndex - 1; targetX >= 0; targetX--) {
+						if (masu[yIndex][targetX] != Masu.NOT_BLACK) {
+							break;
+						}
+						if (yokoWall[yIndex][targetX]) {
+							continueWhite++;
+						}
+						if (continueWhite == 2) {
+							sanren = true;
+							break;
+						}
+					}
+					if (sanren == true) {
+						if (masu[yIndex][xIndex] == Masu.NOT_BLACK) {
+							return false;
+						} else {
+							masu[yIndex][xIndex] = Masu.BLACK;
+							continue;
+						}
 					}
 				}
 			}
@@ -543,6 +605,7 @@ public class HeyawakeSolver implements Solver {
 		 * 各種チェックを1セット実行
 		 */
 		private boolean solveAndCheck() {
+			String str = getStateDump();
 			if (!roomSolve()) {
 				return false;
 			}
@@ -557,6 +620,9 @@ public class HeyawakeSolver implements Solver {
 			}
 			if (!connectSolve()) {
 				return false;
+			}
+			if (!getStateDump().equals(str)) {
+				return solveAndCheck();
 			}
 			return true;
 		}
@@ -623,6 +689,7 @@ public class HeyawakeSolver implements Solver {
 	}
 
 	private final Field field;
+	private int count = 0;
 
 	public HeyawakeSolver(int height, int width, String param) {
 		field = new Field(height, width, param);
@@ -643,18 +710,15 @@ public class HeyawakeSolver implements Solver {
 
 	@Override
 	public String solve() {
-		int difficulty = 0;
 		long start = System.nanoTime();
 		while (!field.isSolved()) {
 			System.out.println(field);
 			String befStr = field.getStateDump();
-			if (!field.solveAndCheck()
-					|| (!befStr.equals(field.getStateDump()) && !field.solveAndCheck())) {
+			if (!field.solveAndCheck()) {
 				return "問題に矛盾がある可能性があります。途中経過を返します。";
 			}
 			int recursiveCnt = 0;
 			while (field.getStateDump().equals(befStr) && recursiveCnt < 3) {
-				difficulty = difficulty <= recursiveCnt ? recursiveCnt + 1 : difficulty;
 				if (!candSolve(field, recursiveCnt)) {
 					return "問題に矛盾がある可能性があります。途中経過を返します。";
 				}
@@ -664,18 +728,18 @@ public class HeyawakeSolver implements Solver {
 				return "解けませんでした。途中経過を返します。";
 			}
 		}
-		System.out.println(((System.nanoTime() - start) / 1000000) +
-				"ms.");
-		System.out.println("難易度:" + difficulty);
+		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
+		System.out.println("難易度:" + (count + field.cnt));
 		System.out.println(field);
 		return "解けました。推定難易度:"
-				+ Difficulty.getByVal(difficulty).toString();
+				+ Difficulty.getByCount(count + field.cnt).toString();
 	}
 
 	/**
 	 * 仮置きして調べる
 	 */
-	private static boolean candSolve(Field field, int recursive) {
+	private boolean candSolve(Field field, int recursive) {
+		String str = field.getStateDump();
 		for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 			for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
 				if (!oneCandSolve(field, yIndex, xIndex, recursive)) {
@@ -683,19 +747,21 @@ public class HeyawakeSolver implements Solver {
 				}
 			}
 		}
+		if (!field.getStateDump().equals(str)) {
+			return candSolve(field, recursive);
+		}
 		return true;
 	}
 
 	/**
 	 * 1つのマスに対する仮置き調査
 	 */
-	private static boolean oneCandSolve(Field field, int yIndex, int xIndex, int recursive) {
+	private boolean oneCandSolve(Field field, int yIndex, int xIndex, int recursive) {
 		if (field.masu[yIndex][xIndex] == Masu.SPACE) {
+			count++;
 			Field virtual = new Field(field);
 			virtual.masu[yIndex][xIndex] = Masu.BLACK;
-			String befStr = virtual.getStateDump();
-			boolean allowBlack = virtual.solveAndCheck()
-					&& (befStr.equals(virtual.getStateDump()) || virtual.solveAndCheck());
+			boolean allowBlack = virtual.solveAndCheck();
 			if (allowBlack && recursive > 0) {
 				if (!candSolve(virtual, recursive - 1)) {
 					allowBlack = false;
@@ -703,9 +769,7 @@ public class HeyawakeSolver implements Solver {
 			}
 			Field virtual2 = new Field(field);
 			virtual2.masu[yIndex][xIndex] = Masu.NOT_BLACK;
-			befStr = virtual2.getStateDump();
-			boolean allowNotBlack = virtual2.solveAndCheck()
-					&& (befStr.equals(virtual2.getStateDump()) || virtual2.solveAndCheck());
+			boolean allowNotBlack = virtual2.solveAndCheck();
 			if (allowNotBlack && recursive > 0) {
 				if (!candSolve(virtual2, recursive - 1)) {
 					allowNotBlack = false;

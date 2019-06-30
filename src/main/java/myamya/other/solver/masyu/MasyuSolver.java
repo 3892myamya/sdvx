@@ -475,24 +475,40 @@ public class MasyuSolver implements Solver {
 						if (wallUp == Wall.EXISTS) {
 							existsCount++;
 						} else if (wallUp == Wall.NOT_EXISTS) {
+							if (masu[yIndex - 1][xIndex] == Masu.BLACK) {
+								return false;
+							}
+							masu[yIndex - 1][xIndex] = Masu.NOT_BLACK;
 							notExistsCount++;
 						}
 						Wall wallRight = xIndex == getXLength() - 1 ? Wall.EXISTS : yokoWall[yIndex][xIndex];
 						if (wallRight == Wall.EXISTS) {
 							existsCount++;
 						} else if (wallRight == Wall.NOT_EXISTS) {
+							if (masu[yIndex][xIndex + 1] == Masu.BLACK) {
+								return false;
+							}
+							masu[yIndex][xIndex + 1] = Masu.NOT_BLACK;
 							notExistsCount++;
 						}
 						Wall wallDown = yIndex == getYLength() - 1 ? Wall.EXISTS : tateWall[yIndex][xIndex];
 						if (wallDown == Wall.EXISTS) {
 							existsCount++;
 						} else if (wallDown == Wall.NOT_EXISTS) {
+							if (masu[yIndex + 1][xIndex] == Masu.BLACK) {
+								return false;
+							}
+							masu[yIndex + 1][xIndex] = Masu.NOT_BLACK;
 							notExistsCount++;
 						}
 						Wall wallLeft = xIndex == 0 ? Wall.EXISTS : yokoWall[yIndex][xIndex - 1];
 						if (wallLeft == Wall.EXISTS) {
 							existsCount++;
 						} else if (wallLeft == Wall.NOT_EXISTS) {
+							if (masu[yIndex][xIndex - 1] == Masu.BLACK) {
+								return false;
+							}
+							masu[yIndex][xIndex - 1] = Masu.NOT_BLACK;
 							notExistsCount++;
 						}
 						// 自分が白マスなら壁は必ず2マス
@@ -515,16 +531,32 @@ public class MasyuSolver implements Solver {
 								}
 							} else if (existsCount == 2) {
 								if (wallUp == Wall.SPACE) {
+									if (masu[yIndex - 1][xIndex] == Masu.BLACK) {
+										return false;
+									}
 									tateWall[yIndex - 1][xIndex] = Wall.NOT_EXISTS;
+									masu[yIndex - 1][xIndex] = Masu.NOT_BLACK;
 								}
 								if (wallRight == Wall.SPACE) {
+									if (masu[yIndex][xIndex + 1] == Masu.BLACK) {
+										return false;
+									}
 									yokoWall[yIndex][xIndex] = Wall.NOT_EXISTS;
+									masu[yIndex][xIndex + 1] = Masu.NOT_BLACK;
 								}
 								if (wallDown == Wall.SPACE) {
+									if (masu[yIndex + 1][xIndex] == Masu.BLACK) {
+										return false;
+									}
 									tateWall[yIndex][xIndex] = Wall.NOT_EXISTS;
+									masu[yIndex + 1][xIndex] = Masu.NOT_BLACK;
 								}
 								if (wallLeft == Wall.SPACE) {
+									if (masu[yIndex][xIndex - 1] == Masu.BLACK) {
+										return false;
+									}
 									yokoWall[yIndex][xIndex - 1] = Wall.NOT_EXISTS;
+									masu[yIndex][xIndex - 1] = Masu.NOT_BLACK;
 								}
 							}
 						} else if (masu[yIndex][xIndex] == Masu.SPACE) {
@@ -533,7 +565,7 @@ public class MasyuSolver implements Solver {
 									|| notExistsCount > 2) {
 								return false;
 							}
-							if (existsCount > 3) {
+							if (existsCount > 2) {
 								masu[yIndex][xIndex] = Masu.BLACK;
 								if (existsCount == 3) {
 									if (wallUp == Wall.SPACE) {

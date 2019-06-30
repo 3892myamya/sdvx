@@ -2035,23 +2035,21 @@ public class SolverWeb extends HttpServlet {
 									+ "</text>");
 						}
 					} else if (oneMark != null) {
-						String str;
+						int lengthAdjust = 0;
 						if (oneMark instanceof SashiganeSolver.Arrow
 								&& (((SashiganeSolver.Arrow) oneMark).getDirection() == Direction.UP
 										|| ((SashiganeSolver.Arrow) oneMark).getDirection() == Direction.DOWN)) {
-							str = "　" + oneMark.toString() + "　";
-						} else {
-							str = oneMark.toString();
+							lengthAdjust = 4;
 						}
 						sb.append("<text y=\"" + (yIndex * baseSize + baseSize + margin - 4)
 								+ "\" x=\""
-								+ (xIndex * baseSize + baseSize)
+								+ (xIndex * baseSize + baseSize + (lengthAdjust / 2))
 								+ "\" font-size=\""
 								+ (baseSize - 2)
 								+ "\" textLength=\""
-								+ (baseSize - 2)
+								+ (baseSize - 2 - lengthAdjust)
 								+ "\" lengthAdjust=\"spacingAndGlyphs\">"
-								+ str
+								+ oneMark.toString()
 								+ "</text>");
 					}
 				}
