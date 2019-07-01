@@ -1,8 +1,6 @@
 package myamya.other.solver.slither;
 
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import myamya.other.solver.Common.Difficulty;
@@ -143,37 +141,67 @@ public class KurohouiSolver implements Solver {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
 					if (numbers[yIndex][xIndex] != -1
 							&& (numbers[yIndex][xIndex] == 2 || masu[yIndex][xIndex] != Masu.SPACE)) {
-						List<Masu> masuSet = new ArrayList<>();
-						masuSet.add(yIndex == 0 ? Masu.BLACK : masu[yIndex - 1][xIndex]);
-						masuSet.add(xIndex == getXLength() - 1 ? Masu.BLACK : masu[yIndex][xIndex + 1]);
-						masuSet.add(yIndex == getYLength() - 1 ? Masu.BLACK : masu[yIndex + 1][xIndex]);
-						masuSet.add(xIndex == 0 ? Masu.BLACK : masu[yIndex][xIndex - 1]);
 						int blackCnt = 0;
 						int whiteCnt = 0;
-						int spaceCnt = 0;
-						for (Masu oneMasu : masuSet) {
-							if (oneMasu == Masu.BLACK) {
-								blackCnt++;
-							} else if (oneMasu == Masu.NOT_BLACK) {
-								whiteCnt++;
-							} else {
-								spaceCnt++;
-							}
+						Masu masuUp = yIndex == 0 ? Masu.BLACK : masu[yIndex - 1][xIndex];
+						Masu masuRight = xIndex == getXLength() - 1 ? Masu.BLACK : masu[yIndex][xIndex + 1];
+						Masu masuDown = yIndex == getYLength() - 1 ? Masu.BLACK : masu[yIndex + 1][xIndex];
+						Masu masuLeft = xIndex == 0 ? Masu.BLACK : masu[yIndex][xIndex - 1];
+						if (masuUp == Masu.BLACK) {
+							blackCnt++;
+						} else if (masuUp == Masu.NOT_BLACK) {
+							whiteCnt++;
+						}
+						if (masuRight == Masu.BLACK) {
+							blackCnt++;
+						} else if (masuRight == Masu.NOT_BLACK) {
+							whiteCnt++;
+						}
+						if (masuDown == Masu.BLACK) {
+							blackCnt++;
+						} else if (masuDown == Masu.NOT_BLACK) {
+							whiteCnt++;
+						}
+						if (masuLeft == Masu.BLACK) {
+							blackCnt++;
+						} else if (masuLeft == Masu.NOT_BLACK) {
+							whiteCnt++;
 						}
 						if (masu[yIndex][xIndex] == Masu.BLACK || numbers[yIndex][xIndex] == 2) {
 							if (numbers[yIndex][xIndex] < whiteCnt) {
 								// 白マス過剰
 								return false;
 							}
-							if (numbers[yIndex][xIndex] > whiteCnt + spaceCnt) {
+							if (numbers[yIndex][xIndex] == whiteCnt) {
+								if (masuUp == Masu.SPACE) {
+									masu[yIndex - 1][xIndex] = Masu.BLACK;
+								}
+								if (masuRight == Masu.SPACE) {
+									masu[yIndex][xIndex + 1] = Masu.BLACK;
+								}
+								if (masuDown == Masu.SPACE) {
+									masu[yIndex + 1][xIndex] = Masu.BLACK;
+								}
+								if (masuLeft == Masu.SPACE) {
+									masu[yIndex][xIndex - 1] = Masu.BLACK;
+								}
+							}
+							if (numbers[yIndex][xIndex] > 4 - blackCnt) {
 								// 白マス不足
 								return false;
 							}
-							if (numbers[yIndex][xIndex] == whiteCnt + spaceCnt) {
-								for (Masu oneMasu : masuSet) {
-									if (oneMasu == Masu.SPACE) {
-										oneMasu = Masu.NOT_BLACK;
-									}
+							if (numbers[yIndex][xIndex] == 4 - blackCnt) {
+								if (masuUp == Masu.SPACE) {
+									masu[yIndex - 1][xIndex] = Masu.NOT_BLACK;
+								}
+								if (masuRight == Masu.SPACE) {
+									masu[yIndex][xIndex + 1] = Masu.NOT_BLACK;
+								}
+								if (masuDown == Masu.SPACE) {
+									masu[yIndex + 1][xIndex] = Masu.NOT_BLACK;
+								}
+								if (masuLeft == Masu.SPACE) {
+									masu[yIndex][xIndex - 1] = Masu.NOT_BLACK;
 								}
 							}
 						}
@@ -182,15 +210,36 @@ public class KurohouiSolver implements Solver {
 								// 黒マス過剰
 								return false;
 							}
-							if (numbers[yIndex][xIndex] > blackCnt + spaceCnt) {
+							if (numbers[yIndex][xIndex] == blackCnt) {
+								if (masuUp == Masu.SPACE) {
+									masu[yIndex - 1][xIndex] = Masu.NOT_BLACK;
+								}
+								if (masuRight == Masu.SPACE) {
+									masu[yIndex][xIndex + 1] = Masu.NOT_BLACK;
+								}
+								if (masuDown == Masu.SPACE) {
+									masu[yIndex + 1][xIndex] = Masu.NOT_BLACK;
+								}
+								if (masuLeft == Masu.SPACE) {
+									masu[yIndex][xIndex - 1] = Masu.NOT_BLACK;
+								}
+							}
+							if (numbers[yIndex][xIndex] > 4 - whiteCnt) {
 								// 黒マス不足
 								return false;
 							}
-							if (numbers[yIndex][xIndex] == blackCnt + spaceCnt) {
-								for (Masu oneMasu : masuSet) {
-									if (oneMasu == Masu.SPACE) {
-										oneMasu = Masu.BLACK;
-									}
+							if (numbers[yIndex][xIndex] == 4 - whiteCnt) {
+								if (masuUp == Masu.SPACE) {
+									masu[yIndex - 1][xIndex] = Masu.BLACK;
+								}
+								if (masuRight == Masu.SPACE) {
+									masu[yIndex][xIndex + 1] = Masu.BLACK;
+								}
+								if (masuDown == Masu.SPACE) {
+									masu[yIndex + 1][xIndex] = Masu.BLACK;
+								}
+								if (masuLeft == Masu.SPACE) {
+									masu[yIndex][xIndex - 1] = Masu.BLACK;
 								}
 							}
 						}
