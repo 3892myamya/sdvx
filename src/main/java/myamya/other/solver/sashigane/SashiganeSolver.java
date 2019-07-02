@@ -3,23 +3,10 @@ package myamya.other.solver.sashigane;
 import myamya.other.solver.Common.Difficulty;
 import myamya.other.solver.Common.Direction;
 import myamya.other.solver.Common.Position;
+import myamya.other.solver.Common.Wall;
 import myamya.other.solver.Solver;
 
 public class SashiganeSolver implements Solver {
-	public enum Wall {
-		SPACE("＊"), NOT_EXISTS("　"), EXISTS("□");
-
-		String str;
-
-		Wall(String str) {
-			this.str = str;
-		}
-
-		@Override
-		public String toString() {
-			return str;
-		}
-	}
 
 	public interface Mark {
 		@Override

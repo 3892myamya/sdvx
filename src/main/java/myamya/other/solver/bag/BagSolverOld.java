@@ -6,6 +6,7 @@ import java.util.Set;
 import myamya.other.solver.Common.Difficulty;
 import myamya.other.solver.Common.Direction;
 import myamya.other.solver.Common.Position;
+import myamya.other.solver.Common.Wall;
 import myamya.other.solver.Solver;
 
 /**
@@ -13,20 +14,6 @@ import myamya.other.solver.Solver;
  * …だが、スリザー方式だと全然解けないので黒マス包囲網方式に変えることにした。
  */
 public class BagSolverOld implements Solver {
-	public enum Wall {
-		SPACE("　"), NOT_EXISTS("・"), EXISTS("■");
-
-		String str;
-
-		Wall(String str) {
-			this.str = str;
-		}
-
-		@Override
-		public String toString() {
-			return str;
-		}
-	}
 
 	public static class Field {
 		static final String ALPHABET = "abcde";

@@ -16,6 +16,21 @@ public class Common {
 		}
 	}
 
+	public enum Wall {
+		SPACE("＊"), NOT_EXISTS("　"), EXISTS("□");
+
+		String str;
+
+		Wall(String str) {
+			this.str = str;
+		}
+
+		@Override
+		public String toString() {
+			return str;
+		}
+	}
+
 	public enum Difficulty {
 		RAKURAKU("らくらく", 0), OTEGORO("おてごろ", 1), TAIHEN("たいへん", 2), AZEN("アゼン", 3), HABANERO("ハバネロ", 4);
 

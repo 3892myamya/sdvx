@@ -500,6 +500,20 @@ public class TapaSolver implements Solver {
 		}
 
 		/**
+		 * フィールドに1つは黒マスが必要。
+		 */
+		private boolean finalSolve() {
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					if (masu[yIndex][xIndex] != Masu.NOT_BLACK) {
+						return true;
+					}
+				}
+			}
+			return false;
+		}
+
+		/**
 		 * 各種チェックを1セット実行
 		 * @param recursive
 		 */
@@ -512,6 +526,9 @@ public class TapaSolver implements Solver {
 				return false;
 			}
 			if (!connectSolve()) {
+				return false;
+			}
+			if (!finalSolve()) {
 				return false;
 			}
 			if (!getStateDump().equals(str)) {

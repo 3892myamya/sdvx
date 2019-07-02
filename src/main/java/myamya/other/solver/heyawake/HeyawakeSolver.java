@@ -175,8 +175,13 @@ public class HeyawakeSolver implements Solver {
 					}
 				}
 			}
-			// 部屋の候補を決定
 			roomsCand = new HashMap<>();
+		}
+
+		/**
+		 * 部屋の候補を決定する。最初に一度だけ呼ぶこと
+		 */
+		public void roomsCandSetUp() {
 			for (int i = 0; i < rooms.size(); i++) {
 				Room room = rooms.get(i);
 				if (room.getBlackCnt() != -1) {
@@ -189,7 +194,7 @@ public class HeyawakeSolver implements Solver {
 								leftUp.getyIndex() == 0, rightDown.getxIndex() == getXLength() - 1,
 								rightDown.getyIndex() == getYLength() - 1, leftUp.getxIndex() == 0, 10000);
 						List<String> result = heyaSolver.solveForSolver();
-						cnt = cnt + (heyaSolver.cnt / 10);
+						cnt = cnt + (heyaSolver.cnt / 20);
 						if (!result.isEmpty()) {
 							roomsCand.put(i, result);
 						}
@@ -711,6 +716,7 @@ public class HeyawakeSolver implements Solver {
 	@Override
 	public String solve() {
 		long start = System.nanoTime();
+		field.roomsCandSetUp();
 		while (!field.isSolved()) {
 			System.out.println(field);
 			String befStr = field.getStateDump();

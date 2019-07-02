@@ -7,24 +7,10 @@ import myamya.other.solver.Common.Difficulty;
 import myamya.other.solver.Common.Direction;
 import myamya.other.solver.Common.Masu;
 import myamya.other.solver.Common.Position;
+import myamya.other.solver.Common.Wall;
 import myamya.other.solver.Solver;
 
 public class MasyuSolver implements Solver {
-
-	public enum Wall {
-		SPACE("＊"), NOT_EXISTS("　"), EXISTS("□");
-
-		String str;
-
-		Wall(String str) {
-			this.str = str;
-		}
-
-		@Override
-		public String toString() {
-			return str;
-		}
-	}
 
 	/**
 	 * 真珠
