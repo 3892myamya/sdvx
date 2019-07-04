@@ -71,6 +71,7 @@ public class NurikabeSolver implements Solver {
 					index++;
 				}
 			}
+			farSolve();
 		}
 
 		public Field(Field other) {
@@ -444,9 +445,6 @@ public class NurikabeSolver implements Solver {
 				return false;
 			}
 			if (!connectSolve()) {
-				return false;
-			}
-			if (!farSolve()) {
 				return false;
 			}
 			if (!getStateDump().equals(str)) {
