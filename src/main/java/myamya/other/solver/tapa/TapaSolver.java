@@ -525,14 +525,15 @@ public class TapaSolver implements Solver {
 			if (!pondSolve()) {
 				return false;
 			}
-			if (!connectSolve()) {
-				return false;
-			}
-			if (!finalSolve()) {
-				return false;
-			}
 			if (!getStateDump().equals(str)) {
 				return solveAndCheck();
+			} else {
+				if (!connectSolve()) {
+					return false;
+				}
+				if (!finalSolve()) {
+					return false;
+				}
 			}
 			return true;
 		}

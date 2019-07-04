@@ -623,11 +623,12 @@ public class HeyawakeSolver implements Solver {
 			if (!roomCandSolve()) {
 				return false;
 			}
-			if (!connectSolve()) {
-				return false;
-			}
 			if (!getStateDump().equals(str)) {
 				return solveAndCheck();
+			} else {
+				if (!connectSolve()) {
+					return false;
+				}
 			}
 			return true;
 		}

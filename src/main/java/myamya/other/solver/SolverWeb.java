@@ -2887,8 +2887,8 @@ public class SolverWeb extends HttpServlet {
 				t = new ShakashakaSolverThread(height, width, param);
 			} else if (puzzleType.contains("tapa")) {
 				t = new TapaSolverThread(height, width, param);
-			} else if (puzzleType.contains("numlin") || puzzleType.contains("numberlink")) {
-				t = new NumlinSolverThread(height, width, param);
+//			} else if (puzzleType.contains("numlin") || puzzleType.contains("numberlink")) {
+//				t = new NumlinSolverThread(height, width, param);
 			} else {
 				throw new IllegalArgumentException();
 			}

@@ -1,6 +1,8 @@
-package myamya.other.solver.masyu;
+package myamya.other.solver.slalom;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import myamya.other.solver.Common.Difficulty;
@@ -10,44 +12,69 @@ import myamya.other.solver.Common.Position;
 import myamya.other.solver.Common.Wall;
 import myamya.other.solver.Solver;
 
-public class MasyuSolver implements Solver {
+/**
+ *
+□□□□□□□□□□□□□□□□□□□□□
+□■□■□■□■□・　・　・　・　・　・□
+□□□□□□□□□　□□□□□□□□□　□
+□■□■□■□■□＋□■□■□■□■□・□
+□□□□□□□□□　□□□□□□□□□　□
+□・　＋　・　・　・□・　・　・□　□・□
+□　□□□□□□□□□　□□□　□□□　□
+□・□■□■□■□・　・□d3□・□■□・□
+□　□□□□□□□　□□□□□　□□□　□
+□＋□＋□＋□■□・□・　＋　・□○　・□
+□　□□□□□□□　□　□□□□□　□□□
+□・□■□■□■□・□・□u3□・　・□■□
+□　□□□□□□□　□　□□□　□□□□□
+□・□d5□■□■□・□・□d2□＋□■□■□
+□　□□□□□□□　□　□□□　□□□□□
+□・　＋　・　＋　・□・　＋　・□■□■□
+□□□□□□□□□□□□□□□□□□□□□
+□■□u5□■□■□■□■□u2□■□■□■□
+□□□□□□□□□□□□□□□□□□□□□
+□■□■□■□■□■□■□■□■□■□■□
+□□□□□□□□□□□□□□□□□□□□□
+ */
+public class SlalomSolver implements Solver {
 
 	/**
-	 * 真珠
+	 * ブロックマス
 	 */
-	public enum Pearl {
-	SIRO("○", 1), KURO("●", 2);
+	public static class Block {
+		private final Direction direction;
+		private final int count;
 
-		String str;
-		int val;
+		public Block(Direction direction, int count) {
+			this.direction = direction;
+			this.count = count;
+		}
 
-		Pearl(String str, int val) {
-			this.str = str;
-			this.val = val;
+		public Direction getDirection() {
+			return direction;
+		}
+
+		public int getCount() {
+			return count;
 		}
 
 		@Override
 		public String toString() {
-			return str;
-		}
-
-		public static Pearl getByVal(int val) {
-			for (Pearl one : Pearl.values()) {
-				if (one.val == val) {
-					return one;
-				}
-			}
-			return null;
+			return count == -1 ? "■" : (count >= 10 ? String.valueOf(count) : direction.toString() + count);
 		}
 	}
 
 	public static class Field {
-		static final String ALPHABET = "abcdefghijklmnopqrstuvwxyz";
-
+		static final String ALPHABET = "abcde";
+		static final String ALPHABET_FROM_G = "ghijklmnopqrstuvwxyz";
 		// マスの情報
 		private Masu[][] masu;
-		// 真珠の情報
-		private Pearl[][] pearl;
+		// 旗門の情報
+		private final Integer[][] gates;
+		// ブロックの情報
+		private final Block[][] blocks;
+		// スタート地点
+		private final Position start;
 		// 横をふさぐ壁が存在するか
 		// 0,0 = trueなら、0,0と0,1の間に壁があるという意味
 		private Wall[][] yokoWall;
@@ -59,8 +86,12 @@ public class MasyuSolver implements Solver {
 			return masu;
 		}
 
-		public Pearl[][] getPearl() {
-			return pearl;
+		public Integer[][] getGates() {
+			return gates;
+		}
+
+		public Block[][] getBlocks() {
+			return blocks;
 		}
 
 		public Wall[][] getYokoWall() {
@@ -79,9 +110,10 @@ public class MasyuSolver implements Solver {
 			return masu[0].length;
 		}
 
-		public Field(int height, int width, String param, boolean ura) {
+		public Field(int height, int width, String param, int startPos) {
 			masu = new Masu[height][width];
-			pearl = new Pearl[height][width];
+			gates = new Integer[height][width];
+			blocks = new Block[height][width];
 			yokoWall = new Wall[height][width - 1];
 			tateWall = new Wall[height - 1][width];
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
@@ -99,47 +131,117 @@ public class MasyuSolver implements Solver {
 					tateWall[yIndex][xIndex] = Wall.SPACE;
 				}
 			}
+			start = new Position(startPos / getXLength(), startPos % getXLength());
+			masu[start.getyIndex()][start.getxIndex()] = Masu.NOT_BLACK;
 			int index = 0;
+			int nextReadPos = 0;
+			List<Position> blockPosList = new ArrayList<>();
+			// マスの決定
 			for (int i = 0; i < param.length(); i++) {
 				char ch = param.charAt(i);
-				int bitInfo = Character.getNumericValue(ch);
-				int pos1 = bitInfo / 9 % 3;
-				int pos2 = bitInfo / 3 % 3;
-				int pos3 = bitInfo % 3;
-				if (index / getXLength() < getYLength()) {
-					if (pos1 > 0) {
-						masu[index / getXLength()][index % getXLength()] = Masu.NOT_BLACK;
-						pearl[index / getXLength()][index % getXLength()] = Pearl.getByVal(ura ? pos1 % 2 + 1 : pos1);
+				nextReadPos = i + 1;
+				Position pos = new Position(index / getXLength(), index % getXLength());
+				int val = Character.getNumericValue(ch);
+				if (val >= 4) {
+					index = index + val - 3;
+				} else {
+					if (val == 1) {
+						// ブロック。黒マス＆周囲の壁が確定
+						masu[pos.getyIndex()][pos.getxIndex()] = Masu.BLACK;
+						blockPosList.add(pos);
+						if (pos.getyIndex() != 0) {
+							tateWall[pos.getyIndex() - 1][pos.getxIndex()] = Wall.EXISTS;
+						}
+						if (pos.getxIndex() != getXLength() - 1) {
+							yokoWall[pos.getyIndex()][pos.getxIndex()] = Wall.EXISTS;
+						}
+						if (pos.getyIndex() != getYLength() - 1) {
+							tateWall[pos.getyIndex()][pos.getxIndex()] = Wall.EXISTS;
+						}
+						if (pos.getxIndex() != 0) {
+							yokoWall[pos.getyIndex()][pos.getxIndex() - 1] = Wall.EXISTS;
+						}
+					} else if (val == 2) {
+						//縦向きゲート。縦の壁閉鎖。
+						gates[pos.getyIndex()][pos.getxIndex()] = -1;
+						if (pos.getyIndex() != 0) {
+							tateWall[pos.getyIndex() - 1][pos.getxIndex()] = Wall.EXISTS;
+						}
+						if (pos.getyIndex() != getYLength() - 1) {
+							tateWall[pos.getyIndex()][pos.getxIndex()] = Wall.EXISTS;
+						}
+					} else if (val == 3) {
+						//横向きゲート。縦の壁閉鎖。
+						gates[pos.getyIndex()][pos.getxIndex()] = -1;
+						if (pos.getxIndex() != getXLength() - 1) {
+							yokoWall[pos.getyIndex()][pos.getxIndex()] = Wall.EXISTS;
+						}
+						if (pos.getxIndex() != 0) {
+							yokoWall[pos.getyIndex()][pos.getxIndex() - 1] = Wall.EXISTS;
+						}
 					}
+					index++;
 				}
-				index++;
-				if (index / getXLength() < getYLength()) {
-					if (pos2 > 0) {
-						masu[index / getXLength()][index % getXLength()] = Masu.NOT_BLACK;
-						pearl[index / getXLength()][index % getXLength()] = Pearl.getByVal(ura ? pos2 % 2 + 1 : pos2);
-					}
+				if (index >= getYLength() * getXLength()) {
+					break;
 				}
-				index++;
-				if (index / getXLength() < getYLength()) {
-					if (pos3 > 0) {
-						masu[index / getXLength()][index % getXLength()] = Masu.NOT_BLACK;
-						pearl[index / getXLength()][index % getXLength()] = Pearl.getByVal(ura ? pos3 % 2 + 1 : pos3);
-					}
-				}
-				index++;
 			}
+			// 黒マス決定
+			int blockIndex = 0;
+			for (int i = nextReadPos; i < param.length(); i++) {
+				Position blockPos = blockPosList.get(blockIndex);
+				char ch = param.charAt(i);
+				int interval = ALPHABET_FROM_G.indexOf(ch);
+				if (interval != -1) {
+					blockIndex = blockIndex + interval;
+				} else {
+					Direction direction;
+					int count;
+					if (ch == '-') {
+						direction = Direction.getByNum(param.charAt(i + 1));
+						count = Integer.parseInt(
+								"" + param.charAt(i + 2) + param.charAt(i + 3) + param.charAt(i + 4),
+								16);
+						i++;
+						i++;
+						i++;
+						i++;
+					} else if (Character.getNumericValue(ch) >= 5) {
+						direction = Direction.getByNum(Character.getNumericValue(ch) - 5);
+						count = Integer.parseInt(
+								"" + param.charAt(i + 1) + param.charAt(i + 2),
+								16);
+						i++;
+						i++;
+					} else {
+						direction = Direction.getByNum(Character.getNumericValue(ch));
+						count = Integer.parseInt("" + param.charAt(i + 1));
+						i++;
+					}
+					blocks[blockPos.getyIndex()][blockPos.getxIndex()] = new Block(direction, count);
+				}
+				blockIndex++;
+			}
+			for (Position blockPos : blockPosList) {
+				if (blocks[blockPos.getyIndex()][blockPos.getxIndex()] == null) {
+					blocks[blockPos.getyIndex()][blockPos.getxIndex()] = new Block(null, -1);
+				}
+			}
+			// ゲートの数字決定
+			// TODO
 		}
 
 		public Field(Field other) {
 			masu = new Masu[other.getYLength()][other.getXLength()];
-			pearl = other.pearl;
-			yokoWall = new Wall[other.getYLength()][other.getXLength() - 1];
-			tateWall = new Wall[other.getYLength() - 1][other.getXLength()];
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
 					masu[yIndex][xIndex] = other.masu[yIndex][xIndex];
 				}
 			}
+			blocks = other.blocks;
+			gates = other.gates;
+			yokoWall = new Wall[other.getYLength()][other.getXLength() - 1];
+			tateWall = new Wall[other.getYLength() - 1][other.getXLength()];
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength() - 1; xIndex++) {
 					yokoWall[yIndex][xIndex] = other.yokoWall[yIndex][xIndex];
@@ -150,7 +252,10 @@ public class MasyuSolver implements Solver {
 					tateWall[yIndex][xIndex] = other.tateWall[yIndex][xIndex];
 				}
 			}
+			start = other.start;
 		}
+
+		private static final String FULL_NUMS = "０１２３４５６７８９";
 
 		@Override
 		public String toString() {
@@ -162,8 +267,12 @@ public class MasyuSolver implements Solver {
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				sb.append("□");
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					if (pearl[yIndex][xIndex] != null) {
-						sb.append(pearl[yIndex][xIndex]);
+					if (blocks[yIndex][xIndex] != null) {
+						sb.append(blocks[yIndex][xIndex]);
+					} else if (gates[yIndex][xIndex] != null) {
+						sb.append("＋");
+					} else if (new Position(yIndex, xIndex).equals(start)) {
+						sb.append("○");
 					} else {
 						sb.append(masu[yIndex][xIndex]);
 					}
@@ -213,216 +322,30 @@ public class MasyuSolver implements Solver {
 		}
 
 		/**
-		 * 白真珠は直進のちカーブ、黒真珠はカーブのち直進。
-		 * 条件を満たさない場合falseを返す。
+		 * 各種チェックを1セット実行
+		 * @param recursive
+		 * @param recursive
 		 */
-		private boolean pearlSolve() {
-			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
-				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					if (pearl[yIndex][xIndex] != null) {
-						if (pearl[yIndex][xIndex] == Pearl.SIRO) {
-							if (!toStraightCheck(yIndex, xIndex)) {
-								return false;
-							}
-							toStraight(yIndex, xIndex);
-							Wall wallUp = yIndex == 0 ? Wall.EXISTS : tateWall[yIndex - 1][xIndex];
-							Wall wallRight = xIndex == getXLength() - 1 ? Wall.EXISTS : yokoWall[yIndex][xIndex];
-							Wall wallDown = yIndex == getYLength() - 1 ? Wall.EXISTS : tateWall[yIndex][xIndex];
-							Wall wallLeft = xIndex == 0 ? Wall.EXISTS : yokoWall[yIndex][xIndex - 1];
-							if (wallUp == Wall.NOT_EXISTS || wallDown == Wall.NOT_EXISTS) {
-								boolean canUpCurve = toCurveCheck(yIndex - 1, xIndex);
-								boolean canDownCurve = toCurveCheck(yIndex + 1, xIndex);
-								if (!canUpCurve && !canDownCurve) {
-									return false;
-								}
-								if (!canUpCurve) {
-									toCurve(yIndex + 1, xIndex);
-								}
-								if (!canDownCurve) {
-									toCurve(yIndex - 1, xIndex);
-								}
-							}
-							if (wallRight == Wall.NOT_EXISTS || wallLeft == Wall.NOT_EXISTS) {
-								boolean canRightCurve = toCurveCheck(yIndex, xIndex + 1);
-								boolean canLeftCurve = toCurveCheck(yIndex, xIndex - 1);
-								if (!canRightCurve && !canLeftCurve) {
-									return false;
-								}
-								if (!canRightCurve) {
-									toCurve(yIndex, xIndex - 1);
-								}
-								if (!canLeftCurve) {
-									toCurve(yIndex, xIndex + 1);
-								}
-							}
-						} else if (pearl[yIndex][xIndex] == Pearl.KURO) {
-							if (!toCurveCheck(yIndex, xIndex)) {
-								return false;
-							}
-							toCurve(yIndex, xIndex);
-							Wall wallUp = yIndex == 0 ? Wall.EXISTS : tateWall[yIndex - 1][xIndex];
-							Wall wallRight = xIndex == getXLength() - 1 ? Wall.EXISTS : yokoWall[yIndex][xIndex];
-							Wall wallDown = yIndex == getYLength() - 1 ? Wall.EXISTS : tateWall[yIndex][xIndex];
-							Wall wallLeft = xIndex == 0 ? Wall.EXISTS : yokoWall[yIndex][xIndex - 1];
-							if (wallUp == Wall.NOT_EXISTS) {
-								if (!toStraightCheck(yIndex - 1, xIndex)) {
-									return false;
-								}
-								toStraight(yIndex - 1, xIndex);
-							}
-							if (wallRight == Wall.NOT_EXISTS) {
-								if (!toStraightCheck(yIndex, xIndex + 1)) {
-									return false;
-								}
-								toStraight(yIndex, xIndex + 1);
-							}
-							if (wallDown == Wall.NOT_EXISTS) {
-								if (!toStraightCheck(yIndex + 1, xIndex)) {
-									return false;
-								}
-								toStraight(yIndex + 1, xIndex);
-							}
-							if (wallLeft == Wall.NOT_EXISTS) {
-								if (!toStraightCheck(yIndex, xIndex - 1)) {
-									return false;
-								}
-								toStraight(yIndex, xIndex - 1);
-							}
-						}
-					}
-				}
+		public boolean solveAndCheck() {
+			String str = getStateDump();
+			if (!nextSolve()) {
+				return false;
+			}
+			if (!oddSolve()) {
+				return false;
+			}
+			if (!connectSolve()) {
+				return false;
+			}
+			if (!getStateDump().equals(str)) {
+				return solveAndCheck();
 			}
 			return true;
-		}
-
-		/**
-		 * 指定した位置のマスがカーブ可能かチェックする。できない場合falseを返す。
-		 */
-		private boolean toStraightCheck(int yIndex, int xIndex) {
-			if (pearl[yIndex][xIndex] == Pearl.KURO) {
-				return false;
-			}
-			Wall wallUp = yIndex == 0 ? Wall.EXISTS : tateWall[yIndex - 1][xIndex];
-			Wall wallRight = xIndex == getXLength() - 1 ? Wall.EXISTS : yokoWall[yIndex][xIndex];
-			Wall wallDown = yIndex == getYLength() - 1 ? Wall.EXISTS : tateWall[yIndex][xIndex];
-			Wall wallLeft = xIndex == 0 ? Wall.EXISTS : yokoWall[yIndex][xIndex - 1];
-			if ((wallUp == Wall.EXISTS && wallRight == Wall.EXISTS)
-					|| (wallUp == Wall.EXISTS && wallLeft == Wall.EXISTS)
-					|| (wallRight == Wall.EXISTS && wallDown == Wall.EXISTS)
-					|| (wallDown == Wall.EXISTS && wallLeft == Wall.EXISTS)) {
-				return false;
-			}
-			return true;
-		}
-
-		/**
-		 * 指定した位置のマスを直進させる。必ずチェック処理後に呼ぶこと。
-		 */
-		private void toStraight(int yIndex, int xIndex) {
-			Wall wallUp = yIndex == 0 ? Wall.EXISTS : tateWall[yIndex - 1][xIndex];
-			Wall wallRight = xIndex == getXLength() - 1 ? Wall.EXISTS : yokoWall[yIndex][xIndex];
-			Wall wallDown = yIndex == getYLength() - 1 ? Wall.EXISTS : tateWall[yIndex][xIndex];
-			Wall wallLeft = xIndex == 0 ? Wall.EXISTS : yokoWall[yIndex][xIndex - 1];
-			if (wallUp == Wall.EXISTS || wallDown == Wall.EXISTS) {
-				if (wallUp == Wall.SPACE) {
-					tateWall[yIndex - 1][xIndex] = Wall.EXISTS;
-				}
-				if (wallRight == Wall.SPACE) {
-					yokoWall[yIndex][xIndex] = Wall.NOT_EXISTS;
-				}
-				if (wallDown == Wall.SPACE) {
-					tateWall[yIndex][xIndex] = Wall.EXISTS;
-				}
-				if (wallLeft == Wall.SPACE) {
-					yokoWall[yIndex][xIndex - 1] = Wall.NOT_EXISTS;
-				}
-			}
-			if (wallRight == Wall.EXISTS || wallLeft == Wall.EXISTS) {
-				if (wallUp == Wall.SPACE) {
-					tateWall[yIndex - 1][xIndex] = Wall.NOT_EXISTS;
-				}
-				if (wallRight == Wall.SPACE) {
-					yokoWall[yIndex][xIndex] = Wall.EXISTS;
-				}
-				if (wallDown == Wall.SPACE) {
-					tateWall[yIndex][xIndex] = Wall.NOT_EXISTS;
-				}
-				if (wallLeft == Wall.SPACE) {
-					yokoWall[yIndex][xIndex - 1] = Wall.EXISTS;
-				}
-			}
-		}
-
-		/**
-		 * 指定した位置のマスがカーブ可能かチェックする。できない場合falseを返す。
-		 */
-		private boolean toCurveCheck(int yIndex, int xIndex) {
-			if (pearl[yIndex][xIndex] == Pearl.SIRO) {
-				return false;
-			}
-			Wall wallUp = yIndex == 0 ? Wall.EXISTS : tateWall[yIndex - 1][xIndex];
-			Wall wallRight = xIndex == getXLength() - 1 ? Wall.EXISTS : yokoWall[yIndex][xIndex];
-			Wall wallDown = yIndex == getYLength() - 1 ? Wall.EXISTS : tateWall[yIndex][xIndex];
-			Wall wallLeft = xIndex == 0 ? Wall.EXISTS : yokoWall[yIndex][xIndex - 1];
-			if ((wallUp == Wall.EXISTS && wallDown == Wall.EXISTS)
-					|| (wallRight == Wall.EXISTS && wallLeft == Wall.EXISTS)) {
-				return false;
-			}
-			return true;
-		}
-
-		/**
-		 * 指定した位置のマスをカーブさせる。できない場合falseを返す。
-		 */
-		private void toCurve(int yIndex, int xIndex) {
-			Wall wallUp = yIndex == 0 ? Wall.EXISTS : tateWall[yIndex - 1][xIndex];
-			Wall wallRight = xIndex == getXLength() - 1 ? Wall.EXISTS : yokoWall[yIndex][xIndex];
-			Wall wallDown = yIndex == getYLength() - 1 ? Wall.EXISTS : tateWall[yIndex][xIndex];
-			Wall wallLeft = xIndex == 0 ? Wall.EXISTS : yokoWall[yIndex][xIndex - 1];
-			if (wallUp == Wall.EXISTS) {
-				if (wallDown == Wall.SPACE) {
-					tateWall[yIndex][xIndex] = Wall.NOT_EXISTS;
-				}
-			}
-			if (wallRight == Wall.EXISTS) {
-				if (wallLeft == Wall.SPACE) {
-					yokoWall[yIndex][xIndex - 1] = Wall.NOT_EXISTS;
-				}
-			}
-			if (wallDown == Wall.EXISTS) {
-				if (wallUp == Wall.SPACE) {
-					tateWall[yIndex - 1][xIndex] = Wall.NOT_EXISTS;
-				}
-			}
-			if (wallLeft == Wall.EXISTS) {
-				if (wallRight == Wall.SPACE) {
-					yokoWall[yIndex][xIndex] = Wall.NOT_EXISTS;
-				}
-			}
-			if (wallUp == Wall.NOT_EXISTS) {
-				if (wallDown == Wall.SPACE) {
-					tateWall[yIndex][xIndex] = Wall.EXISTS;
-				}
-			}
-			if (wallRight == Wall.NOT_EXISTS) {
-				if (wallLeft == Wall.SPACE) {
-					yokoWall[yIndex][xIndex - 1] = Wall.EXISTS;
-				}
-			}
-			if (wallDown == Wall.NOT_EXISTS) {
-				if (wallUp == Wall.SPACE) {
-					tateWall[yIndex - 1][xIndex] = Wall.EXISTS;
-				}
-			}
-			if (wallLeft == Wall.NOT_EXISTS) {
-				if (wallRight == Wall.SPACE) {
-					yokoWall[yIndex][xIndex] = Wall.EXISTS;
-				}
-			}
 		}
 
 		/**
 		 * 黒マスの周囲の壁を埋め、隣接セルを白マスにする
+		 * 黒マス隣接セルの隣に黒マスがある場合はfalseを返す。
 		 * また、白マス隣接セルの周辺の壁の数が2にならない場合もfalseを返す。
 		 */
 		public boolean nextSolve() {
@@ -578,6 +501,42 @@ public class MasyuSolver implements Solver {
 		}
 
 		/**
+		 * ルール上、各列をふさぐ壁は必ず偶数になる。
+		 * 偶数になっていない場合falseを返す。
+		 */
+		private boolean oddSolve() {
+			for (int yIndex = 0; yIndex < getYLength() - 1; yIndex++) {
+				int notExistsCount = 0;
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					if (tateWall[yIndex][xIndex] == Wall.SPACE) {
+						notExistsCount = 0;
+						break;
+					} else if (tateWall[yIndex][xIndex] == Wall.NOT_EXISTS) {
+						notExistsCount++;
+					}
+				}
+				if (notExistsCount % 2 != 0) {
+					return false;
+				}
+			}
+			for (int xIndex = 0; xIndex < getXLength() - 1; xIndex++) {
+				int notExistsCount = 0;
+				for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+					if (yokoWall[yIndex][xIndex] == Wall.SPACE) {
+						notExistsCount = 0;
+						break;
+					} else if (yokoWall[yIndex][xIndex] == Wall.NOT_EXISTS) {
+						notExistsCount++;
+					}
+				}
+				if (notExistsCount % 2 != 0) {
+					return false;
+				}
+			}
+			return true;
+		}
+
+		/**
 		 * 白マスが1つながりになっていない場合falseを返す。
 		 */
 		public boolean connectSolve() {
@@ -641,89 +600,6 @@ public class MasyuSolver implements Solver {
 			}
 		}
 
-		/**
-		 * 各種チェックを1セット実行
-		 * @param recursive
-		 * @param recursive
-		 */
-		public boolean solveAndCheck() {
-			String str = getStateDump();
-			if (!pearlSolve()) {
-				return false;
-			}
-			if (!nextSolve()) {
-				return false;
-			}
-			if (!oddSolve()) {
-				return false;
-			}
-			if (!getStateDump().equals(str)) {
-				return solveAndCheck();
-			} else {
-				if (!connectSolve()) {
-					return false;
-				}
-			}
-			return true;
-		}
-
-		/**
-		 * 各種チェックを1セット実行
-		 * @param recursive
-		 */
-		public boolean solveAndCheckSkipConnect() {
-			String str = getStateDump();
-			if (!pearlSolve()) {
-				return false;
-			}
-			if (!nextSolve()) {
-				return false;
-			}
-			if (!oddSolve()) {
-				return false;
-			}
-			if (!getStateDump().equals(str)) {
-				return solveAndCheckSkipConnect();
-			}
-			return true;
-		}
-
-		/**
-		 * ましゅのルール上、各列をふさぐ壁は必ず偶数になる。
-		 * 偶数になっていない場合falseを返す。
-		 */
-		private boolean oddSolve() {
-			for (int yIndex = 0; yIndex < getYLength() - 1; yIndex++) {
-				int notExistsCount = 0;
-				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					if (tateWall[yIndex][xIndex] == Wall.SPACE) {
-						notExistsCount = 0;
-						break;
-					} else if (tateWall[yIndex][xIndex] == Wall.NOT_EXISTS) {
-						notExistsCount++;
-					}
-				}
-				if (notExistsCount % 2 != 0) {
-					return false;
-				}
-			}
-			for (int xIndex = 0; xIndex < getXLength() - 1; xIndex++) {
-				int notExistsCount = 0;
-				for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
-					if (yokoWall[yIndex][xIndex] == Wall.SPACE) {
-						notExistsCount = 0;
-						break;
-					} else if (yokoWall[yIndex][xIndex] == Wall.NOT_EXISTS) {
-						notExistsCount++;
-					}
-				}
-				if (notExistsCount % 2 != 0) {
-					return false;
-				}
-			}
-			return true;
-		}
-
 		public boolean isSolved() {
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
@@ -754,8 +630,8 @@ public class MasyuSolver implements Solver {
 	private final Field field;
 	private int count = 0;
 
-	public MasyuSolver(int height, int width, String param, boolean ura) {
-		field = new Field(height, width, param, ura);
+	public SlalomSolver(int height, int width, String param, int startPos) {
+		field = new Field(height, width, param, startPos);
 	}
 
 	public Field getField() {
@@ -763,12 +639,14 @@ public class MasyuSolver implements Solver {
 	}
 
 	public static void main(String[] args) {
-		String url = ""; //urlを入れれば試せる
-		String[] params = url.split("/");
-		int height = Integer.parseInt(params[params.length - 2]);
-		int width = Integer.parseInt(params[params.length - 3]);
-		String param = params[params.length - 1];
-		System.out.println(new MasyuSolver(height, width, param, false).solve());
+		String url = "http://pzv.jp/p.html?slalom/d/10/10/e1413114152c14151414333152c171415131524252714114141em23h1325g22g15h12g/48"; //urlを入れれば試せる
+		String[] params = url.split("\\?");
+		params = params[params.length - 1].split("/");
+		int height = Integer.parseInt(params[3]);
+		int width = Integer.parseInt(params[2]);
+		String param = params[4];
+		int startPos = Integer.parseInt(params[5]);
+		System.out.println(new SlalomSolver(height, width, param, startPos).solve());
 	}
 
 	@Override

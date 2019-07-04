@@ -506,17 +506,18 @@ public class KurohouiSolver implements Solver {
 			if (!pondSolve()) {
 				return false;
 			}
-			if (!connectWhiteSolve()) {
-				return false;
-			}
-			if (!connectWallBlackSolve()) {
-				return false;
-			}
-			if (!finalSolve()) {
-				return false;
-			}
 			if (!getStateDump().equals(str)) {
 				return solveAndCheck();
+			} else {
+				if (!connectWhiteSolve()) {
+					return false;
+				}
+				if (!connectWallBlackSolve()) {
+					return false;
+				}
+				if (!finalSolve()) {
+					return false;
+				}
 			}
 			return true;
 		}

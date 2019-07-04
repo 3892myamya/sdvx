@@ -378,7 +378,6 @@ public class YajilinSolver implements Solver {
 					direction = null;
 				}
 			}
-
 		}
 
 		public Field(Field other) {
@@ -473,6 +472,54 @@ public class YajilinSolver implements Solver {
 						if (arrow.getCount() == -1) {
 							continue;
 						}
+						//												int adjust = 0;
+						//												int blackCount = 0;
+						//												int notBlackCount = 0;
+						//												while (true) {
+						//													Position pos = null;
+						//													if (arrow.getDirection() == Direction.UP) {
+						//														if (yIndex - 1 - adjust < 0) {
+						//															break;
+						//														}
+						//														pos = new Position(yIndex - 1 - adjust, xIndex);
+						//													}
+						//													if (arrow.getDirection() == Direction.RIGHT) {
+						//														if (xIndex + 1 + adjust >= getXLength()) {
+						//															break;
+						//														}
+						//														pos = new Position(yIndex, xIndex + 1 + adjust);
+						//													}
+						//													if (arrow.getDirection() == Direction.DOWN) {
+						//														if (yIndex + 1 + adjust >= getYLength()) {
+						//															break;
+						//														}
+						//														pos = new Position(yIndex + 1 + adjust, xIndex);
+						//													}
+						//													if (arrow.getDirection() == Direction.LEFT) {
+						//														if (xIndex - 1 - adjust < 0) {
+						//															break;
+						//														}
+						//														pos = new Position(yIndex, xIndex - 1 - adjust);
+						//													}
+						//													if (masu[pos.getyIndex()][pos.getxIndex()] instanceof Arrow) {
+						//														Arrow anotherArrow = (Arrow) masu[pos.getyIndex()][pos.getxIndex()];
+						//														if (anotherArrow.getDirection() == arrow.getDirection() && anotherArrow.getCount() != -1) {
+						//															int betweenCnt = arrow.getCount() - anotherArrow.getCount();
+						//															if (betweenCnt < blackCount) {
+						//																return false;
+						//															}
+						//															if (betweenCnt > (adjust - notBlackCount)) {
+						//																return false;
+						//															}
+						//															break;
+						//														}
+						//													} else if (masu[pos.getyIndex()][pos.getxIndex()] == MasuImpl.BLACK) {
+						//														blackCount++;
+						//													} else if (masu[pos.getyIndex()][pos.getxIndex()] == MasuImpl.NOT_BLACK) {
+						//														notBlackCount++;
+						//													}
+						//													adjust++;
+						//												}
 						if (arrowsInfo.get(arrow) != null) {
 							List<String> candList = arrowsInfo.get(arrow);
 							for (Iterator<String> iterator = candList.iterator(); iterator.hasNext();) {
@@ -551,6 +598,9 @@ public class YajilinSolver implements Solver {
 									Position pos = new Position(pivot.getyIndex() - 1 - idx, pivot.getxIndex());
 									if (masu[pos.getyIndex()][pos.getxIndex()] == MasuImpl.BLACK) {
 										blackCnt++;
+										if (arrow.getCount() < blackCnt) {
+											return false;
+										}
 										nextCanSpace = false;
 									} else if (masu[pos.getyIndex()][pos.getxIndex()] == MasuImpl.SPACE) {
 										if (nextCanSpace) {
@@ -570,6 +620,9 @@ public class YajilinSolver implements Solver {
 									Position pos = new Position(pivot.getyIndex(), pivot.getxIndex() + 1 + idx);
 									if (masu[pos.getyIndex()][pos.getxIndex()] == MasuImpl.BLACK) {
 										blackCnt++;
+										if (arrow.getCount() < blackCnt) {
+											return false;
+										}
 										nextCanSpace = false;
 									} else if (masu[pos.getyIndex()][pos.getxIndex()] == MasuImpl.SPACE) {
 										if (nextCanSpace) {
@@ -589,6 +642,9 @@ public class YajilinSolver implements Solver {
 									Position pos = new Position(pivot.getyIndex() + 1 + idx, pivot.getxIndex());
 									if (masu[pos.getyIndex()][pos.getxIndex()] == MasuImpl.BLACK) {
 										blackCnt++;
+										if (arrow.getCount() < blackCnt) {
+											return false;
+										}
 										nextCanSpace = false;
 									} else if (masu[pos.getyIndex()][pos.getxIndex()] == MasuImpl.SPACE) {
 										if (nextCanSpace) {
@@ -608,6 +664,9 @@ public class YajilinSolver implements Solver {
 									Position pos = new Position(pivot.getyIndex(), pivot.getxIndex() - 1 - idx);
 									if (masu[pos.getyIndex()][pos.getxIndex()] == MasuImpl.BLACK) {
 										blackCnt++;
+										if (arrow.getCount() < blackCnt) {
+											return false;
+										}
 										nextCanSpace = false;
 									} else if (masu[pos.getyIndex()][pos.getxIndex()] == MasuImpl.SPACE) {
 										if (nextCanSpace) {
@@ -622,7 +681,7 @@ public class YajilinSolver implements Solver {
 									idx++;
 								}
 							}
-							if (arrow.getCount() < blackCnt || arrow.getCount() > blackCnt + spaceCnt) {
+							if (arrow.getCount() > blackCnt + spaceCnt) {
 								return false;
 							}
 						}
@@ -835,6 +894,20 @@ public class YajilinSolver implements Solver {
 								}
 							} else if (notExistsCount != 0) {
 								masu[yIndex][xIndex] = MasuImpl.NOT_BLACK;
+								if (notExistsCount == 2) {
+									if (wallUp == Wall.SPACE) {
+										tateWall[yIndex - 1][xIndex] = Wall.EXISTS;
+									}
+									if (wallRight == Wall.SPACE) {
+										yokoWall[yIndex][xIndex] = Wall.EXISTS;
+									}
+									if (wallDown == Wall.SPACE) {
+										tateWall[yIndex][xIndex] = Wall.EXISTS;
+									}
+									if (wallLeft == Wall.SPACE) {
+										yokoWall[yIndex][xIndex - 1] = Wall.EXISTS;
+									}
+								}
 							}
 						}
 					}
@@ -922,11 +995,12 @@ public class YajilinSolver implements Solver {
 			if (!oddSolve()) {
 				return false;
 			}
-			if (!connectSolve()) {
-				return false;
-			}
 			if (!getStateDump().equals(str)) {
 				return solveAndCheck();
+			} else {
+				if (!connectSolve()) {
+					return false;
+				}
 			}
 			return true;
 		}

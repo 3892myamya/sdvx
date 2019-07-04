@@ -538,14 +538,15 @@ public class SlitherSolver implements Solver {
 			if (!oddSolve()) {
 				return false;
 			}
-			if (!connectWhiteSolve()) {
-				return false;
-			}
-			if (!finalSolve()) {
-				return false;
-			}
 			if (!getStateDump().equals(str)) {
 				return solveAndCheck();
+			} else {
+				if (!connectWhiteSolve()) {
+					return false;
+				}
+				if (!finalSolve()) {
+					return false;
+				}
 			}
 			return true;
 		}
