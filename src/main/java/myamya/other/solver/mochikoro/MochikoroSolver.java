@@ -2,7 +2,6 @@ package myamya.other.solver.mochikoro;
 
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import myamya.other.solver.Common.Difficulty;
@@ -18,8 +17,8 @@ public class MochikoroSolver implements Solver {
 
 		// マスの情報
 		private Masu[][] masu;
-		// 同一グループに属するマスの情報
-		public final List<Room> rooms;
+		// 数字の情報
+		private final Integer[][] numbers;
 
 		public Masu[][] getMasu() {
 			return masu;
@@ -35,13 +34,13 @@ public class MochikoroSolver implements Solver {
 
 		public Field(int height, int width, String param) {
 			masu = new Masu[height][width];
+			numbers = new Integer[height][width];
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
 					masu[yIndex][xIndex] = Masu.SPACE;
 				}
 			}
 			int index = 0;
-			rooms = new ArrayList<>();
 			for (int i = 0; i < param.length(); i++) {
 				char ch = param.charAt(i);
 				int interval = ALPHABET_FROM_G.indexOf(ch);
@@ -71,7 +70,7 @@ public class MochikoroSolver implements Solver {
 						}
 						Position pos = new Position(index / getXLength(), index % getXLength());
 						masu[pos.getyIndex()][pos.getxIndex()] = Masu.NOT_BLACK;
-						rooms.add(new Room(capacity, pos));
+						numbers[pos.getyIndex()][pos.getxIndex()] = capacity;
 					}
 					index++;
 				}
@@ -79,13 +78,13 @@ public class MochikoroSolver implements Solver {
 		}
 
 		public Field(Field other) {
+			numbers = other.numbers;
 			masu = new Masu[other.getYLength()][other.getXLength()];
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
 					masu[yIndex][xIndex] = other.masu[yIndex][xIndex];
 				}
 			}
-			rooms = other.rooms;
 		}
 
 		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
@@ -96,24 +95,18 @@ public class MochikoroSolver implements Solver {
 			StringBuilder sb = new StringBuilder();
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					boolean writeNumber = false;
-					for (Room room : rooms) {
-						if (room.getPivot().equals(new Position(yIndex, xIndex))) {
-							if (room.getCapacity() > 99) {
-								sb.append("99");
-							}
-							String capacityStr = String.valueOf(room.getCapacity());
-							int index = HALF_NUMS.indexOf(capacityStr);
-							if (index >= 0) {
-								sb.append(FULL_NUMS.substring(index / 2, index / 2 + 1));
-							} else {
-								sb.append(capacityStr);
-							}
-							writeNumber = true;
-							break;
+					if (numbers[yIndex][xIndex] != null) {
+						if (numbers[yIndex][xIndex] > 99) {
+							sb.append("99");
 						}
-					}
-					if (!writeNumber) {
+						String capacityStr = String.valueOf(numbers[yIndex][xIndex]);
+						int index = HALF_NUMS.indexOf(capacityStr);
+						if (index >= 0) {
+							sb.append(FULL_NUMS.substring(index / 2, index / 2 + 1));
+						} else {
+							sb.append(capacityStr);
+						}
+					} else {
 						sb.append(masu[yIndex][xIndex]);
 					}
 				}
@@ -137,49 +130,49 @@ public class MochikoroSolver implements Solver {
 		 * 部屋が既定サイズに到達している場合、周囲を黒で埋める。
 		 */
 		public boolean roomSolve() {
-			for (int i = 0; i < rooms.size(); i++) {
-				Room room = rooms.get(i);
-				Position pivot = room.getPivot();
-				Set<Position> continueNotBlackPosSet = new HashSet<>();
-				continueNotBlackPosSet.add(pivot);
-				setContinueNotBlackPosSet(pivot, continueNotBlackPosSet, null);
-				if (room.getCapacity() > continueNotBlackPosSet.size()) {
-					// サイズ不足
-					return false;
-				}
-				Set<Position> continueWhitePosSet = new HashSet<>();
-				continueWhitePosSet.add(pivot);
-				setContinueWhitePosSet(pivot, continueWhitePosSet, null);
-				if (room.getCapacity() < continueWhitePosSet.size()) {
-					// サイズ超過
-					return false;
-				}
-				for (int j = i + 1; j < rooms.size(); j++) {
-					// 別部屋と連結
-					if (continueWhitePosSet.contains(rooms.get(j).getPivot())) {
-						return false;
-					}
-				}
-				if (room.getCapacity() == continueWhitePosSet.size()) {
-					for (Position pos : continueWhitePosSet) {
-						if (pos.getyIndex() != 0) {
-							if (masu[pos.getyIndex() - 1][pos.getxIndex()] == Masu.SPACE) {
-								masu[pos.getyIndex() - 1][pos.getxIndex()] = Masu.BLACK;
-							}
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					if (numbers[yIndex][xIndex] != null) {
+						Position pivot = new Position(yIndex, xIndex);
+						Set<Position> continueNotBlackPosSet = new HashSet<>();
+						continueNotBlackPosSet.add(pivot);
+						setContinueNotBlackPosSet(pivot, continueNotBlackPosSet, null);
+						if (numbers[yIndex][xIndex] > continueNotBlackPosSet.size()) {
+							// サイズ不足
+							return false;
 						}
-						if (pos.getxIndex() != getXLength() - 1) {
-							if (masu[pos.getyIndex()][pos.getxIndex() + 1] == Masu.SPACE) {
-								masu[pos.getyIndex()][pos.getxIndex() + 1] = Masu.BLACK;
-							}
+						Set<Position> continueWhitePosSet = new HashSet<>();
+						continueWhitePosSet.add(pivot);
+						if (!setContinueWhitePosSet2(pivot, continueWhitePosSet, null)) {
+							// 別部屋と連結
+							return false;
 						}
-						if (pos.getyIndex() != getYLength() - 1) {
-							if (masu[pos.getyIndex() + 1][pos.getxIndex()] == Masu.SPACE) {
-								masu[pos.getyIndex() + 1][pos.getxIndex()] = Masu.BLACK;
-							}
+						if (numbers[yIndex][xIndex] < continueWhitePosSet.size()) {
+							// サイズ超過
+							return false;
 						}
-						if (pos.getxIndex() != 0) {
-							if (masu[pos.getyIndex()][pos.getxIndex() - 1] == Masu.SPACE) {
-								masu[pos.getyIndex()][pos.getxIndex() - 1] = Masu.BLACK;
+						if (numbers[yIndex][xIndex] == continueWhitePosSet.size()) {
+							for (Position pos : continueWhitePosSet) {
+								if (pos.getyIndex() != 0) {
+									if (masu[pos.getyIndex() - 1][pos.getxIndex()] == Masu.SPACE) {
+										masu[pos.getyIndex() - 1][pos.getxIndex()] = Masu.BLACK;
+									}
+								}
+								if (pos.getxIndex() != getXLength() - 1) {
+									if (masu[pos.getyIndex()][pos.getxIndex() + 1] == Masu.SPACE) {
+										masu[pos.getyIndex()][pos.getxIndex() + 1] = Masu.BLACK;
+									}
+								}
+								if (pos.getyIndex() != getYLength() - 1) {
+									if (masu[pos.getyIndex() + 1][pos.getxIndex()] == Masu.SPACE) {
+										masu[pos.getyIndex() + 1][pos.getxIndex()] = Masu.BLACK;
+									}
+								}
+								if (pos.getxIndex() != 0) {
+									if (masu[pos.getyIndex()][pos.getxIndex() - 1] == Masu.SPACE) {
+										masu[pos.getyIndex()][pos.getxIndex() - 1] = Masu.BLACK;
+									}
+								}
 							}
 						}
 					}
@@ -189,41 +182,141 @@ public class MochikoroSolver implements Solver {
 		}
 
 		/**
-		 * posを起点に上下左右に黒確定でないマスを無制限につなげていく。
+		 * posを起点に上下左右に黒確定でないマスをつなげていくが、
+		 * 繋げたマスの前後左右(自分が元いたマス以外)に数字マスを発見した場合はつながない。
 		 */
 		private void setContinueNotBlackPosSet(Position pos, Set<Position> continuePosSet, Direction from) {
 			if (pos.getyIndex() != 0 && from != Direction.UP) {
 				Position nextPos = new Position(pos.getyIndex() - 1, pos.getxIndex());
 				if (!continuePosSet.contains(nextPos)
 						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.BLACK) {
-					continuePosSet.add(nextPos);
-					setContinueNotBlackPosSet(nextPos, continuePosSet, Direction.DOWN);
+					Integer numberUp = nextPos.getyIndex() == 0 ? null
+							: numbers[nextPos.getyIndex() - 1][nextPos.getxIndex()];
+					Integer numberRight = nextPos.getxIndex() == getXLength() - 1 ? null
+							: numbers[nextPos.getyIndex()][nextPos.getxIndex() + 1];
+					Integer numberLeft = nextPos.getxIndex() == 0 ? null
+							: numbers[nextPos.getyIndex()][nextPos.getxIndex() - 1];
+					if (numberUp != null || numberRight != null || numberLeft != null) {
+
+					} else {
+						continuePosSet.add(nextPos);
+						setContinueNotBlackPosSet(nextPos, continuePosSet, Direction.DOWN);
+					}
 				}
 			}
 			if (pos.getxIndex() != getXLength() - 1 && from != Direction.RIGHT) {
 				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() + 1);
 				if (!continuePosSet.contains(nextPos)
 						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.BLACK) {
-					continuePosSet.add(nextPos);
-					setContinueNotBlackPosSet(nextPos, continuePosSet, Direction.LEFT);
+					Integer numberUp = nextPos.getyIndex() == 0 ? null
+							: numbers[nextPos.getyIndex() - 1][nextPos.getxIndex()];
+					Integer numberRight = nextPos.getxIndex() == getXLength() - 1 ? null
+							: numbers[nextPos.getyIndex()][nextPos.getxIndex() + 1];
+					Integer numberDown = nextPos.getyIndex() == getYLength() - 1 ? null
+							: numbers[nextPos.getyIndex() + 1][nextPos.getxIndex()];
+					if (numberUp != null || numberRight != null || numberDown != null) {
+
+					} else {
+						continuePosSet.add(nextPos);
+						setContinueNotBlackPosSet(nextPos, continuePosSet, Direction.LEFT);
+					}
 				}
 			}
 			if (pos.getyIndex() != getYLength() - 1 && from != Direction.DOWN) {
 				Position nextPos = new Position(pos.getyIndex() + 1, pos.getxIndex());
 				if (!continuePosSet.contains(nextPos)
 						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.BLACK) {
-					continuePosSet.add(nextPos);
-					setContinueNotBlackPosSet(nextPos, continuePosSet, Direction.UP);
+					Integer numberRight = nextPos.getxIndex() == getXLength() - 1 ? null
+							: numbers[nextPos.getyIndex()][nextPos.getxIndex() + 1];
+					Integer numberDown = nextPos.getyIndex() == getYLength() - 1 ? null
+							: numbers[nextPos.getyIndex() + 1][nextPos.getxIndex()];
+					Integer numberLeft = nextPos.getxIndex() == 0 ? null
+							: numbers[nextPos.getyIndex()][nextPos.getxIndex() - 1];
+					if (numberRight != null || numberDown != null || numberLeft != null) {
+
+					} else {
+						continuePosSet.add(nextPos);
+						setContinueNotBlackPosSet(nextPos, continuePosSet, Direction.UP);
+					}
 				}
 			}
 			if (pos.getxIndex() != 0 && from != Direction.LEFT) {
 				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() - 1);
 				if (!continuePosSet.contains(nextPos)
 						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.BLACK) {
-					continuePosSet.add(nextPos);
-					setContinueNotBlackPosSet(nextPos, continuePosSet, Direction.RIGHT);
+					Integer numberUp = nextPos.getyIndex() == 0 ? null
+							: numbers[nextPos.getyIndex() - 1][nextPos.getxIndex()];
+					Integer numberDown = nextPos.getyIndex() == getYLength() - 1 ? null
+							: numbers[nextPos.getyIndex() + 1][nextPos.getxIndex()];
+					Integer numberLeft = nextPos.getxIndex() == 0 ? null
+							: numbers[nextPos.getyIndex()][nextPos.getxIndex() - 1];
+					if (numberUp != null || numberDown != null || numberLeft != null) {
+
+					} else {
+						continuePosSet.add(nextPos);
+						setContinueNotBlackPosSet(nextPos, continuePosSet, Direction.RIGHT);
+					}
 				}
 			}
+		}
+
+		/**
+		 * posを起点に上下左右に白確定のマスを無制限につなぎ、違う数字にたどり着いたらfalseを返す。
+		 */
+		private boolean setContinueWhitePosSet2(Position pos, Set<Position> continuePosSet, Direction from) {
+			if (pos.getyIndex() != 0 && from != Direction.UP) {
+				Position nextPos = new Position(pos.getyIndex() - 1, pos.getxIndex());
+				if (!continuePosSet.contains(nextPos)
+						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.NOT_BLACK) {
+					if (numbers[nextPos.getyIndex()][nextPos.getxIndex()] != null) {
+						return false;
+					}
+					continuePosSet.add(nextPos);
+					if (!setContinueWhitePosSet2(nextPos, continuePosSet, Direction.DOWN)) {
+						return false;
+					}
+				}
+			}
+			if (pos.getxIndex() != getXLength() - 1 && from != Direction.RIGHT) {
+				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() + 1);
+				if (!continuePosSet.contains(nextPos)
+						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.NOT_BLACK) {
+					if (numbers[nextPos.getyIndex()][nextPos.getxIndex()] != null) {
+						return false;
+					}
+					continuePosSet.add(nextPos);
+					if (!setContinueWhitePosSet2(nextPos, continuePosSet, Direction.LEFT)) {
+						return false;
+					}
+				}
+			}
+			if (pos.getyIndex() != getYLength() - 1 && from != Direction.DOWN) {
+				Position nextPos = new Position(pos.getyIndex() + 1, pos.getxIndex());
+				if (!continuePosSet.contains(nextPos)
+						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.NOT_BLACK) {
+					if (numbers[nextPos.getyIndex()][nextPos.getxIndex()] != null) {
+						return false;
+					}
+					continuePosSet.add(nextPos);
+					if (!setContinueWhitePosSet2(nextPos, continuePosSet, Direction.UP)) {
+						return false;
+					}
+				}
+			}
+			if (pos.getxIndex() != 0 && from != Direction.LEFT) {
+				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() - 1);
+				if (!continuePosSet.contains(nextPos)
+						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.NOT_BLACK) {
+					if (numbers[nextPos.getyIndex()][nextPos.getxIndex()] != null) {
+						return false;
+					}
+					continuePosSet.add(nextPos);
+					if (!setContinueWhitePosSet2(nextPos, continuePosSet, Direction.RIGHT)) {
+						return false;
+					}
+				}
+			}
+			return true;
 		}
 
 		/**
@@ -293,6 +386,8 @@ public class MochikoroSolver implements Solver {
 						maxX = pos.getxIndex();
 					}
 				}
+				// TODO 餅の幅・高さが決まっていたらそこから確定するとか、
+				// 餅サイズが素数で2*2以上だったらダメとかその辺のロジック入れれば強くなりそう
 				for (int yIndex = minY; yIndex <= maxY; yIndex++) {
 					for (int xIndex = minX; xIndex <= maxX; xIndex++) {
 						if (masu[yIndex][xIndex] == Masu.BLACK) {
@@ -517,8 +612,7 @@ public class MochikoroSolver implements Solver {
 	}
 
 	public static void main(String[] args) {
-		// http://pzv.jp/p.html?mochikoro/10/10/qfzkcjar8h2zr1l1g
-		String url = "http://pzv.jp/p.html?mochikoro/10/10/3q6l6zr3h6g3h6zl3q6"; //urlを入れれば試せる
+		String url = ""; //urlを入れれば試せる
 		String[] params = url.split("/");
 		int height = Integer.parseInt(params[params.length - 2]);
 		int width = Integer.parseInt(params[params.length - 3]);

@@ -1124,6 +1124,31 @@ public class YajilinSolver implements Solver {
 		for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 			for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
 				if (field.masu[yIndex][xIndex] == MasuImpl.SPACE) {
+					// 周囲に空白が少ない個所を優先して調査
+					Masu masuUp = yIndex == 0 ? MasuImpl.BLACK
+							: field.masu[yIndex - 1][xIndex];
+					Masu masuRight = xIndex == field.getXLength() - 1 ? MasuImpl.BLACK
+							: field.masu[yIndex][xIndex + 1];
+					Masu masuDown = yIndex == field.getYLength() - 1 ? MasuImpl.BLACK
+							: field.masu[yIndex + 1][xIndex];
+					Masu masuLeft = xIndex == 0  ? MasuImpl.BLACK
+							: field.masu[yIndex][xIndex - 1];
+					int whiteCnt =0;
+					if (masuUp == MasuImpl.SPACE) {
+						whiteCnt++;
+					}
+					if (masuRight == MasuImpl.SPACE) {
+						whiteCnt++;
+					}
+					if (masuDown == MasuImpl.SPACE) {
+						whiteCnt++;
+					}
+					if (masuLeft == MasuImpl.SPACE) {
+						whiteCnt++;
+					}
+					if (whiteCnt > 3) {
+						continue;
+					}
 					count++;
 					if (!oneCandSolve(field, yIndex, xIndex, recursive)) {
 						return false;

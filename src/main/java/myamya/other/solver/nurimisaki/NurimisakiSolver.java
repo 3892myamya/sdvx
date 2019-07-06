@@ -197,15 +197,15 @@ public class NurimisakiSolver implements Solver {
 							if (entry.getValue() == MasuImpl.SPACE) {
 								misakiDirectionCand.add(entry.getKey());
 							} else if (entry.getValue().isNotBlack()) {
+								if (!misakiDirectionStrongCand.isEmpty()) {
+									// 2方向に延びる場合、失敗
+									return false;
+								}
 								misakiDirectionStrongCand.add(entry.getKey());
 							}
 						}
 						Misaki oneMasu = (Misaki) masu[yIndex][xIndex];
-						if (misakiDirectionStrongCand.size() >= 2) {
-							// 2方向に延びる場合、失敗
-							return false;
-						}
-						if (misakiDirectionStrongCand.size() == 1) {
+						if (!misakiDirectionStrongCand.isEmpty()) {
 							// 岬の方角が決まっていたら伸ばしていくが、伸ばせないことが分かったらfalseを返す
 							if (!misakiStretch(yIndex, xIndex, new ArrayList<>(misakiDirectionStrongCand).get(0),
 									oneMasu.getCnt())) {
@@ -262,20 +262,20 @@ public class NurimisakiSolver implements Solver {
 							}
 						}
 					} else if (masu[yIndex][xIndex] == MasuImpl.NOT_BLACK) {
-						Map<Direction, Masu> masuMap = new HashMap<>();
-						masuMap.put(Direction.UP, yIndex == 0 ? MasuImpl.BLACK : masu[yIndex - 1][xIndex]);
-						masuMap.put(Direction.RIGHT,
-								xIndex == getXLength() - 1 ? MasuImpl.BLACK : masu[yIndex][xIndex + 1]);
-						masuMap.put(Direction.DOWN,
-								yIndex == getYLength() - 1 ? MasuImpl.BLACK : masu[yIndex + 1][xIndex]);
-						masuMap.put(Direction.LEFT, xIndex == 0 ? MasuImpl.BLACK : masu[yIndex][xIndex - 1]);
-						Set<Direction> blackDirection = new HashSet<>();
-						for (Entry<Direction, Masu> entry : masuMap.entrySet()) {
-							if (entry.getValue() == MasuImpl.BLACK) {
-								blackDirection.add(entry.getKey());
-							}
+						int blackCnt = 0;
+						if (yIndex == 0 || masu[yIndex - 1][xIndex] == MasuImpl.BLACK) {
+							blackCnt++;
 						}
-						if (blackDirection.size() >= 3) {
+						if (xIndex == getXLength() - 1 || masu[yIndex][xIndex + 1] == MasuImpl.BLACK) {
+							blackCnt++;
+						}
+						if (yIndex == getYLength() - 1 || masu[yIndex + 1][xIndex] == MasuImpl.BLACK) {
+							blackCnt++;
+						}
+						if (xIndex == 0 || masu[yIndex][xIndex - 1] == MasuImpl.BLACK) {
+							blackCnt++;
+						}
+						if (blackCnt >= 3) {
 							// 岬予定じゃないのに岬になってる
 							return false;
 						}
@@ -512,6 +512,45 @@ public class NurimisakiSolver implements Solver {
 		}
 
 		/**
+		 * ぬりみさ木モード特有の処理
+		 * 分岐の数がみさきの数-2を超えていたら失敗
+		 */
+		public boolean branchSolve() {
+			if (tree) {
+				int misakiCnt = 0;
+				int branchCnt = 0;
+				for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+					for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+						if (masu[yIndex][xIndex] instanceof Misaki) {
+							misakiCnt++;
+						} else if (masu[yIndex][xIndex] == MasuImpl.NOT_BLACK) {
+							int notBlackCnt = 0;
+							if (yIndex == 0 || masu[yIndex - 1][xIndex].isNotBlack()) {
+								notBlackCnt++;
+							}
+							if (xIndex == getXLength() - 1 || masu[yIndex][xIndex + 1].isNotBlack()) {
+								notBlackCnt++;
+							}
+							if (yIndex == getYLength() - 1 || masu[yIndex + 1][xIndex].isNotBlack()) {
+								notBlackCnt++;
+							}
+							if (xIndex == 0 || masu[yIndex][xIndex - 1].isNotBlack()) {
+								notBlackCnt++;
+							}
+							if (notBlackCnt > 2) {
+								branchCnt = notBlackCnt - 2;
+							}
+						}
+					}
+				}
+				if (branchCnt + 2 > misakiCnt) {
+					return false;
+				}
+			}
+			return true;
+		}
+
+		/**
 		 * 白確定マスをつなぎ、ループができてる場合falseを返す。
 		 */
 		private boolean loopCheck(Position pos, Set<Position> continuePosSet, Direction from) {
@@ -616,11 +655,15 @@ public class NurimisakiSolver implements Solver {
 			if (!pondSolve()) {
 				return false;
 			}
-			if (!connectSolve()) {
+			if (!branchSolve()) {
 				return false;
 			}
 			if (!getStateDump().equals(str)) {
 				return solveAndCheck();
+			} else {
+				if (!connectSolve()) {
+					return false;
+				}
 			}
 			return true;
 		}
@@ -694,6 +737,31 @@ public class NurimisakiSolver implements Solver {
 		String str = field.getStateDump();
 		for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 			for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+				// 周囲に空白が少ない個所を優先して調査
+				Masu masuUp = yIndex == 0 ? MasuImpl.BLACK
+						: field.masu[yIndex - 1][xIndex];
+				Masu masuRight = xIndex == field.getXLength() - 1 ? MasuImpl.BLACK
+						: field.masu[yIndex][xIndex + 1];
+				Masu masuDown = yIndex == field.getYLength() - 1 ? MasuImpl.BLACK
+						: field.masu[yIndex + 1][xIndex];
+				Masu masuLeft = xIndex == 0 ? MasuImpl.BLACK
+						: field.masu[yIndex][xIndex - 1];
+				int whiteCnt = 0;
+				if (masuUp == MasuImpl.SPACE) {
+					whiteCnt++;
+				}
+				if (masuRight == MasuImpl.SPACE) {
+					whiteCnt++;
+				}
+				if (masuDown == MasuImpl.SPACE) {
+					whiteCnt++;
+				}
+				if (masuLeft == MasuImpl.SPACE) {
+					whiteCnt++;
+				}
+				if (whiteCnt > 3) {
+					continue;
+				}
 				if (!oneCandSolve(field, yIndex, xIndex, recursive)) {
 					return false;
 				}

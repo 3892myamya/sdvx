@@ -1,11 +1,6 @@
 package myamya.other.solver.shakashaka;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Set;
-
 import myamya.other.solver.Common.Difficulty;
-import myamya.other.solver.Common.Direction;
 import myamya.other.solver.Common.Masu;
 import myamya.other.solver.Common.Position;
 import myamya.other.solver.Common.Wall;
@@ -227,10 +222,10 @@ public class ShakashakaSolver implements Solver {
 			if (!pondSolve()) {
 				return false;
 			}
-			if (!wallSolve()) {
+			if (!rectSolve()) {
 				return false;
 			}
-			if (!rectSolve()) {
+			if (!wallSolve()) {
 				return false;
 			}
 			if (!whiteWallSolve()) {
@@ -250,82 +245,47 @@ public class ShakashakaSolver implements Solver {
 		 * 長方形にできなかった場合はfalseを返す。
 		 */
 		public boolean rectSolve() {
-			Set<Position> blackPosSet = new HashSet<>();
-			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
-				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					if (masu[yIndex][xIndex] == Masu.BLACK) {
-						blackPosSet.add(new Position(yIndex, xIndex));
+			boolean advance = false;
+			for (int yIndex = 0; yIndex < getYLength() - 1; yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength() - 1; xIndex++) {
+					Masu masu1 = masu[yIndex][xIndex];
+					Masu masu2 = masu[yIndex][xIndex + 1];
+					Masu masu3 = masu[yIndex + 1][xIndex];
+					Masu masu4 = masu[yIndex + 1][xIndex + 1];
+					if (masu1 == Masu.BLACK && masu2 == Masu.BLACK && masu3 == Masu.BLACK && masu4 == Masu.NOT_BLACK) {
+						return false;
 					}
-				}
-			}
-			while (!blackPosSet.isEmpty()) {
-				Position typicalBlackPos = new ArrayList<>(blackPosSet).get(0);
-				Set<Position> continuePosSet = new HashSet<>();
-				continuePosSet.add(typicalBlackPos);
-				setContinueBlackPosSet(typicalBlackPos, continuePosSet, null);
-				int minY = getYLength() - 1;
-				int maxY = 0;
-				int minX = getXLength() - 1;
-				int maxX = 0;
-				for (Position pos : continuePosSet) {
-					if (pos.getyIndex() < minY) {
-						minY = pos.getyIndex();
+					if (masu1 == Masu.BLACK && masu2 == Masu.BLACK && masu3 == Masu.NOT_BLACK && masu4 == Masu.BLACK) {
+						return false;
 					}
-					if (pos.getyIndex() > maxY) {
-						maxY = pos.getyIndex();
+					if (masu1 == Masu.BLACK && masu2 == Masu.NOT_BLACK && masu3 == Masu.BLACK && masu4 == Masu.BLACK) {
+						return false;
 					}
-					if (pos.getxIndex() < minX) {
-						minX = pos.getxIndex();
+					if (masu1 == Masu.NOT_BLACK && masu2 == Masu.BLACK && masu3 == Masu.BLACK && masu4 == Masu.BLACK) {
+						return false;
 					}
-					if (pos.getxIndex() > maxX) {
-						maxX = pos.getxIndex();
+					if (masu1 == Masu.BLACK && masu2 == Masu.BLACK && masu3 == Masu.BLACK && masu4 == Masu.SPACE) {
+						advance = true;
+						masu[yIndex + 1][xIndex + 1] = Masu.BLACK;
 					}
-				}
-				for (int yIndex = minY; yIndex <= maxY; yIndex++) {
-					for (int xIndex = minX; xIndex <= maxX; xIndex++) {
-						if (masu[yIndex][xIndex] == Masu.NOT_BLACK) {
-							return false;
-						}
+					if (masu1 == Masu.BLACK && masu2 == Masu.BLACK && masu3 == Masu.SPACE && masu4 == Masu.BLACK) {
+						advance = true;
+						masu[yIndex + 1][xIndex] = Masu.BLACK;
+					}
+					if (masu1 == Masu.BLACK && masu2 == Masu.SPACE && masu3 == Masu.BLACK && masu4 == Masu.BLACK) {
+						advance = true;
+						masu[yIndex][xIndex + 1] = Masu.BLACK;
+					}
+					if (masu1 == Masu.SPACE && masu2 == Masu.BLACK && masu3 == Masu.BLACK && masu4 == Masu.BLACK) {
+						advance = true;
 						masu[yIndex][xIndex] = Masu.BLACK;
 					}
 				}
-				blackPosSet.removeAll(continuePosSet);
+			}
+			if (advance) {
+				return rectSolve();
 			}
 			return true;
-		}
-
-		/**
-		 * posを起点に上下左右に黒確定マスを無制限につなげていく。
-		 */
-		private void setContinueBlackPosSet(Position pos, Set<Position> continuePosSet, Direction from) {
-			if (pos.getyIndex() != 0 && from != Direction.UP) {
-				Position nextPos = new Position(pos.getyIndex() - 1, pos.getxIndex());
-				if (masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.BLACK && !continuePosSet.contains(nextPos)) {
-					continuePosSet.add(nextPos);
-					setContinueBlackPosSet(nextPos, continuePosSet, Direction.DOWN);
-				}
-			}
-			if (pos.getxIndex() != getXLength() - 1 && from != Direction.RIGHT) {
-				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() + 1);
-				if (masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.BLACK && !continuePosSet.contains(nextPos)) {
-					continuePosSet.add(nextPos);
-					setContinueBlackPosSet(nextPos, continuePosSet, Direction.LEFT);
-				}
-			}
-			if (pos.getyIndex() != getYLength() - 1 && from != Direction.DOWN) {
-				Position nextPos = new Position(pos.getyIndex() + 1, pos.getxIndex());
-				if (masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.BLACK && !continuePosSet.contains(nextPos)) {
-					continuePosSet.add(nextPos);
-					setContinueBlackPosSet(nextPos, continuePosSet, Direction.UP);
-				}
-			}
-			if (pos.getxIndex() != 0 && from != Direction.LEFT) {
-				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() - 1);
-				if (masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.BLACK && !continuePosSet.contains(nextPos)) {
-					continuePosSet.add(nextPos);
-					setContinueBlackPosSet(nextPos, continuePosSet, Direction.RIGHT);
-				}
-			}
 		}
 
 		/**
@@ -518,8 +478,7 @@ public class ShakashakaSolver implements Solver {
 								return false;
 							}
 							masu[yIndex][xIndex] = Masu.BLACK;
-						}
-						if (exists > 0) {
+						} else if (exists > 0) {
 							// 壁2枚が確定。
 							if ((wallUp == Wall.EXISTS && wallDown == Wall.EXISTS)
 									|| (wallRight == Wall.EXISTS
@@ -528,8 +487,13 @@ public class ShakashakaSolver implements Solver {
 									return false;
 								}
 								masu[yIndex][xIndex] = Masu.BLACK;
-							}
-							if (masu[yIndex][xIndex] == Masu.NOT_BLACK) {
+							} else if ((wallUp == Wall.NOT_EXISTS && wallDown == Wall.NOT_EXISTS)
+									|| (wallRight == Wall.NOT_EXISTS && wallLeft == Wall.NOT_EXISTS)) {
+								if (masu[yIndex][xIndex] == Masu.NOT_BLACK) {
+									return false;
+								}
+								masu[yIndex][xIndex] = Masu.BLACK;
+							} else if (masu[yIndex][xIndex] == Masu.NOT_BLACK) {
 								if (wallUp == Wall.EXISTS && wallDown == Wall.SPACE) {
 									tateWall[yIndex][xIndex] = Wall.NOT_EXISTS;
 								}
@@ -555,8 +519,7 @@ public class ShakashakaSolver implements Solver {
 									yokoWall[yIndex][xIndex] = Wall.EXISTS;
 								}
 							}
-						}
-						if (notExists > 2) {
+						} else if (notExists > 2) {
 							if (masu[yIndex][xIndex] == Masu.NOT_BLACK) {
 								// 壁なしが確定。
 								if (wallUp == Wall.SPACE) {
@@ -756,6 +719,32 @@ public class ShakashakaSolver implements Solver {
 		for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 			for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
 				if (field.masu[yIndex][xIndex] == Masu.SPACE && field.numbers[yIndex][xIndex] == null) {
+					Masu masuUp = yIndex == 0 || field.numbers[yIndex - 1][xIndex] != null ? Masu.BLACK
+							: field.masu[yIndex - 1][xIndex];
+					Masu masuRight = xIndex == field.getXLength() - 1 || field.numbers[yIndex][xIndex + 1] != null
+							? Masu.BLACK
+							: field.masu[yIndex][xIndex + 1];
+					Masu masuDown = yIndex == field.getYLength() - 1 || field.numbers[yIndex + 1][xIndex] != null
+							? Masu.BLACK
+							: field.masu[yIndex + 1][xIndex];
+					Masu masuLeft = xIndex == 0 || field.numbers[yIndex][xIndex - 1] != null ? Masu.BLACK
+							: field.masu[yIndex][xIndex - 1];
+					int whiteCnt = 0;
+					if (masuUp == Masu.SPACE) {
+						whiteCnt++;
+					}
+					if (masuRight == Masu.SPACE) {
+						whiteCnt++;
+					}
+					if (masuDown == Masu.SPACE) {
+						whiteCnt++;
+					}
+					if (masuLeft == Masu.SPACE) {
+						whiteCnt++;
+					}
+					if (whiteCnt > 2) {
+						continue;
+					}
 					count++;
 					if (!oneCandSolve(field, yIndex, xIndex, recursive)) {
 						return false;

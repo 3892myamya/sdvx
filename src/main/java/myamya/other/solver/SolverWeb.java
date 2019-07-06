@@ -38,7 +38,6 @@ import myamya.other.solver.masyu.MasyuSolver.Pearl;
 import myamya.other.solver.norinori.NorinoriSolver;
 import myamya.other.solver.numlin.NumlinSolver;
 import myamya.other.solver.nurikabe.NurikabeSolver;
-import myamya.other.solver.nurikabe.NurikabeSolver.Room;
 import myamya.other.solver.nurimisaki.NurimisakiSolver;
 import myamya.other.solver.nurimisaki.NurimisakiSolver.Misaki;
 import myamya.other.solver.sashigane.SashiganeSolver;
@@ -114,7 +113,6 @@ public class SolverWeb extends HttpServlet {
 			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
 					YajilinSolver.Masu oneMasu = field.getMasu()[yIndex][xIndex];
-
 					String str = "";
 					if (oneMasu.toString().equals("・")) {
 						Wall up = yIndex == 0 ? Wall.EXISTS : field.getTateWall()[yIndex - 1][xIndex];
@@ -207,19 +205,19 @@ public class SolverWeb extends HttpServlet {
 								+ "</rect>");
 					} else {
 						String masuStr = null;
-						for (Room room : field.rooms) {
-							if (room.getPivot().equals(new Position(yIndex, xIndex))) {
-								String capacityStr = String.valueOf(room.getCapacity());
+						if (field.getNumbers()[yIndex][xIndex] != null) {
+							if (field.getNumbers()[yIndex][xIndex] == -1) {
+								masuStr = "？";
+							} else {
+								String capacityStr = String.valueOf(field.getNumbers()[yIndex][xIndex]);
 								int index = HALF_NUMS.indexOf(capacityStr);
 								if (index >= 0) {
 									masuStr = FULL_NUMS.substring(index / 2, index / 2 + 1);
 								} else {
 									masuStr = capacityStr;
 								}
-								break;
 							}
-						}
-						if (masuStr == null) {
+						} else {
 							masuStr = oneMasu.toString();
 						}
 						sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 4)
@@ -2887,8 +2885,8 @@ public class SolverWeb extends HttpServlet {
 				t = new ShakashakaSolverThread(height, width, param);
 			} else if (puzzleType.contains("tapa")) {
 				t = new TapaSolverThread(height, width, param);
-//			} else if (puzzleType.contains("numlin") || puzzleType.contains("numberlink")) {
-//				t = new NumlinSolverThread(height, width, param);
+				//			} else if (puzzleType.contains("numlin") || puzzleType.contains("numberlink")) {
+				//				t = new NumlinSolverThread(height, width, param);
 			} else {
 				throw new IllegalArgumentException();
 			}
