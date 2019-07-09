@@ -614,7 +614,11 @@ public class NurimisakiSolver implements Solver {
 				if (!continuePosSet.contains(nextPos)
 						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != MasuImpl.BLACK) {
 					continuePosSet.add(nextPos);
-					setContinueWhitePosSet(nextPos, continuePosSet, Direction.DOWN);
+					if (masu[nextPos.getyIndex()][nextPos.getxIndex()] instanceof Misaki) {
+						// 岬のマスからはもう伸ばせない
+					} else {
+						setContinueWhitePosSet(nextPos, continuePosSet, Direction.DOWN);
+					}
 				}
 			}
 			if (pos.getxIndex() != getXLength() - 1 && from != Direction.RIGHT) {
@@ -622,7 +626,11 @@ public class NurimisakiSolver implements Solver {
 				if (!continuePosSet.contains(nextPos)
 						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != MasuImpl.BLACK) {
 					continuePosSet.add(nextPos);
-					setContinueWhitePosSet(nextPos, continuePosSet, Direction.LEFT);
+					if (masu[nextPos.getyIndex()][nextPos.getxIndex()] instanceof Misaki) {
+						// 岬のマスからはもう伸ばせない
+					} else {
+						setContinueWhitePosSet(nextPos, continuePosSet, Direction.LEFT);
+					}
 				}
 			}
 			if (pos.getyIndex() != getYLength() - 1 && from != Direction.DOWN) {
@@ -630,7 +638,11 @@ public class NurimisakiSolver implements Solver {
 				if (!continuePosSet.contains(nextPos)
 						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != MasuImpl.BLACK) {
 					continuePosSet.add(nextPos);
-					setContinueWhitePosSet(nextPos, continuePosSet, Direction.UP);
+					if (masu[nextPos.getyIndex()][nextPos.getxIndex()] instanceof Misaki) {
+						// 岬のマスからはもう伸ばせない
+					} else {
+						setContinueWhitePosSet(nextPos, continuePosSet, Direction.UP);
+					}
 				}
 			}
 			if (pos.getxIndex() != 0 && from != Direction.LEFT) {
@@ -638,7 +650,11 @@ public class NurimisakiSolver implements Solver {
 				if (!continuePosSet.contains(nextPos)
 						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != MasuImpl.BLACK) {
 					continuePosSet.add(nextPos);
-					setContinueWhitePosSet(nextPos, continuePosSet, Direction.RIGHT);
+					if (masu[nextPos.getyIndex()][nextPos.getxIndex()] instanceof Misaki) {
+						// 岬のマスからはもう伸ばせない
+					} else {
+						setContinueWhitePosSet(nextPos, continuePosSet, Direction.RIGHT);
+					}
 				}
 			}
 		}
@@ -713,7 +729,7 @@ public class NurimisakiSolver implements Solver {
 			int recursiveCnt = 0;
 			while (field.getStateDump().equals(befStr) && recursiveCnt < 3) {
 				difficulty = difficulty <= recursiveCnt ? recursiveCnt + 1 : difficulty;
-				if (!candSolve(field, recursiveCnt)) {
+				if (!candSolve(field, recursiveCnt == 2 ? 999 : recursiveCnt)) {
 					return "問題に矛盾がある可能性があります。途中経過を返します。";
 				}
 				recursiveCnt++;

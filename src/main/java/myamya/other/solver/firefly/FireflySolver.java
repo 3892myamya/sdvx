@@ -16,8 +16,6 @@ public class FireflySolver implements Solver {
 	 * ホタルのマス
 	 */
 	public static class Firefly {
-		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
-		private static final String FULL_NUMS = "０１２３４５６７８９";
 
 		private final Position position;
 		private final Direction direction;
@@ -177,6 +175,40 @@ public class FireflySolver implements Solver {
 					direction = null;
 				}
 			}
+			// ホタルが2匹並んでいていずれも尻でない場合、間に壁を作る。
+			// TODO これだけここでやるのが微妙だなあ…
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					if (fireflies[yIndex][xIndex] != null) {
+						Firefly pivotFf = fireflies[yIndex][xIndex];
+						Firefly ffU = yIndex == 0 ? null
+								: fireflies[yIndex - 1][xIndex];
+						Firefly ffR = xIndex == getXLength() - 1 ? null
+								: fireflies[yIndex][xIndex + 1];
+						Firefly ffD = yIndex == getYLength() - 1 ? null
+								: fireflies[yIndex + 1][xIndex];
+						Firefly ffL = xIndex == 0 ? null
+								: fireflies[yIndex][xIndex - 1];
+						if (ffU != null && pivotFf.getDirection() != Direction.UP
+								&& ffU.getDirection() != Direction.DOWN) {
+							tateWall[yIndex - 1][xIndex] = Wall.EXISTS;
+						}
+						if (ffR != null && pivotFf.getDirection() != Direction.RIGHT
+								&& ffR.getDirection() != Direction.LEFT) {
+							yokoWall[yIndex][xIndex] = Wall.EXISTS;
+						}
+						if (ffD != null && pivotFf.getDirection() != Direction.DOWN
+								&& ffD.getDirection() != Direction.UP) {
+							tateWall[yIndex][xIndex] = Wall.EXISTS;
+						}
+						if (ffL != null && pivotFf.getDirection() != Direction.LEFT
+								&& ffL.getDirection() != Direction.RIGHT) {
+							yokoWall[yIndex][xIndex - 1] = Wall.EXISTS;
+						}
+					}
+				}
+			}
+
 		}
 
 		public Field(Field other) {
@@ -286,7 +318,11 @@ public class FireflySolver implements Solver {
 							pivot = new Position(pivot.getyIndex(), pivot.getxIndex() - 1);
 						}
 						while (true) {
+							if (fireflies[pivot.getyIndex()][pivot.getxIndex()] != null) {
+								break;
+							}
 							// 各方向の壁の存在状況
+							// TODO いける方向かどうかをもうちょい再帰で判定させたい
 							Wall wallU = pivot.getyIndex() == 0 ? Wall.EXISTS
 									: tateWall[pivot.getyIndex() - 1][pivot.getxIndex()];
 							Wall wallR = pivot.getxIndex() == getXLength() - 1 ? Wall.EXISTS
@@ -296,12 +332,13 @@ public class FireflySolver implements Solver {
 							Wall wallL = pivot.getxIndex() == 0 ? Wall.EXISTS
 									: yokoWall[pivot.getyIndex()][pivot.getxIndex() - 1];
 							// 行ける条件
-							// 進行方向と逆方向でないこと
-							// 行く先に壁がないこと
-							// カーブ回数が残ってないとき、カーブしないこと
-							// 進行方向の逆以外に確定解放壁がないこと
-							// 行く先がホタルの尻でないこと
-							// カーブ回数が1回以上残っているとき、直進した行く先がホタルでないこと
+							// ・進行方向と逆方向でないこと
+							// ・行く先に壁がないこと
+							// ・カーブ回数が残ってないとき、カーブしないこと
+							// ・進行方向の逆以外に確定解放壁がないこと
+							// ・行く先がホタルの尻でないこと
+							// ・カーブ回数が1回以上残っているとき、直進した行く先がホタルでないこと
+							// ・カーブ回数が2回以上残っているとき、カーブした行く先がホタルでないこと
 							boolean canU = (to != Direction.DOWN && wallU != Wall.EXISTS
 									&& (to != Direction.UP || (wallR != Wall.NOT_EXISTS
 											&& wallL != Wall.NOT_EXISTS))
@@ -310,6 +347,8 @@ public class FireflySolver implements Solver {
 											&& fireflies[pivot.getyIndex() - 1][pivot.getxIndex()]
 													.getDirection() == Direction.DOWN))
 									&& !(retainCurve > 0 && to == Direction.UP
+											&& fireflies[pivot.getyIndex() - 1][pivot.getxIndex()] != null)
+									&& !(retainCurve > 1 && to != Direction.UP
 											&& fireflies[pivot.getyIndex() - 1][pivot.getxIndex()] != null);
 							boolean canR = (to != Direction.LEFT && wallR != Wall.EXISTS
 									&& (to != Direction.RIGHT || (wallU != Wall.NOT_EXISTS
@@ -319,6 +358,8 @@ public class FireflySolver implements Solver {
 											&& fireflies[pivot.getyIndex()][pivot.getxIndex() + 1]
 													.getDirection() == Direction.LEFT))
 									&& !(retainCurve > 0 && to == Direction.RIGHT
+											&& fireflies[pivot.getyIndex()][pivot.getxIndex() + 1] != null)
+									&& !(retainCurve > 1 && to != Direction.RIGHT
 											&& fireflies[pivot.getyIndex()][pivot.getxIndex() + 1] != null);
 							boolean canD = (to != Direction.UP && wallD != Wall.EXISTS
 									&& (to != Direction.DOWN || (wallR != Wall.NOT_EXISTS
@@ -328,6 +369,8 @@ public class FireflySolver implements Solver {
 											&& fireflies[pivot.getyIndex() + 1][pivot.getxIndex()]
 													.getDirection() == Direction.UP))
 									&& !(retainCurve > 0 && to == Direction.DOWN
+											&& fireflies[pivot.getyIndex() + 1][pivot.getxIndex()] != null)
+									&& !(retainCurve > 1 && to != Direction.DOWN
 											&& fireflies[pivot.getyIndex() + 1][pivot.getxIndex()] != null);
 							boolean canL = (to != Direction.RIGHT && wallL != Wall.EXISTS
 									&& (to != Direction.LEFT || (wallU != Wall.NOT_EXISTS
@@ -337,6 +380,8 @@ public class FireflySolver implements Solver {
 											&& fireflies[pivot.getyIndex()][pivot.getxIndex() - 1]
 													.getDirection() == Direction.RIGHT))
 									&& !(retainCurve > 0 && to == Direction.LEFT
+											&& fireflies[pivot.getyIndex()][pivot.getxIndex() - 1] != null)
+									&& !(retainCurve > 1 && to != Direction.LEFT
 											&& fireflies[pivot.getyIndex()][pivot.getxIndex() - 1] != null);
 							if (!canU && !canR && !canD && !canL) {
 								return false;
@@ -408,9 +453,6 @@ public class FireflySolver implements Solver {
 									to = Direction.LEFT;
 								}
 							} else {
-								break;
-							}
-							if (fireflies[pivot.getyIndex()][pivot.getxIndex()] != null) {
 								break;
 							}
 						}
@@ -550,15 +592,15 @@ public class FireflySolver implements Solver {
 		 * 白マスが1つながりになっていない場合falseを返す。
 		 */
 		public boolean connectSolve() {
-			Set<Position> whitePosSet = new HashSet<>();
+			Set<Position> allPosSet = new HashSet<>();
 			Position typicalWhitePos = null;
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					Position pos = new Position(yIndex, xIndex);
+					allPosSet.add(pos);
 					if (masu[yIndex][xIndex] == Masu.NOT_BLACK) {
-						Position whitePos = new Position(yIndex, xIndex);
-						whitePosSet.add(whitePos);
 						if (typicalWhitePos == null) {
-							typicalWhitePos = whitePos;
+							typicalWhitePos = pos;
 						}
 					}
 				}
@@ -569,13 +611,19 @@ public class FireflySolver implements Solver {
 				Set<Position> continuePosSet = new HashSet<>();
 				continuePosSet.add(typicalWhitePos);
 				setContinuePosSet(typicalWhitePos, continuePosSet, null);
-				whitePosSet.removeAll(continuePosSet);
-				return whitePosSet.isEmpty();
+				allPosSet.removeAll(continuePosSet);
+				for (Position pos : allPosSet) {
+					if (masu[pos.getyIndex()][pos.getxIndex()] == Masu.NOT_BLACK) {
+						return false;
+					}
+					masu[pos.getyIndex()][pos.getxIndex()] = Masu.BLACK;
+				}
+				return true;
 			}
 		}
 
 		/**
-		 * posを起点に上下左右に壁で区切られていないマスを無制限につなげていく。
+		 * posを起点に上下左右に壁で区切られていないマスをつなげていく。
 		 */
 		private void setContinuePosSet(Position pos, Set<Position> continuePosSet, Direction from) {
 			if (pos.getyIndex() != 0 && from != Direction.UP) {
@@ -611,6 +659,75 @@ public class FireflySolver implements Solver {
 		}
 
 		/**
+		 * ホタルビームから孤立したマスを黒にする。
+		 */
+		public boolean connectSolve2() {
+			Set<Position> continuePosSet = new HashSet<>();
+			Set<Position> allPosSet = new HashSet<>();
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					Position pos = new Position(yIndex, xIndex);
+					allPosSet.add(pos);
+					if (fireflies[yIndex][xIndex] != null) {
+						continuePosSet.add(pos);
+						setFireFlyContinuePosSet(pos, continuePosSet, null);
+					}
+				}
+			}
+			allPosSet.removeAll(continuePosSet);
+			for (Position pos : allPosSet) {
+				if (masu[pos.getyIndex()][pos.getxIndex()] == Masu.NOT_BLACK) {
+					return false;
+				}
+				masu[pos.getyIndex()][pos.getxIndex()] = Masu.BLACK;
+			}
+			return true;
+		}
+
+		/**
+		 * posを起点に上下左右に壁で区切られていないマスをつなげていく。
+		 * ホタルのマスは尻の方向にしか向かないようにする。
+		 */
+		private void setFireFlyContinuePosSet(Position pos, Set<Position> continuePosSet, Direction from) {
+			if (pos.getyIndex() != 0 && from != Direction.UP && !(fireflies[pos.getyIndex()][pos.getxIndex()] != null
+					&& fireflies[pos.getyIndex()][pos.getxIndex()].getDirection() != Direction.UP)) {
+				Position nextPos = new Position(pos.getyIndex() - 1, pos.getxIndex());
+				if (tateWall[pos.getyIndex() - 1][pos.getxIndex()] != Wall.EXISTS
+						&& !continuePosSet.contains(nextPos)) {
+					continuePosSet.add(nextPos);
+					setFireFlyContinuePosSet(nextPos, continuePosSet, Direction.DOWN);
+				}
+			}
+			if (pos.getxIndex() != getXLength() - 1 && from != Direction.RIGHT
+					&& !(fireflies[pos.getyIndex()][pos.getxIndex()] != null
+							&& fireflies[pos.getyIndex()][pos.getxIndex()].getDirection() != Direction.RIGHT)) {
+				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() + 1);
+				if (yokoWall[pos.getyIndex()][pos.getxIndex()] != Wall.EXISTS && !continuePosSet.contains(nextPos)) {
+					continuePosSet.add(nextPos);
+					setFireFlyContinuePosSet(nextPos, continuePosSet, Direction.LEFT);
+				}
+			}
+			if (pos.getyIndex() != getYLength() - 1 && from != Direction.DOWN
+					&& !(fireflies[pos.getyIndex()][pos.getxIndex()] != null
+							&& fireflies[pos.getyIndex()][pos.getxIndex()].getDirection() != Direction.DOWN)) {
+				Position nextPos = new Position(pos.getyIndex() + 1, pos.getxIndex());
+				if (tateWall[pos.getyIndex()][pos.getxIndex()] != Wall.EXISTS && !continuePosSet.contains(nextPos)) {
+					continuePosSet.add(nextPos);
+					setFireFlyContinuePosSet(nextPos, continuePosSet, Direction.UP);
+				}
+			}
+			if (pos.getxIndex() != 0 && from != Direction.LEFT && !(fireflies[pos.getyIndex()][pos.getxIndex()] != null
+					&& fireflies[pos.getyIndex()][pos.getxIndex()].getDirection() != Direction.LEFT)) {
+				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() - 1);
+				if (yokoWall[pos.getyIndex()][pos.getxIndex() - 1] != Wall.EXISTS
+						&& !continuePosSet.contains(nextPos)) {
+					continuePosSet.add(nextPos);
+					setFireFlyContinuePosSet(nextPos, continuePosSet, Direction.RIGHT);
+				}
+			}
+		}
+
+		/**
 		 * 各種チェックを1セット実行
 		 * @param recursive
 		 */
@@ -626,6 +743,9 @@ public class FireflySolver implements Solver {
 				return solveAndCheck();
 			} else {
 				if (!connectSolve()) {
+					return false;
+				}
+				if (!connectSolve2()) {
 					return false;
 				}
 			}
@@ -690,7 +810,7 @@ public class FireflySolver implements Solver {
 			}
 			int recursiveCnt = 0;
 			while (field.getStateDump().equals(befStr) && recursiveCnt < 3) {
-				if (!candSolve(field, recursiveCnt)) {
+				if (!candSolve(field, recursiveCnt == 2 ? 999 : recursiveCnt)) {
 					return "問題に矛盾がある可能性があります。途中経過を返します。";
 				}
 				recursiveCnt++;
@@ -700,10 +820,10 @@ public class FireflySolver implements Solver {
 			}
 		}
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
-		System.out.println("難易度:" + (count * 5));
+		System.out.println("難易度:" + (count));
 		System.out.println(field);
 		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count * 5).toString();
+				+ Difficulty.getByCount(count).toString();
 	}
 
 	/**
@@ -711,45 +831,16 @@ public class FireflySolver implements Solver {
 	 * @param posSet
 	 */
 	private boolean candSolve(Field field, int recursive) {
+		//System.out.println(field);
 		String str = field.getStateDump();
-		for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
-			for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
-				if (field.masu[yIndex][xIndex] == Masu.SPACE) {
-					// 周囲に空白が少ない個所を優先して調査
-					Masu masuUp = yIndex == 0 ? Masu.BLACK
-							: field.masu[yIndex - 1][xIndex];
-					Masu masuRight = xIndex == field.getXLength() - 1 ? Masu.BLACK
-							: field.masu[yIndex][xIndex + 1];
-					Masu masuDown = yIndex == field.getYLength() - 1 ? Masu.BLACK
-							: field.masu[yIndex + 1][xIndex];
-					Masu masuLeft = xIndex == 0 ? Masu.BLACK
-							: field.masu[yIndex][xIndex - 1];
-					int whiteCnt = 0;
-					if (masuUp == Masu.SPACE) {
-						whiteCnt++;
-					}
-					if (masuRight == Masu.SPACE) {
-						whiteCnt++;
-					}
-					if (masuDown == Masu.SPACE) {
-						whiteCnt++;
-					}
-					if (masuLeft == Masu.SPACE) {
-						whiteCnt++;
-					}
-					if (whiteCnt > 4) {
-						continue;
-					}
-					count++;
-					if (!oneCandSolve(field, yIndex, xIndex, recursive)) {
-						return false;
-					}
-				}
-			}
-		}
 		for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 			for (int xIndex = 0; xIndex < field.getXLength() - 1; xIndex++) {
 				if (field.yokoWall[yIndex][xIndex] == Wall.SPACE) {
+					Masu masuLeft = field.masu[yIndex][xIndex];
+					Masu masuRight = field.masu[yIndex][xIndex + 1];
+					if (masuLeft == Masu.SPACE && masuRight == Masu.SPACE) {
+						continue;
+					}
 					count++;
 					if (!oneCandYokoWallSolve(field, yIndex, xIndex, recursive)) {
 						return false;
@@ -760,6 +851,11 @@ public class FireflySolver implements Solver {
 		for (int yIndex = 0; yIndex < field.getYLength() - 1; yIndex++) {
 			for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
 				if (field.tateWall[yIndex][xIndex] == Wall.SPACE) {
+					Masu masuUp = field.masu[yIndex][xIndex];
+					Masu masuDown = field.masu[yIndex + 1][xIndex];
+					if (masuUp == Masu.SPACE && masuDown == Masu.SPACE) {
+						continue;
+					}
 					count++;
 					if (!oneCandTateWallSolve(field, yIndex, xIndex, recursive)) {
 						return false;
@@ -769,40 +865,6 @@ public class FireflySolver implements Solver {
 		}
 		if (!field.getStateDump().equals(str)) {
 			return candSolve(field, recursive);
-		}
-		return true;
-	}
-
-	/**
-	 * 1つのマスに対する仮置き調査
-	 */
-	private boolean oneCandSolve(Field field, int yIndex, int xIndex, int recursive) {
-		Field virtual = new Field(field);
-		virtual.masu[yIndex][xIndex] = Masu.BLACK;
-		boolean allowBlack = virtual.solveAndCheck();
-		if (allowBlack && recursive > 0) {
-			if (!candSolve(virtual, recursive - 1)) {
-				allowBlack = false;
-			}
-		}
-		Field virtual2 = new Field(field);
-		virtual2.masu[yIndex][xIndex] = Masu.NOT_BLACK;
-		boolean allowNotBlack = virtual2.solveAndCheck();
-		if (allowNotBlack && recursive > 0) {
-			if (!candSolve(virtual2, recursive - 1)) {
-				allowNotBlack = false;
-			}
-		}
-		if (!allowBlack && !allowNotBlack) {
-			return false;
-		} else if (!allowBlack) {
-			field.masu = virtual2.masu;
-			field.tateWall = virtual2.tateWall;
-			field.yokoWall = virtual2.yokoWall;
-		} else if (!allowNotBlack) {
-			field.masu = virtual.masu;
-			field.tateWall = virtual.tateWall;
-			field.yokoWall = virtual.yokoWall;
 		}
 		return true;
 	}

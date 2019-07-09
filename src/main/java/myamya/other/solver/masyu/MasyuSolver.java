@@ -581,15 +581,15 @@ public class MasyuSolver implements Solver {
 		 * 白マスが1つながりになっていない場合falseを返す。
 		 */
 		public boolean connectSolve() {
-			Set<Position> whitePosSet = new HashSet<>();
+			Set<Position> allPosSet = new HashSet<>();
 			Position typicalWhitePos = null;
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					Position pos = new Position(yIndex, xIndex);
+					allPosSet.add(pos);
 					if (masu[yIndex][xIndex] == Masu.NOT_BLACK) {
-						Position whitePos = new Position(yIndex, xIndex);
-						whitePosSet.add(whitePos);
 						if (typicalWhitePos == null) {
-							typicalWhitePos = whitePos;
+							typicalWhitePos = pos;
 						}
 					}
 				}
@@ -600,8 +600,14 @@ public class MasyuSolver implements Solver {
 				Set<Position> continuePosSet = new HashSet<>();
 				continuePosSet.add(typicalWhitePos);
 				setContinuePosSet(typicalWhitePos, continuePosSet, null);
-				whitePosSet.removeAll(continuePosSet);
-				return whitePosSet.isEmpty();
+				allPosSet.removeAll(continuePosSet);
+				for (Position pos : allPosSet) {
+					if (masu[pos.getyIndex()][pos.getxIndex()] == Masu.NOT_BLACK) {
+						return false;
+					}
+					masu[pos.getyIndex()][pos.getxIndex()] = Masu.BLACK;
+				}
+				return true;
 			}
 		}
 
@@ -792,10 +798,10 @@ public class MasyuSolver implements Solver {
 			}
 		}
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
-		System.out.println("難易度:" + (count / 2));
+		System.out.println("難易度:" + (count));
 		System.out.println(field);
 		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count / 2).toString();
+				+ Difficulty.getByCount(count).toString();
 	}
 
 	/**
@@ -807,6 +813,11 @@ public class MasyuSolver implements Solver {
 		for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 			for (int xIndex = 0; xIndex < field.getXLength() - 1; xIndex++) {
 				if (field.yokoWall[yIndex][xIndex] == Wall.SPACE) {
+					Masu masuLeft = field.masu[yIndex][xIndex];
+					Masu masuRight = field.masu[yIndex][xIndex + 1];
+					if (masuLeft == Masu.SPACE && masuRight == Masu.SPACE) {
+						continue;
+					}
 					count++;
 					if (!oneCandYokoWallSolve(field, yIndex, xIndex, recursive)) {
 						return false;
@@ -817,6 +828,11 @@ public class MasyuSolver implements Solver {
 		for (int yIndex = 0; yIndex < field.getYLength() - 1; yIndex++) {
 			for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
 				if (field.tateWall[yIndex][xIndex] == Wall.SPACE) {
+					Masu masuUp = field.masu[yIndex][xIndex];
+					Masu masuDown = field.masu[yIndex + 1][xIndex];
+					if (masuUp == Masu.SPACE && masuDown == Masu.SPACE) {
+						continue;
+					}
 					count++;
 					if (!oneCandTateWallSolve(field, yIndex, xIndex, recursive)) {
 						return false;
