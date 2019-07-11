@@ -1,4 +1,4 @@
-﻿package myamya.other.solver.firefly;
+package myamya.other.solver.firefly;
 
 import java.util.HashSet;
 import java.util.Set;

@@ -1,0 +1,22 @@
+body{
+  margin:0px;
+}
+
+#div_title{
+  font-size: 1.5em;
+  font-weight: bold;
+  background: linear-gradient(#6F5595, #6F30C5);
+  color: #ffffff;
+}
+
+div{
+  margin-bottom: 5px;
+}
+
+#btn_submit{
+  height: 40px;
+  width: 120px;
+}
+#tweetpng {
+    vertical-align: middle;
+}

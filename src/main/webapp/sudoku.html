@@ -1,0 +1,48 @@
+<html>
+<head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-121350239-1"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'UA-121350239-1');
+    </script>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数独ガチャ</title>
+    <meta name="keywords" content="数独, sudoku, ナンプレ, number place, 自動生成, ガチャ, ジェネレータ"/>
+    <meta name="description" content="数独の問題がゲットできるガチャです。あなたは高レベルのレア数独をゲットできるか？引いた問題はそのままぱずぷれv3さんで解くことが可能です。"/>
+    <link rel="stylesheet" href="css/sudoku.css?ver=20190711"/>
+    <script src="js/jquery-3.3.1.min.js"></script>
+    <script src="js/sudoku.js?ver=20190711"></script>
+</head>
+<body>
+<div id="div_title">数独ガチャ</div>
+<div>
+<label id="lbl_pattern" for="sel_pattern">問題の形</label>
+<select id="sel_pattern" name="sel_pattern">
+	<option value="0">フリー</option>
+	<option value="1">点対称</option>
+	<option value="2">左右対称</option>
+	<option value="3">上下対称</option>
+	<option value="6">上下左右対称</option>
+</select>
+</div>
+
+<div>
+<button type="button" id="btn_submit">ガチャを回す！</button>
+<label id="caption"></label>
+</div>
+
+<div id="div_result">
+</div>
+<div id="div_link">
+</div>
+<div>
+<a id="tweetbtn" href="https://twitter.com/intent/tweet?hashtags=数独ガチャ&text=数独の問題がゲットできるガチャです。&tw_p=tweetbutton&url=https%3a%2f%2ft%2eco%2fGg5hFCjLwP" target="_blank" rel="nofollow">
+<img id="tweetpng" src="tweetbtn.png" width="80" height="20">
+</a>
+</div>
+
+</html>
