@@ -20,3 +20,11 @@ div{
 #tweetpng {
     vertical-align: middle;
 }
+
+#div_tweet{
+  margin-bottom: 15px;
+}
+
+#edt_if{
+  width: 250px;
+}

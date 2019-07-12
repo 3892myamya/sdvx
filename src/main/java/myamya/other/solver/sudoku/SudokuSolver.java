@@ -62,15 +62,63 @@ public class SudokuSolver implements Solver {
 			DESC_SLASH(4, 45) {
 				@Override
 				Set<Position> getPosSet(int num) {
-					// TODO 自動生成されたメソッド・スタブ
-					return null;
+					Set<Position> result = new HashSet<>();
+					int wknum;
+					if (num < 9) {
+						wknum = num;
+					} else if (num < 17) {
+						wknum = num + 1;
+					} else if (num < 24) {
+						wknum = num + 3;
+					} else if (num < 30) {
+						wknum = num + 6;
+					} else if (num < 35) {
+						wknum = num + 10;
+					} else if (num < 39) {
+						wknum = num + 15;
+					} else if (num < 42) {
+						wknum = num + 21;
+					} else if (num < 44) {
+						wknum = num + 28;
+					} else {
+						wknum = num + 36;
+					}
+					int yIndex = wknum / 9;
+					int xIndex = wknum % 9;
+					result.add(new Position(yIndex, xIndex));
+					result.add(new Position(xIndex, yIndex));
+					return result;
 				}
 			},
 			ASC_SLASH(5, 45) {
 				@Override
 				Set<Position> getPosSet(int num) {
-					// TODO 自動生成されたメソッド・スタブ
-					return null;
+					Set<Position> result = new HashSet<>();
+					int wknum;
+					if (num < 9) {
+						wknum = num;
+					} else if (num < 17) {
+						wknum = num;
+					} else if (num < 24) {
+						wknum = num + 1;
+					} else if (num < 30) {
+						wknum = num + 3;
+					} else if (num < 35) {
+						wknum = num + 6;
+					} else if (num < 39) {
+						wknum = num + 10;
+					} else if (num < 42) {
+						wknum = num + 15;
+					} else if (num < 44) {
+						wknum = num + 21;
+					} else {
+						wknum = num + 28;
+					}
+					int yIndex = wknum / 9;
+					int xIndex = wknum % 9;
+					result.add(new Position(yIndex, xIndex));
+					result.add(new Position(8 - xIndex, 8 - yIndex));
+					return result;
 				}
 			},
 			ALL(6, 25) {
@@ -79,10 +127,23 @@ public class SudokuSolver implements Solver {
 					Set<Position> result = new HashSet<>();
 					int yIndex = num / 5;
 					int xIndex = num % 5;
-					result.add(new Position(xIndex, yIndex));
+					result.add(new Position(yIndex, xIndex));
+					result.add(new Position(8 - yIndex, xIndex));
+					result.add(new Position(yIndex, 8 - xIndex));
+					result.add(new Position(8 - yIndex, 8 - xIndex));
+					return result;
+				}
+			},
+			MANJI(7, 25) {
+				@Override
+				Set<Position> getPosSet(int num) {
+					Set<Position> result = new HashSet<>();
+					int yIndex = num / 5;
+					int xIndex = num % 5;
+					result.add(new Position(yIndex, xIndex));
 					result.add(new Position(8 - xIndex, yIndex));
+					result.add(new Position(8 - yIndex, 8 - xIndex));
 					result.add(new Position(xIndex, 8 - yIndex));
-					result.add(new Position(8 - xIndex, 8 - yIndex));
 					return result;
 				}
 			};
@@ -158,7 +219,7 @@ public class SudokuSolver implements Solver {
 				numIdxList.add(i);
 			}
 			Collections.shuffle(numIdxList);
-			int count = 0;
+			int level = 0;
 			for (Integer numIdx : numIdxList) {
 				SudokuSolver.Field virtual = new SudokuSolver.Field(wkField);
 				for (Position pos : hintPattern.getPosSet(numIdx)) {
@@ -170,7 +231,7 @@ public class SudokuSolver implements Solver {
 				String solveResult = new SudokuSolver(virtual) {
 					@Override
 					protected boolean candSolve(Field field, int recursive) {
-						if (this.count >= 12000) {
+						if (this.count >= 300000) {
 							return false;
 						} else {
 							return super.candSolve(field, recursive);
@@ -183,14 +244,13 @@ public class SudokuSolver implements Solver {
 						for (int number = 0; number < wkField.getYLength(); number++) {
 							wkField.numbersCand[pos.getyIndex()][pos.getxIndex()].add(number + 1);
 						}
-						count = Integer.parseInt(solveResult.split(":")[1]);
+						level = Integer.parseInt(solveResult.split(":")[1]);
 					}
 				}
 			}
 			Field field = new Field(wkField.numbersCand);
-			System.out.println(count);
+			System.out.println(level);
 			System.out.println(field);
-			int level = count / 50 + 1;
 			String status = "Lv:" + level + "の問題を獲得しました。";
 			String url = field.getPuzPreURL();
 			String link = "<a href=\"" + url + "\" target=\"_blank\">ぱずぷれv3で解く</a>";
@@ -271,7 +331,8 @@ public class SudokuSolver implements Solver {
 			}
 			sb.append("</svg>");
 			System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
-			return new SudokuGeneratorResult(status, sb.toString(), link, url, level);
+			String txt = field.getTxt();
+			return new SudokuGeneratorResult(status, sb.toString(), link, url, level, txt);
 
 		}
 
@@ -426,52 +487,112 @@ public class SudokuSolver implements Solver {
 		}
 
 		boolean updated = false;
+		int cnt = 0;
 
 		/**
 		 * 縦・横・同じ部屋の数字を除外する。
 		 * 数字が入れられないマスができてしまったらfalseを返す。
 		 */
 		protected boolean solveAndCheck() {
-			updated = false;
-			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
-				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					if (numbersCand[yIndex][xIndex].size() != 1) {
-						for (int targetY = 0; targetY < getYLength(); targetY++) {
-							if (numbersCand[targetY][xIndex].size() == 1 && yIndex != targetY) {
-								if (numbersCand[yIndex][xIndex].remove((numbersCand[targetY][xIndex]).get(0))) {
-									updated = true;
-								}
-							}
-						}
-						for (int targetX = 0; targetX < getXLength(); targetX++) {
-							if (numbersCand[yIndex][targetX].size() == 1 && xIndex != targetX) {
-								if (numbersCand[yIndex][xIndex].remove((numbersCand[yIndex][targetX]).get(0))) {
-									updated = true;
-								}
-							}
-						}
-						for (int targetY = yIndex / getRoomHeight()
-								* getRoomHeight(); targetY < (yIndex / getRoomHeight() * getRoomHeight())
-										+ getRoomHeight(); targetY++) {
-							for (int targetX = xIndex / getRoomWidth()
-									* getRoomWidth(); targetX < (xIndex / getRoomWidth() * getRoomWidth())
-											+ getRoomWidth(); targetX++) {
-								if ((numbersCand[targetY][targetX].size() == 1)
-										&& (xIndex != targetX || yIndex != targetY)) {
-									if (numbersCand[yIndex][xIndex].remove((numbersCand[targetY][targetX]).get(0))) {
+			while (true) {
+				updated = false;
+				for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+					for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+						if (numbersCand[yIndex][xIndex].size() != 1) {
+							cnt++;
+							for (int targetY = 0; targetY < getYLength(); targetY++) {
+								if (numbersCand[targetY][xIndex].size() == 1 && yIndex != targetY) {
+									if (numbersCand[yIndex][xIndex].remove((numbersCand[targetY][xIndex]).get(0))) {
 										updated = true;
 									}
 								}
 							}
+							for (int targetX = 0; targetX < getXLength(); targetX++) {
+								if (numbersCand[yIndex][targetX].size() == 1 && xIndex != targetX) {
+									if (numbersCand[yIndex][xIndex].remove((numbersCand[yIndex][targetX]).get(0))) {
+										updated = true;
+									}
+								}
+							}
+							for (int targetY = yIndex / getRoomHeight()
+									* getRoomHeight(); targetY < (yIndex / getRoomHeight() * getRoomHeight())
+											+ getRoomHeight(); targetY++) {
+								for (int targetX = xIndex / getRoomWidth()
+										* getRoomWidth(); targetX < (xIndex / getRoomWidth() * getRoomWidth())
+												+ getRoomWidth(); targetX++) {
+									if ((numbersCand[targetY][targetX].size() == 1)
+											&& (xIndex != targetX || yIndex != targetY)) {
+										if (numbersCand[yIndex][xIndex]
+												.remove((numbersCand[targetY][targetX]).get(0))) {
+											updated = true;
+										}
+									}
+								}
+							}
+							if (numbersCand[yIndex][xIndex].size() == 0) {
+								return false;
+							}
 						}
-						if (numbersCand[yIndex][xIndex].size() == 0) {
-							return false;
+						if (numbersCand[yIndex][xIndex].size() != 1) {
+							for (int cand : numbersCand[yIndex][xIndex]) {
+								boolean isHiddenSingle = true;
+								for (int targetY = 0; targetY < getYLength(); targetY++) {
+									if (yIndex != targetY) {
+										if (numbersCand[targetY][xIndex].contains(cand)) {
+											isHiddenSingle = false;
+											break;
+										}
+									}
+								}
+								if (isHiddenSingle) {
+									numbersCand[yIndex][xIndex].clear();
+									numbersCand[yIndex][xIndex].add(cand);
+									updated = true;
+									break;
+								}
+								isHiddenSingle = true;
+								for (int targetX = 0; targetX < getXLength(); targetX++) {
+									if (xIndex != targetX) {
+										if (numbersCand[yIndex][targetX].contains(cand)) {
+											isHiddenSingle = false;
+											break;
+										}
+									}
+								}
+								if (isHiddenSingle) {
+									numbersCand[yIndex][xIndex].clear();
+									numbersCand[yIndex][xIndex].add(cand);
+									updated = true;
+									break;
+								}
+								isHiddenSingle = true;
+								outside: for (int targetY = yIndex / getRoomHeight()
+										* getRoomHeight(); targetY < (yIndex / getRoomHeight() * getRoomHeight())
+												+ getRoomHeight(); targetY++) {
+									for (int targetX = xIndex / getRoomWidth()
+											* getRoomWidth(); targetX < (xIndex / getRoomWidth() * getRoomWidth())
+													+ getRoomWidth(); targetX++) {
+										if ((xIndex != targetX || yIndex != targetY)) {
+											if (numbersCand[targetY][targetX].contains(cand)) {
+												isHiddenSingle = false;
+												break outside;
+											}
+										}
+									}
+								}
+								if (isHiddenSingle) {
+									numbersCand[yIndex][xIndex].clear();
+									numbersCand[yIndex][xIndex].add(cand);
+									updated = true;
+									break;
+								}
+							}
 						}
 					}
 				}
-			}
-			if (updated) {
-				return solveAndCheck();
+				if (!updated) {
+					break;
+				}
 			}
 			return true;
 		}
@@ -527,6 +648,20 @@ public class SudokuSolver implements Solver {
 			}
 			return sb.toString();
 		}
+
+		public String getTxt() {
+			StringBuilder sb = new StringBuilder();
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					if (numbers[yIndex][xIndex] == null) {
+						sb.append(".");
+					} else {
+						sb.append(numbers[yIndex][xIndex]);
+					}
+				}
+			}
+			return sb.toString();
+		}
 	}
 
 	public static class ExtendedField extends Field {
@@ -579,7 +714,7 @@ public class SudokuSolver implements Solver {
 	}
 
 	public static void main(String[] args) {
-		String url = ""; //urlを入れれば試せる
+		String url = "http://pzv.jp/p.html?sudoku/9/9/http://pzv.jp/p.html?sudoku/9/9/http://pzv.jp/p.html?sudoku/9/9/8p36l7h9g2i5i7m457k1i3i1j68h85i1h9j4h"; //urlを入れれば試せる
 		String[] params = url.split("/");
 		int height = Integer.parseInt(params[params.length - 2]);
 		int width = Integer.parseInt(params[params.length - 3]);
@@ -595,42 +730,48 @@ public class SudokuSolver implements Solver {
 			if (!field.solveAndCheck()) {
 				return "問題に矛盾がある可能性があります。途中経過を返します。";
 			}
-			int recursiveCnt = 0;
-			while (field.getStateDump().equals(befStr) && recursiveCnt < 2) {
-				if (!candSolve(field, recursiveCnt)) {
+			count = count + field.cnt;
+			field.cnt = 0;
+			if (field.getStateDump().equals(befStr)) {
+				if (!candSolve(field, 0)) {
 					return "問題に矛盾がある可能性があります。途中経過を返します。";
 				}
-				recursiveCnt++;
-			}
-			if (recursiveCnt == 2 && field.getStateDump().equals(befStr)) {
-				return "解けませんでした。途中経過を返します。";
+				if (field.getStateDump().equals(befStr)) {
+					if (!candSolve(field, 1)) {
+						return "問題に矛盾がある可能性があります。途中経過を返します。";
+					}
+					if (field.getStateDump().equals(befStr)) {
+						System.out.println(field);
+						return "解けませんでした。途中経過を返します。";
+					}
+				}
 			}
 		}
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
+		int level = (int) Math.sqrt(count) - 10;
+		System.out.println("難易度:" + (count));
 		System.out.println(field);
-		return "解けました。推定難易度:" + count;
+		return "解けました。推定難易度:" + (level < 1 ? 1 : level);
+
 	}
 
 	/**
 	 * 仮置きして調べる
 	 */
 	protected boolean candSolve(Field field, int recursive) {
-		// ここの上限をいくつにするかが運命の分かれ道。5だと遅いながらも安定。
-		// 平均すると4の方が早いがたまに遅い問題にぶち当たる。。
-		// 3にすると解けない問題が出てきてしまう。
-		for (int i = 2; i <= 5; i++) {
+		while (true) {
 			field.updated = false;
 			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
-					if (field.numbersCand[yIndex][xIndex].size() == i) {
+					if (field.numbersCand[yIndex][xIndex].size() != 1) {
 						for (Iterator<Integer> iterator = field.numbersCand[yIndex][xIndex].iterator(); iterator
 								.hasNext();) {
-							count++;
 							int oneCand = iterator.next();
 							Field virtual = new Field(field);
-							virtual.numbersCand[yIndex][xIndex] = new ArrayList<>();
+							virtual.numbersCand[yIndex][xIndex].clear();
 							virtual.numbersCand[yIndex][xIndex].add(oneCand);
 							boolean arrowCand = virtual.solveAndCheck();
+							count = count + virtual.cnt;
 							if (arrowCand && recursive > 0) {
 								arrowCand = candSolve(virtual, recursive - 1);
 							}
@@ -645,9 +786,8 @@ public class SudokuSolver implements Solver {
 					}
 				}
 			}
-			// 進展があればiを戻してもう一度調査
-			if (field.updated) {
-				i = 1;
+			if (!field.updated) {
+				break;
 			}
 		}
 		return true;

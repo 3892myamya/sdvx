@@ -12,10 +12,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>数独ガチャ</title>
     <meta name="keywords" content="数独, sudoku, ナンプレ, number place, 自動生成, ガチャ, ジェネレータ"/>
-    <meta name="description" content="数独の問題がゲットできるガチャです。あなたは高レベルのレア数独をゲットできるか？引いた問題はそのままぱずぷれv3さんで解くことが可能です。"/>
-    <link rel="stylesheet" href="css/sudoku.css?ver=20190711"/>
+    <meta name="description" content="自動生成された数独の問題がゲットできるガチャです。あなたは高レベルのレア数独をゲットできるか？引いた問題はそのままぱずぷれv3さんで解くことが可能です。"/>
+    <link rel="stylesheet" href="css/sudoku.css?ver=20190712"/>
     <script src="js/jquery-3.3.1.min.js"></script>
-    <script src="js/sudoku.js?ver=20190711"></script>
+    <script src="js/sudoku.js?ver=20190712"></script>
 </head>
 <body>
 <div id="div_title">数独ガチャ</div>
@@ -26,7 +26,10 @@
 	<option value="1">点対称</option>
 	<option value="2">左右対称</option>
 	<option value="3">上下対称</option>
+	<option value="4">＼対称</option>
+	<option value="5">／対称</option>
 	<option value="6">上下左右対称</option>
+	<option value="7">卍型</option>
 </select>
 </div>
 
@@ -39,10 +42,13 @@
 </div>
 <div id="div_link">
 </div>
-<div>
+<div id="div_tweet">
 <a id="tweetbtn" href="https://twitter.com/intent/tweet?hashtags=数独ガチャ&text=数独の問題がゲットできるガチャです。&tw_p=tweetbutton&url=https%3a%2f%2ft%2eco%2fGg5hFCjLwP" target="_blank" rel="nofollow">
 <img id="tweetpng" src="tweetbtn.png" width="80" height="20">
 </a>
+</div>
+<div>
+<input type="text" id="edt_if" name="edt_if" disabled/>
 </div>
 
 </html>

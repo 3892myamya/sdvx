@@ -24,6 +24,7 @@ public class SudokuGachaWeb extends HttpServlet {
 		private final String link;
 		private final String url;
 		private final int level;
+		private final String txt;
 
 		public SudokuGeneratorResult(String status) {
 			this.status = status;
@@ -31,14 +32,16 @@ public class SudokuGachaWeb extends HttpServlet {
 			link = "";
 			url = "";
 			level = 0;
+			txt = "";
 		}
 
-		public SudokuGeneratorResult(String status, String result, String link, String url, int level) {
+		public SudokuGeneratorResult(String status, String result, String link, String url, int level,String txt) {
 			this.status = status;
 			this.result = result;
 			this.link = link;
 			this.url = url;
 			this.level = level;
+			this.txt = txt;
 		}
 
 		public String getStatus() {
@@ -59,6 +62,10 @@ public class SudokuGachaWeb extends HttpServlet {
 
 		public int getLevel() {
 			return level;
+		}
+
+		public String getTxt() {
+			return txt;
 		}
 
 	}
@@ -93,6 +100,7 @@ public class SudokuGachaWeb extends HttpServlet {
 			resultMap.put("result", t.result.getResult());
 			resultMap.put("link", t.result.getLink());
 			resultMap.put("url", t.result.getUrl());
+			resultMap.put("txt", t.result.getTxt());
 			resultMap.put("level", t.result.getLevel());
 		} catch (Exception e) {
 			e.printStackTrace();

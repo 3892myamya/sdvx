@@ -5,6 +5,7 @@ $(function() {
             return;
         }
         $('#tweetbtn').hide();
+        $('#edt_if').hide();
         $('#div_result').text('');
         $('#div_link').text('');
         $('#caption').text('抽選中です。少々お待ちください……');
@@ -26,6 +27,8 @@ $(function() {
                 splitted[1] ='text=' + encodeURIComponent(tweetTxt);
                 $('#tweetbtn').attr('href', splitted.join('&'))
                 $('#tweetbtn').show();
+                $('#edt_if').val(resultObj.txt);
+                $('#edt_if').show();
             }
         }).fail(function() {
             $('#caption').text('通信時にエラーが発生しました');
@@ -33,4 +36,5 @@ $(function() {
     });
     $('#sel_pattern').val(1);
     $('#tweetbtn').hide();
+    $('#edt_if').hide();
 });
