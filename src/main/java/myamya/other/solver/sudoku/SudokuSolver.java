@@ -251,7 +251,7 @@ public class SudokuSolver implements Solver {
 			Field field = new Field(wkField.numbersCand);
 			System.out.println(level);
 			System.out.println(field);
-			String status = "Lv:" + level + "の問題を獲得しました。";
+			String status = "Lv:" + level + "の問題を獲得！(ヒント数" + field.getHintCount() + ")";
 			String url = field.getPuzPreURL();
 			String link = "<a href=\"" + url + "\" target=\"_blank\">ぱずぷれv3で解く</a>";
 			StringBuilder sb = new StringBuilder();
@@ -662,6 +662,19 @@ public class SudokuSolver implements Solver {
 			}
 			return sb.toString();
 		}
+
+		public int getHintCount() {
+			int result = 0;
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					if (numbers[yIndex][xIndex] != null) {
+						result++;
+					}
+				}
+			}
+			return result;
+		}
+
 	}
 
 	public static class ExtendedField extends Field {
