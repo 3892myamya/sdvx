@@ -27,6 +27,7 @@ import myamya.other.solver.SolverWeb.MasyuSolverThread.UraMasyuSolverThread;
 import myamya.other.solver.SolverWeb.NurimisakiSolverThread.TrimisakiSolverThread;
 import myamya.other.solver.akari.AkariSolver;
 import myamya.other.solver.bag.BagSolver;
+import myamya.other.solver.country.CountrySolver;
 import myamya.other.solver.dosufuwa.DosufuwaSolver;
 import myamya.other.solver.heyawake.HeyawakeSolver;
 import myamya.other.solver.hitori.HitoriSolver;
@@ -48,7 +49,9 @@ import myamya.other.solver.shikaku.ShikakuSolver.Sikaku;
 import myamya.other.solver.shimaguni.ShimaguniSolver;
 import myamya.other.solver.slither.KurohouiSolver;
 import myamya.other.solver.slither.SlitherSolver;
+import myamya.other.solver.starbattle.StarBattleSolver;
 import myamya.other.solver.stostone.StostoneSolver;
+import myamya.other.solver.sudoku.SudokuSolver;
 import myamya.other.solver.tapa.TapaSolver;
 import myamya.other.solver.yajikazu.YajikazuSolver;
 import myamya.other.solver.yajikazu.YajikazuSolver.Arrow;
@@ -72,17 +75,23 @@ public class SolverWeb extends HttpServlet {
 	}
 
 	static abstract class AbsSolverThlead extends Thread implements SolverThlead {
-		protected final Solver solver;
+		protected Solver solver;
 		private String status = "時間切れです。途中経過を返します。";
+		protected final int height;
+		protected final int width;
+		protected final String param;
 
 		AbsSolverThlead(int height, int width, String param) {
-			solver = getSolver(height, width, param);
+			this.height = height;
+			this.width = width;
+			this.param = param;
 		}
 
-		abstract protected Solver getSolver(int height, int width, String param);
+		abstract protected Solver getSolver();
 
 		@Override
 		public void run() {
+			solver = getSolver();
 			status = solver.solve();
 		}
 
@@ -97,7 +106,7 @@ public class SolverWeb extends HttpServlet {
 		}
 
 		@Override
-		protected Solver getSolver(int height, int width, String param) {
+		protected Solver getSolver() {
 			return new YajilinSolver(height, width, param);
 		}
 
@@ -177,7 +186,7 @@ public class SolverWeb extends HttpServlet {
 		}
 
 		@Override
-		protected Solver getSolver(int height, int width, String param) {
+		protected Solver getSolver() {
 			return new NurikabeSolver(height, width, param);
 		}
 
@@ -247,7 +256,7 @@ public class SolverWeb extends HttpServlet {
 		}
 
 		@Override
-		protected Solver getSolver(int height, int width, String param) {
+		protected Solver getSolver() {
 			return new StostoneSolver(height, width, param);
 		}
 
@@ -370,7 +379,7 @@ public class SolverWeb extends HttpServlet {
 		}
 
 		@Override
-		protected Solver getSolver(int height, int width, String param) {
+		protected Solver getSolver() {
 			return new HeyawakeSolver(height, width, param);
 		}
 
@@ -490,7 +499,7 @@ public class SolverWeb extends HttpServlet {
 		}
 
 		@Override
-		protected Solver getSolver(int height, int width, String param) {
+		protected Solver getSolver() {
 			return new LitsSolver(height, width, param);
 		}
 
@@ -579,7 +588,7 @@ public class SolverWeb extends HttpServlet {
 		}
 
 		@Override
-		protected Solver getSolver(int height, int width, String param) {
+		protected Solver getSolver() {
 			return new NorinoriSolver(height, width, param);
 		}
 
@@ -671,7 +680,7 @@ public class SolverWeb extends HttpServlet {
 		}
 
 		@Override
-		protected Solver getSolver(int height, int width, String param) {
+		protected Solver getSolver() {
 			return new ShimaguniSolver(height, width, param);
 		}
 
@@ -794,7 +803,7 @@ public class SolverWeb extends HttpServlet {
 		}
 
 		@Override
-		protected Solver getSolver(int height, int width, String param) {
+		protected Solver getSolver() {
 			return new ShikakuSolver(height, width, param);
 		}
 
@@ -927,7 +936,7 @@ public class SolverWeb extends HttpServlet {
 		}
 
 		@Override
-		protected Solver getSolver(int height, int width, String param) {
+		protected Solver getSolver() {
 			return new AkariSolver(height, width, param);
 		}
 
@@ -1002,7 +1011,7 @@ public class SolverWeb extends HttpServlet {
 			}
 
 			@Override
-			protected Solver getSolver(int height, int width, String param) {
+			protected Solver getSolver() {
 				return new NurimisakiSolver(height, width, param, true);
 			}
 		}
@@ -1015,7 +1024,7 @@ public class SolverWeb extends HttpServlet {
 		}
 
 		@Override
-		protected Solver getSolver(int height, int width, String param) {
+		protected Solver getSolver() {
 			return new NurimisakiSolver(height, width, param, false);
 		}
 
@@ -1098,7 +1107,7 @@ public class SolverWeb extends HttpServlet {
 		}
 
 		@Override
-		protected Solver getSolver(int height, int width, String param) {
+		protected Solver getSolver() {
 			return new HitoriSolver(height, width, param);
 		}
 
@@ -1171,7 +1180,7 @@ public class SolverWeb extends HttpServlet {
 		}
 
 		@Override
-		protected Solver getSolver(int height, int width, String param) {
+		protected Solver getSolver() {
 			return new KurodokoSolver(height, width, param);
 		}
 
@@ -1251,7 +1260,7 @@ public class SolverWeb extends HttpServlet {
 		}
 
 		@Override
-		protected Solver getSolver(int height, int width, String param) {
+		protected Solver getSolver() {
 			return new DosufuwaSolver(height, width, param);
 		}
 
@@ -1358,7 +1367,7 @@ public class SolverWeb extends HttpServlet {
 		}
 
 		@Override
-		protected Solver getSolver(int height, int width, String param) {
+		protected Solver getSolver() {
 			return new YinyangSolver(height, width, param);
 		}
 
@@ -1419,7 +1428,7 @@ public class SolverWeb extends HttpServlet {
 		}
 
 		@Override
-		protected Solver getSolver(int height, int width, String param) {
+		protected Solver getSolver() {
 			return new SlitherSolver(height, width, param);
 		}
 
@@ -1513,7 +1522,7 @@ public class SolverWeb extends HttpServlet {
 		}
 
 		@Override
-		protected Solver getSolver(int height, int width, String param) {
+		protected Solver getSolver() {
 			return new KurohouiSolver(height, width, param);
 		}
 
@@ -1747,7 +1756,7 @@ public class SolverWeb extends HttpServlet {
 		}
 
 		@Override
-		protected Solver getSolver(int height, int width, String param) {
+		protected Solver getSolver() {
 			return new YajikazuSolver(height, width, param);
 		}
 
@@ -1831,7 +1840,7 @@ public class SolverWeb extends HttpServlet {
 			}
 
 			@Override
-			protected Solver getSolver(int height, int width, String param) {
+			protected Solver getSolver() {
 				return new MasyuSolver(height, width, param, true);
 			}
 		}
@@ -1841,7 +1850,7 @@ public class SolverWeb extends HttpServlet {
 		}
 
 		@Override
-		protected Solver getSolver(int height, int width, String param) {
+		protected Solver getSolver() {
 			return new MasyuSolver(height, width, param, false);
 		}
 
@@ -1988,7 +1997,7 @@ public class SolverWeb extends HttpServlet {
 		}
 
 		@Override
-		protected Solver getSolver(int height, int width, String param) {
+		protected Solver getSolver() {
 			return new SashiganeSolver(height, width, param);
 		}
 
@@ -2113,7 +2122,7 @@ public class SolverWeb extends HttpServlet {
 		}
 
 		@Override
-		protected Solver getSolver(int height, int width, String param) {
+		protected Solver getSolver() {
 			return new BagSolver(height, width, param);
 		}
 
@@ -2243,7 +2252,7 @@ public class SolverWeb extends HttpServlet {
 		}
 
 		@Override
-		protected Solver getSolver(int height, int width, String param) {
+		protected Solver getSolver() {
 			return new TapaSolver(height, width, param);
 		}
 
@@ -2474,7 +2483,7 @@ public class SolverWeb extends HttpServlet {
 		}
 
 		@Override
-		protected Solver getSolver(int height, int width, String param) {
+		protected Solver getSolver() {
 			return new ShakashakaSolver(height, width, param);
 		}
 
@@ -2681,7 +2690,7 @@ public class SolverWeb extends HttpServlet {
 		}
 
 		@Override
-		protected Solver getSolver(int height, int width, String param) {
+		protected Solver getSolver() {
 			return new NumlinSolver(height, width, param);
 		}
 
@@ -2744,7 +2753,6 @@ public class SolverWeb extends HttpServlet {
 				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
 					Integer number = field.getNumbers()[yIndex][xIndex];
 					String str = "";
-					int size = baseSize;
 					if (number != null) {
 						if (number == -1) {
 							str = "？";
@@ -2821,6 +2829,357 @@ public class SolverWeb extends HttpServlet {
 		}
 	}
 
+	static class StarBattleSolverThread extends AbsSolverThlead {
+		private final int starCnt;
+
+		StarBattleSolverThread(int height, int width, int starCnt, String param) {
+			super(height, width, param);
+			this.starCnt = starCnt;
+		}
+
+		@Override
+		protected Solver getSolver() {
+			return new StarBattleSolver(height, width, starCnt, param);
+		}
+
+		@Override
+		public String makeCambus() {
+			StringBuilder sb = new StringBuilder();
+			StarBattleSolver.Field field = ((StarBattleSolver) solver).getField();
+			int baseSize = 20;
+			sb.append(
+					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
+							+ "height=\"" + (field.getYLength() * baseSize + 2 * baseSize) + "\" width=\""
+							+ (field.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					Common.Masu oneMasu = field.getMasu()[yIndex][xIndex];
+					sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 4)
+							+ "\" x=\""
+							+ (xIndex * baseSize + baseSize)
+							+ "\" font-size=\""
+							+ (baseSize - 2)
+							+ "\" fill=\""
+							+ "green"
+							+ "\" textLength=\""
+							+ (baseSize - 2)
+							+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+							+ (oneMasu.toString().equals("■") ? "★" : oneMasu.toString())
+							+ "</text>");
+				}
+			}
+			// 横壁描画
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = -1; xIndex < field.getXLength(); xIndex++) {
+					boolean oneYokoWall = xIndex == -1 || xIndex == field.getXLength() - 1
+							|| field.getYokoWall()[yIndex][xIndex];
+					if (oneYokoWall) {
+						sb.append("<rect y=\"" + (yIndex * baseSize)
+								+ "\" x=\""
+								+ (xIndex * baseSize + 2 * baseSize)
+								+ "\" width=\""
+								+ (1)
+								+ "\" height=\""
+								+ (baseSize)
+								+ "\">"
+								+ "</rect>");
+					}
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = -1; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					boolean oneTateWall = yIndex == -1 || yIndex == field.getYLength() - 1
+							|| field.getTateWall()[yIndex][xIndex];
+					if (oneTateWall) {
+						sb.append("<rect y=\"" + (yIndex * baseSize + baseSize)
+								+ "\" x=\""
+								+ (xIndex * baseSize + baseSize)
+								+ "\" width=\""
+								+ (baseSize)
+								+ "\" height=\""
+								+ (1)
+								+ "\">"
+								+ "</rect>");
+					}
+				}
+			}
+			sb.append("</svg>");
+			return sb.toString();
+		}
+	}
+
+	static class SudokuSolverThread extends AbsSolverThlead {
+		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
+		private static final String FULL_NUMS = "０１２３４５６７８９";
+
+		SudokuSolverThread(int height, int width, String param) {
+			super(height, width, param);
+		}
+
+		@Override
+		protected Solver getSolver() {
+			return new SudokuSolver(height, width, param, true) {
+				public String solve() {
+					String result = super.solve();
+					if (result.contains("解けました")) {
+						int level = (int) Math.sqrt(count) - 10;
+						level = level < 1 ? 1 : level;
+						String difficulty = level <= 4 ? "らくらく"
+								: level <= 14 ? "おてごろ" : level <= 39 ? "たいへん" : level <= 99 ? "アゼン" : "ハバネロ";
+						return "解けました。推定難易度:" + difficulty + "(Lv:" + level + ")";
+					} else {
+						return result;
+					}
+				}
+			};
+		}
+
+		@Override
+		public String makeCambus() {
+			SudokuSolver.Field field = ((SudokuSolver) solver).getField();
+			StringBuilder sb = new StringBuilder();
+			int baseSize = 20;
+			int margin = 5;
+			sb.append(
+					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
+							+ "height=\"" + (field.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
+							+ (field.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					if (field.getNumbers()[yIndex][xIndex] != null) {
+						sb.append("<rect y=\"" + (yIndex * baseSize + margin)
+								+ "\" x=\""
+								+ (xIndex * baseSize + baseSize)
+								+ "\" width=\""
+								+ (baseSize)
+								+ "\" height=\""
+								+ (baseSize)
+								+ "\" fill=\"gray\" >"
+								+ "</rect>");
+					}
+					if (field.getNumbersCand()[yIndex][xIndex].size() == 1) {
+						String numberStr = String.valueOf(field.getNumbersCand()[yIndex][xIndex].get(0));
+						String masuStr;
+						int idx = HALF_NUMS.indexOf(numberStr);
+						if (idx >= 0) {
+							masuStr = FULL_NUMS.substring(idx / 2, idx / 2 + 1);
+						} else {
+							masuStr = numberStr;
+						}
+						sb.append("<text y=\"" + (yIndex * baseSize + baseSize + margin - 4)
+								+ "\" x=\""
+								+ (xIndex * baseSize + baseSize + 2)
+								+ "\" font-size=\""
+								+ (baseSize - 5)
+								+ "\" textLength=\""
+								+ (baseSize - 5)
+								+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+								+ masuStr
+								+ "</text>");
+					}
+				}
+			}
+
+			// 横壁描画
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = -1; xIndex < field.getXLength(); xIndex++) {
+					boolean oneYokoWall = xIndex == -1 || xIndex == field.getXLength() - 1
+							|| xIndex % field.getRoomWidth() == field.getRoomWidth() - 1;
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + margin)
+							+ "\" x1=\""
+							+ (xIndex * baseSize + 2 * baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ (xIndex * baseSize + 2 * baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneYokoWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">"
+							+ "</line>");
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = -1; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					boolean oneTateWall = yIndex == -1 || yIndex == field.getYLength() - 1
+							|| yIndex % field.getRoomHeight() == field.getRoomHeight() - 1;
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x1=\""
+							+ (xIndex * baseSize + baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ (xIndex * baseSize + baseSize + baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneTateWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">"
+							+ "</line>");
+				}
+			}
+			sb.append("</svg>");
+			return sb.toString();
+		}
+	}
+
+	static class CountrySolverThread extends AbsSolverThlead {
+		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
+		private static final String FULL_NUMS = "０１２３４５６７８９";
+
+		CountrySolverThread(int height, int width, String param) {
+			super(height, width, param);
+		}
+
+		@Override
+		protected Solver getSolver() {
+			return new CountrySolver(height, width, param);
+		}
+
+		@Override
+		public String makeCambus() {
+			CountrySolver.Field field = ((CountrySolver) solver).getField();
+			int baseSize = 20;
+			int margin = 5;
+			StringBuilder sb = new StringBuilder();
+			sb.append(
+					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
+							+ "height=\"" + (field.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
+							+ (field.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					Masu oneMasu = field.getMasu()[yIndex][xIndex];
+					if (oneMasu.toString().equals("・")) {
+						String str = "";
+						Wall up = yIndex == 0 ? Wall.EXISTS
+								: field.getTateWall()[yIndex - 1][xIndex];
+						Wall right = xIndex == field.getXLength() - 1 ? Wall.EXISTS
+								: field.getYokoWall()[yIndex][xIndex];
+						Wall down = yIndex == field.getYLength() - 1 ? Wall.EXISTS
+								: field.getTateWall()[yIndex][xIndex];
+						Wall left = xIndex == 0 ? Wall.EXISTS
+								: field.getYokoWall()[yIndex][xIndex - 1];
+						if (up == Wall.NOT_EXISTS && right == Wall.NOT_EXISTS
+								&& down == Wall.EXISTS &&
+								left == Wall.EXISTS) {
+							str = "└";
+						} else if (up == Wall.NOT_EXISTS && right == Wall.EXISTS
+								&& down == Wall.NOT_EXISTS &&
+								left == Wall.EXISTS) {
+							str = "│";
+						} else if (up == Wall.NOT_EXISTS && right == Wall.EXISTS
+								&& down == Wall.EXISTS &&
+								left == Wall.NOT_EXISTS) {
+							str = "┘";
+						} else if (up == Wall.EXISTS && right == Wall.NOT_EXISTS
+								&& down == Wall.NOT_EXISTS &&
+								left == Wall.EXISTS) {
+							str = "┌";
+						} else if (up == Wall.EXISTS && right == Wall.NOT_EXISTS
+								&& down == Wall.EXISTS &&
+								left == Wall.NOT_EXISTS) {
+							str = "─";
+						} else if (up == Wall.EXISTS && right == Wall.EXISTS
+								&& down == Wall.NOT_EXISTS &&
+								left == Wall.NOT_EXISTS) {
+							str = "┐";
+						} else {
+							str = oneMasu.toString();
+						}
+						sb.append("<text y=\"" + (yIndex * baseSize + baseSize + margin - 2)
+								+ "\" x=\""
+								+ (xIndex * baseSize + baseSize)
+								+ "\" font-size=\""
+								+ (baseSize)
+								+ "\" textLength=\""
+								+ (baseSize)
+								+ "\" fill=\""
+								+ "green"
+								+ "\" stroke=\"green\" stroke-width=\"1"
+								+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+								+ str
+								+ "</text>");
+					}
+				}
+			}
+			// 横壁描画
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = -1; xIndex < field.getXLength(); xIndex++) {
+					boolean oneYokoWall = xIndex == -1 || xIndex == field.getXLength() - 1
+							|| field.getYokoRoomWall()[yIndex][xIndex];
+					if (oneYokoWall) {
+						sb.append("<rect y=\"" + (yIndex * baseSize + margin)
+								+ "\" x=\""
+								+ (xIndex * baseSize + 2 * baseSize)
+								+ "\" width=\""
+								+ (1)
+								+ "\" height=\""
+								+ (baseSize)
+								+ "\">"
+								+ "</rect>");
+					}
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = -1; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					boolean oneTateWall = yIndex == -1 || yIndex == field.getYLength() - 1
+							|| field.getTateRoomWall()[yIndex][xIndex];
+					if (oneTateWall) {
+						sb.append("<rect y=\"" + (yIndex * baseSize + baseSize + margin)
+								+ "\" x=\""
+								+ (xIndex * baseSize + baseSize)
+								+ "\" width=\""
+								+ (baseSize)
+								+ "\" height=\""
+								+ (1)
+								+ "\">"
+								+ "</rect>");
+					}
+				}
+			}
+			// 数字描画
+			for (CountrySolver.Room room : field.getRooms()) {
+				int roomWhiteCount = room.getWhiteCnt();
+				if (roomWhiteCount != -1) {
+					String roomWhiteCountStr;
+					String wkstr = String.valueOf(roomWhiteCount);
+					int index = HALF_NUMS.indexOf(wkstr);
+					if (index >= 0) {
+						roomWhiteCountStr = FULL_NUMS.substring(index / 2,
+								index / 2 + 1);
+					} else {
+						roomWhiteCountStr = wkstr;
+					}
+					Position numberMasuPos = room.getNumberMasuPos();
+					sb.append("<text y=\"" + (numberMasuPos.getyIndex() * baseSize + baseSize - 5 + margin)
+							+ "\" x=\""
+							+ (numberMasuPos.getxIndex() * baseSize + baseSize + 2)
+							+ "\" fill=\""
+							+ "black"
+							+ "\" font-size=\""
+							+ (baseSize - 5)
+							+ "\" textLength=\""
+							+ (baseSize - 5)
+							+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+							+ roomWhiteCountStr
+							+ "</text>");
+				}
+			}
+			sb.append("</svg>");
+			return sb.toString();
+		}
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -2828,10 +3187,10 @@ public class SolverWeb extends HttpServlet {
 		Map<String, Object> resultMap = new HashMap<>();
 		try {
 			List<String> parts = getURLparts(request.getParameter("url"));
-			int height = Integer.parseInt(parts.get(parts.size() - 2));
-			int width = Integer.parseInt(parts.get(parts.size() - 3));
-			String puzzleType = parts.get(parts.size() - 4);
-			String param = parts.get(parts.size() - 1).split("@")[0];
+			int height = Integer.parseInt(parts.get(2));
+			int width = Integer.parseInt(parts.get(1));
+			String puzzleType = parts.get(0);
+			String param = parts.get(3).split("@")[0];
 			AbsSolverThlead t;
 			if (puzzleType.contains("yajilin") || puzzleType.contains("yajirin")) {
 				t = new YajirinSolveThlead(height, width, param);
@@ -2885,6 +3244,14 @@ public class SolverWeb extends HttpServlet {
 				t = new ShakashakaSolverThread(height, width, param);
 			} else if (puzzleType.contains("tapa")) {
 				t = new TapaSolverThread(height, width, param);
+			} else if (puzzleType.contains("starbattle")) {
+				int starCnt = Integer.parseInt(parts.get(3));
+				param = parts.get(4).split("@")[0];
+				t = new StarBattleSolverThread(height, width, starCnt, param);
+			} else if (puzzleType.contains("sudoku")) {
+				t = new SudokuSolverThread(height, width, param);
+			} else if (puzzleType.contains("country")) {
+				t = new CountrySolverThread(height, width, param);
 				//			} else if (puzzleType.contains("numlin") || puzzleType.contains("numberlink")) {
 				//				t = new NumlinSolverThread(height, width, param);
 			} else {
@@ -2923,7 +3290,9 @@ public class SolverWeb extends HttpServlet {
 				throw new IllegalStateException();
 			}
 		} else {
-			return parts;
+			List<String> puzpreParts = Arrays.asList(urlStr.split("\\?"));
+			puzpreParts = Arrays.asList(puzpreParts.get(puzpreParts.size() - 1).split("/"));
+			return puzpreParts;
 		}
 	}
 

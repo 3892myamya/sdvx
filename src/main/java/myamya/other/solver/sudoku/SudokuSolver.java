@@ -597,11 +597,11 @@ public class SudokuSolver implements Solver {
 			return true;
 		}
 
-		protected int getRoomWidth() {
+		public int getRoomWidth() {
 			return 3;
 		}
 
-		protected int getRoomHeight() {
+		public int getRoomHeight() {
 			return 3;
 		}
 
@@ -700,12 +700,12 @@ public class SudokuSolver implements Solver {
 		}
 
 		@Override
-		protected int getRoomWidth() {
+		public int getRoomWidth() {
 			return roomWidth;
 		}
 
 		@Override
-		protected int getRoomHeight() {
+		public int getRoomHeight() {
 			return roomHeight;
 		}
 
@@ -718,6 +718,14 @@ public class SudokuSolver implements Solver {
 		field = new Field(height, width, param);
 	}
 
+	public SudokuSolver(int height, int width, String param, boolean isExtended) {
+		if (isExtended) {
+			field = new ExtendedField(height, width, param);
+		} else {
+			field = new Field(height, width, param);
+		}
+	}
+
 	public SudokuSolver(Field field) {
 		this.field = new Field(field);
 	}
@@ -727,7 +735,7 @@ public class SudokuSolver implements Solver {
 	}
 
 	public static void main(String[] args) {
-		String url = "http://pzv.jp/p.html?sudoku/9/9/http://pzv.jp/p.html?sudoku/9/9/http://pzv.jp/p.html?sudoku/9/9/8p36l7h9g2i5i7m457k1i3i1j68h85i1h9j4h"; //urlを入れれば試せる
+		String url = ""; //urlを入れれば試せる
 		String[] params = url.split("/");
 		int height = Integer.parseInt(params[params.length - 2]);
 		int width = Integer.parseInt(params[params.length - 3]);
