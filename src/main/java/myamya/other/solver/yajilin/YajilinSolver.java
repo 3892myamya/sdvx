@@ -264,6 +264,8 @@ public class YajilinSolver implements Solver {
 		private Wall[][] tateWall;
 		// 矢印の候補情報
 		private final Map<Arrow, List<String>> arrowsInfo;
+		// バリアントルール-ループ内黒ます禁止
+		private final boolean out;
 
 		public Masu[][] getMasu() {
 			return masu;
@@ -285,11 +287,12 @@ public class YajilinSolver implements Solver {
 			return masu[0].length;
 		}
 
-		public Field(int height, int width, String param) {
+		public Field(int height, int width, String param, boolean out) {
 			masu = new Masu[height][width];
 			yokoWall = new Wall[height][width - 1];
 			tateWall = new Wall[height - 1][width];
 			arrowsInfo = new HashMap<>();
+			this.out = out;
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
 					masu[yIndex][xIndex] = MasuImpl.SPACE;
@@ -385,6 +388,7 @@ public class YajilinSolver implements Solver {
 			yokoWall = new Wall[other.getYLength()][other.getXLength() - 1];
 			tateWall = new Wall[other.getYLength() - 1][other.getXLength()];
 			arrowsInfo = new HashMap<>();
+			out = other.out;
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
 					masu[yIndex][xIndex] = other.masu[yIndex][xIndex];
@@ -998,6 +1002,11 @@ public class YajilinSolver implements Solver {
 			if (!getStateDump().equals(str)) {
 				return solveAndCheck();
 			} else {
+				if (out) {
+					if (!outsideSolve()) {
+						return false;
+					}
+				}
 				if (!connectSolve()) {
 					return false;
 				}
@@ -1041,6 +1050,195 @@ public class YajilinSolver implements Solver {
 			return true;
 		}
 
+		/**
+		 * ループ内黒マス禁止ヤリジン専用の解法
+		 * 黒マスから前後左右に向かっていき、外壁にぶつかるまでに壁の数が奇数個であれば失敗。
+		 * また、黒マスで未確定壁が残り1マスの場合は、偶数個になるように壁の有無が確定する。
+		 */
+		private boolean outsideSolve() {
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					Position pivot = new Position(yIndex, xIndex);
+					// 左側横壁上方向
+					int idx = 0;
+					int whiteCnt = 0;
+					int spaceCnt = 0;
+					Position spacePos = null;
+					while (pivot.getyIndex() - 1 - idx >= 0 && pivot.getxIndex() != 0) {
+						Position pos = new Position(pivot.getyIndex() - 1 - idx, pivot.getxIndex() - 1);
+						if (yokoWall[pos.getyIndex()][pos.getxIndex()] == Wall.NOT_EXISTS) {
+							whiteCnt++;
+						} else if (yokoWall[pos.getyIndex()][pos.getxIndex()] == Wall.SPACE) {
+							spacePos = pos;
+							spaceCnt++;
+						}
+						idx++;
+					}
+					if (!oneOutSideCheck(pivot, whiteCnt, spaceCnt, spacePos, true)) {
+						return false;
+					}
+					// 右側横壁上方向
+					idx = 0;
+					whiteCnt = 0;
+					spaceCnt = 0;
+					spacePos = null;
+					while (pivot.getyIndex() - 1 - idx >= 0 && pivot.getxIndex() != getXLength() - 1) {
+						Position pos = new Position(pivot.getyIndex() - 1 - idx, pivot.getxIndex());
+						if (yokoWall[pos.getyIndex()][pos.getxIndex()] == Wall.NOT_EXISTS) {
+							whiteCnt++;
+						} else if (yokoWall[pos.getyIndex()][pos.getxIndex()] == Wall.SPACE) {
+							spacePos = pos;
+							spaceCnt++;
+						}
+						idx++;
+					}
+					if (!oneOutSideCheck(pivot, whiteCnt, spaceCnt, spacePos, true)) {
+						return false;
+					}
+
+					// 左側横壁下方向
+					idx = 0;
+					whiteCnt = 0;
+					spaceCnt = 0;
+					spacePos = null;
+					while (pivot.getyIndex() + 1 + idx < getYLength() && pivot.getxIndex() != 0) {
+						Position pos = new Position(pivot.getyIndex() + 1 + idx, pivot.getxIndex() - 1);
+						if (yokoWall[pos.getyIndex()][pos.getxIndex()] == Wall.NOT_EXISTS) {
+							whiteCnt++;
+						} else if (yokoWall[pos.getyIndex()][pos.getxIndex()] == Wall.SPACE) {
+							spacePos = pos;
+							spaceCnt++;
+						}
+						idx++;
+					}
+					if (!oneOutSideCheck(pivot, whiteCnt, spaceCnt, spacePos, true)) {
+						return false;
+					}
+
+					// 右側横壁下方向
+					idx = 0;
+					whiteCnt = 0;
+					spaceCnt = 0;
+					spacePos = null;
+					while (pivot.getyIndex() + 1 + idx < getYLength() && pivot.getxIndex() != getXLength() - 1) {
+						Position pos = new Position(pivot.getyIndex() + 1 + idx, pivot.getxIndex());
+						if (yokoWall[pos.getyIndex()][pos.getxIndex()] == Wall.NOT_EXISTS) {
+							whiteCnt++;
+						} else if (yokoWall[pos.getyIndex()][pos.getxIndex()] == Wall.SPACE) {
+							spacePos = pos;
+							spaceCnt++;
+						}
+						idx++;
+					}
+					if (!oneOutSideCheck(pivot, whiteCnt, spaceCnt, spacePos, true)) {
+						return false;
+					}
+
+					// 上側縦壁右方向
+					idx = 0;
+					whiteCnt = 0;
+					spaceCnt = 0;
+					spacePos = null;
+					while (pivot.getxIndex() + 1 + idx < getXLength() && pivot.getyIndex() != 0) {
+						Position pos = new Position(pivot.getyIndex() - 1, pivot.getxIndex() + 1 + idx);
+						if (tateWall[pos.getyIndex()][pos.getxIndex()] == Wall.NOT_EXISTS) {
+							whiteCnt++;
+						} else if (tateWall[pos.getyIndex()][pos.getxIndex()] == Wall.SPACE) {
+							spacePos = pos;
+							spaceCnt++;
+						}
+						idx++;
+					}
+					if (!oneOutSideCheck(pivot, whiteCnt, spaceCnt, spacePos, false)) {
+						return false;
+					}
+
+					// 下側縦壁右方向
+					idx = 0;
+					whiteCnt = 0;
+					spaceCnt = 0;
+					spacePos = null;
+					while (pivot.getxIndex() + 1 + idx < getXLength() && pivot.getyIndex() != getYLength() - 1) {
+						Position pos = new Position(pivot.getyIndex(), pivot.getxIndex() + 1 + idx);
+						if (tateWall[pos.getyIndex()][pos.getxIndex()] == Wall.NOT_EXISTS) {
+							whiteCnt++;
+						} else if (tateWall[pos.getyIndex()][pos.getxIndex()] == Wall.SPACE) {
+							spacePos = pos;
+							spaceCnt++;
+						}
+						idx++;
+					}
+					if (!oneOutSideCheck(pivot, whiteCnt, spaceCnt, spacePos, false)) {
+						return false;
+					}
+
+					// 上側縦壁左方向
+					idx = 0;
+					whiteCnt = 0;
+					spaceCnt = 0;
+					spacePos = null;
+					while (pivot.getxIndex() - 1 - idx >= 0 && pivot.getyIndex() != 0) {
+						Position pos = new Position(pivot.getyIndex() - 1, pivot.getxIndex() - 1 - idx);
+						if (tateWall[pos.getyIndex()][pos.getxIndex()] == Wall.NOT_EXISTS) {
+							whiteCnt++;
+						} else if (tateWall[pos.getyIndex()][pos.getxIndex()] == Wall.SPACE) {
+							spacePos = pos;
+							spaceCnt++;
+						}
+						idx++;
+					}
+					if (!oneOutSideCheck(pivot, whiteCnt, spaceCnt, spacePos, false)) {
+						return false;
+					}
+
+					// 下側縦壁左方向
+					idx = 0;
+					whiteCnt = 0;
+					spaceCnt = 0;
+					spacePos = null;
+					while (pivot.getxIndex() - 1 - idx >= 0 && pivot.getyIndex() != getYLength() - 1) {
+						Position pos = new Position(pivot.getyIndex(), pivot.getxIndex() - 1 - idx);
+						if (tateWall[pos.getyIndex()][pos.getxIndex()] == Wall.NOT_EXISTS) {
+							whiteCnt++;
+						} else if (tateWall[pos.getyIndex()][pos.getxIndex()] == Wall.SPACE) {
+							spacePos = pos;
+							spaceCnt++;
+						}
+						idx++;
+					}
+					if (!oneOutSideCheck(pivot, whiteCnt, spaceCnt, spacePos, false)) {
+						return false;
+					}
+				}
+			}
+			return true;
+		}
+
+		private boolean oneOutSideCheck(Position pivot, int whiteCnt, int spaceCnt, Position spacePos, boolean isYoko) {
+			if (spaceCnt == 0 && whiteCnt % 2 == 1) {
+				if (masu[pivot.getyIndex()][pivot.getxIndex()] == MasuImpl.BLACK) {
+					return false;
+				} else if (masu[pivot.getyIndex()][pivot.getxIndex()] == MasuImpl.SPACE) {
+					masu[pivot.getyIndex()][pivot.getxIndex()] = MasuImpl.NOT_BLACK;
+				}
+			} else if (masu[pivot.getyIndex()][pivot.getxIndex()] == MasuImpl.BLACK && spaceCnt == 1) {
+				if (whiteCnt % 2 == 1) {
+					if (isYoko) {
+						yokoWall[spacePos.getyIndex()][spacePos.getxIndex()] = Wall.NOT_EXISTS;
+					} else {
+						tateWall[spacePos.getyIndex()][spacePos.getxIndex()] = Wall.NOT_EXISTS;
+					}
+				} else {
+					if (isYoko) {
+						yokoWall[spacePos.getyIndex()][spacePos.getxIndex()] = Wall.EXISTS;
+					} else {
+						tateWall[spacePos.getyIndex()][spacePos.getxIndex()] = Wall.EXISTS;
+					}
+				}
+			}
+			return true;
+		}
+
 		public boolean isSolved() {
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
@@ -1071,8 +1269,8 @@ public class YajilinSolver implements Solver {
 	private final Field field;
 	private int count = 0;
 
-	public YajilinSolver(int height, int width, String param) {
-		field = new Field(height, width, param);
+	public YajilinSolver(int height, int width, String param, boolean out) {
+		field = new Field(height, width, param, out);
 	}
 
 	public Field getField() {
@@ -1085,7 +1283,7 @@ public class YajilinSolver implements Solver {
 		int height = Integer.parseInt(params[params.length - 2]);
 		int width = Integer.parseInt(params[params.length - 3]);
 		String param = params[params.length - 1];
-		System.out.println(new YajilinSolver(height, width, param).solve());
+		System.out.println(new YajilinSolver(height, width, param, false).solve());
 	}
 
 	@Override
@@ -1131,9 +1329,9 @@ public class YajilinSolver implements Solver {
 							: field.masu[yIndex][xIndex + 1];
 					Masu masuDown = yIndex == field.getYLength() - 1 ? MasuImpl.BLACK
 							: field.masu[yIndex + 1][xIndex];
-					Masu masuLeft = xIndex == 0  ? MasuImpl.BLACK
+					Masu masuLeft = xIndex == 0 ? MasuImpl.BLACK
 							: field.masu[yIndex][xIndex - 1];
-					int whiteCnt =0;
+					int whiteCnt = 0;
 					if (masuUp == MasuImpl.SPACE) {
 						whiteCnt++;
 					}

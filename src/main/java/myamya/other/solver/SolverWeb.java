@@ -101,13 +101,16 @@ public class SolverWeb extends HttpServlet {
 	}
 
 	static class YajirinSolveThlead extends AbsSolverThlead {
-		YajirinSolveThlead(int height, int width, String param) {
+		private final boolean out;
+
+		YajirinSolveThlead(int height, int width, String param, boolean out) {
 			super(height, width, param);
+			this.out = out;
 		}
 
 		@Override
 		protected Solver getSolver() {
-			return new YajilinSolver(height, width, param);
+			return new YajilinSolver(height, width, param, out);
 		}
 
 		@Override
@@ -3193,7 +3196,7 @@ public class SolverWeb extends HttpServlet {
 			String param = parts.get(3).split("@")[0];
 			AbsSolverThlead t;
 			if (puzzleType.contains("yajilin") || puzzleType.contains("yajirin")) {
-				t = new YajirinSolveThlead(height, width, param);
+				t = new YajirinSolveThlead(height, width, param, puzzleType.contains("out"));
 			} else if (puzzleType.contains("nurikabe")) {
 				t = new NurikabeSolverThread(height, width, param);
 			} else if (puzzleType.contains("stostone")) {

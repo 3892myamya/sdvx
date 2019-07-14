@@ -134,16 +134,20 @@ public class SudokuSolver implements Solver {
 					return result;
 				}
 			},
-			MANJI(7, 25) {
+			MANJI(7, 21) {
 				@Override
 				Set<Position> getPosSet(int num) {
 					Set<Position> result = new HashSet<>();
-					int yIndex = num / 5;
-					int xIndex = num % 5;
-					result.add(new Position(yIndex, xIndex));
-					result.add(new Position(8 - xIndex, yIndex));
-					result.add(new Position(8 - yIndex, 8 - xIndex));
-					result.add(new Position(xIndex, 8 - yIndex));
+					if (num == 20) {
+						result.add(new Position(4, 4));
+					} else {
+						int yIndex = num / 4;
+						int xIndex = num % 4;
+						result.add(new Position(yIndex, xIndex));
+						result.add(new Position(8 - xIndex, yIndex));
+						result.add(new Position(8 - yIndex, 8 - xIndex));
+						result.add(new Position(xIndex, 8 - yIndex));
+					}
 					return result;
 				}
 			};
@@ -231,7 +235,7 @@ public class SudokuSolver implements Solver {
 				String solveResult = new SudokuSolver(virtual) {
 					@Override
 					protected boolean candSolve(Field field, int recursive) {
-						if (this.count >= 300000) {
+						if (this.count >= 100000) {
 							return false;
 						} else {
 							return super.candSolve(field, recursive);
