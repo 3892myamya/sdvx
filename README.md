@@ -5,7 +5,7 @@ https://myamyasdvx.herokuapp.com/
 
 ・CHUNITHM 課題曲ジェネレータ
 
-https://myamyasdvx.herokuapp.com/chuni.html　
+https://myamyasdvx.herokuapp.com/chuni.html
 
 
 ・ペンシルパズルソルバー
