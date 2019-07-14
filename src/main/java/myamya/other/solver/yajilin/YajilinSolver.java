@@ -1052,7 +1052,8 @@ public class YajilinSolver implements Solver {
 
 		/**
 		 * ループ内黒マス禁止ヤリジン専用の解法
-		 * 黒マスから前後左右に向かっていき、外壁にぶつかるまでに壁の数が奇数個であれば失敗。
+		 * 黒マスから前後左右に向かっていき、外壁か黒マスのいずれかにぶつかるまでに
+		 * 壁の数が奇数個であれば失敗。
 		 * また、黒マスで未確定壁が残り1マスの場合は、偶数個になるように壁の有無が確定する。
 		 */
 		private boolean outsideSolve() {
@@ -1064,7 +1065,8 @@ public class YajilinSolver implements Solver {
 					int whiteCnt = 0;
 					int spaceCnt = 0;
 					Position spacePos = null;
-					while (pivot.getyIndex() - 1 - idx >= 0 && pivot.getxIndex() != 0) {
+					while (pivot.getyIndex() - 1 - idx >= 0 && pivot.getxIndex() != 0
+							&& masu[pivot.getyIndex() - 1 - idx][pivot.getxIndex()] != MasuImpl.BLACK) {
 						Position pos = new Position(pivot.getyIndex() - 1 - idx, pivot.getxIndex() - 1);
 						if (yokoWall[pos.getyIndex()][pos.getxIndex()] == Wall.NOT_EXISTS) {
 							whiteCnt++;
@@ -1082,7 +1084,8 @@ public class YajilinSolver implements Solver {
 					whiteCnt = 0;
 					spaceCnt = 0;
 					spacePos = null;
-					while (pivot.getyIndex() - 1 - idx >= 0 && pivot.getxIndex() != getXLength() - 1) {
+					while (pivot.getyIndex() - 1 - idx >= 0 && pivot.getxIndex() != getXLength() - 1
+							&& masu[pivot.getyIndex() - 1 - idx][pivot.getxIndex()] != MasuImpl.BLACK) {
 						Position pos = new Position(pivot.getyIndex() - 1 - idx, pivot.getxIndex());
 						if (yokoWall[pos.getyIndex()][pos.getxIndex()] == Wall.NOT_EXISTS) {
 							whiteCnt++;
@@ -1101,7 +1104,8 @@ public class YajilinSolver implements Solver {
 					whiteCnt = 0;
 					spaceCnt = 0;
 					spacePos = null;
-					while (pivot.getyIndex() + 1 + idx < getYLength() && pivot.getxIndex() != 0) {
+					while (pivot.getyIndex() + 1 + idx < getYLength() && pivot.getxIndex() != 0
+							&& masu[pivot.getyIndex() + 1 + idx][pivot.getxIndex()] != MasuImpl.BLACK) {
 						Position pos = new Position(pivot.getyIndex() + 1 + idx, pivot.getxIndex() - 1);
 						if (yokoWall[pos.getyIndex()][pos.getxIndex()] == Wall.NOT_EXISTS) {
 							whiteCnt++;
@@ -1120,7 +1124,8 @@ public class YajilinSolver implements Solver {
 					whiteCnt = 0;
 					spaceCnt = 0;
 					spacePos = null;
-					while (pivot.getyIndex() + 1 + idx < getYLength() && pivot.getxIndex() != getXLength() - 1) {
+					while (pivot.getyIndex() + 1 + idx < getYLength() && pivot.getxIndex() != getXLength() - 1
+							&& masu[pivot.getyIndex() + 1 + idx][pivot.getxIndex()] != MasuImpl.BLACK) {
 						Position pos = new Position(pivot.getyIndex() + 1 + idx, pivot.getxIndex());
 						if (yokoWall[pos.getyIndex()][pos.getxIndex()] == Wall.NOT_EXISTS) {
 							whiteCnt++;
@@ -1139,7 +1144,8 @@ public class YajilinSolver implements Solver {
 					whiteCnt = 0;
 					spaceCnt = 0;
 					spacePos = null;
-					while (pivot.getxIndex() + 1 + idx < getXLength() && pivot.getyIndex() != 0) {
+					while (pivot.getxIndex() + 1 + idx < getXLength() && pivot.getyIndex() != 0
+							&& masu[pivot.getyIndex()][pivot.getxIndex() + 1 + idx] != MasuImpl.BLACK) {
 						Position pos = new Position(pivot.getyIndex() - 1, pivot.getxIndex() + 1 + idx);
 						if (tateWall[pos.getyIndex()][pos.getxIndex()] == Wall.NOT_EXISTS) {
 							whiteCnt++;
@@ -1158,7 +1164,8 @@ public class YajilinSolver implements Solver {
 					whiteCnt = 0;
 					spaceCnt = 0;
 					spacePos = null;
-					while (pivot.getxIndex() + 1 + idx < getXLength() && pivot.getyIndex() != getYLength() - 1) {
+					while (pivot.getxIndex() + 1 + idx < getXLength() && pivot.getyIndex() != getYLength() - 1
+							&& masu[pivot.getyIndex()][pivot.getxIndex() + 1 + idx] != MasuImpl.BLACK) {
 						Position pos = new Position(pivot.getyIndex(), pivot.getxIndex() + 1 + idx);
 						if (tateWall[pos.getyIndex()][pos.getxIndex()] == Wall.NOT_EXISTS) {
 							whiteCnt++;
@@ -1177,7 +1184,8 @@ public class YajilinSolver implements Solver {
 					whiteCnt = 0;
 					spaceCnt = 0;
 					spacePos = null;
-					while (pivot.getxIndex() - 1 - idx >= 0 && pivot.getyIndex() != 0) {
+					while (pivot.getxIndex() - 1 - idx >= 0 && pivot.getyIndex() != 0
+							&& masu[pivot.getyIndex()][pivot.getxIndex() - 1 - idx] != MasuImpl.BLACK) {
 						Position pos = new Position(pivot.getyIndex() - 1, pivot.getxIndex() - 1 - idx);
 						if (tateWall[pos.getyIndex()][pos.getxIndex()] == Wall.NOT_EXISTS) {
 							whiteCnt++;
@@ -1196,7 +1204,8 @@ public class YajilinSolver implements Solver {
 					whiteCnt = 0;
 					spaceCnt = 0;
 					spacePos = null;
-					while (pivot.getxIndex() - 1 - idx >= 0 && pivot.getyIndex() != getYLength() - 1) {
+					while (pivot.getxIndex() - 1 - idx >= 0 && pivot.getyIndex() != getYLength() - 1
+							&& masu[pivot.getyIndex()][pivot.getxIndex() - 1 - idx] != MasuImpl.BLACK) {
 						Position pos = new Position(pivot.getyIndex(), pivot.getxIndex() - 1 - idx);
 						if (tateWall[pos.getyIndex()][pos.getxIndex()] == Wall.NOT_EXISTS) {
 							whiteCnt++;
