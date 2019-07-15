@@ -716,22 +716,27 @@ public class SudokuSolver implements Solver {
 	}
 
 	private final Field field;
+	private final boolean isExtended;
 	protected int count;
 
 	public SudokuSolver(int height, int width, String param) {
 		field = new Field(height, width, param);
+		isExtended = false;
 	}
 
 	public SudokuSolver(int height, int width, String param, boolean isExtended) {
 		if (isExtended) {
 			field = new ExtendedField(height, width, param);
+			this.isExtended = true;
 		} else {
 			field = new Field(height, width, param);
+			this.isExtended = false;
 		}
 	}
 
 	public SudokuSolver(Field field) {
 		this.field = new Field(field);
+		this.isExtended = false;
 	}
 
 	public Field getField() {
@@ -792,7 +797,7 @@ public class SudokuSolver implements Solver {
 						for (Iterator<Integer> iterator = field.numbersCand[yIndex][xIndex].iterator(); iterator
 								.hasNext();) {
 							int oneCand = iterator.next();
-							Field virtual = new Field(field);
+							Field virtual = isExtended ? new ExtendedField((ExtendedField) field) : new Field(field);
 							virtual.numbersCand[yIndex][xIndex].clear();
 							virtual.numbersCand[yIndex][xIndex].add(oneCand);
 							boolean arrowCand = virtual.solveAndCheck();
