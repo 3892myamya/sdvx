@@ -317,145 +317,946 @@ public class FireflySolver implements Solver {
 						} else if (to == Direction.LEFT) {
 							pivot = new Position(pivot.getyIndex(), pivot.getxIndex() - 1);
 						}
-						while (true) {
-							if (fireflies[pivot.getyIndex()][pivot.getxIndex()] != null) {
-								break;
-							}
-							// 各方向の壁の存在状況
-							// TODO いける方向かどうかをもうちょい再帰で判定させたい
-							Wall wallU = pivot.getyIndex() == 0 ? Wall.EXISTS
-									: tateWall[pivot.getyIndex() - 1][pivot.getxIndex()];
-							Wall wallR = pivot.getxIndex() == getXLength() - 1 ? Wall.EXISTS
-									: yokoWall[pivot.getyIndex()][pivot.getxIndex()];
-							Wall wallD = pivot.getyIndex() == getYLength() - 1 ? Wall.EXISTS
-									: tateWall[pivot.getyIndex()][pivot.getxIndex()];
-							Wall wallL = pivot.getxIndex() == 0 ? Wall.EXISTS
-									: yokoWall[pivot.getyIndex()][pivot.getxIndex() - 1];
-							// 行ける条件
-							// ・進行方向と逆方向でないこと
-							// ・行く先に壁がないこと
-							// ・カーブ回数が残ってないとき、カーブしないこと
-							// ・進行方向の逆以外に確定解放壁がないこと
-							// ・行く先がホタルの尻でないこと
-							// ・カーブ回数が1回以上残っているとき、直進した行く先がホタルでないこと
-							// ・カーブ回数が2回以上残っているとき、カーブした行く先がホタルでないこと
-							boolean canU = (to != Direction.DOWN && wallU != Wall.EXISTS
-									&& (to != Direction.UP || (wallR != Wall.NOT_EXISTS
-											&& wallL != Wall.NOT_EXISTS))
-									&& !(retainCurve == 0 && to != Direction.UP)
-									&& !(fireflies[pivot.getyIndex() - 1][pivot.getxIndex()] != null
-											&& fireflies[pivot.getyIndex() - 1][pivot.getxIndex()]
-													.getDirection() == Direction.DOWN))
-									&& !(retainCurve > 0 && to == Direction.UP
-											&& fireflies[pivot.getyIndex() - 1][pivot.getxIndex()] != null)
-									&& !(retainCurve > 1 && to != Direction.UP
-											&& fireflies[pivot.getyIndex() - 1][pivot.getxIndex()] != null);
-							boolean canR = (to != Direction.LEFT && wallR != Wall.EXISTS
-									&& (to != Direction.RIGHT || (wallU != Wall.NOT_EXISTS
-											&& wallD != Wall.NOT_EXISTS))
-									&& !(retainCurve == 0 && to != Direction.RIGHT)
-									&& !(fireflies[pivot.getyIndex()][pivot.getxIndex() + 1] != null
-											&& fireflies[pivot.getyIndex()][pivot.getxIndex() + 1]
-													.getDirection() == Direction.LEFT))
-									&& !(retainCurve > 0 && to == Direction.RIGHT
-											&& fireflies[pivot.getyIndex()][pivot.getxIndex() + 1] != null)
-									&& !(retainCurve > 1 && to != Direction.RIGHT
-											&& fireflies[pivot.getyIndex()][pivot.getxIndex() + 1] != null);
-							boolean canD = (to != Direction.UP && wallD != Wall.EXISTS
-									&& (to != Direction.DOWN || (wallR != Wall.NOT_EXISTS
-											&& wallL != Wall.NOT_EXISTS))
-									&& !(retainCurve == 0 && to != Direction.DOWN)
-									&& !(fireflies[pivot.getyIndex() + 1][pivot.getxIndex()] != null
-											&& fireflies[pivot.getyIndex() + 1][pivot.getxIndex()]
-													.getDirection() == Direction.UP))
-									&& !(retainCurve > 0 && to == Direction.DOWN
-											&& fireflies[pivot.getyIndex() + 1][pivot.getxIndex()] != null)
-									&& !(retainCurve > 1 && to != Direction.DOWN
-											&& fireflies[pivot.getyIndex() + 1][pivot.getxIndex()] != null);
-							boolean canL = (to != Direction.RIGHT && wallL != Wall.EXISTS
-									&& (to != Direction.LEFT || (wallU != Wall.NOT_EXISTS
-											&& wallD != Wall.NOT_EXISTS))
-									&& !(retainCurve == 0 && to != Direction.LEFT)
-									&& !(fireflies[pivot.getyIndex()][pivot.getxIndex() - 1] != null
-											&& fireflies[pivot.getyIndex()][pivot.getxIndex() - 1]
-													.getDirection() == Direction.RIGHT))
-									&& !(retainCurve > 0 && to == Direction.LEFT
-											&& fireflies[pivot.getyIndex()][pivot.getxIndex() - 1] != null)
-									&& !(retainCurve > 1 && to != Direction.LEFT
-											&& fireflies[pivot.getyIndex()][pivot.getxIndex() - 1] != null);
-							if (!canU && !canR && !canD && !canL) {
-								return false;
-							} else if (canU && (to == Direction.UP && retainCurve == 0) || (!canR && !canD && !canL)) {
-								tateWall[pivot.getyIndex() - 1][pivot.getxIndex()] = Wall.NOT_EXISTS;
-								if (wallR == Wall.SPACE) {
-									yokoWall[pivot.getyIndex()][pivot.getxIndex()] = Wall.EXISTS;
-								}
-								if (wallL == Wall.SPACE) {
-									yokoWall[pivot.getyIndex()][pivot.getxIndex() - 1] = Wall.EXISTS;
-								}
-								pivot = new Position(pivot.getyIndex() - 1, pivot.getxIndex());
-								if (to != Direction.UP) {
-									if (retainCurve == 0) {
-										return false;
-									}
-									retainCurve--;
-									to = Direction.UP;
-								}
-							} else if (canR && (to == Direction.RIGHT && retainCurve == 0)
-									|| (!canU && !canD && !canL)) {
-								yokoWall[pivot.getyIndex()][pivot.getxIndex()] = Wall.NOT_EXISTS;
-								if (wallU == Wall.SPACE) {
-									tateWall[pivot.getyIndex() - 1][pivot.getxIndex()] = Wall.EXISTS;
-								}
-								if (wallD == Wall.SPACE) {
-									tateWall[pivot.getyIndex()][pivot.getxIndex()] = Wall.EXISTS;
-								}
-								pivot = new Position(pivot.getyIndex(), pivot.getxIndex() + 1);
-								if (to != Direction.RIGHT) {
-									if (retainCurve == 0) {
-										return false;
-									}
-									retainCurve--;
-									to = Direction.RIGHT;
-								}
-							} else if (canD && (to == Direction.DOWN && retainCurve == 0)
-									|| (!canU && !canR && !canL)) {
-								tateWall[pivot.getyIndex()][pivot.getxIndex()] = Wall.NOT_EXISTS;
-								if (wallR == Wall.SPACE) {
-									yokoWall[pivot.getyIndex()][pivot.getxIndex()] = Wall.EXISTS;
-								}
-								if (wallL == Wall.SPACE) {
-									yokoWall[pivot.getyIndex()][pivot.getxIndex() - 1] = Wall.EXISTS;
-								}
-								pivot = new Position(pivot.getyIndex() + 1, pivot.getxIndex());
-								if (to != Direction.DOWN) {
-									if (retainCurve == 0) {
-										return false;
-									}
-									retainCurve--;
-									to = Direction.DOWN;
-								}
-							} else if (canL && (to == Direction.LEFT && retainCurve == 0)
-									|| (!canU && !canR && !canD)) {
-								yokoWall[pivot.getyIndex()][pivot.getxIndex() - 1] = Wall.NOT_EXISTS;
-								if (wallU == Wall.SPACE) {
-									tateWall[pivot.getyIndex() - 1][pivot.getxIndex()] = Wall.EXISTS;
-								}
-								if (wallD == Wall.SPACE) {
-									tateWall[pivot.getyIndex()][pivot.getxIndex()] = Wall.EXISTS;
-								}
-								pivot = new Position(pivot.getyIndex(), pivot.getxIndex() - 1);
-								if (to != Direction.LEFT) {
-									if (retainCurve == 0) {
-										return false;
-									}
-									retainCurve--;
-									to = Direction.LEFT;
-								}
-							} else {
-								break;
-							}
+						if (!serveyLight(to, retainCurve, pivot)) {
+							return false;
 						}
+					}
+				}
+			}
+			return true;
+		}
+
+		/**
+		 * pivotからto方向に進めるかどうかを調査して返す。
+		 */
+		public boolean serveyLight(Direction to, int retainCurve, Position pivot) {
+			if (fireflies[pivot.getyIndex()][pivot.getxIndex()] != null) {
+				if (retainCurve <= 0
+						&& fireflies[pivot.getyIndex()][pivot.getxIndex()].getDirection() != to.opposite()) {
+					return true;
+				} else {
+					return false;
+				}
+			}
+			if (to == Direction.UP) {
+				Wall wallU = pivot.getyIndex() == 0 ? Wall.EXISTS
+						: tateWall[pivot.getyIndex() - 1][pivot.getxIndex()];
+				Wall wallR = pivot.getxIndex() == getXLength() - 1 ? Wall.EXISTS
+						: yokoWall[pivot.getyIndex()][pivot.getxIndex()];
+				Wall wallL = pivot.getxIndex() == 0 ? Wall.EXISTS
+						: yokoWall[pivot.getyIndex()][pivot.getxIndex() - 1];
+				if ((wallU == Wall.NOT_EXISTS && wallR == Wall.NOT_EXISTS)
+						|| (wallU == Wall.NOT_EXISTS && wallL == Wall.NOT_EXISTS)
+						|| (wallR == Wall.NOT_EXISTS && wallL == Wall.NOT_EXISTS)) {
+					// 枝分かれ確定は失敗
+					return false;
+				}
+				if (wallU == Wall.NOT_EXISTS) {
+					Position next = new Position(pivot.getyIndex() - 1, pivot.getxIndex());
+					Field virtual = new Field(this);
+					if (wallR == Wall.SPACE) {
+						virtual.yokoWall[pivot.getyIndex()][pivot.getxIndex()] = Wall.EXISTS;
+					}
+					if (wallL == Wall.SPACE) {
+						virtual.yokoWall[pivot.getyIndex()][pivot.getxIndex() - 1] = Wall.EXISTS;
+					}
+					return virtual.serveyLight(Direction.UP, retainCurve, next);
+				} else if (wallR == Wall.NOT_EXISTS) {
+					if (retainCurve == 0) {
+						return false;
+					}
+					Position next = new Position(pivot.getyIndex(), pivot.getxIndex() + 1);
+					Field virtual = new Field(this);
+					if (wallU == Wall.SPACE) {
+						virtual.tateWall[pivot.getyIndex() - 1][pivot.getxIndex()] = Wall.EXISTS;
+					}
+					if (wallL == Wall.SPACE) {
+						virtual.yokoWall[pivot.getyIndex()][pivot.getxIndex() - 1] = Wall.EXISTS;
+					}
+					return virtual.serveyLight(Direction.RIGHT, retainCurve - 1, next);
+				} else if (wallL == Wall.NOT_EXISTS) {
+					if (retainCurve == 0) {
+						return false;
+					}
+					Position next = new Position(pivot.getyIndex(), pivot.getxIndex() - 1);
+					Field virtual = new Field(this);
+					if (wallU == Wall.SPACE) {
+						virtual.tateWall[pivot.getyIndex() - 1][pivot.getxIndex()] = Wall.EXISTS;
+					}
+					if (wallR == Wall.SPACE) {
+						virtual.yokoWall[pivot.getyIndex()][pivot.getxIndex()] = Wall.EXISTS;
+					}
+					return serveyLight(Direction.LEFT, retainCurve - 1, next);
+				} else {
+					if (wallU == Wall.SPACE) {
+						Position next = new Position(pivot.getyIndex() - 1, pivot.getxIndex());
+						Field virtual = new Field(this);
+						if (wallR == Wall.SPACE) {
+							virtual.yokoWall[pivot.getyIndex()][pivot.getxIndex()] = Wall.EXISTS;
+						}
+						if (wallL == Wall.SPACE) {
+							virtual.yokoWall[pivot.getyIndex()][pivot.getxIndex() - 1] = Wall.EXISTS;
+						}
+						if (virtual.serveyLight(Direction.UP, retainCurve, next)) {
+							return true;
+						}
+					}
+					if (wallR == Wall.SPACE && retainCurve != 0) {
+						Position next = new Position(pivot.getyIndex(), pivot.getxIndex() + 1);
+						Field virtual = new Field(this);
+						if (wallU == Wall.SPACE) {
+							virtual.tateWall[pivot.getyIndex() - 1][pivot.getxIndex()] = Wall.EXISTS;
+						}
+						if (wallL == Wall.SPACE) {
+							virtual.yokoWall[pivot.getyIndex()][pivot.getxIndex() - 1] = Wall.EXISTS;
+						}
+						if (virtual.serveyLight(Direction.RIGHT, retainCurve - 1, next)) {
+							return true;
+						}
+					}
+					if (wallL == Wall.SPACE && retainCurve != 0) {
+						Position next = new Position(pivot.getyIndex(), pivot.getxIndex() - 1);
+						Field virtual = new Field(this);
+						if (wallU == Wall.SPACE) {
+							virtual.tateWall[pivot.getyIndex() - 1][pivot.getxIndex()] = Wall.EXISTS;
+						}
+						if (wallR == Wall.SPACE) {
+							virtual.yokoWall[pivot.getyIndex()][pivot.getxIndex()] = Wall.EXISTS;
+						}
+						if (virtual.serveyLight(Direction.LEFT, retainCurve - 1, next)) {
+							return true;
+						}
+					}
+					return false;
+				}
+			} else if (to == Direction.RIGHT) {
+				Wall wallR = pivot.getxIndex() == getXLength() - 1 ? Wall.EXISTS
+						: yokoWall[pivot.getyIndex()][pivot.getxIndex()];
+				Wall wallU = pivot.getyIndex() == 0 ? Wall.EXISTS
+						: tateWall[pivot.getyIndex() - 1][pivot.getxIndex()];
+				Wall wallD = pivot.getyIndex() == getYLength() - 1 ? Wall.EXISTS
+						: tateWall[pivot.getyIndex()][pivot.getxIndex()];
+				if ((wallR == Wall.NOT_EXISTS && wallU == Wall.NOT_EXISTS)
+						|| (wallR == Wall.NOT_EXISTS && wallU == Wall.NOT_EXISTS)
+						|| (wallD == Wall.NOT_EXISTS && wallU == Wall.NOT_EXISTS)) {
+					// 枝分かれ確定は失敗
+					return false;
+				}
+				if (wallR == Wall.NOT_EXISTS) {
+					Position next = new Position(pivot.getyIndex(), pivot.getxIndex() + 1);
+					Field virtual = new Field(this);
+					if (wallU == Wall.SPACE) {
+						virtual.tateWall[pivot.getyIndex() - 1][pivot.getxIndex()] = Wall.EXISTS;
+					}
+					if (wallD == Wall.SPACE) {
+						virtual.tateWall[pivot.getyIndex()][pivot.getxIndex()] = Wall.EXISTS;
+					}
+					return virtual.serveyLight(Direction.RIGHT, retainCurve, next);
+				} else if (wallU == Wall.NOT_EXISTS) {
+					if (retainCurve == 0) {
+						return false;
+					}
+					Position next = new Position(pivot.getyIndex() - 1, pivot.getxIndex());
+					Field virtual = new Field(this);
+					if (wallR == Wall.SPACE) {
+						virtual.yokoWall[pivot.getyIndex()][pivot.getxIndex()] = Wall.EXISTS;
+					}
+					if (wallD == Wall.SPACE) {
+						virtual.tateWall[pivot.getyIndex()][pivot.getxIndex()] = Wall.EXISTS;
+					}
+					return virtual.serveyLight(Direction.UP, retainCurve - 1, next);
+				} else if (wallD == Wall.NOT_EXISTS) {
+					if (retainCurve == 0) {
+						return false;
+					}
+					Position next = new Position(pivot.getyIndex() + 1, pivot.getxIndex());
+					Field virtual = new Field(this);
+					if (wallU == Wall.SPACE) {
+						virtual.tateWall[pivot.getyIndex() - 1][pivot.getxIndex()] = Wall.EXISTS;
+					}
+					if (wallR == Wall.SPACE) {
+						virtual.yokoWall[pivot.getyIndex()][pivot.getxIndex()] = Wall.EXISTS;
+					}
+					return virtual.serveyLight(Direction.DOWN, retainCurve - 1, next);
+				} else {
+					if (wallR == Wall.SPACE) {
+						Position next = new Position(pivot.getyIndex(), pivot.getxIndex() + 1);
+						Field virtual = new Field(this);
+						if (wallU == Wall.SPACE) {
+							virtual.tateWall[pivot.getyIndex() - 1][pivot.getxIndex()] = Wall.EXISTS;
+						}
+						if (wallD == Wall.SPACE) {
+							virtual.tateWall[pivot.getyIndex()][pivot.getxIndex()] = Wall.EXISTS;
+						}
+						if (virtual.serveyLight(Direction.RIGHT, retainCurve, next)) {
+							return true;
+						}
+					}
+					if (wallU == Wall.SPACE && retainCurve != 0) {
+						Position next = new Position(pivot.getyIndex() - 1, pivot.getxIndex());
+						Field virtual = new Field(this);
+						if (wallR == Wall.SPACE) {
+							virtual.yokoWall[pivot.getyIndex()][pivot.getxIndex()] = Wall.EXISTS;
+						}
+						if (wallD == Wall.SPACE) {
+							virtual.tateWall[pivot.getyIndex()][pivot.getxIndex()] = Wall.EXISTS;
+						}
+						if (virtual.serveyLight(Direction.UP, retainCurve - 1, next)) {
+							return true;
+						}
+					}
+					if (wallD == Wall.SPACE && retainCurve != 0) {
+						Position next = new Position(pivot.getyIndex() + 1, pivot.getxIndex());
+						Field virtual = new Field(this);
+						if (wallU == Wall.SPACE) {
+							virtual.tateWall[pivot.getyIndex() - 1][pivot.getxIndex()] = Wall.EXISTS;
+						}
+						if (wallR == Wall.SPACE) {
+							virtual.yokoWall[pivot.getyIndex()][pivot.getxIndex()] = Wall.EXISTS;
+						}
+						if (virtual.serveyLight(Direction.DOWN, retainCurve - 1, next)) {
+							return true;
+						}
+					}
+					return false;
+				}
+			} else if (to == Direction.DOWN) {
+				Wall wallD = pivot.getyIndex() == getYLength() - 1 ? Wall.EXISTS
+						: tateWall[pivot.getyIndex()][pivot.getxIndex()];
+				Wall wallR = pivot.getxIndex() == getXLength() - 1 ? Wall.EXISTS
+						: yokoWall[pivot.getyIndex()][pivot.getxIndex()];
+				Wall wallL = pivot.getxIndex() == 0 ? Wall.EXISTS
+						: yokoWall[pivot.getyIndex()][pivot.getxIndex() - 1];
+				if ((wallD == Wall.NOT_EXISTS && wallR == Wall.NOT_EXISTS)
+						|| (wallD == Wall.NOT_EXISTS && wallL == Wall.NOT_EXISTS)
+						|| (wallR == Wall.NOT_EXISTS && wallL == Wall.NOT_EXISTS)) {
+					// 枝分かれ確定は失敗
+					return false;
+				}
+				if (wallD == Wall.NOT_EXISTS) {
+					Position next = new Position(pivot.getyIndex() + 1, pivot.getxIndex());
+					Field virtual = new Field(this);
+					if (wallR == Wall.SPACE) {
+						virtual.yokoWall[pivot.getyIndex()][pivot.getxIndex()] = Wall.EXISTS;
+					}
+					if (wallL == Wall.SPACE) {
+						virtual.yokoWall[pivot.getyIndex()][pivot.getxIndex() - 1] = Wall.EXISTS;
+					}
+					return virtual.serveyLight(Direction.DOWN, retainCurve, next);
+				} else if (wallR == Wall.NOT_EXISTS) {
+					if (retainCurve == 0) {
+						return false;
+					}
+					Position next = new Position(pivot.getyIndex(), pivot.getxIndex() + 1);
+					Field virtual = new Field(this);
+					if (wallL == Wall.SPACE) {
+						virtual.yokoWall[pivot.getyIndex()][pivot.getxIndex() - 1] = Wall.EXISTS;
+					}
+					if (wallD == Wall.SPACE) {
+						virtual.tateWall[pivot.getyIndex()][pivot.getxIndex()] = Wall.EXISTS;
+					}
+					return virtual.serveyLight(Direction.RIGHT, retainCurve - 1, next);
+				} else if (wallL == Wall.NOT_EXISTS) {
+					if (retainCurve == 0) {
+						return false;
+					}
+					Position next = new Position(pivot.getyIndex(), pivot.getxIndex() - 1);
+					Field virtual = new Field(this);
+					if (wallR == Wall.SPACE) {
+						virtual.yokoWall[pivot.getyIndex()][pivot.getxIndex()] = Wall.EXISTS;
+					}
+					if (wallD == Wall.SPACE) {
+						virtual.tateWall[pivot.getyIndex()][pivot.getxIndex()] = Wall.EXISTS;
+					}
+					return virtual.serveyLight(Direction.LEFT, retainCurve - 1, next);
+				} else {
+					if (wallD == Wall.SPACE) {
+						Position next = new Position(pivot.getyIndex() + 1, pivot.getxIndex());
+						Field virtual = new Field(this);
+						if (wallR == Wall.SPACE) {
+							virtual.yokoWall[pivot.getyIndex()][pivot.getxIndex()] = Wall.EXISTS;
+						}
+						if (wallL == Wall.SPACE) {
+							virtual.yokoWall[pivot.getyIndex()][pivot.getxIndex() - 1] = Wall.EXISTS;
+						}
+						if (virtual.serveyLight(Direction.DOWN, retainCurve, next)) {
+							return true;
+						}
+					}
+					if (wallR == Wall.SPACE && retainCurve != 0) {
+						Position next = new Position(pivot.getyIndex(), pivot.getxIndex() + 1);
+						Field virtual = new Field(this);
+						if (wallL == Wall.SPACE) {
+							virtual.yokoWall[pivot.getyIndex()][pivot.getxIndex() - 1] = Wall.EXISTS;
+						}
+						if (wallD == Wall.SPACE) {
+							virtual.tateWall[pivot.getyIndex()][pivot.getxIndex()] = Wall.EXISTS;
+						}
+						if (virtual.serveyLight(Direction.RIGHT, retainCurve - 1, next)) {
+							return true;
+						}
+					}
+					if (wallL == Wall.SPACE && retainCurve != 0) {
+						Position next = new Position(pivot.getyIndex(), pivot.getxIndex() - 1);
+						Field virtual = new Field(this);
+						if (wallR == Wall.SPACE) {
+							virtual.yokoWall[pivot.getyIndex()][pivot.getxIndex()] = Wall.EXISTS;
+						}
+						if (wallD == Wall.SPACE) {
+							virtual.tateWall[pivot.getyIndex()][pivot.getxIndex()] = Wall.EXISTS;
+						}
+						if (virtual.serveyLight(Direction.LEFT, retainCurve - 1, next)) {
+							return true;
+						}
+					}
+					return false;
+				}
+			} else if (to == Direction.LEFT) {
+				Wall wallL = pivot.getxIndex() == 0 ? Wall.EXISTS
+						: yokoWall[pivot.getyIndex()][pivot.getxIndex() - 1];
+				Wall wallU = pivot.getyIndex() == 0 ? Wall.EXISTS
+						: tateWall[pivot.getyIndex() - 1][pivot.getxIndex()];
+				Wall wallD = pivot.getyIndex() == getYLength() - 1 ? Wall.EXISTS
+						: tateWall[pivot.getyIndex()][pivot.getxIndex()];
+				if ((wallL == Wall.NOT_EXISTS && wallU == Wall.NOT_EXISTS)
+						|| (wallL == Wall.NOT_EXISTS && wallU == Wall.NOT_EXISTS)
+						|| (wallD == Wall.NOT_EXISTS && wallU == Wall.NOT_EXISTS)) {
+					// 枝分かれ確定は失敗
+					return false;
+				}
+				if (wallL == Wall.NOT_EXISTS) {
+					Position next = new Position(pivot.getyIndex(), pivot.getxIndex() - 1);
+					Field virtual = new Field(this);
+					if (wallU == Wall.SPACE) {
+						virtual.tateWall[pivot.getyIndex() - 1][pivot.getxIndex()] = Wall.EXISTS;
+					}
+					if (wallD == Wall.SPACE) {
+						virtual.tateWall[pivot.getyIndex()][pivot.getxIndex()] = Wall.EXISTS;
+					}
+					return virtual.serveyLight(Direction.LEFT, retainCurve, next);
+				} else if (wallU == Wall.NOT_EXISTS) {
+					if (retainCurve == 0) {
+						return false;
+					}
+					Position next = new Position(pivot.getyIndex() - 1, pivot.getxIndex());
+					Field virtual = new Field(this);
+					if (wallL == Wall.SPACE) {
+						virtual.yokoWall[pivot.getyIndex()][pivot.getxIndex() - 1] = Wall.EXISTS;
+					}
+					if (wallD == Wall.SPACE) {
+						virtual.tateWall[pivot.getyIndex()][pivot.getxIndex()] = Wall.EXISTS;
+					}
+					return virtual.serveyLight(Direction.UP, retainCurve - 1, next);
+				} else if (wallD == Wall.NOT_EXISTS) {
+					if (retainCurve == 0) {
+						return false;
+					}
+					Position next = new Position(pivot.getyIndex() + 1, pivot.getxIndex());
+					Field virtual = new Field(this);
+					if (wallU == Wall.SPACE) {
+						virtual.tateWall[pivot.getyIndex() - 1][pivot.getxIndex()] = Wall.EXISTS;
+					}
+					if (wallL == Wall.SPACE) {
+						virtual.yokoWall[pivot.getyIndex()][pivot.getxIndex() - 1] = Wall.EXISTS;
+					}
+					return virtual.serveyLight(Direction.DOWN, retainCurve - 1, next);
+				} else {
+					if (wallL == Wall.SPACE) {
+						Position next = new Position(pivot.getyIndex(), pivot.getxIndex() - 1);
+						Field virtual = new Field(this);
+						if (wallU == Wall.SPACE) {
+							virtual.tateWall[pivot.getyIndex() - 1][pivot.getxIndex()] = Wall.EXISTS;
+						}
+						if (wallD == Wall.SPACE) {
+							virtual.tateWall[pivot.getyIndex()][pivot.getxIndex()] = Wall.EXISTS;
+						}
+						if (virtual.serveyLight(Direction.LEFT, retainCurve, next)) {
+							return true;
+						}
+					}
+					if (wallU == Wall.SPACE && retainCurve != 0) {
+						Position next = new Position(pivot.getyIndex() - 1, pivot.getxIndex());
+						Field virtual = new Field(this);
+						if (wallL == Wall.SPACE) {
+							virtual.yokoWall[pivot.getyIndex()][pivot.getxIndex() - 1] = Wall.EXISTS;
+						}
+						if (wallD == Wall.SPACE) {
+							virtual.tateWall[pivot.getyIndex()][pivot.getxIndex()] = Wall.EXISTS;
+						}
+						if (virtual.serveyLight(Direction.UP, retainCurve - 1, next)) {
+							return true;
+						}
+					}
+					if (wallD == Wall.SPACE && retainCurve != 0) {
+						Position next = new Position(pivot.getyIndex() + 1, pivot.getxIndex());
+						Field virtual = new Field(this);
+						if (wallU == Wall.SPACE) {
+							virtual.tateWall[pivot.getyIndex() - 1][pivot.getxIndex()] = Wall.EXISTS;
+						}
+						if (wallL == Wall.SPACE) {
+							virtual.yokoWall[pivot.getyIndex()][pivot.getxIndex() - 1] = Wall.EXISTS;
+						}
+						if (virtual.serveyLight(Direction.DOWN, retainCurve - 1, next)) {
+							return true;
+						}
+					}
+					return false;
+				}
+			}
+			return true;
+		}
+
+		/**
+		 * pivotからto方向に進めるかどうかを調査して返す。
+		 * 一応作ったが、あまりに重すぎるので封印
+		 */
+		public boolean serveyHeavy(Direction to, int retainCurve, Position pivot) {
+			if (to == Direction.UP) {
+				if (fireflies[pivot.getyIndex()][pivot.getxIndex()] != null) {
+					if (retainCurve <= 0
+							&& fireflies[pivot.getyIndex()][pivot.getxIndex()].getDirection() != to.opposite()) {
+						return true;
+					} else {
+						return false;
+					}
+				}
+				Wall wallU = pivot.getyIndex() == 0 ? Wall.EXISTS
+						: tateWall[pivot.getyIndex() - 1][pivot.getxIndex()];
+				Wall wallR = pivot.getxIndex() == getXLength() - 1 ? Wall.EXISTS
+						: yokoWall[pivot.getyIndex()][pivot.getxIndex()];
+				Wall wallL = pivot.getxIndex() == 0 ? Wall.EXISTS
+						: yokoWall[pivot.getyIndex()][pivot.getxIndex() - 1];
+				if ((wallU == Wall.NOT_EXISTS && wallR == Wall.NOT_EXISTS)
+						|| (wallU == Wall.NOT_EXISTS && wallL == Wall.NOT_EXISTS)
+						|| (wallR == Wall.NOT_EXISTS && wallL == Wall.NOT_EXISTS)) {
+					// 枝分かれ確定は失敗
+					return false;
+				}
+				if (wallU == Wall.NOT_EXISTS) {
+					Position next = new Position(pivot.getyIndex() - 1, pivot.getxIndex());
+					Field virtual = new Field(this);
+					if (wallR == Wall.SPACE) {
+						virtual.yokoWall[pivot.getyIndex()][pivot.getxIndex()] = Wall.EXISTS;
+					}
+					if (wallL == Wall.SPACE) {
+						virtual.yokoWall[pivot.getyIndex()][pivot.getxIndex() - 1] = Wall.EXISTS;
+					}
+					if (virtual.serveyHeavy(Direction.UP, retainCurve, next)) {
+						tateWall = virtual.tateWall;
+						yokoWall = virtual.yokoWall;
+						return true;
+					} else {
+						return false;
+					}
+				} else if (wallR == Wall.NOT_EXISTS) {
+					if (retainCurve == 0) {
+						return false;
+					}
+					Position next = new Position(pivot.getyIndex(), pivot.getxIndex() + 1);
+					Field virtual = new Field(this);
+					if (wallU == Wall.SPACE) {
+						virtual.tateWall[pivot.getyIndex() - 1][pivot.getxIndex()] = Wall.EXISTS;
+					}
+					if (wallL == Wall.SPACE) {
+						virtual.yokoWall[pivot.getyIndex()][pivot.getxIndex() - 1] = Wall.EXISTS;
+					}
+					if (virtual.serveyHeavy(Direction.RIGHT, retainCurve - 1, next)) {
+						tateWall = virtual.tateWall;
+						yokoWall = virtual.yokoWall;
+						return true;
+					} else {
+						return false;
+					}
+				} else if (wallL == Wall.NOT_EXISTS) {
+					if (retainCurve == 0) {
+						return false;
+					}
+					Position next = new Position(pivot.getyIndex(), pivot.getxIndex() - 1);
+					Field virtual = new Field(this);
+					if (wallU == Wall.SPACE) {
+						virtual.tateWall[pivot.getyIndex() - 1][pivot.getxIndex()] = Wall.EXISTS;
+					}
+					if (wallR == Wall.SPACE) {
+						virtual.yokoWall[pivot.getyIndex()][pivot.getxIndex()] = Wall.EXISTS;
+					}
+					if (virtual.serveyHeavy(Direction.LEFT, retainCurve - 1, next)) {
+						tateWall = virtual.tateWall;
+						yokoWall = virtual.yokoWall;
+						return true;
+					} else {
+						return false;
+					}
+				} else {
+					boolean okU = false;
+					boolean okR = false;
+					boolean okL = false;
+					Field virtualU = null;
+					Field virtualR = null;
+					Field virtualL = null;
+					if (wallU == Wall.SPACE) {
+						Position next = new Position(pivot.getyIndex() - 1, pivot.getxIndex());
+						virtualU = new Field(this);
+						if (wallR == Wall.SPACE) {
+							virtualU.yokoWall[pivot.getyIndex()][pivot.getxIndex()] = Wall.EXISTS;
+						}
+						if (wallL == Wall.SPACE) {
+							virtualU.yokoWall[pivot.getyIndex()][pivot.getxIndex() - 1] = Wall.EXISTS;
+						}
+						if (virtualU.serveyHeavy(Direction.UP, retainCurve, next)) {
+							okU = true;
+						}
+					}
+					if (wallR == Wall.SPACE && retainCurve != 0) {
+						Position next = new Position(pivot.getyIndex(), pivot.getxIndex() + 1);
+						virtualR = new Field(this);
+						if (wallU == Wall.SPACE) {
+							virtualR.tateWall[pivot.getyIndex() - 1][pivot.getxIndex()] = Wall.EXISTS;
+						}
+						if (wallL == Wall.SPACE) {
+							virtualR.yokoWall[pivot.getyIndex()][pivot.getxIndex() - 1] = Wall.EXISTS;
+						}
+						if (virtualR.serveyHeavy(Direction.RIGHT, retainCurve - 1, next)) {
+							okR = true;
+						}
+					}
+					if (wallL == Wall.SPACE && retainCurve != 0) {
+						Position next = new Position(pivot.getyIndex(), pivot.getxIndex() - 1);
+						virtualL = new Field(this);
+						if (wallU == Wall.SPACE) {
+							virtualL.tateWall[pivot.getyIndex() - 1][pivot.getxIndex()] = Wall.EXISTS;
+						}
+						if (wallR == Wall.SPACE) {
+							virtualL.yokoWall[pivot.getyIndex()][pivot.getxIndex()] = Wall.EXISTS;
+						}
+						if (virtualL.serveyHeavy(Direction.LEFT, retainCurve - 1, next)) {
+							okL = true;
+						}
+					}
+					if (!okU && !okR && !okL) {
+						return false;
+					} else {
+						if (okU && !okR && !okL) {
+							tateWall = virtualU.tateWall;
+							yokoWall = virtualU.yokoWall;
+						} else if (!okU && okR && !okL) {
+							tateWall = virtualR.tateWall;
+							yokoWall = virtualR.yokoWall;
+						} else if (!okU && !okR && okL) {
+							tateWall = virtualL.tateWall;
+							yokoWall = virtualL.yokoWall;
+						}
+						return true;
+					}
+				}
+			} else if (to == Direction.RIGHT) {
+				if (fireflies[pivot.getyIndex()][pivot.getxIndex()] != null) {
+					if (retainCurve <= 0
+							&& fireflies[pivot.getyIndex()][pivot.getxIndex()].getDirection() != to.opposite()) {
+						return true;
+					} else {
+						return false;
+					}
+				}
+				Wall wallR = pivot.getxIndex() == getXLength() - 1 ? Wall.EXISTS
+						: yokoWall[pivot.getyIndex()][pivot.getxIndex()];
+				Wall wallU = pivot.getyIndex() == 0 ? Wall.EXISTS
+						: tateWall[pivot.getyIndex() - 1][pivot.getxIndex()];
+				Wall wallD = pivot.getyIndex() == getYLength() - 1 ? Wall.EXISTS
+						: tateWall[pivot.getyIndex()][pivot.getxIndex()];
+				if ((wallR == Wall.NOT_EXISTS && wallU == Wall.NOT_EXISTS)
+						|| (wallR == Wall.NOT_EXISTS && wallU == Wall.NOT_EXISTS)
+						|| (wallD == Wall.NOT_EXISTS && wallU == Wall.NOT_EXISTS)) {
+					// 枝分かれ確定は失敗
+					return false;
+				}
+				if (wallR == Wall.NOT_EXISTS) {
+					Position next = new Position(pivot.getyIndex(), pivot.getxIndex() + 1);
+					Field virtual = new Field(this);
+					if (wallU == Wall.SPACE) {
+						virtual.tateWall[pivot.getyIndex() - 1][pivot.getxIndex()] = Wall.EXISTS;
+					}
+					if (wallD == Wall.SPACE) {
+						virtual.tateWall[pivot.getyIndex()][pivot.getxIndex()] = Wall.EXISTS;
+					}
+					if (virtual.serveyHeavy(Direction.RIGHT, retainCurve, next)) {
+						tateWall = virtual.tateWall;
+						yokoWall = virtual.yokoWall;
+						return true;
+					} else {
+						return false;
+					}
+				} else if (wallU == Wall.NOT_EXISTS) {
+					if (retainCurve == 0) {
+						return false;
+					}
+					Position next = new Position(pivot.getyIndex() - 1, pivot.getxIndex());
+					Field virtual = new Field(this);
+					if (wallR == Wall.SPACE) {
+						virtual.yokoWall[pivot.getyIndex()][pivot.getxIndex()] = Wall.EXISTS;
+					}
+					if (wallD == Wall.SPACE) {
+						virtual.tateWall[pivot.getyIndex()][pivot.getxIndex()] = Wall.EXISTS;
+					}
+					if (virtual.serveyHeavy(Direction.UP, retainCurve - 1, next)) {
+						tateWall = virtual.tateWall;
+						yokoWall = virtual.yokoWall;
+						return true;
+					} else {
+						return false;
+					}
+				} else if (wallD == Wall.NOT_EXISTS) {
+					if (retainCurve == 0) {
+						return false;
+					}
+					Position next = new Position(pivot.getyIndex() + 1, pivot.getxIndex());
+					Field virtual = new Field(this);
+					if (wallU == Wall.SPACE) {
+						virtual.tateWall[pivot.getyIndex() - 1][pivot.getxIndex()] = Wall.EXISTS;
+					}
+					if (wallR == Wall.SPACE) {
+						virtual.yokoWall[pivot.getyIndex()][pivot.getxIndex()] = Wall.EXISTS;
+					}
+					if (virtual.serveyHeavy(Direction.DOWN, retainCurve - 1, next)) {
+						tateWall = virtual.tateWall;
+						yokoWall = virtual.yokoWall;
+						return true;
+					} else {
+						return false;
+					}
+				} else {
+					boolean okR = false;
+					boolean okU = false;
+					boolean okD = false;
+					Field virtualR = null;
+					Field virtualU = null;
+					Field virtualD = null;
+					if (wallR == Wall.SPACE) {
+						Position next = new Position(pivot.getyIndex(), pivot.getxIndex() + 1);
+						virtualR = new Field(this);
+						if (wallU == Wall.SPACE) {
+							virtualR.tateWall[pivot.getyIndex() - 1][pivot.getxIndex()] = Wall.EXISTS;
+						}
+						if (wallD == Wall.SPACE) {
+							virtualR.tateWall[pivot.getyIndex()][pivot.getxIndex()] = Wall.EXISTS;
+						}
+						if (virtualR.serveyHeavy(Direction.RIGHT, retainCurve, next)) {
+							okR = true;
+						}
+					}
+					if (wallU == Wall.SPACE && retainCurve != 0) {
+						Position next = new Position(pivot.getyIndex() - 1, pivot.getxIndex());
+						virtualU = new Field(this);
+						if (wallR == Wall.SPACE) {
+							virtualU.yokoWall[pivot.getyIndex()][pivot.getxIndex()] = Wall.EXISTS;
+						}
+						if (wallD == Wall.SPACE) {
+							virtualU.tateWall[pivot.getyIndex()][pivot.getxIndex()] = Wall.EXISTS;
+						}
+						if (virtualU.serveyHeavy(Direction.UP, retainCurve - 1, next)) {
+							okU = true;
+						}
+					}
+					if (wallD == Wall.SPACE && retainCurve != 0) {
+						Position next = new Position(pivot.getyIndex() + 1, pivot.getxIndex());
+						virtualD = new Field(this);
+						if (wallU == Wall.SPACE) {
+							virtualD.tateWall[pivot.getyIndex() - 1][pivot.getxIndex()] = Wall.EXISTS;
+						}
+						if (wallR == Wall.SPACE) {
+							virtualD.yokoWall[pivot.getyIndex()][pivot.getxIndex()] = Wall.EXISTS;
+						}
+						if (virtualD.serveyHeavy(Direction.DOWN, retainCurve - 1, next)) {
+							okD = true;
+						}
+					}
+					if (!okR && !okU && !okD) {
+						return false;
+					} else {
+						if (okR && !okU && !okD) {
+							tateWall = virtualR.tateWall;
+							yokoWall = virtualR.yokoWall;
+						} else if (!okR && okU && !okD) {
+							tateWall = virtualU.tateWall;
+							yokoWall = virtualU.yokoWall;
+						} else if (!okR && !okU && okD) {
+							tateWall = virtualD.tateWall;
+							yokoWall = virtualD.yokoWall;
+						}
+						return true;
+					}
+				}
+			} else if (to == Direction.DOWN) {
+				if (fireflies[pivot.getyIndex()][pivot.getxIndex()] != null) {
+					if (retainCurve <= 0
+							&& fireflies[pivot.getyIndex()][pivot.getxIndex()].getDirection() != to.opposite()) {
+						return true;
+					} else {
+						return false;
+					}
+				}
+				Wall wallD = pivot.getyIndex() == getYLength() - 1 ? Wall.EXISTS
+						: tateWall[pivot.getyIndex()][pivot.getxIndex()];
+				Wall wallR = pivot.getxIndex() == getXLength() - 1 ? Wall.EXISTS
+						: yokoWall[pivot.getyIndex()][pivot.getxIndex()];
+				Wall wallL = pivot.getxIndex() == 0 ? Wall.EXISTS
+						: yokoWall[pivot.getyIndex()][pivot.getxIndex() - 1];
+				if ((wallD == Wall.NOT_EXISTS && wallR == Wall.NOT_EXISTS)
+						|| (wallD == Wall.NOT_EXISTS && wallL == Wall.NOT_EXISTS)
+						|| (wallR == Wall.NOT_EXISTS && wallL == Wall.NOT_EXISTS)) {
+					// 枝分かれ確定は失敗
+					return false;
+				}
+				if (wallD == Wall.NOT_EXISTS) {
+					Position next = new Position(pivot.getyIndex() + 1, pivot.getxIndex());
+					Field virtual = new Field(this);
+					if (wallR == Wall.SPACE) {
+						virtual.yokoWall[pivot.getyIndex()][pivot.getxIndex()] = Wall.EXISTS;
+					}
+					if (wallL == Wall.SPACE) {
+						virtual.yokoWall[pivot.getyIndex()][pivot.getxIndex() - 1] = Wall.EXISTS;
+					}
+					if (virtual.serveyHeavy(Direction.DOWN, retainCurve, next)) {
+						tateWall = virtual.tateWall;
+						yokoWall = virtual.yokoWall;
+						return true;
+					} else {
+						return false;
+					}
+				} else if (wallR == Wall.NOT_EXISTS) {
+					if (retainCurve == 0) {
+						return false;
+					}
+					Position next = new Position(pivot.getyIndex(), pivot.getxIndex() + 1);
+					Field virtual = new Field(this);
+					if (wallL == Wall.SPACE) {
+						virtual.yokoWall[pivot.getyIndex()][pivot.getxIndex() - 1] = Wall.EXISTS;
+					}
+					if (wallD == Wall.SPACE) {
+						virtual.tateWall[pivot.getyIndex()][pivot.getxIndex()] = Wall.EXISTS;
+					}
+					if (virtual.serveyHeavy(Direction.RIGHT, retainCurve - 1, next)) {
+						tateWall = virtual.tateWall;
+						yokoWall = virtual.yokoWall;
+						return true;
+					} else {
+						return false;
+					}
+				} else if (wallL == Wall.NOT_EXISTS) {
+					if (retainCurve == 0) {
+						return false;
+					}
+					Position next = new Position(pivot.getyIndex(), pivot.getxIndex() - 1);
+					Field virtual = new Field(this);
+					if (wallR == Wall.SPACE) {
+						virtual.yokoWall[pivot.getyIndex()][pivot.getxIndex()] = Wall.EXISTS;
+					}
+					if (wallD == Wall.SPACE) {
+						virtual.tateWall[pivot.getyIndex()][pivot.getxIndex()] = Wall.EXISTS;
+					}
+					if (virtual.serveyHeavy(Direction.LEFT, retainCurve - 1, next)) {
+						tateWall = virtual.tateWall;
+						yokoWall = virtual.yokoWall;
+						return true;
+					} else {
+						return false;
+					}
+				} else {
+					boolean okD = false;
+					boolean okR = false;
+					boolean okL = false;
+					Field virtualD = null;
+					Field virtualR = null;
+					Field virtualL = null;
+					if (wallD == Wall.SPACE) {
+						Position next = new Position(pivot.getyIndex() + 1, pivot.getxIndex());
+						virtualD = new Field(this);
+						if (wallR == Wall.SPACE) {
+							virtualD.yokoWall[pivot.getyIndex()][pivot.getxIndex()] = Wall.EXISTS;
+						}
+						if (wallL == Wall.SPACE) {
+							virtualD.yokoWall[pivot.getyIndex()][pivot.getxIndex() - 1] = Wall.EXISTS;
+						}
+						if (virtualD.serveyHeavy(Direction.DOWN, retainCurve, next)) {
+							okD = true;
+						}
+					}
+					if (wallR == Wall.SPACE && retainCurve != 0) {
+						Position next = new Position(pivot.getyIndex(), pivot.getxIndex() + 1);
+						virtualR = new Field(this);
+						if (wallL == Wall.SPACE) {
+							virtualR.yokoWall[pivot.getyIndex()][pivot.getxIndex() - 1] = Wall.EXISTS;
+						}
+						if (wallD == Wall.SPACE) {
+							virtualR.tateWall[pivot.getyIndex()][pivot.getxIndex()] = Wall.EXISTS;
+						}
+						if (virtualR.serveyHeavy(Direction.RIGHT, retainCurve - 1, next)) {
+							okR = true;
+						}
+					}
+					if (wallL == Wall.SPACE && retainCurve != 0) {
+						Position next = new Position(pivot.getyIndex(), pivot.getxIndex() - 1);
+						virtualL = new Field(this);
+						if (wallR == Wall.SPACE) {
+							virtualL.yokoWall[pivot.getyIndex()][pivot.getxIndex()] = Wall.EXISTS;
+						}
+						if (wallD == Wall.SPACE) {
+							virtualL.tateWall[pivot.getyIndex()][pivot.getxIndex()] = Wall.EXISTS;
+						}
+						if (virtualL.serveyHeavy(Direction.LEFT, retainCurve - 1, next)) {
+							okL = true;
+						}
+					}
+					if (!okD && !okR && !okL) {
+						return false;
+					} else {
+						if (okD && !okR && !okL) {
+							tateWall = virtualD.tateWall;
+							yokoWall = virtualD.yokoWall;
+						} else if (!okD && okR && !okL) {
+							tateWall = virtualR.tateWall;
+							yokoWall = virtualR.yokoWall;
+						} else if (!okD && !okR && okL) {
+							tateWall = virtualL.tateWall;
+							yokoWall = virtualL.yokoWall;
+						}
+						return true;
+					}
+				}
+			} else if (to == Direction.LEFT) {
+				if (fireflies[pivot.getyIndex()][pivot.getxIndex()] != null) {
+					if (retainCurve <= 0
+							&& fireflies[pivot.getyIndex()][pivot.getxIndex()].getDirection() != to.opposite()) {
+						return true;
+					} else {
+						return false;
+					}
+				}
+				Wall wallL = pivot.getxIndex() == 0 ? Wall.EXISTS
+						: yokoWall[pivot.getyIndex()][pivot.getxIndex() - 1];
+				Wall wallU = pivot.getyIndex() == 0 ? Wall.EXISTS
+						: tateWall[pivot.getyIndex() - 1][pivot.getxIndex()];
+				Wall wallD = pivot.getyIndex() == getYLength() - 1 ? Wall.EXISTS
+						: tateWall[pivot.getyIndex()][pivot.getxIndex()];
+				if ((wallL == Wall.NOT_EXISTS && wallU == Wall.NOT_EXISTS)
+						|| (wallL == Wall.NOT_EXISTS && wallU == Wall.NOT_EXISTS)
+						|| (wallD == Wall.NOT_EXISTS && wallU == Wall.NOT_EXISTS)) {
+					// 枝分かれ確定は失敗
+					return false;
+				}
+				if (wallL == Wall.NOT_EXISTS) {
+					Position next = new Position(pivot.getyIndex(), pivot.getxIndex() - 1);
+					Field virtual = new Field(this);
+					if (wallU == Wall.SPACE) {
+						virtual.tateWall[pivot.getyIndex() - 1][pivot.getxIndex()] = Wall.EXISTS;
+					}
+					if (wallD == Wall.SPACE) {
+						virtual.tateWall[pivot.getyIndex()][pivot.getxIndex()] = Wall.EXISTS;
+					}
+					if (virtual.serveyHeavy(Direction.LEFT, retainCurve, next)) {
+						tateWall = virtual.tateWall;
+						yokoWall = virtual.yokoWall;
+						return true;
+					} else {
+						return false;
+					}
+				} else if (wallU == Wall.NOT_EXISTS) {
+					if (retainCurve == 0) {
+						return false;
+					}
+					Position next = new Position(pivot.getyIndex() - 1, pivot.getxIndex());
+					Field virtual = new Field(this);
+					if (wallL == Wall.SPACE) {
+						virtual.yokoWall[pivot.getyIndex()][pivot.getxIndex() - 1] = Wall.EXISTS;
+					}
+					if (wallD == Wall.SPACE) {
+						virtual.tateWall[pivot.getyIndex()][pivot.getxIndex()] = Wall.EXISTS;
+					}
+					if (virtual.serveyHeavy(Direction.UP, retainCurve - 1, next)) {
+						tateWall = virtual.tateWall;
+						yokoWall = virtual.yokoWall;
+						return true;
+					} else {
+						return false;
+					}
+				} else if (wallD == Wall.NOT_EXISTS) {
+					if (retainCurve == 0) {
+						return false;
+					}
+					Position next = new Position(pivot.getyIndex() + 1, pivot.getxIndex());
+					Field virtual = new Field(this);
+					if (wallU == Wall.SPACE) {
+						virtual.tateWall[pivot.getyIndex() - 1][pivot.getxIndex()] = Wall.EXISTS;
+					}
+					if (wallL == Wall.SPACE) {
+						virtual.yokoWall[pivot.getyIndex()][pivot.getxIndex() - 1] = Wall.EXISTS;
+					}
+					if (virtual.serveyHeavy(Direction.DOWN, retainCurve - 1, next)) {
+						tateWall = virtual.tateWall;
+						yokoWall = virtual.yokoWall;
+						return true;
+					} else {
+						return false;
+					}
+				} else {
+					boolean okL = false;
+					boolean okU = false;
+					boolean okD = false;
+					Field virtualL = null;
+					Field virtualU = null;
+					Field virtualD = null;
+					if (wallL == Wall.SPACE) {
+						Position next = new Position(pivot.getyIndex(), pivot.getxIndex() - 1);
+						virtualL = new Field(this);
+						if (wallU == Wall.SPACE) {
+							virtualL.tateWall[pivot.getyIndex() - 1][pivot.getxIndex()] = Wall.EXISTS;
+						}
+						if (wallD == Wall.SPACE) {
+							virtualL.tateWall[pivot.getyIndex()][pivot.getxIndex()] = Wall.EXISTS;
+						}
+						if (virtualL.serveyHeavy(Direction.LEFT, retainCurve, next)) {
+							okL = true;
+						}
+					}
+					if (wallU == Wall.SPACE && retainCurve != 0) {
+						Position next = new Position(pivot.getyIndex() - 1, pivot.getxIndex());
+						virtualU = new Field(this);
+						if (wallL == Wall.SPACE) {
+							virtualU.yokoWall[pivot.getyIndex()][pivot.getxIndex() - 1] = Wall.EXISTS;
+						}
+						if (wallD == Wall.SPACE) {
+							virtualU.tateWall[pivot.getyIndex()][pivot.getxIndex()] = Wall.EXISTS;
+						}
+						if (virtualU.serveyHeavy(Direction.UP, retainCurve - 1, next)) {
+							okU = true;
+						}
+					}
+					if (wallD == Wall.SPACE && retainCurve != 0) {
+						Position next = new Position(pivot.getyIndex() + 1, pivot.getxIndex());
+						virtualD = new Field(this);
+						if (wallU == Wall.SPACE) {
+							virtualD.tateWall[pivot.getyIndex() - 1][pivot.getxIndex()] = Wall.EXISTS;
+						}
+						if (wallL == Wall.SPACE) {
+							virtualD.yokoWall[pivot.getyIndex()][pivot.getxIndex() - 1] = Wall.EXISTS;
+						}
+						if (virtualD.serveyHeavy(Direction.DOWN, retainCurve - 1, next)) {
+							okD = true;
+						}
+					}
+					if (!okL && !okU && !okD) {
+						return false;
+					} else {
+						if (okL && !okU && !okD) {
+							tateWall = virtualL.tateWall;
+							yokoWall = virtualL.yokoWall;
+						} else if (!okL && okU && !okD) {
+							tateWall = virtualU.tateWall;
+							yokoWall = virtualU.yokoWall;
+						} else if (!okL && !okU && okD) {
+							tateWall = virtualD.tateWall;
+							yokoWall = virtualD.yokoWall;
+						}
+						return true;
 					}
 				}
 			}
@@ -733,15 +1534,15 @@ public class FireflySolver implements Solver {
 		 */
 		public boolean solveAndCheck() {
 			String str = getStateDump();
-			if (!fireflySolve()) {
-				return false;
-			}
 			if (!nextSolve()) {
 				return false;
 			}
 			if (!getStateDump().equals(str)) {
 				return solveAndCheck();
 			} else {
+				if (!fireflySolve()) {
+					return false;
+				}
 				if (!connectSolve()) {
 					return false;
 				}
@@ -816,6 +1617,7 @@ public class FireflySolver implements Solver {
 				recursiveCnt++;
 			}
 			if (recursiveCnt == 3 && field.getStateDump().equals(befStr)) {
+				System.out.println(field);
 				return "解けませんでした。途中経過を返します。";
 			}
 		}
@@ -831,7 +1633,6 @@ public class FireflySolver implements Solver {
 	 * @param posSet
 	 */
 	private boolean candSolve(Field field, int recursive) {
-		//System.out.println(field);
 		String str = field.getStateDump();
 		for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 			for (int xIndex = 0; xIndex < field.getXLength() - 1; xIndex++) {
@@ -865,6 +1666,40 @@ public class FireflySolver implements Solver {
 		}
 		if (!field.getStateDump().equals(str)) {
 			return candSolve(field, recursive);
+		}
+		return true;
+	}
+
+	/**
+	 * 1つのマスに対する仮置き調査
+	 */
+	private boolean oneCandSolve(Field field, int yIndex, int xIndex, int recursive) {
+		Field virtual = new Field(field);
+		virtual.masu[yIndex][xIndex] = Masu.BLACK;
+		boolean allowBlack = virtual.solveAndCheck();
+		if (allowBlack && recursive > 0) {
+			if (!candSolve(virtual, recursive - 1)) {
+				allowBlack = false;
+			}
+		}
+		Field virtual2 = new Field(field);
+		virtual2.masu[yIndex][xIndex] = Masu.NOT_BLACK;
+		boolean allowNotBlack = virtual2.solveAndCheck();
+		if (allowNotBlack && recursive > 0) {
+			if (!candSolve(virtual2, recursive - 1)) {
+				allowNotBlack = false;
+			}
+		}
+		if (!allowBlack && !allowNotBlack) {
+			return false;
+		} else if (!allowBlack) {
+			field.masu = virtual2.masu;
+			field.tateWall = virtual2.tateWall;
+			field.yokoWall = virtual2.yokoWall;
+		} else if (!allowNotBlack) {
+			field.masu = virtual.masu;
+			field.tateWall = virtual.tateWall;
+			field.yokoWall = virtual.yokoWall;
 		}
 		return true;
 	}
