@@ -245,7 +245,9 @@ public class RippleSolver implements Solver {
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				sb.append("□");
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					if (numbersCand[yIndex][xIndex].size() == 1) {
+					if (numbersCand[yIndex][xIndex].size() == 0) {
+						sb.append("×");
+					} else if (numbersCand[yIndex][xIndex].size() == 1) {
 						String numStr = String.valueOf(numbersCand[yIndex][xIndex].get(0));
 						int index = HALF_NUMS.indexOf(numStr);
 						if (index >= 0) {
@@ -253,6 +255,9 @@ public class RippleSolver implements Solver {
 						} else {
 							sb.append(numStr);
 						}
+					} else if (numbersCand[yIndex][xIndex].size() == 2) {
+						sb.append(numbersCand[yIndex][xIndex].get(0));
+						sb.append(numbersCand[yIndex][xIndex].get(1));
 					} else {
 						sb.append("　");
 					}
