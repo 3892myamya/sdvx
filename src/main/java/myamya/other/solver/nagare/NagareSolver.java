@@ -21,6 +21,8 @@ public class NagareSolver implements Solver {
 		private final Direction[][] nagare;
 		// 風の情報
 		private final Set<Direction>[][] wind;
+		// 初期黒マスの位置情報
+		private final Set<Position> blockPosSet;
 		// 横をふさぐ壁が存在するか
 		// 0,0 = trueなら、0,0と0,1の間に壁があるという意味
 		private Wall[][] yokoWall;
@@ -59,6 +61,7 @@ public class NagareSolver implements Solver {
 			wind = new HashSet[height][width];
 			yokoWall = new Wall[height][width - 1];
 			tateWall = new Wall[height - 1][width];
+			blockPosSet = new HashSet<>();
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
 					masu[yIndex][xIndex] = Masu.SPACE;
@@ -91,6 +94,7 @@ public class NagareSolver implements Solver {
 					}
 					if (oneChar >= 5) {
 						masu[pos.getyIndex()][pos.getxIndex()] = Masu.BLACK;
+						blockPosSet.add(pos);
 						// 周りの壁が確定
 						if (pos.getyIndex() != 0) {
 							tateWall[pos.getyIndex() - 1][pos.getxIndex()] = Wall.EXISTS;
@@ -128,43 +132,43 @@ public class NagareSolver implements Solver {
 				index++;
 			}
 			// 黒マスから出ている流れをもとに風を吹かせる。
-			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
-				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					if (masu[yIndex][xIndex] == Masu.BLACK && nagare[yIndex][xIndex] != null) {
-						if (nagare[yIndex][xIndex] == Direction.UP) {
-							for (int targetY = yIndex - 1; targetY >= 0; targetY--) {
-								if (masu[targetY][xIndex] == Masu.BLACK) {
-									break;
-								} else {
-									wind[targetY][xIndex].add(nagare[yIndex][xIndex]);
-								}
+			for (Position pos : blockPosSet) {
+				int yIndex = pos.getyIndex();
+				int xIndex = pos.getxIndex();
+				if (nagare[yIndex][xIndex] != null) {
+					if (nagare[yIndex][xIndex] == Direction.UP) {
+						for (int targetY = yIndex - 1; targetY >= 0; targetY--) {
+							if (masu[targetY][xIndex] == Masu.BLACK) {
+								break;
+							} else {
+								wind[targetY][xIndex].add(nagare[yIndex][xIndex]);
 							}
 						}
-						if (nagare[yIndex][xIndex] == Direction.RIGHT) {
-							for (int targetX = xIndex + 1; targetX < getXLength(); targetX++) {
-								if (masu[yIndex][targetX] == Masu.BLACK) {
-									break;
-								} else {
-									wind[yIndex][targetX].add(nagare[yIndex][xIndex]);
-								}
+					}
+					if (nagare[yIndex][xIndex] == Direction.RIGHT) {
+						for (int targetX = xIndex + 1; targetX < getXLength(); targetX++) {
+							if (masu[yIndex][targetX] == Masu.BLACK) {
+								break;
+							} else {
+								wind[yIndex][targetX].add(nagare[yIndex][xIndex]);
 							}
 						}
-						if (nagare[yIndex][xIndex] == Direction.DOWN) {
-							for (int targetY = yIndex + 1; targetY < getYLength(); targetY++) {
-								if (masu[targetY][xIndex] == Masu.BLACK) {
-									break;
-								} else {
-									wind[targetY][xIndex].add(nagare[yIndex][xIndex]);
-								}
+					}
+					if (nagare[yIndex][xIndex] == Direction.DOWN) {
+						for (int targetY = yIndex + 1; targetY < getYLength(); targetY++) {
+							if (masu[targetY][xIndex] == Masu.BLACK) {
+								break;
+							} else {
+								wind[targetY][xIndex].add(nagare[yIndex][xIndex]);
 							}
 						}
-						if (nagare[yIndex][xIndex] == Direction.LEFT) {
-							for (int targetX = xIndex - 1; targetX >= 0; targetX--) {
-								if (masu[yIndex][targetX] == Masu.BLACK) {
-									break;
-								} else {
-									wind[yIndex][targetX].add(nagare[yIndex][xIndex]);
-								}
+					}
+					if (nagare[yIndex][xIndex] == Direction.LEFT) {
+						for (int targetX = xIndex - 1; targetX >= 0; targetX--) {
+							if (masu[yIndex][targetX] == Masu.BLACK) {
+								break;
+							} else {
+								wind[yIndex][targetX].add(nagare[yIndex][xIndex]);
 							}
 						}
 					}
@@ -193,6 +197,7 @@ public class NagareSolver implements Solver {
 					tateWall[yIndex][xIndex] = other.tateWall[yIndex][xIndex];
 				}
 			}
+			blockPosSet = other.blockPosSet;
 		}
 
 		@Override
@@ -208,7 +213,11 @@ public class NagareSolver implements Solver {
 					if (nagare[yIndex][xIndex] != null) {
 						sb.append(nagare[yIndex][xIndex].getDirectString());
 					} else {
-						sb.append(masu[yIndex][xIndex]);
+						if (masu[yIndex][xIndex] == Masu.BLACK && !blockPosSet.contains(new Position(yIndex, xIndex))) {
+							sb.append("×");
+						} else {
+							sb.append(masu[yIndex][xIndex]);
+						}
 					}
 					if (xIndex != getXLength() - 1) {
 						sb.append(yokoWall[yIndex][xIndex]);
@@ -544,6 +553,7 @@ public class NagareSolver implements Solver {
 
 		/**
 		 * 流れの通りにたどっていったとき、流れや風に対して逆に侵入したらfalseを返す。
+		 * また、流れに逆らってたどって行ったとき、流れや風の通りに侵入したらfalseを返す。
 		 */
 		private boolean flowSolve() {
 			Set<Position> continuePosSet = new HashSet<>();
@@ -556,6 +566,9 @@ public class NagareSolver implements Solver {
 						}
 						continuePosSet.add(originPos);
 						if (!checkFlow(originPos, continuePosSet, nagare[yIndex][xIndex].opposite())) {
+							return false;
+						}
+						if (!checkBackFlow(originPos, continuePosSet, nagare[yIndex][xIndex])) {
 							return false;
 						}
 					}
@@ -619,6 +632,66 @@ public class NagareSolver implements Solver {
 					}
 					continuePosSet.add(nextPos);
 					return checkFlow(nextPos, continuePosSet, Direction.RIGHT);
+				}
+			}
+			return true;
+		}
+
+		private boolean checkBackFlow(Position pos, Set<Position> continuePosSet, Direction from) {
+			if (pos.getyIndex() != 0 && from != Direction.UP
+					&& tateWall[pos.getyIndex() - 1][pos.getxIndex()] == Wall.NOT_EXISTS) {
+				Position nextPos = new Position(pos.getyIndex() - 1, pos.getxIndex());
+				if (nagare[nextPos.getyIndex()][nextPos.getxIndex()] == Direction.UP ||
+						wind[nextPos.getyIndex()][nextPos.getxIndex()].contains(Direction.UP)) {
+					return false;
+				} else {
+					if (continuePosSet.contains(nextPos)) {
+						return true;
+					}
+					continuePosSet.add(nextPos);
+					return checkBackFlow(nextPos, continuePosSet, Direction.DOWN);
+				}
+			}
+			if (pos.getxIndex() != getXLength() - 1 && from != Direction.RIGHT
+					&& yokoWall[pos.getyIndex()][pos.getxIndex()] == Wall.NOT_EXISTS) {
+				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() + 1);
+				if (nagare[nextPos.getyIndex()][nextPos.getxIndex()] == Direction.RIGHT ||
+						wind[nextPos.getyIndex()][nextPos.getxIndex()].contains(Direction.RIGHT)) {
+					return false;
+				} else {
+					if (continuePosSet.contains(nextPos)) {
+						return true;
+					}
+					continuePosSet.add(nextPos);
+					return checkBackFlow(nextPos, continuePosSet, Direction.LEFT);
+				}
+			}
+			if (pos.getyIndex() != getYLength() - 1 && from != Direction.DOWN
+					&& tateWall[pos.getyIndex()][pos.getxIndex()] == Wall.NOT_EXISTS) {
+				Position nextPos = new Position(pos.getyIndex() + 1, pos.getxIndex());
+				if (nagare[nextPos.getyIndex()][nextPos.getxIndex()] == Direction.DOWN ||
+						wind[nextPos.getyIndex()][nextPos.getxIndex()].contains(Direction.DOWN)) {
+					return false;
+				} else {
+					if (continuePosSet.contains(nextPos)) {
+						return true;
+					}
+					continuePosSet.add(nextPos);
+					return checkBackFlow(nextPos, continuePosSet, Direction.UP);
+				}
+			}
+			if (pos.getxIndex() != 0 && from != Direction.LEFT
+					&& yokoWall[pos.getyIndex()][pos.getxIndex() - 1] == Wall.NOT_EXISTS) {
+				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() - 1);
+				if (nagare[nextPos.getyIndex()][nextPos.getxIndex()] == Direction.LEFT ||
+						wind[nextPos.getyIndex()][nextPos.getxIndex()].contains(Direction.LEFT)) {
+					return false;
+				} else {
+					if (continuePosSet.contains(nextPos)) {
+						return true;
+					}
+					continuePosSet.add(nextPos);
+					return checkBackFlow(nextPos, continuePosSet, Direction.RIGHT);
 				}
 			}
 			return true;
@@ -746,7 +819,7 @@ public class NagareSolver implements Solver {
 			}
 			int recursiveCnt = 0;
 			while (field.getStateDump().equals(befStr) && recursiveCnt < 3) {
-				if (!candSolve(field, recursiveCnt == 2 ? 999 : recursiveCnt)) {
+				if (!candSolve(field, recursiveCnt)) {
 					return "問題に矛盾がある可能性があります。途中経過を返します。";
 				}
 				recursiveCnt++;
@@ -756,10 +829,10 @@ public class NagareSolver implements Solver {
 			}
 		}
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
-		System.out.println("難易度:" + (count / 2));
+		System.out.println("難易度:" + (count));
 		System.out.println(field);
 		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count / 2).toString();
+				+ Difficulty.getByCount(count).toString();
 	}
 
 	/**

@@ -17,7 +17,7 @@ public class FillominoSolver implements Solver {
 		// 初期数字の情報
 		private final Integer[][] originNumbers;
 		// 数字の情報
-		private final Integer[][] numbers;
+		private Integer[][] numbers;
 		// 0,0 = trueなら、0,0と0,1の間に壁があるという意味
 		private Wall[][] yokoWall;
 		// 縦をふさぐ壁が存在するか
@@ -250,6 +250,10 @@ public class FillominoSolver implements Solver {
 			return true;
 		}
 
+		/**
+		 * posを起点に上下左右に壁なし確定マスをつなぎ、
+		 * サイズ超過になると分かった時点でfalseを返す。
+		 */
 		private boolean checkAndSetContinueWhitePosSet(Position pos, Set<Position> continuePosSet, Direction from,
 				int size) {
 			if (continuePosSet.size() > size) {
@@ -368,7 +372,8 @@ public class FillominoSolver implements Solver {
 		}
 
 		/**
-		 * posを起点に上下左右に壁で区切られていないマスを無制限につなげていく。
+		 * posを起点に上下左右に壁で区切られていないマスをつなぎ、
+		 * サイズ不足にならないと分かった時点でtrueを返す。
 		 */
 		private boolean checkAndSetContinuePosSet(Position pos, Set<Position> continuePosSet, Direction from,
 				int size) {
@@ -497,9 +502,15 @@ public class FillominoSolver implements Solver {
 					Set<Position> continueNotBlackPosSet = new HashSet<>();
 					continueNotBlackPosSet.add(pivot);
 					if (!setContinuePosSetContainsNumber(pivot, continueNotBlackPosSet, null)) {
-						// TODO これだと孤立してるマスの中でさらに分割が必要なときに対応できない…
-						for (Position pos : continueNotBlackPosSet) {
-							numbers[pos.getyIndex()][pos.getxIndex()] = continueNotBlackPosSet.size();
+						Set<Position> continueWhitePosSet = new HashSet<>();
+						continueWhitePosSet.add(pivot);
+						if (checkAndSetContinueWhitePosSet(pivot, continueWhitePosSet, null,
+								continueNotBlackPosSet.size())) {
+							if (continueWhitePosSet.size() == continueNotBlackPosSet.size()) {
+								for (Position pos : continueNotBlackPosSet) {
+									numbers[pos.getyIndex()][pos.getxIndex()] = continueNotBlackPosSet.size();
+								}
+							}
 						}
 					}
 				}
@@ -566,7 +577,7 @@ public class FillominoSolver implements Solver {
 			}
 			int recursiveCnt = 0;
 			while (field.getStateDump().equals(befStr) && recursiveCnt < 3) {
-				if (!candSolve(field, recursiveCnt == 2 ? 999 : recursiveCnt)) {
+				if (!candSolve(field, recursiveCnt)) {
 					System.out.println(field);
 					return "問題に矛盾がある可能性があります。途中経過を返します。";
 				}
@@ -579,17 +590,16 @@ public class FillominoSolver implements Solver {
 			}
 		}
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
-		System.out.println("難易度:" + (count));
+		System.out.println("難易度:" + (count / 5));
 		System.out.println(field);
 		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count).toString();
+				+ Difficulty.getByCount(count / 5).toString();
 	}
 
 	/**
 	 * 仮置きして調べる
 	 */
 	private boolean candSolve(Field field, int recursive) {
-		System.out.println(field);
 		String str = field.getStateDump();
 		for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 			for (int xIndex = 0; xIndex < field.getXLength() - 1; xIndex++) {
@@ -618,12 +628,6 @@ public class FillominoSolver implements Solver {
 	}
 
 	private boolean oneCandYokoWallSolve(Field field, int yIndex, int xIndex, int recursive) {
-		if (yIndex == 8 && xIndex == 10 && recursive == 1) {
-			System.out.println();
-		}
-		if (yIndex == 9 && xIndex == 8 && recursive == 0) {
-			System.out.println();
-		}
 		Field virtual = new Field(field);
 		virtual.yokoWall[yIndex][xIndex] = Wall.EXISTS;
 		boolean allowBlack = virtual.solveAndCheck();
@@ -643,9 +647,11 @@ public class FillominoSolver implements Solver {
 		if (!allowBlack && !allowNotBlack) {
 			return false;
 		} else if (!allowBlack) {
+			field.numbers = virtual2.numbers;
 			field.tateWall = virtual2.tateWall;
 			field.yokoWall = virtual2.yokoWall;
 		} else if (!allowNotBlack) {
+			field.numbers = virtual.numbers;
 			field.tateWall = virtual.tateWall;
 			field.yokoWall = virtual.yokoWall;
 		}
@@ -672,9 +678,11 @@ public class FillominoSolver implements Solver {
 		if (!allowBlack && !allowNotBlack) {
 			return false;
 		} else if (!allowBlack) {
+			field.numbers = virtual2.numbers;
 			field.tateWall = virtual2.tateWall;
 			field.yokoWall = virtual2.yokoWall;
 		} else if (!allowNotBlack) {
+			field.numbers = virtual.numbers;
 			field.tateWall = virtual.tateWall;
 			field.yokoWall = virtual.yokoWall;
 		}
