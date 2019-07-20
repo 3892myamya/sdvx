@@ -28,6 +28,10 @@ public class FillominoSolver implements Solver {
 			return originNumbers;
 		}
 
+		public Integer[][] getNumbers() {
+			return numbers;
+		}
+
 		public Wall[][] getYokoWall() {
 			return yokoWall;
 		}

@@ -300,7 +300,6 @@ public class RippleSolver implements Solver {
 		 * 同じ部屋にいる数字を候補から除外する。
 		 */
 		public boolean roomSolve() {
-			// 部屋の大きさにより、初期候補数字を決定
 			for (Set<Position> room : rooms) {
 				for (Position pos : room) {
 					if (numbersCand[pos.getyIndex()][pos.getxIndex()].size() == 1) {
@@ -311,6 +310,23 @@ public class RippleSolver implements Solver {
 							}
 							if (numbersCand[sameRoomPos.getyIndex()][sameRoomPos.getxIndex()].size() == 0) {
 								return false;
+							}
+						}
+					} else {
+						for (int cand : numbersCand[pos.getyIndex()][pos.getxIndex()]) {
+							boolean isHiddenSingle = true;
+							for (Position sameRoomPos : room) {
+								if (!sameRoomPos.equals(pos)) {
+									if (numbersCand[sameRoomPos.getyIndex()][sameRoomPos.getxIndex()].contains(cand)) {
+										isHiddenSingle = false;
+										break;
+									}
+								}
+							}
+							if (isHiddenSingle) {
+								numbersCand[pos.getyIndex()][pos.getxIndex()].clear();
+								numbersCand[pos.getyIndex()][pos.getxIndex()].add(cand);
+								break;
 							}
 						}
 					}
@@ -403,56 +419,6 @@ public class RippleSolver implements Solver {
 
 	}
 
-	public static class Room {
-		@Override
-		public String toString() {
-			return "Room [member=" +
-					member + "]";
-		}
-
-		// 部屋に属するマスの集合
-		private final Set<Position> member;
-		// 国境となる壁の位置情報
-		private final Set<Position> yokoWallPosSet;
-		private final Set<Position> tateWallPosSet;
-
-		public Room(int capacity, Set<Position> member, Set<Position> yokoWallPosSet, Set<Position> tateWallPosSet) {
-			this.member = member;
-			this.yokoWallPosSet = yokoWallPosSet;
-			this.tateWallPosSet = tateWallPosSet;
-		}
-
-		public Set<Position> getMember() {
-			return member;
-		}
-
-		public Set<Position> getYokoWallPosSet() {
-			return yokoWallPosSet;
-		}
-
-		public Set<Position> getTateWallPosSet() {
-			return tateWallPosSet;
-		}
-
-		// 一番左→一番上の位置を返す。画面の数字描画用。
-		public Position getNumberMasuPos() {
-			int yIndex = Integer.MAX_VALUE;
-			int xIndex = Integer.MAX_VALUE;
-			for (Position pos : member) {
-				if (pos.getxIndex() < xIndex) {
-					xIndex = pos.getxIndex();
-				}
-			}
-			for (Position pos : member) {
-				if (pos.getxIndex() == xIndex && pos.getyIndex() < yIndex) {
-					yIndex = pos.getyIndex();
-				}
-			}
-			return new Position(yIndex, xIndex);
-		}
-
-	}
-
 	private final Field field;
 	private int count = 0;
 
@@ -507,10 +473,10 @@ public class RippleSolver implements Solver {
 			}
 		}
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
-		System.out.println("難易度:" + (count));
+		System.out.println("難易度:" + (count * 5));
 		System.out.println(field);
 		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count).toString();
+				+ Difficulty.getByCount(count * 5).toString();
 	}
 
 	/**

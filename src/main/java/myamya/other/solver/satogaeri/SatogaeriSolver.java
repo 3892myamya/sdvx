@@ -44,6 +44,10 @@ public class SatogaeriSolver implements Solver {
 			return tateRoomWall;
 		}
 
+		public Map<Position, Set<Position>> getCandidates() {
+			return candidates;
+		}
+
 		public int getYLength() {
 			return numbers.length;
 		}
@@ -283,7 +287,7 @@ public class SatogaeriSolver implements Solver {
 								Position fixedTo = new ArrayList<>(entry.getValue()).get(0);
 								if (fixedTo.equals(new Position(yIndex, xIndex))) {
 									sb.setLength(sb.length() - 1);
-									sb.append("○");
+									sb.append("●");
 									break;
 								} else if (isCross(fixedFrom, fixedTo, new Position(yIndex, xIndex),
 										new Position(yIndex, xIndex))) {
@@ -306,7 +310,7 @@ public class SatogaeriSolver implements Solver {
 						}
 					}
 					if (xIndex != getXLength() - 1) {
-						sb.append(yokoRoomWall[yIndex][xIndex] == true ? "□" : "＊");
+						sb.append(yokoRoomWall[yIndex][xIndex] == true ? "□" : "　");
 					}
 				}
 				sb.append("□");
@@ -314,7 +318,7 @@ public class SatogaeriSolver implements Solver {
 				if (yIndex != getYLength() - 1) {
 					sb.append("□");
 					for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-						sb.append(tateRoomWall[yIndex][xIndex] == true ? "□" : "＊");
+						sb.append(tateRoomWall[yIndex][xIndex] == true ? "□" : "　");
 						if (xIndex != getXLength() - 1) {
 							sb.append("□");
 						}
@@ -418,7 +422,6 @@ public class SatogaeriSolver implements Solver {
 			}
 			return solveAndCheck();
 		}
-
 	}
 
 	private final Field field;
@@ -475,10 +478,10 @@ public class SatogaeriSolver implements Solver {
 			}
 		}
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
-		System.out.println("難易度:" + (count));
+		System.out.println("難易度:" + (count * 3 / 2));
 		System.out.println(field);
 		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count).toString();
+				+ Difficulty.getByCount(count * 3 / 2).toString();
 	}
 
 	/**
@@ -486,7 +489,6 @@ public class SatogaeriSolver implements Solver {
 	 * @param posSet
 	 */
 	private boolean candSolve(Field field, int recursive) {
-		System.out.println(field);
 		while (true) {
 			String befStr = field.getStateDump();
 			for (Entry<Position, Set<Position>> entry : field.candidates.entrySet()) {

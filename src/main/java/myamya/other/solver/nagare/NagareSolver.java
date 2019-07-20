@@ -34,7 +34,7 @@ public class NagareSolver implements Solver {
 			return masu;
 		}
 
-		public Direction[][] getPearl() {
+		public Direction[][] getDirection() {
 			return nagare;
 		}
 
@@ -54,8 +54,12 @@ public class NagareSolver implements Solver {
 			return masu[0].length;
 		}
 
+		public Set<Position> getBlockPosSet() {
+			return blockPosSet;
+		}
+
 		@SuppressWarnings("unchecked")
-		public Field(int height, int width, String param, boolean ura) {
+		public Field(int height, int width, String param) {
 			masu = new Masu[height][width];
 			nagare = new Direction[height][width];
 			wind = new HashSet[height][width];
@@ -791,8 +795,8 @@ public class NagareSolver implements Solver {
 	private final Field field;
 	private int count = 0;
 
-	public NagareSolver(int height, int width, String param, boolean ura) {
-		field = new Field(height, width, param, ura);
+	public NagareSolver(int height, int width, String param) {
+		field = new Field(height, width, param);
 	}
 
 	public Field getField() {
@@ -805,7 +809,7 @@ public class NagareSolver implements Solver {
 		int height = Integer.parseInt(params[params.length - 2]);
 		int width = Integer.parseInt(params[params.length - 3]);
 		String param = params[params.length - 1];
-		System.out.println(new NagareSolver(height, width, param, false).solve());
+		System.out.println(new NagareSolver(height, width, param).solve());
 	}
 
 	@Override

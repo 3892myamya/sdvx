@@ -74,6 +74,10 @@ public class FireflySolver implements Solver {
 			return tateWall;
 		}
 
+		public Firefly[][] getFireflies() {
+			return fireflies;
+		}
+
 		public int getYLength() {
 			return masu.length;
 		}

@@ -126,15 +126,17 @@ public class Common {
 	 * 方向を示す列挙型
 	 */
 	public enum Direction {
-		UP("u", 1, "↑"), RIGHT("r", 4, "→"), DOWN("d", 2, "↓"), LEFT("l", 3, "←");
+		UP("u", 1, "↑", "▲"), RIGHT("r", 4, "→", "▶"), DOWN("d", 2, "↓", "▼"), LEFT("l", 3, "←", "◀");
 		private final String str;
 		private final int num;
 		private final String directString;
+		private final String triangle;
 
-		Direction(String str, int num, String directString) {
+		Direction(String str, int num, String directString, String triangle) {
 			this.str = str;
 			this.num = num;
 			this.directString = directString;
+			this.triangle = triangle;
 		}
 
 		@Override
@@ -176,6 +178,10 @@ public class Common {
 
 		public String getDirectString() {
 			return directString;
+		}
+
+		public String getTriangle() {
+			return triangle;
 		}
 	}
 }

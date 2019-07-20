@@ -1065,10 +1065,10 @@ public class YajilinRegionsSolver implements Solver {
 			}
 		}
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
-		System.out.println("難易度:" + (count));
+		System.out.println("難易度:" + (count / 2));
 		System.out.println(field);
 		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count).toString();
+				+ Difficulty.getByCount(count / 2).toString();
 	}
 
 	/**
@@ -1076,7 +1076,6 @@ public class YajilinRegionsSolver implements Solver {
 	 * @param posSet
 	 */
 	private boolean candSolve(Field field, int recursive) {
-		System.out.println(field);
 		String str = field.getStateDump();
 		for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 			for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
