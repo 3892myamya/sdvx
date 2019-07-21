@@ -126,7 +126,7 @@ public class Common {
 	 * 方向を示す列挙型
 	 */
 	public enum Direction {
-		UP("u", 1, "↑", "▲"), RIGHT("r", 4, "→", "▶"), DOWN("d", 2, "↓", "▼"), LEFT("l", 3, "←", "◀");
+		UP("u", 1, "↑", "▲"), RIGHT("r", 4, "→", "►"), DOWN("d", 2, "↓", "▼"), LEFT("l", 3, "←", "◄");
 		private final String str;
 		private final int num;
 		private final String directString;
