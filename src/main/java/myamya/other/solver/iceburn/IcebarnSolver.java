@@ -146,7 +146,6 @@ public class IcebarnSolver implements Solver {
 				if (index < (height * (width -1))) {
 					// 左向き
 					int wkIndex = index;
-					yokoExtraWallDirection[index /(width -1) ][index % width + 1] =
 				} else if (index < (height * (width -1)) + ((height -1) * width)){
 					// 上向き
 					int wkIndex = index - (height * (width -1));
@@ -161,28 +160,6 @@ public class IcebarnSolver implements Solver {
 
 				index++;
 			}
-
-			  00  01  02
-			00  01  02  03
-		      10  11  12
-			10  11  12  13
-			  20  21  22
-			20  21  22  23
-	 		  30  31  32
-
-			3*3
-			なし   cc
-
-			00-01l 0bc
-			00-10u 65c
-
-			00-01r c0b
-			01-02r c1a
-			00-02r c00a
-			00-10d c65
-
-			左向き、上向きの順番で 1-z (35=インターバル)
-			右向き、下向きの順番で 1-z (35=インターバル)
 
 		}
 
