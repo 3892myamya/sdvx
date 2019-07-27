@@ -429,6 +429,7 @@ public class NorinoriSolver implements Solver {
 		 * 各種チェックを1セット実行
 		 */
 		private boolean solveAndCheck() {
+			String str = getStateDump();
 			if (!roomSolve()) {
 				return false;
 			}
@@ -437,6 +438,9 @@ public class NorinoriSolver implements Solver {
 			}
 			if (!noriRoundSolve()) {
 				return false;
+			}
+			if (!getStateDump().equals(str)) {
+				return solveAndCheck();
 			}
 			return true;
 		}
@@ -455,6 +459,7 @@ public class NorinoriSolver implements Solver {
 	}
 
 	private final Field field;
+	private int count = 0;
 
 	public NorinoriSolver(int height, int width, String param) {
 		field = new Field(height, width, param);
@@ -475,19 +480,16 @@ public class NorinoriSolver implements Solver {
 
 	@Override
 	public String solve() {
-		int difficulty = 0;
 		long start = System.nanoTime();
 		while (!field.isSolved()) {
 			System.out.println(field);
 			String befStr = field.getStateDump();
-			if (!field.solveAndCheck()
-					|| (!befStr.equals(field.getStateDump()) && !field.solveAndCheck())) {
+			if (!field.solveAndCheck()) {
 				return "問題に矛盾がある可能性があります。途中経過を返します。";
 			}
 			int recursiveCnt = 0;
 			while (field.getStateDump().equals(befStr) && recursiveCnt < 3) {
-				difficulty = difficulty <= recursiveCnt ? recursiveCnt + 1 : difficulty;
-				if (!candSolve(field, recursiveCnt)) {
+				if (!candSolve(field, recursiveCnt == 2 ? 999 : recursiveCnt)) {
 					return "問題に矛盾がある可能性があります。途中経過を返します。";
 				}
 				recursiveCnt++;
@@ -496,24 +498,30 @@ public class NorinoriSolver implements Solver {
 				return "解けませんでした。途中経過を返します。";
 			}
 		}
-		System.out.println(((System.nanoTime() - start) / 1000000) +
-				"ms.");
-		System.out.println("難易度:" + difficulty);
+		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
+		System.out.println("難易度:" + (count * 5));
 		System.out.println(field);
 		return "解けました。推定難易度:"
-				+ Difficulty.getByVal(difficulty).toString();
+				+ Difficulty.getByCount(count * 5).toString();
 	}
 
 	/**
 	 * 仮置きして調べる
 	 */
-	private static boolean candSolve(Field field, int recursive) {
+	private boolean candSolve(Field field, int recursive) {
+		String str = field.getStateDump();
 		for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 			for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
-				if (!oneCandSolve(field, yIndex, xIndex, recursive)) {
-					return false;
+				if (field.masu[yIndex][xIndex] == Masu.SPACE) {
+					count++;
+					if (!oneCandSolve(field, yIndex, xIndex, recursive)) {
+						return false;
+					}
 				}
 			}
+		}
+		if (!field.getStateDump().equals(str)) {
+			return candSolve(field, recursive);
 		}
 		return true;
 	}
@@ -521,35 +529,33 @@ public class NorinoriSolver implements Solver {
 	/**
 	 * 1つのマスに対する仮置き調査
 	 */
-	private static boolean oneCandSolve(Field field, int yIndex, int xIndex, int recursive) {
-		if (field.masu[yIndex][xIndex] == Masu.SPACE) {
-			Field virtual = new Field(field);
-			virtual.masu[yIndex][xIndex] = Masu.BLACK;
-			String befStr = virtual.getStateDump();
-			boolean allowBlack = virtual.solveAndCheck()
-					&& (befStr.equals(virtual.getStateDump()) || virtual.solveAndCheck());
-			if (allowBlack && recursive > 0) {
-				if (!candSolve(virtual, recursive - 1)) {
-					allowBlack = false;
-				}
+	private boolean oneCandSolve(Field field, int yIndex, int xIndex, int recursive) {
+		Field virtual = new Field(field);
+		virtual.masu[yIndex][xIndex] = Masu.BLACK;
+		String befStr = virtual.getStateDump();
+		boolean allowBlack = virtual.solveAndCheck()
+				&& (befStr.equals(virtual.getStateDump()) || virtual.solveAndCheck());
+		if (allowBlack && recursive > 0) {
+			if (!candSolve(virtual, recursive - 1)) {
+				allowBlack = false;
 			}
-			Field virtual2 = new Field(field);
-			virtual2.masu[yIndex][xIndex] = Masu.NOT_BLACK;
-			befStr = virtual2.getStateDump();
-			boolean allowNotBlack = virtual2.solveAndCheck()
-					&& (befStr.equals(virtual2.getStateDump()) || virtual2.solveAndCheck());
-			if (allowNotBlack && recursive > 0) {
-				if (!candSolve(virtual2, recursive - 1)) {
-					allowNotBlack = false;
-				}
+		}
+		Field virtual2 = new Field(field);
+		virtual2.masu[yIndex][xIndex] = Masu.NOT_BLACK;
+		befStr = virtual2.getStateDump();
+		boolean allowNotBlack = virtual2.solveAndCheck()
+				&& (befStr.equals(virtual2.getStateDump()) || virtual2.solveAndCheck());
+		if (allowNotBlack && recursive > 0) {
+			if (!candSolve(virtual2, recursive - 1)) {
+				allowNotBlack = false;
 			}
-			if (!allowBlack && !allowNotBlack) {
-				return false;
-			} else if (!allowBlack) {
-				field.masu = virtual2.masu;
-			} else if (!allowNotBlack) {
-				field.masu = virtual.masu;
-			}
+		}
+		if (!allowBlack && !allowNotBlack) {
+			return false;
+		} else if (!allowBlack) {
+			field.masu = virtual2.masu;
+		} else if (!allowNotBlack) {
+			field.masu = virtual.masu;
 		}
 		return true;
 	}
