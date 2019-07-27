@@ -64,6 +64,8 @@ public class KadaiGeneratorWeb extends HttpServlet {
 			int border = mode != Mode.FOR_BORDER ? 0 : Integer.parseInt(request.getParameter("border"));
 			Target target = mode != Mode.FOR_TARGET && mode != Mode.FOR_CLEAR ? ClearLamp.NOPLAY
 					: Target.getByVal(Integer.parseInt(request.getParameter("clear")));
+			System.out.println("sdvx:userId=" + userId + ",mode=" + mode + ",lvlMin=" + lvlMin + ",lvlMax=" + lvlMax
+					+ ",dispCnt=" + dispCnt + ",border=" + border + ",target=" + target);
 			if (userId == null || userId.equals("")) {
 				resultMap.put("error_msg", ResponseDiv.NOT_INPUT_USER_ID.getErrorMsg());
 			} else if (lvlMin > lvlMax) {
