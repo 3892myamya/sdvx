@@ -19,6 +19,8 @@ public class PipelinkSolver implements Solver {
 		// 縦をふさぐ壁が存在するか
 		// 0,0 = trueなら、0,0と1,0の間に壁があるという意味
 		private Wall[][] tateWall;
+		// 表出マス情報 画面表示用
+		private final Set<Position> firstPosSet;
 
 		public Wall[][] getYokoWall() {
 			return yokoWall;
@@ -36,9 +38,14 @@ public class PipelinkSolver implements Solver {
 			return tateWall[0].length;
 		}
 
+		public Set<Position> getFirstPosSet() {
+			return firstPosSet;
+		}
+
 		public Field(int height, int width, String param) {
 			yokoWall = new Wall[height][width - 1];
 			tateWall = new Wall[height - 1][width];
+			firstPosSet = new HashSet<>();
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength() - 1; xIndex++) {
 					yokoWall[yIndex][xIndex] = Wall.SPACE;
@@ -60,6 +67,7 @@ public class PipelinkSolver implements Solver {
 					if (ch == '.') {
 						//
 					} else if (ch == 'a') {
+						firstPosSet.add(pos);
 						if (pos.getxIndex() != 0) {
 							yokoWall[pos.getyIndex()][pos.getxIndex() - 1] = Wall.NOT_EXISTS;
 						}
@@ -73,6 +81,7 @@ public class PipelinkSolver implements Solver {
 							tateWall[pos.getyIndex()][pos.getxIndex()] = Wall.NOT_EXISTS;
 						}
 					} else if (ch == 'b') {
+						firstPosSet.add(pos);
 						if (pos.getxIndex() != 0) {
 							yokoWall[pos.getyIndex()][pos.getxIndex() - 1] = Wall.EXISTS;
 						}
@@ -86,6 +95,7 @@ public class PipelinkSolver implements Solver {
 							tateWall[pos.getyIndex()][pos.getxIndex()] = Wall.NOT_EXISTS;
 						}
 					} else if (ch == 'c') {
+						firstPosSet.add(pos);
 						if (pos.getxIndex() != 0) {
 							yokoWall[pos.getyIndex()][pos.getxIndex() - 1] = Wall.NOT_EXISTS;
 						}
@@ -99,6 +109,7 @@ public class PipelinkSolver implements Solver {
 							tateWall[pos.getyIndex()][pos.getxIndex()] = Wall.EXISTS;
 						}
 					} else if (ch == 'd') {
+						firstPosSet.add(pos);
 						if (pos.getxIndex() != 0) {
 							yokoWall[pos.getyIndex()][pos.getxIndex() - 1] = Wall.EXISTS;
 						}
@@ -112,6 +123,7 @@ public class PipelinkSolver implements Solver {
 							tateWall[pos.getyIndex()][pos.getxIndex()] = Wall.EXISTS;
 						}
 					} else if (ch == 'e') {
+						firstPosSet.add(pos);
 						if (pos.getxIndex() != 0) {
 							yokoWall[pos.getyIndex()][pos.getxIndex() - 1] = Wall.NOT_EXISTS;
 						}
@@ -125,6 +137,7 @@ public class PipelinkSolver implements Solver {
 							tateWall[pos.getyIndex()][pos.getxIndex()] = Wall.EXISTS;
 						}
 					} else if (ch == 'f') {
+						firstPosSet.add(pos);
 						if (pos.getxIndex() != 0) {
 							yokoWall[pos.getyIndex()][pos.getxIndex() - 1] = Wall.NOT_EXISTS;
 						}
@@ -138,6 +151,7 @@ public class PipelinkSolver implements Solver {
 							tateWall[pos.getyIndex()][pos.getxIndex()] = Wall.NOT_EXISTS;
 						}
 					} else if (ch == 'g') {
+						firstPosSet.add(pos);
 						if (pos.getxIndex() != 0) {
 							yokoWall[pos.getyIndex()][pos.getxIndex() - 1] = Wall.EXISTS;
 						}
@@ -170,6 +184,7 @@ public class PipelinkSolver implements Solver {
 					tateWall[yIndex][xIndex] = other.tateWall[yIndex][xIndex];
 				}
 			}
+			firstPosSet = other.firstPosSet;
 		}
 
 		@Override

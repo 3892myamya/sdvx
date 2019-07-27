@@ -115,7 +115,6 @@ public class RectsliderSolver implements Solver {
 				}
 			}
 			// 先に他のfromとかぶる候補は消す。
-			// TODO さとがえりにもこれをいれる
 			for (Entry<Position, Set<Position>> entry : candidates.entrySet()) {
 				Position oneFrom = entry.getKey();
 				for (Entry<Position, Set<Position>> target : candidates.entrySet()) {

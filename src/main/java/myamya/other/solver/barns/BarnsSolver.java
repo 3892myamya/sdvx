@@ -21,12 +21,35 @@ public class BarnsSolver implements Solver {
 		// 0,0 = trueなら、0,0と1,0の間に壁があるという意味
 		private Wall[][] tateWall;
 
+		// バーンズのみ 表出している横壁 画面表示用
+		private final Wall[][] firstYokoWall;
+		// バーンズのみ 表出している縦壁 画面表示用
+		private final Wall[][] firstTateWall;
+		// パイプリンクのみ 表出マス情報 画面表示用
+		private final Set<Position> firstPosSet;
+
 		public Wall[][] getYokoWall() {
 			return yokoWall;
 		}
 
 		public Wall[][] getTateWall() {
 			return tateWall;
+		}
+
+		public Wall[][] getFirstYokoWall() {
+			return firstYokoWall;
+		}
+
+		public Wall[][] getFirstTateWall() {
+			return firstTateWall;
+		}
+
+		public Set<Position> getFirstPosSet() {
+			return firstPosSet;
+		}
+
+		public boolean[][] getCircle() {
+			return circle;
 		}
 
 		public int getYLength() {
@@ -41,6 +64,9 @@ public class BarnsSolver implements Solver {
 			circle = new boolean[height][width];
 			yokoWall = new Wall[height][width - 1];
 			tateWall = new Wall[height - 1][width];
+			firstYokoWall = new Wall[height][width - 1];
+			firstTateWall = new Wall[height - 1][width];
+			firstPosSet = new HashSet<>();
 			// バーンズと帰ってきたパイプリンクは作問者が1個だけ表出する壁を作れるかどうかだけで、
 			// パズルとしては実質同じである。盤面解釈の方法だけ変更。
 			if (barns) {
@@ -143,6 +169,16 @@ public class BarnsSolver implements Solver {
 						}
 					}
 				}
+				for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+					for (int xIndex = 0; xIndex < getXLength() - 1; xIndex++) {
+						firstYokoWall[yIndex][xIndex] = yokoWall[yIndex][xIndex];
+					}
+				}
+				for (int yIndex = 0; yIndex < getYLength() - 1; yIndex++) {
+					for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+						firstTateWall[yIndex][xIndex] = tateWall[yIndex][xIndex];
+					}
+				}
 			} else {
 				for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 					for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
@@ -178,6 +214,7 @@ public class BarnsSolver implements Solver {
 							if (ch == '.') {
 								//
 							} else if (ch == 'a') {
+								firstPosSet.add(pos);
 								if (pos.getxIndex() != 0) {
 									yokoWall[pos.getyIndex()][pos.getxIndex() - 1] = Wall.NOT_EXISTS;
 								}
@@ -191,6 +228,7 @@ public class BarnsSolver implements Solver {
 									tateWall[pos.getyIndex()][pos.getxIndex()] = Wall.NOT_EXISTS;
 								}
 							} else if (ch == 'b') {
+								firstPosSet.add(pos);
 								if (pos.getxIndex() != 0) {
 									yokoWall[pos.getyIndex()][pos.getxIndex() - 1] = Wall.EXISTS;
 								}
@@ -204,6 +242,7 @@ public class BarnsSolver implements Solver {
 									tateWall[pos.getyIndex()][pos.getxIndex()] = Wall.NOT_EXISTS;
 								}
 							} else if (ch == 'c') {
+								firstPosSet.add(pos);
 								if (pos.getxIndex() != 0) {
 									yokoWall[pos.getyIndex()][pos.getxIndex() - 1] = Wall.NOT_EXISTS;
 								}
@@ -217,6 +256,7 @@ public class BarnsSolver implements Solver {
 									tateWall[pos.getyIndex()][pos.getxIndex()] = Wall.EXISTS;
 								}
 							} else if (ch == 'd') {
+								firstPosSet.add(pos);
 								if (pos.getxIndex() != 0) {
 									yokoWall[pos.getyIndex()][pos.getxIndex() - 1] = Wall.EXISTS;
 								}
@@ -230,6 +270,7 @@ public class BarnsSolver implements Solver {
 									tateWall[pos.getyIndex()][pos.getxIndex()] = Wall.EXISTS;
 								}
 							} else if (ch == 'e') {
+								firstPosSet.add(pos);
 								if (pos.getxIndex() != 0) {
 									yokoWall[pos.getyIndex()][pos.getxIndex() - 1] = Wall.NOT_EXISTS;
 								}
@@ -243,6 +284,7 @@ public class BarnsSolver implements Solver {
 									tateWall[pos.getyIndex()][pos.getxIndex()] = Wall.EXISTS;
 								}
 							} else if (ch == 'f') {
+								firstPosSet.add(pos);
 								if (pos.getxIndex() != 0) {
 									yokoWall[pos.getyIndex()][pos.getxIndex() - 1] = Wall.NOT_EXISTS;
 								}
@@ -256,6 +298,7 @@ public class BarnsSolver implements Solver {
 									tateWall[pos.getyIndex()][pos.getxIndex()] = Wall.NOT_EXISTS;
 								}
 							} else if (ch == 'g') {
+								firstPosSet.add(pos);
 								if (pos.getxIndex() != 0) {
 									yokoWall[pos.getyIndex()][pos.getxIndex() - 1] = Wall.EXISTS;
 								}
@@ -274,6 +317,7 @@ public class BarnsSolver implements Solver {
 					}
 				}
 			}
+
 		}
 
 		public Field(Field other) {
@@ -290,6 +334,9 @@ public class BarnsSolver implements Solver {
 					tateWall[yIndex][xIndex] = other.tateWall[yIndex][xIndex];
 				}
 			}
+			firstYokoWall = other.firstYokoWall;
+			firstTateWall = other.firstTateWall;
+			firstPosSet = other.firstPosSet;
 		}
 
 		@Override

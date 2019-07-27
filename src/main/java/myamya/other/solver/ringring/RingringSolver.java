@@ -19,6 +19,10 @@ public class RingringSolver implements Solver {
 		// 0,0 = trueなら、0,0と1,0の間に壁があるという意味
 		private Wall[][] tateWall;
 
+		public Masu[][] getMasu() {
+			return masu;
+		}
+
 		public Wall[][] getYokoWall() {
 			return yokoWall;
 		}
@@ -501,7 +505,6 @@ public class RingringSolver implements Solver {
 			}
 			return solveAndCheck();
 		}
-
 	}
 
 	private final Field field;

@@ -26,6 +26,14 @@ public class ReflectSolver implements Solver {
 		// 0,0 = trueなら、0,0と1,0の間に壁があるという意味
 		private Wall[][] tateWall;
 
+		public Integer[][] getNumbers() {
+			return numbers;
+		}
+
+		public Set<Position> getCrossPosSet() {
+			return crossPosSet;
+		}
+
 		public Wall[][] getYokoWall() {
 			return yokoWall;
 		}
@@ -42,7 +50,7 @@ public class ReflectSolver implements Solver {
 			return masu[0].length;
 		}
 
-		public Field(int height, int width, String param, boolean barns) {
+		public Field(int height, int width, String param) {
 			masu = new Masu[height][width];
 			numbers = new Integer[height][width];
 			yokoWall = new Wall[height][width - 1];
@@ -743,8 +751,8 @@ public class ReflectSolver implements Solver {
 	private final Field field;
 	private int count = 0;
 
-	public ReflectSolver(int height, int width, String param, boolean barns) {
-		field = new Field(height, width, param, barns);
+	public ReflectSolver(int height, int width, String param) {
+		field = new Field(height, width, param);
 	}
 
 	public Field getField() {
@@ -757,7 +765,7 @@ public class ReflectSolver implements Solver {
 		int height = Integer.parseInt(params[params.length - 2]);
 		int width = Integer.parseInt(params[params.length - 3]);
 		String param = params[params.length - 1];
-		System.out.println(new ReflectSolver(height, width, param, true).solve());
+		System.out.println(new ReflectSolver(height, width, param).solve());
 	}
 
 	@Override

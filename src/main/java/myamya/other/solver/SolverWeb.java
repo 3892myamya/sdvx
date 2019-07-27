@@ -29,6 +29,7 @@ import myamya.other.solver.SolverWeb.MasyuSolverThread.UraMasyuSolverThread;
 import myamya.other.solver.SolverWeb.NurimisakiSolverThread.TrimisakiSolverThread;
 import myamya.other.solver.akari.AkariSolver;
 import myamya.other.solver.bag.BagSolver;
+import myamya.other.solver.barns.BarnsSolver;
 import myamya.other.solver.country.CountrySolver;
 import myamya.other.solver.dosufuwa.DosufuwaSolver;
 import myamya.other.solver.fillomino.FillominoSolver;
@@ -39,6 +40,7 @@ import myamya.other.solver.hitori.HitoriSolver;
 import myamya.other.solver.kurodoko.KurodokoSolver;
 import myamya.other.solver.kurodoko.KurodokoSolver.NumberMasu;
 import myamya.other.solver.lits.LitsSolver;
+import myamya.other.solver.loopsp.LoopspSolver;
 import myamya.other.solver.masyu.MasyuSolver;
 import myamya.other.solver.masyu.MasyuSolver.Pearl;
 import myamya.other.solver.nagare.NagareSolver;
@@ -47,6 +49,9 @@ import myamya.other.solver.numlin.NumlinSolver;
 import myamya.other.solver.nurikabe.NurikabeSolver;
 import myamya.other.solver.nurimisaki.NurimisakiSolver;
 import myamya.other.solver.nurimisaki.NurimisakiSolver.Misaki;
+import myamya.other.solver.pipelink.PipelinkSolver;
+import myamya.other.solver.reflect.ReflectSolver;
+import myamya.other.solver.ringring.RingringSolver;
 import myamya.other.solver.ripple.RippleSolver;
 import myamya.other.solver.sashigane.SashiganeSolver;
 import myamya.other.solver.sashigane.SashiganeSolver.Mark;
@@ -3403,7 +3408,6 @@ public class SolverWeb extends HttpServlet {
 									+ (baseSize)
 									+ "\" fill=\""
 									+ "green"
-									+ "\" stroke=\"green\" stroke-width=\"1"
 									+ "\" lengthAdjust=\"spacingAndGlyphs\">"
 									+ str
 									+ "</text>");
@@ -4030,6 +4034,807 @@ public class SolverWeb extends HttpServlet {
 		}
 	}
 
+	static class BarnsSolverThread extends AbsSolverThlead {
+
+		BarnsSolverThread(int height, int width, String param) {
+			super(height, width, param);
+		}
+
+		@Override
+		protected Solver getSolver() {
+			return new BarnsSolver(height, width, param, true);
+		}
+
+		@Override
+		public String makeCambus() {
+			StringBuilder sb = new StringBuilder();
+			BarnsSolver.Field field = ((BarnsSolver) solver).getField();
+			int baseSize = 20;
+			sb.append(
+					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
+							+ "height=\"" + (field.getYLength() * baseSize + 2 * baseSize) + "\" width=\""
+							+ (field.getXLength() * baseSize + 2 * baseSize) + "\" >");
+
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					if (field.getCircle()[yIndex][xIndex]) {
+						sb.append("<rect y=\"" + (yIndex * baseSize)
+								+ "\" x=\""
+								+ (xIndex * baseSize + baseSize)
+								+ "\" width=\""
+								+ (baseSize)
+								+ "\" height=\""
+								+ (baseSize)
+								+ "\" fill=\""
+								+ "lightblue"
+								+ "\">"
+								+ "</rect>");
+					}
+					String str = "";
+					Wall up = yIndex == 0 ? Wall.EXISTS
+							: field.getTateWall()[yIndex - 1][xIndex];
+					Wall right = xIndex == field.getXLength() - 1 ? Wall.EXISTS
+							: field.getYokoWall()[yIndex][xIndex];
+					Wall down = yIndex == field.getYLength() - 1 ? Wall.EXISTS
+							: field.getTateWall()[yIndex][xIndex];
+					Wall left = xIndex == 0 ? Wall.EXISTS
+							: field.getYokoWall()[yIndex][xIndex - 1];
+					if (up == Wall.NOT_EXISTS && right == Wall.NOT_EXISTS
+							&& down == Wall.EXISTS &&
+							left == Wall.EXISTS) {
+						str = "└";
+					} else if (up == Wall.NOT_EXISTS && right == Wall.EXISTS
+							&& down == Wall.NOT_EXISTS &&
+							left == Wall.EXISTS) {
+						str = "│";
+					} else if (up == Wall.NOT_EXISTS && right == Wall.EXISTS
+							&& down == Wall.EXISTS &&
+							left == Wall.NOT_EXISTS) {
+						str = "┘";
+					} else if (up == Wall.EXISTS && right == Wall.NOT_EXISTS
+							&& down == Wall.NOT_EXISTS &&
+							left == Wall.EXISTS) {
+						str = "┌";
+					} else if (up == Wall.EXISTS && right == Wall.NOT_EXISTS
+							&& down == Wall.EXISTS &&
+							left == Wall.NOT_EXISTS) {
+						str = "─";
+					} else if (up == Wall.EXISTS && right == Wall.EXISTS
+							&& down == Wall.NOT_EXISTS &&
+							left == Wall.NOT_EXISTS) {
+						str = "┐";
+					} else if (up == Wall.NOT_EXISTS && right == Wall.NOT_EXISTS
+							&& down == Wall.NOT_EXISTS &&
+							left == Wall.NOT_EXISTS) {
+						str = "┼";
+					} else {
+						str = "　";
+					}
+					sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 2)
+							+ "\" x=\""
+							+ (xIndex * baseSize + baseSize)
+							+ "\" font-size=\""
+							+ (baseSize)
+							+ "\" textLength=\""
+							+ (baseSize)
+							+ "\" fill=\""
+							+ "green"
+							+ "\" stroke=\"green\" stroke-width=\"1"
+							+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+							+ str
+							+ "</text>");
+				}
+			}
+			// 横壁描画
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = -1; xIndex < field.getXLength(); xIndex++) {
+					boolean oneYokoWall = xIndex == -1 || xIndex == field.getXLength() - 1
+							|| field.getFirstYokoWall()[yIndex][xIndex] == Wall.EXISTS;
+					if (oneYokoWall) {
+						sb.append("<rect y=\"" + (yIndex * baseSize)
+								+ "\" x=\""
+								+ (xIndex * baseSize + 2 * baseSize)
+								+ "\" width=\""
+								+ (1)
+								+ "\" height=\""
+								+ (baseSize)
+								+ "\">"
+								+ "</rect>");
+					}
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = -1; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					boolean oneTateWall = yIndex == -1 || yIndex == field.getYLength() - 1
+							|| field.getFirstTateWall()[yIndex][xIndex] == Wall.EXISTS;
+					if (oneTateWall) {
+						sb.append("<rect y=\"" + (yIndex * baseSize + baseSize)
+								+ "\" x=\""
+								+ (xIndex * baseSize + baseSize)
+								+ "\" width=\""
+								+ (baseSize)
+								+ "\" height=\""
+								+ (1)
+								+ "\">"
+								+ "</rect>");
+					}
+				}
+			}
+			sb.append("</svg>");
+			return sb.toString();
+		}
+	}
+
+	static class LoopspSolverThread extends AbsSolverThlead {
+
+		LoopspSolverThread(int height, int width, String param) {
+			super(height, width, param);
+		}
+
+		@Override
+		protected Solver getSolver() {
+			return new LoopspSolver(height, width, param);
+		}
+
+		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
+		private static final String FULL_NUMS = "０１２３４５６７８９";
+
+		@Override
+		public String makeCambus() {
+			StringBuilder sb = new StringBuilder();
+			LoopspSolver.Field field = ((LoopspSolver) solver).getField();
+			int baseSize = 20;
+			sb.append(
+					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
+							+ "height=\"" + (field.getYLength() * baseSize + 2 * baseSize) + "\" width=\""
+							+ (field.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					String str = "";
+					Wall up = yIndex == 0 ? Wall.EXISTS
+							: field.getTateWall()[yIndex - 1][xIndex];
+					Wall right = xIndex == field.getXLength() - 1 ? Wall.EXISTS
+							: field.getYokoWall()[yIndex][xIndex];
+					Wall down = yIndex == field.getYLength() - 1 ? Wall.EXISTS
+							: field.getTateWall()[yIndex][xIndex];
+					Wall left = xIndex == 0 ? Wall.EXISTS
+							: field.getYokoWall()[yIndex][xIndex - 1];
+					if (up == Wall.NOT_EXISTS && right == Wall.NOT_EXISTS
+							&& down == Wall.EXISTS &&
+							left == Wall.EXISTS) {
+						str = "└";
+					} else if (up == Wall.NOT_EXISTS && right == Wall.EXISTS
+							&& down == Wall.NOT_EXISTS &&
+							left == Wall.EXISTS) {
+						str = "│";
+					} else if (up == Wall.NOT_EXISTS && right == Wall.EXISTS
+							&& down == Wall.EXISTS &&
+							left == Wall.NOT_EXISTS) {
+						str = "┘";
+					} else if (up == Wall.EXISTS && right == Wall.NOT_EXISTS
+							&& down == Wall.NOT_EXISTS &&
+							left == Wall.EXISTS) {
+						str = "┌";
+					} else if (up == Wall.EXISTS && right == Wall.NOT_EXISTS
+							&& down == Wall.EXISTS &&
+							left == Wall.NOT_EXISTS) {
+						str = "─";
+					} else if (up == Wall.EXISTS && right == Wall.EXISTS
+							&& down == Wall.NOT_EXISTS &&
+							left == Wall.NOT_EXISTS) {
+						str = "┐";
+					} else if (up == Wall.NOT_EXISTS && right == Wall.NOT_EXISTS
+							&& down == Wall.NOT_EXISTS &&
+							left == Wall.NOT_EXISTS) {
+						str = "┼";
+					} else {
+						str = "　";
+					}
+					String fillColor;
+					if (field.getFirstPosSet().contains(new Position(yIndex, xIndex))) {
+						fillColor = "black";
+					} else {
+						fillColor = "green";
+					}
+					sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 2)
+							+ "\" x=\""
+							+ (xIndex * baseSize + baseSize)
+							+ "\" font-size=\""
+							+ (baseSize)
+							+ "\" textLength=\""
+							+ (baseSize)
+							+ "\" fill=\""
+							+ fillColor
+							+ "\" stroke=\"" + fillColor + "\" stroke-width=\"1"
+							+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+							+ str
+							+ "</text>");
+					if (field.getNumbers()[yIndex][xIndex] != null) {
+						sb.append("<circle cy=\"" + (yIndex * baseSize + (baseSize / 2))
+								+ "\" cx=\""
+								+ (xIndex * baseSize + baseSize + (baseSize / 2))
+								+ "\" r=\""
+								+ (baseSize / 2 - 2)
+								+ "\" fill=\"white\", stroke=\"black\">"
+								+ "</circle>");
+						if (field.getNumbers()[yIndex][xIndex] != -1) {
+							String numberStr = String.valueOf(field.getNumbers()[yIndex][xIndex]);
+							int index = HALF_NUMS.indexOf(numberStr);
+							String masuStr = null;
+							if (index >= 0) {
+								masuStr = FULL_NUMS.substring(index / 2, index / 2 + 1);
+							} else {
+								masuStr = numberStr;
+							}
+							sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 4)
+									+ "\" x=\""
+									+ (xIndex * baseSize + baseSize + 2)
+									+ "\" font-size=\""
+									+ (baseSize - 5)
+									+ "\" textLength=\""
+									+ (baseSize - 5)
+									+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+									+ masuStr
+									+ "</text>");
+						}
+					}
+				}
+			}
+			sb.append("</svg>");
+			return sb.toString();
+		}
+	}
+
+	static class PipelinkrSolverThread extends AbsSolverThlead {
+
+		PipelinkrSolverThread(int height, int width, String param) {
+			super(height, width, param);
+		}
+
+		@Override
+		protected Solver getSolver() {
+			return new BarnsSolver(height, width, param, false);
+		}
+
+		@Override
+		public String makeCambus() {
+			StringBuilder sb = new StringBuilder();
+			BarnsSolver.Field field = ((BarnsSolver) solver).getField();
+			int baseSize = 20;
+			sb.append(
+					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
+							+ "height=\"" + (field.getYLength() * baseSize + 2 * baseSize) + "\" width=\""
+							+ (field.getXLength() * baseSize + 2 * baseSize) + "\" >");
+
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					if (field.getCircle()[yIndex][xIndex]) {
+						sb.append("<circle cy=\"" + (yIndex * baseSize + (baseSize / 2))
+								+ "\" cx=\""
+								+ (xIndex * baseSize + baseSize + (baseSize / 2))
+								+ "\" r=\""
+								+ (baseSize / 2 - 2)
+								+ "\" fill=\"white\", stroke=\"black\">"
+								+ "</circle>");
+					}
+					String str = "";
+					Wall up = yIndex == 0 ? Wall.EXISTS
+							: field.getTateWall()[yIndex - 1][xIndex];
+					Wall right = xIndex == field.getXLength() - 1 ? Wall.EXISTS
+							: field.getYokoWall()[yIndex][xIndex];
+					Wall down = yIndex == field.getYLength() - 1 ? Wall.EXISTS
+							: field.getTateWall()[yIndex][xIndex];
+					Wall left = xIndex == 0 ? Wall.EXISTS
+							: field.getYokoWall()[yIndex][xIndex - 1];
+					if (up == Wall.NOT_EXISTS && right == Wall.NOT_EXISTS
+							&& down == Wall.EXISTS &&
+							left == Wall.EXISTS) {
+						str = "└";
+					} else if (up == Wall.NOT_EXISTS && right == Wall.EXISTS
+							&& down == Wall.NOT_EXISTS &&
+							left == Wall.EXISTS) {
+						str = "│";
+					} else if (up == Wall.NOT_EXISTS && right == Wall.EXISTS
+							&& down == Wall.EXISTS &&
+							left == Wall.NOT_EXISTS) {
+						str = "┘";
+					} else if (up == Wall.EXISTS && right == Wall.NOT_EXISTS
+							&& down == Wall.NOT_EXISTS &&
+							left == Wall.EXISTS) {
+						str = "┌";
+					} else if (up == Wall.EXISTS && right == Wall.NOT_EXISTS
+							&& down == Wall.EXISTS &&
+							left == Wall.NOT_EXISTS) {
+						str = "─";
+					} else if (up == Wall.EXISTS && right == Wall.EXISTS
+							&& down == Wall.NOT_EXISTS &&
+							left == Wall.NOT_EXISTS) {
+						str = "┐";
+					} else if (up == Wall.NOT_EXISTS && right == Wall.NOT_EXISTS
+							&& down == Wall.NOT_EXISTS &&
+							left == Wall.NOT_EXISTS) {
+						str = "┼";
+					} else {
+						str = "　";
+					}
+					String fillColor;
+					if (field.getFirstPosSet().contains(new Position(yIndex, xIndex))) {
+						fillColor = "black";
+					} else {
+						fillColor = "green";
+					}
+					sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 2)
+							+ "\" x=\""
+							+ (xIndex * baseSize + baseSize)
+							+ "\" font-size=\""
+							+ (baseSize)
+							+ "\" textLength=\""
+							+ (baseSize)
+							+ "\" fill=\""
+							+ fillColor
+							+ "\" stroke=\"" + fillColor + "\" stroke-width=\"1"
+							+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+							+ str
+							+ "</text>");
+				}
+			}
+			// 横壁描画
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = -1; xIndex < field.getXLength(); xIndex++) {
+					boolean oneYokoWall = xIndex == -1 || xIndex == field.getXLength() - 1
+							|| field.getFirstYokoWall()[yIndex][xIndex] == Wall.EXISTS;
+					if (oneYokoWall) {
+						sb.append("<rect y=\"" + (yIndex * baseSize)
+								+ "\" x=\""
+								+ (xIndex * baseSize + 2 * baseSize)
+								+ "\" width=\""
+								+ (1)
+								+ "\" height=\""
+								+ (baseSize)
+								+ "\">"
+								+ "</rect>");
+					}
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = -1; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					boolean oneTateWall = yIndex == -1 || yIndex == field.getYLength() - 1
+							|| field.getFirstTateWall()[yIndex][xIndex] == Wall.EXISTS;
+					if (oneTateWall) {
+						sb.append("<rect y=\"" + (yIndex * baseSize + baseSize)
+								+ "\" x=\""
+								+ (xIndex * baseSize + baseSize)
+								+ "\" width=\""
+								+ (baseSize)
+								+ "\" height=\""
+								+ (1)
+								+ "\">"
+								+ "</rect>");
+					}
+				}
+			}
+			sb.append("</svg>");
+			return sb.toString();
+		}
+	}
+
+	static class PipelinkSolverThread extends AbsSolverThlead {
+
+		PipelinkSolverThread(int height, int width, String param) {
+			super(height, width, param);
+		}
+
+		@Override
+		protected Solver getSolver() {
+			return new PipelinkSolver(height, width, param);
+		}
+
+		@Override
+		public String makeCambus() {
+			StringBuilder sb = new StringBuilder();
+			PipelinkSolver.Field field = ((PipelinkSolver) solver).getField();
+			int baseSize = 20;
+			sb.append(
+					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
+							+ "height=\"" + (field.getYLength() * baseSize + 2 * baseSize) + "\" width=\""
+							+ (field.getXLength() * baseSize + 2 * baseSize) + "\" >");
+
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					String str = "";
+					Wall up = yIndex == 0 ? Wall.EXISTS
+							: field.getTateWall()[yIndex - 1][xIndex];
+					Wall right = xIndex == field.getXLength() - 1 ? Wall.EXISTS
+							: field.getYokoWall()[yIndex][xIndex];
+					Wall down = yIndex == field.getYLength() - 1 ? Wall.EXISTS
+							: field.getTateWall()[yIndex][xIndex];
+					Wall left = xIndex == 0 ? Wall.EXISTS
+							: field.getYokoWall()[yIndex][xIndex - 1];
+					if (up == Wall.NOT_EXISTS && right == Wall.NOT_EXISTS
+							&& down == Wall.EXISTS &&
+							left == Wall.EXISTS) {
+						str = "└";
+					} else if (up == Wall.NOT_EXISTS && right == Wall.EXISTS
+							&& down == Wall.NOT_EXISTS &&
+							left == Wall.EXISTS) {
+						str = "│";
+					} else if (up == Wall.NOT_EXISTS && right == Wall.EXISTS
+							&& down == Wall.EXISTS &&
+							left == Wall.NOT_EXISTS) {
+						str = "┘";
+					} else if (up == Wall.EXISTS && right == Wall.NOT_EXISTS
+							&& down == Wall.NOT_EXISTS &&
+							left == Wall.EXISTS) {
+						str = "┌";
+					} else if (up == Wall.EXISTS && right == Wall.NOT_EXISTS
+							&& down == Wall.EXISTS &&
+							left == Wall.NOT_EXISTS) {
+						str = "─";
+					} else if (up == Wall.EXISTS && right == Wall.EXISTS
+							&& down == Wall.NOT_EXISTS &&
+							left == Wall.NOT_EXISTS) {
+						str = "┐";
+					} else if (up == Wall.NOT_EXISTS && right == Wall.NOT_EXISTS
+							&& down == Wall.NOT_EXISTS &&
+							left == Wall.NOT_EXISTS) {
+						str = "┼";
+					} else {
+						str = "　";
+					}
+					String fillColor;
+					if (field.getFirstPosSet().contains(new Position(yIndex, xIndex))) {
+						fillColor = "black";
+					} else {
+						fillColor = "green";
+					}
+					sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 2)
+							+ "\" x=\""
+							+ (xIndex * baseSize + baseSize)
+							+ "\" font-size=\""
+							+ (baseSize)
+							+ "\" textLength=\""
+							+ (baseSize)
+							+ "\" fill=\""
+							+ fillColor
+							+ "\" stroke=\"" + fillColor + "\" stroke-width=\"1"
+							+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+							+ str
+							+ "</text>");
+				}
+			}
+			sb.append("</svg>");
+			return sb.toString();
+		}
+	}
+
+	static class ReflectSolverThread extends AbsSolverThlead {
+
+		ReflectSolverThread(int height, int width, String param) {
+			super(height, width, param);
+		}
+
+		@Override
+		protected Solver getSolver() {
+			return new ReflectSolver(height, width, param);
+		}
+
+		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
+		private static final String FULL_NUMS = "０１２３４５６７８９";
+
+		@Override
+		public String makeCambus() {
+			StringBuilder sb = new StringBuilder();
+			ReflectSolver.Field field = ((ReflectSolver) solver).getField();
+			int baseSize = 20;
+			sb.append(
+					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
+							+ "height=\"" + (field.getYLength() * baseSize + 2 * baseSize) + "\" width=\""
+							+ (field.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					if (field.getNumbers()[yIndex][xIndex] != null) {
+						String masuStr = null;
+						if (field.getNumbers()[yIndex][xIndex] > 0) {
+							String numberStr = String.valueOf(field.getNumbers()[yIndex][xIndex]);
+							int index = HALF_NUMS.indexOf(numberStr);
+							if (index >= 0) {
+								masuStr = FULL_NUMS.substring(index / 2, index / 2 + 1);
+							} else {
+								masuStr = numberStr;
+							}
+						}
+						Wall up = yIndex == 0 ? Wall.EXISTS : field.getTateWall()[yIndex - 1][xIndex];
+						Wall right = xIndex == field.getXLength() - 1 ? Wall.EXISTS
+								: field.getYokoWall()[yIndex][xIndex];
+						Wall down = yIndex == field.getYLength() - 1 ? Wall.EXISTS
+								: field.getTateWall()[yIndex][xIndex];
+						Wall left = xIndex == 0 ? Wall.EXISTS : field.getYokoWall()[yIndex][xIndex - 1];
+						if (up == Wall.NOT_EXISTS && right == Wall.NOT_EXISTS
+								&& down == Wall.EXISTS && left == Wall.EXISTS) {
+							sb.append("<path d=\"M "
+									+ (xIndex * baseSize + baseSize)
+									+ " "
+									+ (yIndex * baseSize)
+									+ " L"
+									+ (xIndex * baseSize + baseSize)
+									+ " "
+									+ (yIndex * baseSize + baseSize)
+									+ " L"
+									+ (xIndex * baseSize + baseSize + baseSize)
+									+ " "
+									+ (yIndex * baseSize + baseSize)
+									+ " Z\" >"
+									+ "</path>");
+							if (masuStr != null) {
+								sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 1)
+										+ "\" x=\""
+										+ (xIndex * baseSize + baseSize)
+										+ "\" fill=\""
+										+ "white"
+										+ "\" font-size=\""
+										+ (baseSize + 2) / 2
+										+ "\" textLength=\""
+										+ (baseSize + 2) / 2
+										+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+										+ masuStr
+										+ "</text>");
+							}
+						} else if (up == Wall.NOT_EXISTS && right == Wall.EXISTS
+								&& down == Wall.EXISTS && left == Wall.NOT_EXISTS) {
+							sb.append("<path d=\"M "
+									+ (xIndex * baseSize + baseSize + baseSize)
+									+ " "
+									+ (yIndex * baseSize)
+									+ " L"
+									+ (xIndex * baseSize + baseSize)
+									+ " "
+									+ (yIndex * baseSize + baseSize)
+									+ " L"
+									+ (xIndex * baseSize + baseSize + baseSize)
+									+ " "
+									+ (yIndex * baseSize + baseSize)
+									+ " Z\" >"
+									+ "</path>");
+							if (masuStr != null) {
+								sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 1)
+										+ "\" x=\""
+										+ (xIndex * baseSize + baseSize + (baseSize / 2))
+										+ "\" fill=\""
+										+ "white"
+										+ "\" font-size=\""
+										+ (baseSize + 2) / 2
+										+ "\" textLength=\""
+										+ (baseSize + 2) / 2
+										+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+										+ masuStr
+										+ "</text>");
+							}
+						} else if (up == Wall.EXISTS && right == Wall.NOT_EXISTS
+								&& down == Wall.NOT_EXISTS && left == Wall.EXISTS) {
+							sb.append("<path d=\"M "
+									+ (xIndex * baseSize + baseSize)
+									+ " "
+									+ (yIndex * baseSize)
+									+ " L"
+									+ (xIndex * baseSize + baseSize + baseSize)
+									+ " "
+									+ (yIndex * baseSize)
+									+ " L"
+									+ (xIndex * baseSize + baseSize)
+									+ " "
+									+ (yIndex * baseSize + baseSize)
+									+ " Z\" >"
+									+ "</path>");
+							if (masuStr != null) {
+								sb.append("<text y=\"" + (yIndex * baseSize + (baseSize / 2) - 1)
+										+ "\" x=\""
+										+ (xIndex * baseSize + baseSize)
+										+ "\" fill=\""
+										+ "white"
+										+ "\" font-size=\""
+										+ (baseSize + 2) / 2
+										+ "\" textLength=\""
+										+ (baseSize + 2) / 2
+										+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+										+ masuStr
+										+ "</text>");
+							}
+						} else if (up == Wall.EXISTS && right == Wall.EXISTS
+								&& down == Wall.NOT_EXISTS && left == Wall.NOT_EXISTS) {
+							sb.append("<path d=\"M "
+									+ (xIndex * baseSize + baseSize)
+									+ " "
+									+ (yIndex * baseSize)
+									+ " L"
+									+ (xIndex * baseSize + baseSize + baseSize)
+									+ " "
+									+ (yIndex * baseSize)
+									+ " L"
+									+ (xIndex * baseSize + baseSize + baseSize)
+									+ " "
+									+ (yIndex * baseSize + baseSize)
+									+ " Z\" >"
+									+ "</path>");
+							if (masuStr != null) {
+								sb.append("<text y=\"" + (yIndex * baseSize + (baseSize / 2) - 1)
+										+ "\" x=\""
+										+ (xIndex * baseSize + baseSize + (baseSize / 2))
+										+ "\" fill=\""
+										+ "white"
+										+ "\" font-size=\""
+										+ (baseSize + 2) / 2
+										+ "\" textLength=\""
+										+ (baseSize + 2) / 2
+										+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+										+ masuStr
+										+ "</text>");
+							}
+						}
+					}
+					String str = "";
+					Wall up = yIndex == 0 ? Wall.EXISTS
+							: field.getTateWall()[yIndex - 1][xIndex];
+					Wall right = xIndex == field.getXLength() - 1 ? Wall.EXISTS
+							: field.getYokoWall()[yIndex][xIndex];
+					Wall down = yIndex == field.getYLength() - 1 ? Wall.EXISTS
+							: field.getTateWall()[yIndex][xIndex];
+					Wall left = xIndex == 0 ? Wall.EXISTS
+							: field.getYokoWall()[yIndex][xIndex - 1];
+					if (up == Wall.NOT_EXISTS && right == Wall.NOT_EXISTS
+							&& down == Wall.EXISTS &&
+							left == Wall.EXISTS) {
+						str = "└";
+					} else if (up == Wall.NOT_EXISTS && right == Wall.EXISTS
+							&& down == Wall.NOT_EXISTS &&
+							left == Wall.EXISTS) {
+						str = "│";
+					} else if (up == Wall.NOT_EXISTS && right == Wall.EXISTS
+							&& down == Wall.EXISTS &&
+							left == Wall.NOT_EXISTS) {
+						str = "┘";
+					} else if (up == Wall.EXISTS && right == Wall.NOT_EXISTS
+							&& down == Wall.NOT_EXISTS &&
+							left == Wall.EXISTS) {
+						str = "┌";
+					} else if (up == Wall.EXISTS && right == Wall.NOT_EXISTS
+							&& down == Wall.EXISTS &&
+							left == Wall.NOT_EXISTS) {
+						str = "─";
+					} else if (up == Wall.EXISTS && right == Wall.EXISTS
+							&& down == Wall.NOT_EXISTS &&
+							left == Wall.NOT_EXISTS) {
+						str = "┐";
+					} else if (up == Wall.NOT_EXISTS && right == Wall.NOT_EXISTS
+							&& down == Wall.NOT_EXISTS &&
+							left == Wall.NOT_EXISTS) {
+						str = "┼";
+					} else {
+						str = "　";
+					}
+					String fillColor;
+					if (field.getCrossPosSet().contains(new Position(yIndex, xIndex))) {
+						fillColor = "black";
+					} else {
+						fillColor = "green";
+					}
+					sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 2)
+							+ "\" x=\""
+							+ (xIndex * baseSize + baseSize)
+							+ "\" font-size=\""
+							+ (baseSize)
+							+ "\" textLength=\""
+							+ (baseSize)
+							+ "\" fill=\""
+							+ fillColor
+							+ "\" stroke=\"" + fillColor + "\" stroke-width=\"1"
+							+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+							+ str
+							+ "</text>");
+				}
+			}
+			sb.append("</svg>");
+			return sb.toString();
+		}
+	}
+
+	static class RingringSolverThread extends AbsSolverThlead {
+
+		RingringSolverThread(int height, int width, String param) {
+			super(height, width, param);
+		}
+
+		@Override
+		protected Solver getSolver() {
+			return new RingringSolver(height, width, param);
+		}
+
+		@Override
+		public String makeCambus() {
+			StringBuilder sb = new StringBuilder();
+			RingringSolver.Field field = ((RingringSolver) solver).getField();
+			int baseSize = 20;
+			sb.append(
+					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
+							+ "height=\"" + (field.getYLength() * baseSize + 2 * baseSize) + "\" width=\""
+							+ (field.getXLength() * baseSize + 2 * baseSize) + "\" >");
+
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					if (field.getMasu()[yIndex][xIndex] == Masu.BLACK) {
+						sb.append("<rect y=\"" + (yIndex * baseSize)
+								+ "\" x=\""
+								+ (xIndex * baseSize + baseSize)
+								+ "\" width=\""
+								+ (baseSize)
+								+ "\" height=\""
+								+ (baseSize)
+								+ "\" fill=\""
+								+ "black"
+								+ "\">"
+								+ "</rect>");
+					}
+					String str = "";
+					Wall up = yIndex == 0 ? Wall.EXISTS
+							: field.getTateWall()[yIndex - 1][xIndex];
+					Wall right = xIndex == field.getXLength() - 1 ? Wall.EXISTS
+							: field.getYokoWall()[yIndex][xIndex];
+					Wall down = yIndex == field.getYLength() - 1 ? Wall.EXISTS
+							: field.getTateWall()[yIndex][xIndex];
+					Wall left = xIndex == 0 ? Wall.EXISTS
+							: field.getYokoWall()[yIndex][xIndex - 1];
+					if (up == Wall.NOT_EXISTS && right == Wall.NOT_EXISTS
+							&& down == Wall.EXISTS &&
+							left == Wall.EXISTS) {
+						str = "└";
+					} else if (up == Wall.NOT_EXISTS && right == Wall.EXISTS
+							&& down == Wall.NOT_EXISTS &&
+							left == Wall.EXISTS) {
+						str = "│";
+					} else if (up == Wall.NOT_EXISTS && right == Wall.EXISTS
+							&& down == Wall.EXISTS &&
+							left == Wall.NOT_EXISTS) {
+						str = "┘";
+					} else if (up == Wall.EXISTS && right == Wall.NOT_EXISTS
+							&& down == Wall.NOT_EXISTS &&
+							left == Wall.EXISTS) {
+						str = "┌";
+					} else if (up == Wall.EXISTS && right == Wall.NOT_EXISTS
+							&& down == Wall.EXISTS &&
+							left == Wall.NOT_EXISTS) {
+						str = "─";
+					} else if (up == Wall.EXISTS && right == Wall.EXISTS
+							&& down == Wall.NOT_EXISTS &&
+							left == Wall.NOT_EXISTS) {
+						str = "┐";
+					} else if (up == Wall.NOT_EXISTS && right == Wall.NOT_EXISTS
+							&& down == Wall.NOT_EXISTS &&
+							left == Wall.NOT_EXISTS) {
+						str = "┼";
+					} else {
+						str = "　";
+					}
+					sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 2)
+							+ "\" x=\""
+							+ (xIndex * baseSize + baseSize)
+							+ "\" font-size=\""
+							+ (baseSize)
+							+ "\" textLength=\""
+							+ (baseSize)
+							+ "\" fill=\""
+							+ "green"
+							+ "\" stroke=\"green\" stroke-width=\"1"
+							+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+							+ str
+							+ "</text>");
+				}
+			}
+			sb.append("</svg>");
+			return sb.toString();
+		}
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -4112,6 +4917,20 @@ public class SolverWeb extends HttpServlet {
 				t = new RippleSolverThread(height, width, param);
 			} else if (puzzleType.contains("sato")) {
 				t = new SatogaeriSolverThread(height, width, param);
+			} else if (puzzleType.contains("barns")) {
+				t = new BarnsSolverThread(height, width, param);
+			} else if (puzzleType.contains("loopsp")) {
+				t = new LoopspSolverThread(height, width, param);
+			} else if (puzzleType.contains("pipelink")) {
+				if (puzzleType.contains("pipelinkr")) {
+					t = new PipelinkrSolverThread(height, width, param);
+				} else {
+					t = new PipelinkSolverThread(height, width, param);
+				}
+			} else if (puzzleType.contains("reflect")) {
+				t = new ReflectSolverThread(height, width, param);
+			} else if (puzzleType.contains("ringring")) {
+				t = new RingringSolverThread(height, width, param);
 				//			} else if (puzzleType.contains("numlin") || puzzleType.contains("numberlink")) {
 				//				t = new NumlinSolverThread(height, width, param);
 			} else {

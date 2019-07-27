@@ -213,6 +213,22 @@ public class SatogaeriSolver implements Solver {
 					}
 				}
 			}
+			// 先に他のfromとかぶる候補は消す。
+			for (Entry<Position, Set<Position>> entry : candidates.entrySet()) {
+				Position oneFrom = entry.getKey();
+				for (Entry<Position, Set<Position>> target : candidates.entrySet()) {
+					Position otherFrom = target.getKey();
+					if (!oneFrom.equals(otherFrom)) {
+						for (Iterator<Position> iterator = entry.getValue().iterator(); iterator
+								.hasNext();) {
+							Position oneTo = iterator.next();
+							if (isCross(oneFrom, oneTo, otherFrom, otherFrom)) {
+								iterator.remove();
+							}
+						}
+					}
+				}
+			}
 		}
 
 		public Field(Field other) {
@@ -478,10 +494,10 @@ public class SatogaeriSolver implements Solver {
 			}
 		}
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
-		System.out.println("難易度:" + (count * 3 / 2));
+		System.out.println("難易度:" + (count * 3));
 		System.out.println(field);
 		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count * 3 / 2).toString();
+				+ Difficulty.getByCount(count * 3).toString();
 	}
 
 	/**

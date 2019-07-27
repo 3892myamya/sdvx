@@ -20,6 +20,12 @@ public class LoopspSolver implements Solver {
 		// 縦をふさぐ壁が存在するか
 		// 0,0 = trueなら、0,0と1,0の間に壁があるという意味
 		private Wall[][] tateWall;
+		// 表出マス情報 画面表示用
+		private final Set<Position> firstPosSet;
+
+		public Integer[][] getNumbers() {
+			return numbers;
+		}
 
 		public Wall[][] getYokoWall() {
 			return yokoWall;
@@ -27,6 +33,10 @@ public class LoopspSolver implements Solver {
 
 		public Wall[][] getTateWall() {
 			return tateWall;
+		}
+
+		public Set<Position> getFirstPosSet() {
+			return firstPosSet;
 		}
 
 		public int getYLength() {
@@ -51,6 +61,7 @@ public class LoopspSolver implements Solver {
 					tateWall[yIndex][xIndex] = Wall.SPACE;
 				}
 			}
+			firstPosSet = new HashSet<>();
 			int index = 0;
 			for (int i = 0; i < param.length(); i++) {
 				char ch = param.charAt(i);
@@ -60,6 +71,7 @@ public class LoopspSolver implements Solver {
 				} else {
 					Position pos = new Position(index / getXLength(), index % getXLength());
 					if (ch == 'g') {
+						firstPosSet.add(pos);
 						if (pos.getxIndex() != 0) {
 							yokoWall[pos.getyIndex()][pos.getxIndex() - 1] = Wall.NOT_EXISTS;
 						}
@@ -73,6 +85,7 @@ public class LoopspSolver implements Solver {
 							tateWall[pos.getyIndex()][pos.getxIndex()] = Wall.NOT_EXISTS;
 						}
 					} else if (ch == 'h') {
+						firstPosSet.add(pos);
 						if (pos.getxIndex() != 0) {
 							yokoWall[pos.getyIndex()][pos.getxIndex() - 1] = Wall.EXISTS;
 						}
@@ -86,6 +99,7 @@ public class LoopspSolver implements Solver {
 							tateWall[pos.getyIndex()][pos.getxIndex()] = Wall.NOT_EXISTS;
 						}
 					} else if (ch == 'i') {
+						firstPosSet.add(pos);
 						if (pos.getxIndex() != 0) {
 							yokoWall[pos.getyIndex()][pos.getxIndex() - 1] = Wall.NOT_EXISTS;
 						}
@@ -99,6 +113,7 @@ public class LoopspSolver implements Solver {
 							tateWall[pos.getyIndex()][pos.getxIndex()] = Wall.EXISTS;
 						}
 					} else if (ch == 'j') {
+						firstPosSet.add(pos);
 						if (pos.getxIndex() != 0) {
 							yokoWall[pos.getyIndex()][pos.getxIndex() - 1] = Wall.EXISTS;
 						}
@@ -112,6 +127,7 @@ public class LoopspSolver implements Solver {
 							tateWall[pos.getyIndex()][pos.getxIndex()] = Wall.EXISTS;
 						}
 					} else if (ch == 'k') {
+						firstPosSet.add(pos);
 						if (pos.getxIndex() != 0) {
 							yokoWall[pos.getyIndex()][pos.getxIndex() - 1] = Wall.NOT_EXISTS;
 						}
@@ -125,6 +141,7 @@ public class LoopspSolver implements Solver {
 							tateWall[pos.getyIndex()][pos.getxIndex()] = Wall.EXISTS;
 						}
 					} else if (ch == 'l') {
+						firstPosSet.add(pos);
 						if (pos.getxIndex() != 0) {
 							yokoWall[pos.getyIndex()][pos.getxIndex() - 1] = Wall.NOT_EXISTS;
 						}
@@ -138,6 +155,7 @@ public class LoopspSolver implements Solver {
 							tateWall[pos.getyIndex()][pos.getxIndex()] = Wall.NOT_EXISTS;
 						}
 					} else if (ch == 'm') {
+						firstPosSet.add(pos);
 						if (pos.getxIndex() != 0) {
 							yokoWall[pos.getyIndex()][pos.getxIndex() - 1] = Wall.EXISTS;
 						}
@@ -194,6 +212,7 @@ public class LoopspSolver implements Solver {
 					tateWall[yIndex][xIndex] = other.tateWall[yIndex][xIndex];
 				}
 			}
+			firstPosSet = other.firstPosSet;
 		}
 
 		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
@@ -733,10 +752,10 @@ public class LoopspSolver implements Solver {
 			}
 		}
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
-		System.out.println("難易度:" + (count / 5));
+		System.out.println("難易度:" + (count / 2));
 		System.out.println(field);
 		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count / 5).toString();
+				+ Difficulty.getByCount(count / 2).toString();
 	}
 
 	/**
