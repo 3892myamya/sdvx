@@ -559,43 +559,50 @@ public class StostoneSolver implements Solver {
 		 * 別部屋の黒マス隣接セルが黒マスの場合falseを返す。
 		 */
 		public boolean nextSolve() {
-			Set<Position> notBlackSet = new HashSet<>();
 			for (Room room : rooms) {
 				for (Position pos : room.getMember()) {
 					if (masu[pos.getyIndex()][pos.getxIndex()] == Masu.BLACK) {
 						if (pos.getyIndex() != 0) {
 							Position blackPos = new Position(pos.getyIndex() - 1, pos.getxIndex());
 							if (!room.getMember().contains(blackPos)) {
-								notBlackSet.add(blackPos);
+								if (masu[blackPos.getyIndex()][blackPos.getxIndex()] == Masu.BLACK) {
+									return false;
+								} else {
+									masu[blackPos.getyIndex()][blackPos.getxIndex()] = Masu.NOT_BLACK;
+								}
 							}
 						}
 						if (pos.getxIndex() != getXLength() - 1) {
 							Position blackPos = new Position(pos.getyIndex(), pos.getxIndex() + 1);
 							if (!room.getMember().contains(blackPos)) {
-								notBlackSet.add(blackPos);
+								if (masu[blackPos.getyIndex()][blackPos.getxIndex()] == Masu.BLACK) {
+									return false;
+								} else {
+									masu[blackPos.getyIndex()][blackPos.getxIndex()] = Masu.NOT_BLACK;
+								}
 							}
 						}
 						if (pos.getyIndex() != getYLength() - 1) {
 							Position blackPos = new Position(pos.getyIndex() + 1, pos.getxIndex());
 							if (!room.getMember().contains(blackPos)) {
-								notBlackSet.add(blackPos);
+								if (masu[blackPos.getyIndex()][blackPos.getxIndex()] == Masu.BLACK) {
+									return false;
+								} else {
+									masu[blackPos.getyIndex()][blackPos.getxIndex()] = Masu.NOT_BLACK;
+								}
 							}
 						}
 						if (pos.getxIndex() != 0) {
 							Position blackPos = new Position(pos.getyIndex(), pos.getxIndex() - 1);
 							if (!room.getMember().contains(blackPos)) {
-								notBlackSet.add(blackPos);
+								if (masu[blackPos.getyIndex()][blackPos.getxIndex()] == Masu.BLACK) {
+									return false;
+								} else {
+									masu[blackPos.getyIndex()][blackPos.getxIndex()] = Masu.NOT_BLACK;
+								}
 							}
 						}
 					}
-				}
-			}
-			for (Position pos : notBlackSet) {
-				if (masu[pos.getyIndex()][pos.getxIndex()] == Masu.BLACK) {
-					return false;
-				} else {
-
-					masu[pos.getyIndex()][pos.getxIndex()] = Masu.NOT_BLACK;
 				}
 			}
 			return true;
@@ -605,6 +612,7 @@ public class StostoneSolver implements Solver {
 		 * 各種チェックを1セット実行
 		 */
 		private boolean solveAndCheck() {
+			String str = getStateDump();
 			if (!roomSolve()) {
 				return false;
 			}
@@ -614,11 +622,15 @@ public class StostoneSolver implements Solver {
 			if (!nextSolve()) {
 				return false;
 			}
-			if (!dropAndCheck()) {
-				return false;
-			}
-			if (!capacitySolve()) {
-				return false;
+			if (!getStateDump().equals(str)) {
+				return solveAndCheck();
+			} else {
+				if (!dropAndCheck()) {
+					return false;
+				}
+				if (!capacitySolve()) {
+					return false;
+				}
 			}
 			return true;
 		}
@@ -639,12 +651,10 @@ public class StostoneSolver implements Solver {
 		 */
 		private boolean dropAndCheck() {
 			Masu[][] droppedMasu = drop();
-			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+			for (int yIndex = 0; yIndex < getHalfYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					if (yIndex < getHalfYLength()) {
-						if (droppedMasu[yIndex][xIndex] == Masu.BLACK) {
-							return false;
-						}
+					if (droppedMasu[yIndex][xIndex] == Masu.BLACK) {
+						return false;
 					}
 				}
 			}
@@ -786,13 +796,18 @@ public class StostoneSolver implements Solver {
 	 * 仮置きして調べる
 	 */
 	private static boolean candSolve(Field field, int recursive) {
+		String str = field.getStateDump();
 		for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 			for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
-				if (!oneCandSolve(field, yIndex, xIndex,
-						recursive)) {
-					return false;
+				if (field.masu[yIndex][xIndex] == Masu.SPACE) {
+					if (!oneCandSolve(field, yIndex, xIndex, recursive)) {
+						return false;
+					}
 				}
 			}
+		}
+		if (!field.getStateDump().equals(str)) {
+			return candSolve(field, recursive);
 		}
 		return true;
 	}
@@ -801,34 +816,32 @@ public class StostoneSolver implements Solver {
 	 * 1つのマスに対する仮置き調査
 	 */
 	private static boolean oneCandSolve(Field field, int yIndex, int xIndex, int recursive) {
-		if (field.masu[yIndex][xIndex] == Masu.SPACE) {
-			Field virtual = new Field(field);
-			virtual.masu[yIndex][xIndex] = Masu.BLACK;
-			String befStr = virtual.getStateDump();
-			boolean allowBlack = virtual.solveAndCheck()
-					&& (befStr.equals(virtual.getStateDump()) || virtual.solveAndCheck());
-			if (allowBlack && recursive > 0) {
-				if (!candSolve(virtual, recursive - 1)) {
-					allowBlack = false;
-				}
+		Field virtual = new Field(field);
+		virtual.masu[yIndex][xIndex] = Masu.BLACK;
+		String befStr = virtual.getStateDump();
+		boolean allowBlack = virtual.solveAndCheck()
+				&& (befStr.equals(virtual.getStateDump()) || virtual.solveAndCheck());
+		if (allowBlack && recursive > 0) {
+			if (!candSolve(virtual, recursive - 1)) {
+				allowBlack = false;
 			}
-			Field virtual2 = new Field(field);
-			virtual2.masu[yIndex][xIndex] = Masu.NOT_BLACK;
-			befStr = virtual2.getStateDump();
-			boolean allowNotBlack = virtual2.solveAndCheck()
-					&& (befStr.equals(virtual2.getStateDump()) || virtual2.solveAndCheck());
-			if (allowNotBlack && recursive > 0) {
-				if (!candSolve(virtual2, recursive - 1)) {
-					allowNotBlack = false;
-				}
+		}
+		Field virtual2 = new Field(field);
+		virtual2.masu[yIndex][xIndex] = Masu.NOT_BLACK;
+		befStr = virtual2.getStateDump();
+		boolean allowNotBlack = virtual2.solveAndCheck()
+				&& (befStr.equals(virtual2.getStateDump()) || virtual2.solveAndCheck());
+		if (allowNotBlack && recursive > 0) {
+			if (!candSolve(virtual2, recursive - 1)) {
+				allowNotBlack = false;
 			}
-			if (!allowBlack && !allowNotBlack) {
-				return false;
-			} else if (!allowBlack) {
-				field.masu = virtual2.masu;
-			} else if (!allowNotBlack) {
-				field.masu = virtual.masu;
-			}
+		}
+		if (!allowBlack && !allowNotBlack) {
+			return false;
+		} else if (!allowBlack) {
+			field.masu = virtual2.masu;
+		} else if (!allowNotBlack) {
+			field.masu = virtual.masu;
 		}
 		return true;
 	}
