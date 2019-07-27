@@ -192,22 +192,22 @@ public class NurimisakiSolver implements Solver {
 								yIndex == getYLength() - 1 ? MasuImpl.BLACK : masu[yIndex + 1][xIndex]);
 						masuMap.put(Direction.LEFT, xIndex == 0 ? MasuImpl.BLACK : masu[yIndex][xIndex - 1]);
 						Set<Direction> misakiDirectionCand = new HashSet<>();
-						Set<Direction> misakiDirectionStrongCand = new HashSet<>();
+						Direction misakiDirectionStrongCand = null;
 						for (Entry<Direction, Masu> entry : masuMap.entrySet()) {
 							if (entry.getValue() == MasuImpl.SPACE) {
 								misakiDirectionCand.add(entry.getKey());
 							} else if (entry.getValue().isNotBlack()) {
-								if (!misakiDirectionStrongCand.isEmpty()) {
+								if (misakiDirectionStrongCand != null) {
 									// 2方向に延びる場合、失敗
 									return false;
 								}
-								misakiDirectionStrongCand.add(entry.getKey());
+								misakiDirectionStrongCand = entry.getKey();
 							}
 						}
 						Misaki oneMasu = (Misaki) masu[yIndex][xIndex];
-						if (!misakiDirectionStrongCand.isEmpty()) {
+						if (misakiDirectionStrongCand != null) {
 							// 岬の方角が決まっていたら伸ばしていくが、伸ばせないことが分かったらfalseを返す
-							if (!misakiStretch(yIndex, xIndex, new ArrayList<>(misakiDirectionStrongCand).get(0),
+							if (!misakiStretch(yIndex, xIndex, misakiDirectionStrongCand,
 									oneMasu.getCnt())) {
 								return false;
 							}
@@ -278,6 +278,50 @@ public class NurimisakiSolver implements Solver {
 						if (blackCnt >= 3) {
 							// 岬予定じゃないのに岬になってる
 							return false;
+						} else if (blackCnt == 2) {
+							if (yIndex != 0 && masu[yIndex - 1][xIndex] == MasuImpl.SPACE) {
+								masu[yIndex - 1][xIndex] = MasuImpl.NOT_BLACK;
+							}
+							if (xIndex != getXLength() - 1 && masu[yIndex][xIndex + 1] == MasuImpl.SPACE) {
+								masu[yIndex][xIndex + 1] = MasuImpl.NOT_BLACK;
+							}
+							if (yIndex != getYLength() - 1 && masu[yIndex + 1][xIndex] == MasuImpl.SPACE) {
+								masu[yIndex + 1][xIndex] = MasuImpl.NOT_BLACK;
+							}
+							if (xIndex != 0 && masu[yIndex][xIndex - 1] == MasuImpl.SPACE) {
+								masu[yIndex][xIndex - 1] = MasuImpl.NOT_BLACK;
+							}
+						}
+					} else if (masu[yIndex][xIndex] == MasuImpl.SPACE) {
+						int blackCnt = 0;
+						if (yIndex == 0 || masu[yIndex - 1][xIndex] == MasuImpl.BLACK) {
+							blackCnt++;
+						}
+						if (xIndex == getXLength() - 1 || masu[yIndex][xIndex + 1] == MasuImpl.BLACK) {
+							blackCnt++;
+						}
+						if (yIndex == getYLength() - 1 || masu[yIndex + 1][xIndex] == MasuImpl.BLACK) {
+							blackCnt++;
+						}
+						if (xIndex == 0 || masu[yIndex][xIndex - 1] == MasuImpl.BLACK) {
+							blackCnt++;
+						}
+						if (blackCnt >= 3) {
+							masu[yIndex][xIndex] = MasuImpl.BLACK;
+							if (blackCnt == 4) {
+								if (yIndex != 0 && masu[yIndex - 1][xIndex] == MasuImpl.SPACE) {
+									masu[yIndex - 1][xIndex] = MasuImpl.BLACK;
+								}
+								if (xIndex != getXLength() - 1 && masu[yIndex][xIndex + 1] == MasuImpl.SPACE) {
+									masu[yIndex][xIndex + 1] = MasuImpl.BLACK;
+								}
+								if (yIndex != getYLength() - 1 && masu[yIndex + 1][xIndex] == MasuImpl.SPACE) {
+									masu[yIndex + 1][xIndex] = MasuImpl.BLACK;
+								}
+								if (xIndex != 0 && masu[yIndex][xIndex - 1] == MasuImpl.SPACE) {
+									masu[yIndex][xIndex - 1] = MasuImpl.BLACK;
+								}
+							}
 						}
 					}
 				}
@@ -698,6 +742,7 @@ public class NurimisakiSolver implements Solver {
 	}
 
 	private final Field field;
+	private int count = 0;
 
 	public NurimisakiSolver(int height, int width, String param, boolean tree) {
 		field = new Field(height, width, param, tree);
@@ -718,7 +763,6 @@ public class NurimisakiSolver implements Solver {
 
 	@Override
 	public String solve() {
-		int difficulty = 0;
 		long start = System.nanoTime();
 		while (!field.isSolved()) {
 			System.out.println(field);
@@ -728,7 +772,6 @@ public class NurimisakiSolver implements Solver {
 			}
 			int recursiveCnt = 0;
 			while (field.getStateDump().equals(befStr) && recursiveCnt < 3) {
-				difficulty = difficulty <= recursiveCnt ? recursiveCnt + 1 : difficulty;
 				if (!candSolve(field, recursiveCnt == 2 ? 999 : recursiveCnt)) {
 					return "問題に矛盾がある可能性があります。途中経過を返します。";
 				}
@@ -738,18 +781,17 @@ public class NurimisakiSolver implements Solver {
 				return "解けませんでした。途中経過を返します。";
 			}
 		}
-		System.out.println(((System.nanoTime() - start) / 1000000) +
-				"ms.");
-		System.out.println("難易度:" + difficulty);
+		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
+		System.out.println("難易度:" + (count * 2));
 		System.out.println(field);
 		return "解けました。推定難易度:"
-				+ Difficulty.getByVal(difficulty).toString();
+				+ Difficulty.getByCount(count * 2).toString();
 	}
 
 	/**
 	 * 仮置きして調べる
 	 */
-	private static boolean candSolve(Field field, int recursive) {
+	private boolean candSolve(Field field, int recursive) {
 		String str = field.getStateDump();
 		for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 			for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
@@ -778,6 +820,7 @@ public class NurimisakiSolver implements Solver {
 				if (whiteCnt > 3) {
 					continue;
 				}
+				count++;
 				if (!oneCandSolve(field, yIndex, xIndex, recursive)) {
 					return false;
 				}
@@ -792,7 +835,7 @@ public class NurimisakiSolver implements Solver {
 	/**
 	 * 1つのマスに対する仮置き調査
 	 */
-	private static boolean oneCandSolve(Field field, int yIndex, int xIndex, int recursive) {
+	private boolean oneCandSolve(Field field, int yIndex, int xIndex, int recursive) {
 		if (field.masu[yIndex][xIndex] == MasuImpl.SPACE) {
 			Field virtual = new Field(field);
 			virtual.masu[yIndex][xIndex] = MasuImpl.BLACK;
