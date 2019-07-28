@@ -328,7 +328,7 @@ public class ChoconaSolver implements Solver {
 				Position typicalWhitePos = new ArrayList<>(whitePosSet).get(0);
 				Set<Position> continuePosSet = new HashSet<>();
 				continuePosSet.add(typicalWhitePos);
-				setContinueWhitePosSet(typicalWhitePos, continuePosSet, null);
+				setContinueBlackPosSet(typicalWhitePos, continuePosSet, null);
 				int minY = getYLength() - 1;
 				int maxY = 0;
 				int minX = getXLength() - 1;
@@ -361,15 +361,15 @@ public class ChoconaSolver implements Solver {
 		}
 
 		/**
-		 * posを起点に上下左右に白確定マスを無制限につなげていく。
+		 * posを起点に上下左右に黒確定マスを無制限につなげていく。
 		 */
-		private void setContinueWhitePosSet(Position pos, Set<Position> continuePosSet, Direction from) {
+		private void setContinueBlackPosSet(Position pos, Set<Position> continuePosSet, Direction from) {
 			if (pos.getyIndex() != 0 && from != Direction.UP) {
 				Position nextPos = new Position(pos.getyIndex() - 1, pos.getxIndex());
 				if (masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.BLACK
 						&& !continuePosSet.contains(nextPos)) {
 					continuePosSet.add(nextPos);
-					setContinueWhitePosSet(nextPos, continuePosSet, Direction.DOWN);
+					setContinueBlackPosSet(nextPos, continuePosSet, Direction.DOWN);
 				}
 			}
 			if (pos.getxIndex() != getXLength() - 1 && from != Direction.RIGHT) {
@@ -377,7 +377,7 @@ public class ChoconaSolver implements Solver {
 				if (masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.BLACK
 						&& !continuePosSet.contains(nextPos)) {
 					continuePosSet.add(nextPos);
-					setContinueWhitePosSet(nextPos, continuePosSet, Direction.LEFT);
+					setContinueBlackPosSet(nextPos, continuePosSet, Direction.LEFT);
 				}
 			}
 			if (pos.getyIndex() != getYLength() - 1 && from != Direction.DOWN) {
@@ -385,7 +385,7 @@ public class ChoconaSolver implements Solver {
 				if (masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.BLACK
 						&& !continuePosSet.contains(nextPos)) {
 					continuePosSet.add(nextPos);
-					setContinueWhitePosSet(nextPos, continuePosSet, Direction.UP);
+					setContinueBlackPosSet(nextPos, continuePosSet, Direction.UP);
 				}
 			}
 			if (pos.getxIndex() != 0 && from != Direction.LEFT) {
@@ -393,7 +393,7 @@ public class ChoconaSolver implements Solver {
 				if (masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.BLACK
 						&& !continuePosSet.contains(nextPos)) {
 					continuePosSet.add(nextPos);
-					setContinueWhitePosSet(nextPos, continuePosSet, Direction.RIGHT);
+					setContinueBlackPosSet(nextPos, continuePosSet, Direction.RIGHT);
 				}
 			}
 		}
