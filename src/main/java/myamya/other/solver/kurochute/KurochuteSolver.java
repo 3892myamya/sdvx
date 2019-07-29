@@ -1,4 +1,4 @@
-package myamya.other.solver.kurotto;
+package myamya.other.solver.kurochute;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -9,7 +9,7 @@ import myamya.other.solver.Common.Masu;
 import myamya.other.solver.Common.Position;
 import myamya.other.solver.Solver;
 
-public class KurottoSolver implements Solver {
+public class KurochuteSolver implements Solver {
 
 	public static class Field {
 		static final String ALPHABET_FROM_G = "ghijklmnopqrstuvwxyz";
@@ -18,8 +18,6 @@ public class KurottoSolver implements Solver {
 		private Masu[][] masu;
 		// 数字の情報
 		private final Integer[][] numbers;
-		// 確定済み数字の位置情報
-		private final Set<Position> alreadyPosSet;
 
 		public Masu[][] getMasu() {
 			return masu;
@@ -40,7 +38,6 @@ public class KurottoSolver implements Solver {
 		public Field(int height, int width, String param) {
 			masu = new Masu[height][width];
 			numbers = new Integer[height][width];
-			alreadyPosSet = new HashSet<>();
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
 					masu[yIndex][xIndex] = Masu.SPACE;
@@ -92,7 +89,6 @@ public class KurottoSolver implements Solver {
 					masu[yIndex][xIndex] = other.masu[yIndex][xIndex];
 				}
 			}
-			alreadyPosSet = new HashSet<>(other.alreadyPosSet);
 		}
 
 		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
@@ -141,7 +137,13 @@ public class KurottoSolver implements Solver {
 		 */
 		private boolean solveAndCheck() {
 			String str = getStateDump();
-			if (!countSolve()) {
+			if (!chuteSolve()) {
+				return false;
+			}
+			if (!nextSolve()) {
+				return false;
+			}
+			if (!connectSolve()) {
 				return false;
 			}
 			if (!getStateDump().equals(str)) {
@@ -151,48 +153,152 @@ public class KurottoSolver implements Solver {
 		}
 
 		/**
-		 * 白マスの前後左右にある連結黒マスおよび黒マス候補の数をカウントする。
-		 * 超過や不足が確定したらfalseを返す。
+		 * 数字マスからクロシュート可能な方向をチェックし、1通りに決まれば確定する。
+		 * どこにもシュートできなかったらfalseを返す。
 		 */
-		private boolean countSolve() {
+		private boolean chuteSolve() {
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
 					if (numbers[yIndex][xIndex] != null && numbers[yIndex][xIndex] != -1) {
-						Position pivot = new Position(yIndex, xIndex);
-						if (alreadyPosSet.contains(pivot)) {
-							continue;
-						}
-						Set<Position> continueBlackPosSet = new HashSet<>();
-						if (!(setContinueBlackPosSet(pivot, continueBlackPosSet, numbers[yIndex][xIndex], null))) {
-							// サイズ超過
+						int range = numbers[yIndex][xIndex];
+						Masu masuUp = yIndex < range ? Masu.NOT_BLACK
+								: masu[yIndex - range][xIndex];
+						Masu masuRight = xIndex >= getXLength() - range ? Masu.NOT_BLACK
+								: masu[yIndex][xIndex + range];
+						Masu masuDown = yIndex >= getYLength() - range ? Masu.NOT_BLACK
+								: masu[yIndex + range][xIndex];
+						Masu masuLeft = xIndex < range ? Masu.NOT_BLACK
+								: masu[yIndex][xIndex - range];
+						if (masuUp == Masu.NOT_BLACK && masuRight == Masu.NOT_BLACK && masuDown == Masu.NOT_BLACK
+								&& masuLeft == Masu.NOT_BLACK) {
 							return false;
-						} else if (numbers[yIndex][xIndex] == continueBlackPosSet.size()) {
-							// サイズ確定。周りを白に
-							continueBlackPosSet.add(pivot);
-							alreadyPosSet.add(pivot);
-							for (Position pos : continueBlackPosSet) {
-								if (pos.getyIndex() != 0 && !continueBlackPosSet
-										.contains(new Position(pos.getyIndex() - 1, pos.getxIndex()))) {
-									masu[pos.getyIndex() - 1][pos.getxIndex()] = Masu.NOT_BLACK;
-								}
-								if (pos.getxIndex() != getXLength() - 1 && !continueBlackPosSet
-										.contains(new Position(pos.getyIndex(), pos.getxIndex() + 1))) {
-									masu[pos.getyIndex()][pos.getxIndex() + 1] = Masu.NOT_BLACK;
-								}
-								if (pos.getyIndex() != getYLength() - 1 && !continueBlackPosSet
-										.contains(new Position(pos.getyIndex() + 1, pos.getxIndex()))) {
-									masu[pos.getyIndex() + 1][pos.getxIndex()] = Masu.NOT_BLACK;
-								}
-								if (pos.getxIndex() != 0 && !continueBlackPosSet
-										.contains(new Position(pos.getyIndex(), pos.getxIndex() - 1))) {
-									masu[pos.getyIndex()][pos.getxIndex() - 1] = Masu.NOT_BLACK;
-								}
+						}
+						if (masuUp == Masu.SPACE && masuRight == Masu.NOT_BLACK && masuDown == Masu.NOT_BLACK
+								&& masuLeft == Masu.NOT_BLACK) {
+							masu[yIndex - range][xIndex] = Masu.BLACK;
+						}
+						if (masuUp == Masu.NOT_BLACK && masuRight == Masu.SPACE && masuDown == Masu.NOT_BLACK
+								&& masuLeft == Masu.NOT_BLACK) {
+							masu[yIndex][xIndex + range] = Masu.BLACK;
+						}
+						if (masuUp == Masu.NOT_BLACK && masuRight == Masu.NOT_BLACK && masuDown == Masu.SPACE
+								&& masuLeft == Masu.NOT_BLACK) {
+							masu[yIndex + range][xIndex] = Masu.BLACK;
+						}
+						if (masuUp == Masu.NOT_BLACK && masuRight == Masu.NOT_BLACK && masuDown == Masu.NOT_BLACK
+								&& masuLeft == Masu.SPACE) {
+							masu[yIndex][xIndex - range] = Masu.BLACK;
+						}
+						if (masuUp == Masu.BLACK) {
+							if (masuRight == Masu.BLACK || masuDown == Masu.BLACK || masuLeft == Masu.BLACK) {
+								return false;
 							}
+							if (masuRight == Masu.SPACE) {
+								masu[yIndex][xIndex + range] = Masu.NOT_BLACK;
+							}
+							if (masuDown == Masu.SPACE) {
+								masu[yIndex + range][xIndex] = Masu.NOT_BLACK;
+							}
+							if (masuLeft == Masu.SPACE) {
+								masu[yIndex][xIndex - range] = Masu.NOT_BLACK;
+							}
+						}
+						if (masuRight == Masu.BLACK) {
+							if (masuUp == Masu.BLACK || masuDown == Masu.BLACK || masuLeft == Masu.BLACK) {
+								return false;
+							}
+							if (masuUp == Masu.SPACE) {
+								masu[yIndex - range][xIndex] = Masu.NOT_BLACK;
+							}
+							if (masuDown == Masu.SPACE) {
+								masu[yIndex + range][xIndex] = Masu.NOT_BLACK;
+							}
+							if (masuLeft == Masu.SPACE) {
+								masu[yIndex][xIndex - range] = Masu.NOT_BLACK;
+							}
+						}
+						if (masuDown == Masu.BLACK) {
+							if (masuUp == Masu.BLACK || masuRight == Masu.BLACK || masuLeft == Masu.BLACK) {
+								return false;
+							}
+							if (masuUp == Masu.SPACE) {
+								masu[yIndex - range][xIndex] = Masu.NOT_BLACK;
+							}
+							if (masuRight == Masu.SPACE) {
+								masu[yIndex][xIndex + range] = Masu.NOT_BLACK;
+							}
+							if (masuLeft == Masu.SPACE) {
+								masu[yIndex][xIndex - range] = Masu.NOT_BLACK;
+							}
+						}
+						if (masuLeft == Masu.BLACK) {
+							if (masuUp == Masu.BLACK || masuRight == Masu.BLACK || masuDown == Masu.BLACK) {
+								return false;
+							}
+							if (masuUp == Masu.SPACE) {
+								masu[yIndex - range][xIndex] = Masu.NOT_BLACK;
+							}
+							if (masuRight == Masu.SPACE) {
+								masu[yIndex][xIndex + range] = Masu.NOT_BLACK;
+							}
+							if (masuDown == Masu.SPACE) {
+								masu[yIndex + range][xIndex] = Masu.NOT_BLACK;
+							}
+						}
+					}
+				}
+			}
+			return true;
+		}
+
+		/**
+		 * 黒マス隣接セルを白マスにする。
+		 * 黒マス隣接セルが黒マスの場合falseを返す。
+		 */
+		public boolean nextSolve() {
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					if (masu[yIndex][xIndex] == Masu.BLACK) {
+						Masu masuUp = yIndex == 0 ? Masu.NOT_BLACK : masu[yIndex - 1][xIndex];
+						Masu masuRight = xIndex == getXLength() - 1 ? Masu.NOT_BLACK : masu[yIndex][xIndex + 1];
+						Masu masuDown = yIndex == getYLength() - 1 ? Masu.NOT_BLACK : masu[yIndex + 1][xIndex];
+						Masu masuLeft = xIndex == 0 ? Masu.NOT_BLACK : masu[yIndex][xIndex - 1];
+						if (masuUp == Masu.BLACK || masuRight == Masu.BLACK || masuDown == Masu.BLACK
+								|| masuLeft == Masu.BLACK) {
+							return false;
+						}
+						if (masuUp == Masu.SPACE) {
+							masu[yIndex - 1][xIndex] = Masu.NOT_BLACK;
+						}
+						if (masuRight == Masu.SPACE) {
+							masu[yIndex][xIndex + 1] = Masu.NOT_BLACK;
+						}
+						if (masuDown == Masu.SPACE) {
+							masu[yIndex + 1][xIndex] = Masu.NOT_BLACK;
+						}
+						if (masuLeft == Masu.SPACE) {
+							masu[yIndex][xIndex - 1] = Masu.NOT_BLACK;
+						}
+					}
+				}
+			}
+			return true;
+		}
+
+		/**
+		 * 白マスがひとつながりにならない場合Falseを返す。
+		 */
+		public boolean connectSolve() {
+			Set<Position> whitePosSet = new HashSet<>();
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					if (masu[yIndex][xIndex] == Masu.NOT_BLACK) {
+						Position whitePos = new Position(yIndex, xIndex);
+						if (whitePosSet.size() == 0) {
+							whitePosSet.add(whitePos);
+							setContinuePosSet(whitePos, whitePosSet, null);
 						} else {
-							Set<Position> continueNotWhitePosSet = new HashSet<>();
-							if (!setContinueNotWhitePosSet(pivot, continueNotWhitePosSet, numbers[yIndex][xIndex],
-									null)) {
-								// サイズ不足
+							if (!whitePosSet.contains(whitePos)) {
 								return false;
 							}
 						}
@@ -203,106 +309,41 @@ public class KurottoSolver implements Solver {
 		}
 
 		/**
-		 * posを起点に上下左右に白確定でないマスをつなげていく。
-		 * sizeが不足しないと分かった時点でtrueを返す。
+		 * posを起点に上下左右に黒確定でないマスを無制限につなげていく。
 		 */
-		private boolean setContinueNotWhitePosSet(Position pos, Set<Position> continuePosSet, int size,
-				Direction from) {
-			if (continuePosSet.size() >= size) {
-				return true;
-			}
+		private void setContinuePosSet(Position pos, Set<Position> continuePosSet, Direction from) {
 			if (pos.getyIndex() != 0 && from != Direction.UP) {
 				Position nextPos = new Position(pos.getyIndex() - 1, pos.getxIndex());
-				if (masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.NOT_BLACK
-						&& !continuePosSet.contains(nextPos)) {
+				if (!continuePosSet.contains(nextPos)
+						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.BLACK) {
 					continuePosSet.add(nextPos);
-					if (setContinueNotWhitePosSet(nextPos, continuePosSet, size, Direction.DOWN)) {
-						return true;
-					}
+					setContinuePosSet(nextPos, continuePosSet, Direction.DOWN);
 				}
 			}
 			if (pos.getxIndex() != getXLength() - 1 && from != Direction.RIGHT) {
 				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() + 1);
-				if (masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.NOT_BLACK
-						&& !continuePosSet.contains(nextPos)) {
+				if (!continuePosSet.contains(nextPos)
+						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.BLACK) {
 					continuePosSet.add(nextPos);
-					if (setContinueNotWhitePosSet(nextPos, continuePosSet, size, Direction.LEFT)) {
-						return true;
-					}
+					setContinuePosSet(nextPos, continuePosSet, Direction.LEFT);
 				}
 			}
 			if (pos.getyIndex() != getYLength() - 1 && from != Direction.DOWN) {
 				Position nextPos = new Position(pos.getyIndex() + 1, pos.getxIndex());
-				if (masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.NOT_BLACK
-						&& !continuePosSet.contains(nextPos)) {
+				if (!continuePosSet.contains(nextPos)
+						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.BLACK) {
 					continuePosSet.add(nextPos);
-					if (setContinueNotWhitePosSet(nextPos, continuePosSet, size, Direction.UP)) {
-						return true;
-					}
+					setContinuePosSet(nextPos, continuePosSet, Direction.UP);
 				}
 			}
 			if (pos.getxIndex() != 0 && from != Direction.LEFT) {
 				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() - 1);
-				if (masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.NOT_BLACK
-						&& !continuePosSet.contains(nextPos)) {
+				if (!continuePosSet.contains(nextPos)
+						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.BLACK) {
 					continuePosSet.add(nextPos);
-					if (setContinueNotWhitePosSet(nextPos, continuePosSet, size, Direction.RIGHT)) {
-						return true;
-					}
+					setContinuePosSet(nextPos, continuePosSet, Direction.RIGHT);
 				}
 			}
-			return false;
-		}
-
-		/**
-		 * posを起点に上下左右に黒確定マスをつなげていく。
-		 * sizeが超過すると分かった時点でfalseを返す。
-		 */
-		private boolean setContinueBlackPosSet(Position pos, Set<Position> continuePosSet, int size, Direction from) {
-			if (continuePosSet.size() > size) {
-				return false;
-			}
-			if (pos.getyIndex() != 0 && from != Direction.UP) {
-				Position nextPos = new Position(pos.getyIndex() - 1, pos.getxIndex());
-				if (masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.BLACK
-						&& !continuePosSet.contains(nextPos)) {
-					continuePosSet.add(nextPos);
-					if (!setContinueBlackPosSet(nextPos, continuePosSet, size, Direction.DOWN)) {
-						return false;
-					}
-				}
-			}
-			if (pos.getxIndex() != getXLength() - 1 && from != Direction.RIGHT) {
-				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() + 1);
-				if (masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.BLACK
-						&& !continuePosSet.contains(nextPos)) {
-					continuePosSet.add(nextPos);
-					if (!setContinueBlackPosSet(nextPos, continuePosSet, size, Direction.LEFT)) {
-						return false;
-					}
-				}
-			}
-			if (pos.getyIndex() != getYLength() - 1 && from != Direction.DOWN) {
-				Position nextPos = new Position(pos.getyIndex() + 1, pos.getxIndex());
-				if (masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.BLACK
-						&& !continuePosSet.contains(nextPos)) {
-					continuePosSet.add(nextPos);
-					if (!setContinueBlackPosSet(nextPos, continuePosSet, size, Direction.UP)) {
-						return false;
-					}
-				}
-			}
-			if (pos.getxIndex() != 0 && from != Direction.LEFT) {
-				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() - 1);
-				if (masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.BLACK
-						&& !continuePosSet.contains(nextPos)) {
-					continuePosSet.add(nextPos);
-					if (!setContinueBlackPosSet(nextPos, continuePosSet, size, Direction.RIGHT)) {
-						return false;
-					}
-				}
-			}
-			return true;
 		}
 
 		public boolean isSolved() {
@@ -347,7 +388,7 @@ public class KurottoSolver implements Solver {
 	private final Field field;
 	private int count;
 
-	public KurottoSolver(int height, int width, String param) {
+	public KurochuteSolver(int height, int width, String param) {
 		field = new Field(height, width, param);
 	}
 
@@ -361,7 +402,7 @@ public class KurottoSolver implements Solver {
 		int height = Integer.parseInt(params[params.length - 2]);
 		int width = Integer.parseInt(params[params.length - 3]);
 		String param = params[params.length - 1];
-		System.out.println(new KurottoSolver(height, width, param).solve());
+		System.out.println(new KurochuteSolver(height, width, param).solve());
 	}
 
 	@Override
@@ -385,10 +426,10 @@ public class KurottoSolver implements Solver {
 			}
 		}
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
-		System.out.println("難易度:" + (count));
+		System.out.println("難易度:" + (count * 25));
 		System.out.println(field);
 		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count).toString();
+				+ Difficulty.getByCount(count * 25).toString();
 	}
 
 	/**
@@ -400,31 +441,6 @@ public class KurottoSolver implements Solver {
 		for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 			for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
 				if (field.masu[yIndex][xIndex] == Masu.SPACE) {
-					// 周囲に空白が少ない個所を優先して調査
-					Masu masuUp = yIndex == 0 ? Masu.BLACK
-							: field.masu[yIndex - 1][xIndex];
-					Masu masuRight = xIndex == field.getXLength() - 1 ? Masu.BLACK
-							: field.masu[yIndex][xIndex + 1];
-					Masu masuDown = yIndex == field.getYLength() - 1 ? Masu.BLACK
-							: field.masu[yIndex + 1][xIndex];
-					Masu masuLeft = xIndex == 0 ? Masu.BLACK
-							: field.masu[yIndex][xIndex - 1];
-					int whiteCnt = 0;
-					if (masuUp == Masu.SPACE) {
-						whiteCnt++;
-					}
-					if (masuRight == Masu.SPACE) {
-						whiteCnt++;
-					}
-					if (masuDown == Masu.SPACE) {
-						whiteCnt++;
-					}
-					if (masuLeft == Masu.SPACE) {
-						whiteCnt++;
-					}
-					if (whiteCnt > 3) {
-						continue;
-					}
 					count++;
 					if (!oneCandSolve(field, yIndex, xIndex, recursive)) {
 						return false;
