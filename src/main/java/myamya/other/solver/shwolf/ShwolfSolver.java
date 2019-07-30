@@ -181,25 +181,117 @@ public class ShwolfSolver implements Solver {
 		 * @param recursive
 		 */
 		public boolean solveAndCheck() {
-			String str = getStateDump();
+			//			String str = getStateDump();
 			if (!pileSolve()) {
 				return false;
 			}
 			if (!roomSolve()) {
 				return false;
 			}
-			if (!getStateDump().equals(str)) {
-				return solveAndCheck();
+			if (!insidePileSolve()) {
+				return false;
+			}
+			//			if (!getStateDump().equals(str)) {
+			//				return solveAndCheck();
+			//			}
+			return true;
+		}
+
+		/**
+		 * 柱から伸びる壁がある場合、それが外につながらないのはダメ。
+		 */
+		private boolean insidePileSolve() {
+			Set<Position> alreadyServeyPosSet = new HashSet<>();
+			for (int yIndex = 0; yIndex < getYLength() - 1; yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength() - 1; xIndex++) {
+					if (piles[yIndex][xIndex]) {
+						Wall wall1 = tateWall[yIndex][xIndex];
+						Wall wall2 = tateWall[yIndex][xIndex + 1];
+						Wall wall3 = yokoWall[yIndex][xIndex];
+						Wall wall4 = yokoWall[yIndex + 1][xIndex];
+						if (wall1 == Wall.EXISTS || wall2 == Wall.EXISTS || wall3 == Wall.EXISTS
+								|| wall4 == Wall.EXISTS) {
+							Position pos = new Position(yIndex, xIndex);
+							if (!alreadyServeyPosSet.contains(pos)) {
+								HashSet<Position> continuePosSet = new HashSet<>();
+								continuePosSet.add(pos);
+								if (!checkInsidePile(pos, continuePosSet, null)) {
+									return false;
+								} else {
+									alreadyServeyPosSet.addAll(continuePosSet);
+								}
+							}
+						}
+					}
+				}
 			}
 			return true;
+		}
+
+		/**
+		 * 壁あり確定の連結部を直進優先でつなぐ。外枠に接する壁が見つかった時点でtrueを返す。
+		 */
+		private boolean checkInsidePile(Position pos, HashSet<Position> continuePosSet, Direction from) {
+			// 直進不可
+			if (from != Direction.UP && (from == Direction.DOWN || piles[pos.getyIndex()][pos.getxIndex()])
+					&& yokoWall[pos.getyIndex()][pos.getxIndex()] != Wall.NOT_EXISTS) {
+				if (pos.getyIndex() == 0) {
+					return true;
+				}
+				Position nextPos = new Position(pos.getyIndex() - 1, pos.getxIndex());
+				if (!continuePosSet.contains(nextPos)) {
+					continuePosSet.add(nextPos);
+					if (checkInsidePile(nextPos, continuePosSet, Direction.DOWN)) {
+						return true;
+					}
+				}
+			}
+			if (from != Direction.RIGHT && (from == Direction.LEFT || piles[pos.getyIndex()][pos.getxIndex()])
+					&& tateWall[pos.getyIndex()][pos.getxIndex() + 1] != Wall.NOT_EXISTS) {
+				if (pos.getxIndex() == getXLength() - 2) {
+					return true;
+				}
+				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() + 1);
+				if (!continuePosSet.contains(nextPos)) {
+					continuePosSet.add(nextPos);
+					if (checkInsidePile(nextPos, continuePosSet, Direction.LEFT)) {
+						return true;
+					}
+				}
+			}
+			if (from != Direction.DOWN && (from == Direction.UP || piles[pos.getyIndex()][pos.getxIndex()])
+					&& yokoWall[pos.getyIndex() + 1][pos.getxIndex()] != Wall.NOT_EXISTS) {
+				if (pos.getyIndex() == getYLength() - 2) {
+					return true;
+				}
+				Position nextPos = new Position(pos.getyIndex() + 1, pos.getxIndex());
+				if (!continuePosSet.contains(nextPos)) {
+					continuePosSet.add(nextPos);
+					if (checkInsidePile(nextPos, continuePosSet, Direction.UP)) {
+						return true;
+					}
+				}
+			}
+			if (from != Direction.LEFT && (from == Direction.RIGHT || piles[pos.getyIndex()][pos.getxIndex()])
+					&& tateWall[pos.getyIndex()][pos.getxIndex()] != Wall.NOT_EXISTS) {
+				if (pos.getxIndex() == 0) {
+					return true;
+				}
+				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() - 1);
+				if (!continuePosSet.contains(nextPos)) {
+					continuePosSet.add(nextPos);
+					if (checkInsidePile(nextPos, continuePosSet, Direction.RIGHT)) {
+						return true;
+					}
+				}
+			}
+			return false;
 		}
 
 		/**
 		 * 柱ありから伸びる壁は0枚か2枚、
 		 * 柱なしから伸びる壁は0枚か2枚(直進)か4枚になる。
 		 * 違反する場合はfalseを返す。
-		 *
-		 * TODO ■が外枠につながらずにループする場合を禁止しなきゃ…
 		 */
 		private boolean pileSolve() {
 			for (int yIndex = 0; yIndex < getYLength() - 1; yIndex++) {
@@ -343,6 +435,22 @@ public class ShwolfSolver implements Solver {
 			return true;
 		}
 
+		static class BooleanWrapper {
+			private boolean value;
+
+			public BooleanWrapper(boolean value) {
+				this.value = value;
+			}
+
+			public boolean isValue() {
+				return value;
+			}
+
+			public void setValue(boolean value) {
+				this.value = value;
+			}
+		}
+
 		/**
 		 * 同じ部屋にヤギとオオカミが同居したり、誰もいない部屋があってはならない。
 		 * 違反した場合falseを返す。
@@ -355,8 +463,9 @@ public class ShwolfSolver implements Solver {
 					if (!alreadyServeyPosSet.contains(pos)) {
 						HashSet<Position> continuePosSet = new HashSet<>();
 						continuePosSet.add(pos);
-						if (!setContinuePosSet(pos, continuePosSet, null, masu[yIndex][xIndex] == Masu.NOT_BLACK,
-								masu[yIndex][xIndex] == Masu.BLACK)) {
+						BooleanWrapper whiteExists = new BooleanWrapper(masu[yIndex][xIndex] == Masu.NOT_BLACK);
+						BooleanWrapper blackExists = new BooleanWrapper(masu[yIndex][xIndex] == Masu.BLACK);
+						if (!setContinuePosSet(pos, continuePosSet, null, whiteExists, blackExists)) {
 							return false;
 						} else {
 							alreadyServeyPosSet.addAll(continuePosSet);
@@ -386,18 +495,20 @@ public class ShwolfSolver implements Solver {
 		 * posを起点に上下左右に壁なし確定のマスをつなぐ。ヤギとオオカミの同居が確定した時点でfalseを返す。
 		 */
 		private boolean setContinuePosSet(Position pos, Set<Position> continuePosSet, Direction from,
-				boolean whiteDiscover, boolean blackDiscover) {
+				BooleanWrapper whiteExists, BooleanWrapper blackExists) {
 			if (pos.getyIndex() != 0 && from != Direction.UP) {
 				Position nextPos = new Position(pos.getyIndex() - 1, pos.getxIndex());
 				if (tateWall[pos.getyIndex() - 1][pos.getxIndex()] == Wall.NOT_EXISTS
 						&& !continuePosSet.contains(nextPos)) {
-					whiteDiscover = whiteDiscover || masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.NOT_BLACK;
-					blackDiscover = blackDiscover || masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.BLACK;
-					if (whiteDiscover && blackDiscover) {
+					whiteExists.setValue(
+							whiteExists.isValue() || masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.NOT_BLACK);
+					blackExists.setValue(
+							blackExists.isValue() || masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.BLACK);
+					if (whiteExists.isValue() && blackExists.isValue()) {
 						return false;
 					}
 					continuePosSet.add(nextPos);
-					if (!setContinuePosSet(nextPos, continuePosSet, Direction.DOWN, whiteDiscover, blackDiscover)) {
+					if (!setContinuePosSet(nextPos, continuePosSet, Direction.DOWN, whiteExists, blackExists)) {
 						return false;
 					}
 				}
@@ -406,13 +517,16 @@ public class ShwolfSolver implements Solver {
 				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() + 1);
 				if (yokoWall[pos.getyIndex()][pos.getxIndex()] == Wall.NOT_EXISTS
 						&& !continuePosSet.contains(nextPos)) {
-					whiteDiscover = whiteDiscover || masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.NOT_BLACK;
-					blackDiscover = blackDiscover || masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.BLACK;
-					if (whiteDiscover && blackDiscover) {
+					whiteExists.setValue(
+							whiteExists.isValue() || masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.NOT_BLACK);
+					blackExists.setValue(
+							blackExists.isValue() || masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.BLACK);
+					if (whiteExists.isValue() && blackExists.isValue()) {
 						return false;
 					}
+
 					continuePosSet.add(nextPos);
-					if (!setContinuePosSet(nextPos, continuePosSet, Direction.LEFT, whiteDiscover, blackDiscover)) {
+					if (!setContinuePosSet(nextPos, continuePosSet, Direction.LEFT, whiteExists, blackExists)) {
 						return false;
 					}
 				}
@@ -421,13 +535,15 @@ public class ShwolfSolver implements Solver {
 				Position nextPos = new Position(pos.getyIndex() + 1, pos.getxIndex());
 				if (tateWall[pos.getyIndex()][pos.getxIndex()] == Wall.NOT_EXISTS
 						&& !continuePosSet.contains(nextPos)) {
-					whiteDiscover = whiteDiscover || masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.NOT_BLACK;
-					blackDiscover = blackDiscover || masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.BLACK;
-					if (whiteDiscover && blackDiscover) {
+					whiteExists.setValue(
+							whiteExists.isValue() || masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.NOT_BLACK);
+					blackExists.setValue(
+							blackExists.isValue() || masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.BLACK);
+					if (whiteExists.isValue() && blackExists.isValue()) {
 						return false;
 					}
 					continuePosSet.add(nextPos);
-					if (!setContinuePosSet(nextPos, continuePosSet, Direction.UP, whiteDiscover, blackDiscover)) {
+					if (!setContinuePosSet(nextPos, continuePosSet, Direction.UP, whiteExists, blackExists)) {
 						return false;
 					}
 				}
@@ -436,13 +552,15 @@ public class ShwolfSolver implements Solver {
 				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() - 1);
 				if (yokoWall[pos.getyIndex()][pos.getxIndex() - 1] == Wall.NOT_EXISTS
 						&& !continuePosSet.contains(nextPos)) {
-					whiteDiscover = whiteDiscover || masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.NOT_BLACK;
-					blackDiscover = blackDiscover || masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.BLACK;
-					if (whiteDiscover && blackDiscover) {
+					whiteExists.setValue(
+							whiteExists.isValue() || masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.NOT_BLACK);
+					blackExists.setValue(
+							blackExists.isValue() || masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.BLACK);
+					if (whiteExists.isValue() && blackExists.isValue()) {
 						return false;
 					}
 					continuePosSet.add(nextPos);
-					if (!setContinuePosSet(nextPos, continuePosSet, Direction.RIGHT, whiteDiscover, blackDiscover)) {
+					if (!setContinuePosSet(nextPos, continuePosSet, Direction.RIGHT, whiteExists, blackExists)) {
 						return false;
 					}
 				}
@@ -571,10 +689,10 @@ public class ShwolfSolver implements Solver {
 			}
 		}
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
-		System.out.println("難易度:" + (count / 2));
+		System.out.println("難易度:" + (count / 3));
 		System.out.println(field);
 		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count / 2).toString();
+				+ Difficulty.getByCount(count / 3).toString();
 	}
 
 	/**
@@ -582,7 +700,6 @@ public class ShwolfSolver implements Solver {
 	 * @param posSet
 	 */
 	private boolean candSolve(Field field, int recursive) {
-		System.out.println(field);
 		String str = field.getStateDump();
 		for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 			for (int xIndex = 0; xIndex < field.getXLength() - 1; xIndex++) {

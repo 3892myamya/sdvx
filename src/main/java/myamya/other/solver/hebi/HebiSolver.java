@@ -295,7 +295,7 @@ public class HebiSolver implements Solver {
 								idx++;
 							}
 						}
-						if (candPosList.size() == 0) {
+						if (candPosList.size() == 0 && arrow.getCount() != 0) {
 							// 矢印の数字を置く場所がない場合
 							return false;
 						}
@@ -1075,7 +1075,6 @@ public class HebiSolver implements Solver {
 	 * @param posSet
 	 */
 	private boolean candSolve(Field field, int recursive) {
-		System.out.println(field);
 		// へびいちごはどうやらここでの再帰はしない方がはやい
 		//		while (true) {
 		//			String befStr = field.getStateDump();
