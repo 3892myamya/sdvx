@@ -76,7 +76,7 @@ public class Common {
 
 		@Override
 		public String toString() {
-			return "Position [yIndex=" + yIndex + ", xIndex=" + xIndex + "]";
+			return "[" + yIndex + "," + xIndex + "]";
 		}
 
 		private final int yIndex;
