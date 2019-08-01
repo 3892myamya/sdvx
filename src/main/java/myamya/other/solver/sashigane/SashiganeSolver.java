@@ -159,25 +159,29 @@ public class SashiganeSolver implements Solver {
 					} else {
 						//16 - 255は '-'
 						//256 - 999は '+'
-						int cnt;
-						if (ch == '-') {
-							cnt = Integer.parseInt("" + param.charAt(i + 1) + param.charAt(i + 2), 16);
-							i++;
-							i++;
-						} else if (ch == '+') {
-							cnt = Integer.parseInt(
-									"" + param.charAt(i + 1) + param.charAt(i + 2) + param.charAt(i + 3),
-									16);
-							i++;
-							i++;
-							i++;
-						} else if (ch == '.') {
-							cnt = -1;
-						} else {
-							cnt = Integer.parseInt(String.valueOf(ch), 16);
+						try {
+							int cnt;
+							if (ch == '-') {
+								cnt = Integer.parseInt("" + param.charAt(i + 1) + param.charAt(i + 2), 16);
+								i++;
+								i++;
+							} else if (ch == '+') {
+								cnt = Integer.parseInt(
+										"" + param.charAt(i + 1) + param.charAt(i + 2) + param.charAt(i + 3),
+										16);
+								i++;
+								i++;
+								i++;
+							} else if (ch == '.') {
+								cnt = -1;
+							} else {
+								cnt = Integer.parseInt(String.valueOf(ch), 16);
+							}
+							Position pos = new Position(index / getXLength(), index % getXLength());
+							mark[pos.getyIndex()][pos.getxIndex()] = new Circle(cnt);
+						} catch (NumberFormatException e) {
+							// 関係ない文字が来ていた場合は1文字進めるため何もしない
 						}
-						Position pos = new Position(index / getXLength(), index % getXLength());
-						mark[pos.getyIndex()][pos.getxIndex()] = new Circle(cnt);
 					}
 				}
 				index++;
