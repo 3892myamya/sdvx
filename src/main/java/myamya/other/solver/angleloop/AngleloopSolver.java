@@ -14,7 +14,7 @@ import myamya.other.solver.Solver;
 
 public class AngleloopSolver implements Solver {
 	public enum Angle {
-		ACUTE("▲"), RIGHT("□"), OBTUSE("★");
+		ACUTE("▲"), RIGHT("□"), OBTUSE("☆");
 
 		String str;
 
@@ -88,6 +88,31 @@ public class AngleloopSolver implements Solver {
 					}
 				}
 			}
+
+			// スピードアップのため、同じ角度にある記号で一番近いもの以外は線をひかないことを先に確定
+			for (Entry<Position, Map<Position, Masu>> candidate : candidates.entrySet()) {
+				Position pos1 = candidate.getKey();
+				// 角度とそれに対する最短距離のmapを作成。
+				Map<Integer, Integer> directionDistanceMap = new HashMap<>();
+				for (Entry<Position, Masu> target : candidate.getValue().entrySet()) {
+					Position pos2 = target.getKey();
+					int direction = getDirection(pos1, pos2);
+					int distance = getDistance(pos1, pos2);
+					if (directionDistanceMap.get(direction) == null || directionDistanceMap.get(direction) > distance) {
+						directionDistanceMap.put(direction, distance);
+					}
+				}
+				// 角度ごとに最短距離でないものは白マス確定
+				for (Entry<Position, Masu> target : candidate.getValue().entrySet()) {
+					Position pos2 = target.getKey();
+					int direction = getDirection(pos1, pos2);
+					int distance = getDistance(pos1, pos2);
+					if (directionDistanceMap.get(direction) != distance) {
+						candidate.getValue().put(target.getKey(), Masu.NOT_BLACK);
+					}
+				}
+			}
+
 			// 最初に確認用に1回形を出す。
 			StringBuilder sb = new StringBuilder();
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
@@ -101,6 +126,23 @@ public class AngleloopSolver implements Solver {
 				sb.append(System.lineSeparator());
 			}
 			System.out.println(sb);
+		}
+
+		/**
+		 * 2点の方向を計算する。
+		 */
+		public int getDirection(Position pos1, Position pos2) {
+			double angle = Math.atan2(pos1.getxIndex() - pos2.getxIndex(), pos1.getyIndex() - pos2.getyIndex());
+			return (int) Math.round(Math.toDegrees(angle));
+		}
+
+		/**
+		 * 2点の距離を計算する。
+		 */
+		public int getDistance(Position pos1, Position pos2) {
+			return (int) Math
+					.round(Math.sqrt((pos2.getxIndex() - pos1.getxIndex()) * (pos2.getxIndex() - pos1.getxIndex())
+							+ (pos2.getyIndex() - pos1.getyIndex()) * (pos2.getyIndex() - pos1.getyIndex())));
 		}
 
 		public Field(Field other) {
@@ -152,10 +194,10 @@ public class AngleloopSolver implements Solver {
 			if (!mirrorSolve()) {
 				return false;
 			}
-			if (!countSolve()) {
+			if (!angleSolve()) {
 				return false;
 			}
-			if (!angleSolve()) {
+			if (!countSolve()) {
 				return false;
 			}
 			if (!getStateDump().equals(str)) {
@@ -176,10 +218,10 @@ public class AngleloopSolver implements Solver {
 				for (Entry<Position, Masu> target : candidate.getValue().entrySet()) {
 					if (target.getValue() != Masu.SPACE) {
 						Masu tagretMasu = candidates.get(target.getKey()).get(candidate.getKey());
-						if (tagretMasu != Masu.SPACE && tagretMasu != target.getValue()) {
-							return false;
-						} else {
+						if (tagretMasu == Masu.SPACE) {
 							candidates.get(target.getKey()).put(candidate.getKey(), target.getValue());
+						} else if (tagretMasu != target.getValue()) {
+							return false;
 						}
 					}
 				}
@@ -231,7 +273,7 @@ public class AngleloopSolver implements Solver {
 		}
 
 		/**
-		 * 黒(線を引く先)に対し角度を満たさなかったり、他の黒と交差している場合falseを返す。
+		 * 黒(線を引く先)に対し角度を満たさなかったり、他の線と交差している場合falseを返す。
 		 */
 		private boolean angleSolve() {
 			for (Entry<Position, Map<Position, Masu>> candidate : candidates.entrySet()) {
@@ -246,29 +288,35 @@ public class AngleloopSolver implements Solver {
 							}
 							Position otherTargetPos = otherEntry.getKey();
 							if (!targetPos.equals(otherTargetPos)) {
-								double kakudo = getKakudo(targetPos, otherTargetPos, pivotPos);
-								// 浮動小数点で誤差が出るのでちょっとだけ余裕を持たせる。
-								if (angles[pivotPos.getyIndex()][pivotPos.getxIndex()] == Angle.RIGHT) {
-									if (!((89.9 < kakudo && kakudo < 90.1)
-											|| (-90.1 < kakudo && kakudo < -89.9)
-											|| (269.9 < kakudo && kakudo < 270.1)
-											|| (-270.1 < kakudo && kakudo < -269.9))) {
+								int kakudo = getKakudo(targetPos, otherTargetPos, pivotPos);
+								if (180 == kakudo || -180 == kakudo) {
+									// 180度はどんな記号でもだめ
+									if (otherEntry.getValue() == Masu.BLACK) {
+										return false;
+									}
+									candidate.getValue().put(otherEntry.getKey(), Masu.NOT_BLACK);
+								} else if (angles[pivotPos.getyIndex()][pivotPos.getxIndex()] == Angle.RIGHT) {
+									// 直角は90度のみ
+									if (!(kakudo == 90
+											|| kakudo == -90
+											|| kakudo == 270
+											|| kakudo == -270)) {
 										if (otherEntry.getValue() == Masu.BLACK) {
 											return false;
 										}
 										candidate.getValue().put(otherEntry.getKey(), Masu.NOT_BLACK);
 									}
 								} else if (angles[pivotPos.getyIndex()][pivotPos.getxIndex()] == Angle.ACUTE) {
-									if (!((-89.9 <= kakudo && kakudo <= 89.9) || kakudo <= -270.1 || 270.1 <= kakudo)) {
+									// 鋭角は90度より小さい角度のみ
+									if (!((-90 < kakudo && kakudo < 90) || kakudo < -270 || 270 < kakudo)) {
 										if (otherEntry.getValue() == Masu.BLACK) {
 											return false;
 										}
 										candidate.getValue().put(otherEntry.getKey(), Masu.NOT_BLACK);
 									}
 								} else if (angles[pivotPos.getyIndex()][pivotPos.getxIndex()] == Angle.OBTUSE) {
-									if (!((-269.9 <= kakudo && kakudo <= -90.1) || (90.1 <= kakudo && kakudo <= 269.9))
-											|| ((179.9 < kakudo && kakudo < 180.1))
-											|| (-180.1 < kakudo && kakudo < -179.9)) {
+									// 鈍角は90度より大きい角度のみ
+									if (!((-270 < kakudo && kakudo < -90) || (90 < kakudo && kakudo < 270))) {
 										if (otherEntry.getValue() == Masu.BLACK) {
 											return false;
 										}
@@ -306,10 +354,10 @@ public class AngleloopSolver implements Solver {
 		/**
 		 * 3点の角度を計算する。
 		 */
-		public double getKakudo(Position pos1, Position pos2, Position pivot) {
+		public int getKakudo(Position pos1, Position pos2, Position pivot) {
 			double angle1 = Math.atan2(pos1.getxIndex() - pivot.getxIndex(), pos1.getyIndex() - pivot.getyIndex());
 			double angle2 = Math.atan2(pos2.getxIndex() - pivot.getxIndex(), pos2.getyIndex() - pivot.getyIndex());
-			return Math.toDegrees(angle1 - angle2);
+			return (int) Math.round(Math.toDegrees(angle1 - angle2));
 		}
 
 		/**
@@ -322,7 +370,7 @@ public class AngleloopSolver implements Solver {
 		}
 
 		/**
-		 * 2方向が確定している記号をつなぎ、全記号が回収できるか調査する。
+		 * 記号をできるだけつなぎ、全記号が回収できるか調査する。
 		 * 回収できない候補があったらfalseを返す。
 		 */
 		public boolean connectSolve() {
@@ -421,10 +469,10 @@ public class AngleloopSolver implements Solver {
 			}
 		}
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
-		System.out.println("難易度:" + (count));
+		System.out.println("難易度:" + (count * count / 100));
 		System.out.println(field);
 		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count).toString();
+				+ Difficulty.getByCount(count * count / 100).toString();
 	}
 
 	/**
@@ -432,7 +480,6 @@ public class AngleloopSolver implements Solver {
 	 * @param posSet
 	 */
 	private boolean candSolve(Field field, int recursive) {
-		System.out.println(field);
 		while (true) {
 			String befStr = field.getStateDump();
 			for (Entry<Position, Map<Position, Masu>> entry : field.candidates.entrySet()) {

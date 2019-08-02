@@ -230,7 +230,6 @@ public class ShugakuSolver implements Solver {
 
 		/**
 		 * 枕があるマスは白であり、黒マスは枕がない。
-		 * また、白マスと黒マスの間は必ず壁で隔て、黒マスと黒マスの間は必ず壁を隔てない。
 		 * 違反した場合falseを返す。
 		 */
 		private boolean blackWhiteSolve() {
@@ -248,63 +247,6 @@ public class ShugakuSolver implements Solver {
 								return false;
 							}
 							masu[yIndex][xIndex] = Masu.NOT_BLACK;
-						}
-						Masu myMasu = masu[yIndex][xIndex];
-						Masu masuUp = yIndex == 0 ? Masu.SPACE : masu[yIndex - 1][xIndex];
-						if ((myMasu == Masu.NOT_BLACK && masuUp == Masu.BLACK) ||
-								(myMasu == Masu.BLACK && masuUp == Masu.NOT_BLACK)) {
-							if (tateWall[yIndex - 1][xIndex] == Wall.NOT_EXISTS) {
-								return false;
-							}
-							tateWall[yIndex - 1][xIndex] = Wall.EXISTS;
-						}
-						if (myMasu == Masu.BLACK && masuUp == Masu.BLACK) {
-							if (tateWall[yIndex - 1][xIndex] == Wall.EXISTS) {
-								return false;
-							}
-							tateWall[yIndex - 1][xIndex] = Wall.NOT_EXISTS;
-						}
-						Masu masuRight = xIndex == getXLength() - 1 ? Masu.SPACE : masu[yIndex][xIndex + 1];
-						if ((myMasu == Masu.NOT_BLACK && masuRight == Masu.BLACK) ||
-								(myMasu == Masu.BLACK && masuRight == Masu.NOT_BLACK)) {
-							if (yokoWall[yIndex][xIndex] == Wall.NOT_EXISTS) {
-								return false;
-							}
-							yokoWall[yIndex][xIndex] = Wall.EXISTS;
-						}
-						if (myMasu == Masu.BLACK && masuRight == Masu.BLACK) {
-							if (yokoWall[yIndex][xIndex] == Wall.EXISTS) {
-								return false;
-							}
-							yokoWall[yIndex][xIndex] = Wall.NOT_EXISTS;
-						}
-						Masu masuDown = yIndex == getYLength() - 1 ? Masu.SPACE : masu[yIndex + 1][xIndex];
-						if ((myMasu == Masu.NOT_BLACK && masuDown == Masu.BLACK) ||
-								(myMasu == Masu.BLACK && masuDown == Masu.NOT_BLACK)) {
-							if (tateWall[yIndex][xIndex] == Wall.NOT_EXISTS) {
-								return false;
-							}
-							tateWall[yIndex][xIndex] = Wall.EXISTS;
-						}
-						if (myMasu == Masu.BLACK && masuDown == Masu.BLACK) {
-							if (tateWall[yIndex][xIndex] == Wall.EXISTS) {
-								return false;
-							}
-							tateWall[yIndex][xIndex] = Wall.NOT_EXISTS;
-						}
-						Masu masuLeft = xIndex == 0 ? Masu.SPACE : masu[yIndex][xIndex - 1];
-						if ((myMasu == Masu.NOT_BLACK && masuLeft == Masu.BLACK) ||
-								(myMasu == Masu.BLACK && masuLeft == Masu.NOT_BLACK)) {
-							if (yokoWall[yIndex][xIndex - 1] == Wall.NOT_EXISTS) {
-								return false;
-							}
-							yokoWall[yIndex][xIndex - 1] = Wall.EXISTS;
-						}
-						if (myMasu == Masu.BLACK && masuLeft == Masu.BLACK) {
-							if (yokoWall[yIndex][xIndex - 1] == Wall.EXISTS) {
-								return false;
-							}
-							yokoWall[yIndex][xIndex - 1] = Wall.NOT_EXISTS;
 						}
 					}
 				}
@@ -426,13 +368,13 @@ public class ShugakuSolver implements Solver {
 		}
 
 		/**
-		 * 数字マスでない白マスは必ず壁の数が3個になる。
+		 * 数字マスでない白マスは必ず壁の数が3個に、黒マスは壁の数が4枚になる。
 		 * かつ、枕のある白マスは必ず下の壁が閉じる。違反した場合はfalseを返す。
 		 */
 		private boolean wallSolve() {
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					if (numbers[yIndex][xIndex] == null && masu[yIndex][xIndex] != Masu.BLACK) {
+					if (numbers[yIndex][xIndex] == null) {
 						int exists = 0;
 						int notExists = 0;
 						Wall wallUp = yIndex == 0 ? Wall.EXISTS : tateWall[yIndex - 1][xIndex];
@@ -459,6 +401,15 @@ public class ShugakuSolver implements Solver {
 						} else if (wallLeft == Wall.NOT_EXISTS) {
 							notExists++;
 						}
+						if (masu[yIndex][xIndex] == Masu.SPACE) {
+							if (notExists > 1) {
+								return false;
+							} else if (notExists > 0) {
+								masu[yIndex][xIndex] = Masu.NOT_BLACK;
+							} else if (exists == 4) {
+								masu[yIndex][xIndex] = Masu.BLACK;
+							}
+						}
 						if (masu[yIndex][xIndex] == Masu.NOT_BLACK) {
 							if (notExists > 1 || exists == 4) {
 								return false;
@@ -469,7 +420,7 @@ public class ShugakuSolver implements Solver {
 							if (wallDown == Wall.SPACE && makura[yIndex][xIndex] == Masu.BLACK) {
 								tateWall[yIndex][xIndex] = Wall.EXISTS;
 							}
-							if (notExists == 1 && exists == 2) {
+							if (notExists == 1) {
 								if (wallUp == Wall.SPACE) {
 									tateWall[yIndex - 1][xIndex] = Wall.EXISTS;
 								}
@@ -497,9 +448,22 @@ public class ShugakuSolver implements Solver {
 									yokoWall[yIndex][xIndex - 1] = Wall.NOT_EXISTS;
 								}
 							}
-						} else if (masu[yIndex][xIndex] == Masu.SPACE) {
-							if (notExists > 1 || exists == 4) {
-								masu[yIndex][xIndex] = Masu.BLACK;
+						} else if (masu[yIndex][xIndex] == Masu.BLACK) {
+							if (notExists > 0) {
+								return false;
+							} else if (exists != 4) {
+								if (wallUp == Wall.SPACE) {
+									tateWall[yIndex - 1][xIndex] = Wall.EXISTS;
+								}
+								if (wallRight == Wall.SPACE) {
+									yokoWall[yIndex][xIndex] = Wall.EXISTS;
+								}
+								if (wallDown == Wall.SPACE) {
+									tateWall[yIndex][xIndex] = Wall.EXISTS;
+								}
+								if (wallLeft == Wall.SPACE) {
+									yokoWall[yIndex][xIndex - 1] = Wall.EXISTS;
+								}
 							}
 						}
 					}
@@ -640,14 +604,13 @@ public class ShugakuSolver implements Solver {
 		}
 
 		/**
-		 * posを起点に上下左右の壁なし確定の黒でないマスつなぐ。サイズが2の場合のみtrueを返す。
+		 * posを起点に上下左右の壁なし確定のマスをつなぐ。サイズが2の場合のみtrueを返す。
 		 */
 		private boolean setContinueWhitePosSet(Position pos, Set<Position> continuePosSet, Direction from) {
 			if (pos.getyIndex() != 0 && from != Direction.UP) {
 				Position nextPos = new Position(pos.getyIndex() - 1, pos.getxIndex());
 				if (!continuePosSet.contains(nextPos)
-						&& tateWall[pos.getyIndex() - 1][pos.getxIndex()] == Wall.NOT_EXISTS
-						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.BLACK) {
+						&& tateWall[pos.getyIndex() - 1][pos.getxIndex()] == Wall.NOT_EXISTS) {
 					continuePosSet.add(nextPos);
 					if (!setContinueWhitePosSet(nextPos, continuePosSet, Direction.DOWN)) {
 						return false;
@@ -656,8 +619,8 @@ public class ShugakuSolver implements Solver {
 			}
 			if (pos.getxIndex() != getXLength() - 1 && from != Direction.RIGHT) {
 				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() + 1);
-				if (!continuePosSet.contains(nextPos) && yokoWall[pos.getyIndex()][pos.getxIndex()] == Wall.NOT_EXISTS
-						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.BLACK) {
+				if (!continuePosSet.contains(nextPos)
+						&& yokoWall[pos.getyIndex()][pos.getxIndex()] == Wall.NOT_EXISTS) {
 					continuePosSet.add(nextPos);
 					if (!setContinueWhitePosSet(nextPos, continuePosSet, Direction.LEFT)) {
 						return false;
@@ -666,8 +629,8 @@ public class ShugakuSolver implements Solver {
 			}
 			if (pos.getyIndex() != getYLength() - 1 && from != Direction.DOWN) {
 				Position nextPos = new Position(pos.getyIndex() + 1, pos.getxIndex());
-				if (!continuePosSet.contains(nextPos) && tateWall[pos.getyIndex()][pos.getxIndex()] == Wall.NOT_EXISTS
-						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.BLACK) {
+				if (!continuePosSet.contains(nextPos)
+						&& tateWall[pos.getyIndex()][pos.getxIndex()] == Wall.NOT_EXISTS) {
 					continuePosSet.add(nextPos);
 					if (!setContinueWhitePosSet(nextPos, continuePosSet, Direction.UP)) {
 						return false;
@@ -677,8 +640,7 @@ public class ShugakuSolver implements Solver {
 			if (pos.getxIndex() != 0 && from != Direction.LEFT) {
 				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() - 1);
 				if (!continuePosSet.contains(nextPos)
-						&& yokoWall[pos.getyIndex()][pos.getxIndex() - 1] == Wall.NOT_EXISTS
-						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.BLACK) {
+						&& yokoWall[pos.getyIndex()][pos.getxIndex() - 1] == Wall.NOT_EXISTS) {
 					continuePosSet.add(nextPos);
 					if (!setContinueWhitePosSet(nextPos, continuePosSet, Direction.RIGHT)) {
 						return false;
@@ -717,7 +679,7 @@ public class ShugakuSolver implements Solver {
 		private void setContinuePosSet(Position pos, Set<Position> continuePosSet, Direction from) {
 			if (pos.getyIndex() != 0 && from != Direction.UP) {
 				Position nextPos = new Position(pos.getyIndex() - 1, pos.getxIndex());
-				if (!continuePosSet.contains(nextPos) && tateWall[pos.getyIndex() - 1][pos.getxIndex()] != Wall.EXISTS
+				if (!continuePosSet.contains(nextPos)
 						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.NOT_BLACK) {
 					continuePosSet.add(nextPos);
 					setContinuePosSet(nextPos, continuePosSet, Direction.DOWN);
@@ -725,7 +687,7 @@ public class ShugakuSolver implements Solver {
 			}
 			if (pos.getxIndex() != getXLength() - 1 && from != Direction.RIGHT) {
 				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() + 1);
-				if (!continuePosSet.contains(nextPos) && yokoWall[pos.getyIndex()][pos.getxIndex()] != Wall.EXISTS
+				if (!continuePosSet.contains(nextPos)
 						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.NOT_BLACK) {
 					continuePosSet.add(nextPos);
 					setContinuePosSet(nextPos, continuePosSet, Direction.LEFT);
@@ -733,7 +695,7 @@ public class ShugakuSolver implements Solver {
 			}
 			if (pos.getyIndex() != getYLength() - 1 && from != Direction.DOWN) {
 				Position nextPos = new Position(pos.getyIndex() + 1, pos.getxIndex());
-				if (!continuePosSet.contains(nextPos) && tateWall[pos.getyIndex()][pos.getxIndex()] != Wall.EXISTS
+				if (!continuePosSet.contains(nextPos)
 						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.NOT_BLACK) {
 					continuePosSet.add(nextPos);
 					setContinuePosSet(nextPos, continuePosSet, Direction.UP);
@@ -741,7 +703,7 @@ public class ShugakuSolver implements Solver {
 			}
 			if (pos.getxIndex() != 0 && from != Direction.LEFT) {
 				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() - 1);
-				if (!continuePosSet.contains(nextPos) && yokoWall[pos.getyIndex()][pos.getxIndex() - 1] != Wall.EXISTS
+				if (!continuePosSet.contains(nextPos)
 						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.NOT_BLACK) {
 					continuePosSet.add(nextPos);
 					setContinuePosSet(nextPos, continuePosSet, Direction.RIGHT);
@@ -843,10 +805,10 @@ public class ShugakuSolver implements Solver {
 			}
 		}
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
-		System.out.println("難易度:" + (count / 3));
+		System.out.println("難易度:" + (count / 2));
 		System.out.println(field);
 		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count / 3).toString();
+				+ Difficulty.getByCount(count / 2).toString();
 	}
 
 	/**
