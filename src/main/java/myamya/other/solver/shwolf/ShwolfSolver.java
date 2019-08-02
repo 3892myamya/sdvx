@@ -30,6 +30,18 @@ public class ShwolfSolver implements Solver {
 			return masu;
 		}
 
+		public boolean[][] getPiles() {
+			return piles;
+		}
+
+		public Wall[][] getYokoWall() {
+			return yokoWall;
+		}
+
+		public Wall[][] getTateWall() {
+			return tateWall;
+		}
+
 		public int getYLength() {
 			return masu.length;
 		}

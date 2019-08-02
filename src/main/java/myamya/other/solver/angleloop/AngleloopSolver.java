@@ -34,7 +34,7 @@ public class AngleloopSolver implements Solver {
 		// つなぎ方の候補
 		private Map<Position, Map<Position, Masu>> candidates;
 
-		public Angle[][] getNumbers() {
+		public Angle[][] getAngles() {
 			return angles;
 		}
 

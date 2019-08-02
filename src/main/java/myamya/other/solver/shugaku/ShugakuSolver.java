@@ -30,6 +30,10 @@ public class ShugakuSolver implements Solver {
 			return masu;
 		}
 
+		public Masu[][] getMakura() {
+			return makura;
+		}
+
 		public Wall[][] getYokoWall() {
 			return yokoWall;
 		}
