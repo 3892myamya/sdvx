@@ -23,6 +23,8 @@ public class FillominoSolver implements Solver {
 		// 縦をふさぐ壁が存在するか
 		// 0,0 = trueなら、0,0と1,0の間に壁があるという意味
 		private Wall[][] tateWall;
+		// 確定した部屋の位置情報。再調査しないことでスピードアップ
+		private Set<Position> fixedPosSet;
 
 		public Integer[][] getOriginNumbers() {
 			return originNumbers;
@@ -53,6 +55,7 @@ public class FillominoSolver implements Solver {
 			numbers = new Integer[height][width];
 			yokoWall = new Wall[height][width - 1];
 			tateWall = new Wall[height - 1][width];
+			fixedPosSet = new HashSet<>();
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength() - 1; xIndex++) {
 					yokoWall[yIndex][xIndex] = Wall.SPACE;
@@ -121,6 +124,7 @@ public class FillominoSolver implements Solver {
 					tateWall[yIndex][xIndex] = other.tateWall[yIndex][xIndex];
 				}
 			}
+			fixedPosSet = new HashSet<>(other.fixedPosSet);
 		}
 
 		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
@@ -207,6 +211,9 @@ public class FillominoSolver implements Solver {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
 					if (originNumbers[yIndex][xIndex] != null) {
 						Position pivot = new Position(yIndex, xIndex);
+						if (fixedPosSet.contains(pivot)) {
+							continue;
+						}
 						Set<Position> continueNotBlackPosSet = new HashSet<>();
 						continueNotBlackPosSet.add(pivot);
 						if (!checkAndSetContinuePosSet(pivot, continueNotBlackPosSet, null,
@@ -224,24 +231,19 @@ public class FillominoSolver implements Solver {
 						for (Position pos : continueWhitePosSet) {
 							numbers[pos.getyIndex()][pos.getxIndex()] = originNumbers[yIndex][xIndex];
 							if (originNumbers[yIndex][xIndex] == continueWhitePosSet.size()) {
+								fixedPosSet.addAll(continueWhitePosSet);
 								if (pos.getyIndex() != 0 && !continueWhitePosSet
 										.contains(new Position(pos.getyIndex() - 1, pos.getxIndex()))) {
 									tateWall[pos.getyIndex() - 1][pos.getxIndex()] = Wall.EXISTS;
 								}
-							}
-							if (originNumbers[yIndex][xIndex] == continueWhitePosSet.size()) {
 								if (pos.getxIndex() != getXLength() - 1 && !continueWhitePosSet
 										.contains(new Position(pos.getyIndex(), pos.getxIndex() + 1))) {
 									yokoWall[pos.getyIndex()][pos.getxIndex()] = Wall.EXISTS;
 								}
-							}
-							if (originNumbers[yIndex][xIndex] == continueWhitePosSet.size()) {
 								if (pos.getyIndex() != getYLength() - 1 && !continueWhitePosSet
 										.contains(new Position(pos.getyIndex() + 1, pos.getxIndex()))) {
 									tateWall[pos.getyIndex()][pos.getxIndex()] = Wall.EXISTS;
 								}
-							}
-							if (originNumbers[yIndex][xIndex] == continueWhitePosSet.size()) {
 								if (pos.getxIndex() != 0 && !continueWhitePosSet
 										.contains(new Position(pos.getyIndex(), pos.getxIndex() - 1))) {
 									yokoWall[pos.getyIndex()][pos.getxIndex() - 1] = Wall.EXISTS;
@@ -502,17 +504,19 @@ public class FillominoSolver implements Solver {
 		private boolean standAloneSolve() {
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					Position pivot = new Position(yIndex, xIndex);
-					Set<Position> continueNotBlackPosSet = new HashSet<>();
-					continueNotBlackPosSet.add(pivot);
-					if (!setContinuePosSetContainsNumber(pivot, continueNotBlackPosSet, null)) {
-						Set<Position> continueWhitePosSet = new HashSet<>();
-						continueWhitePosSet.add(pivot);
-						if (checkAndSetContinueWhitePosSet(pivot, continueWhitePosSet, null,
-								continueNotBlackPosSet.size())) {
-							if (continueWhitePosSet.size() == continueNotBlackPosSet.size()) {
-								for (Position pos : continueNotBlackPosSet) {
-									numbers[pos.getyIndex()][pos.getxIndex()] = continueNotBlackPosSet.size();
+					if (numbers[yIndex][xIndex] == null) {
+						Position pivot = new Position(yIndex, xIndex);
+						Set<Position> continueNotBlackPosSet = new HashSet<>();
+						continueNotBlackPosSet.add(pivot);
+						if (!setContinuePosSetContainsNumber(pivot, continueNotBlackPosSet, null)) {
+							Set<Position> continueWhitePosSet = new HashSet<>();
+							continueWhitePosSet.add(pivot);
+							if (checkAndSetContinueWhitePosSet(pivot, continueWhitePosSet, null,
+									continueNotBlackPosSet.size())) {
+								if (continueWhitePosSet.size() == continueNotBlackPosSet.size()) {
+									for (Position pos : continueNotBlackPosSet) {
+										numbers[pos.getyIndex()][pos.getxIndex()] = continueNotBlackPosSet.size();
+									}
 								}
 							}
 						}
