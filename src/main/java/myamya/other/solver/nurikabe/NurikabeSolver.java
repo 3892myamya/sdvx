@@ -685,7 +685,7 @@ public class NurikabeSolver implements Solver {
 	}
 
 	public static void main(String[] args) {
-		String url = "https://puzz.link/p?http://pzv.jp/p.html?nurikabe/10/10/wap1k2kck3sak8p9y6h"; //urlを入れれば試せる
+		String url = ""; //urlを入れれば試せる
 		String[] params = url.split("/");
 		int height = Integer.parseInt(params[params.length - 2]);
 		int width = Integer.parseInt(params[params.length - 3]);
