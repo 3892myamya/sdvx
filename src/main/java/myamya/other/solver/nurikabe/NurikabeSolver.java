@@ -145,19 +145,14 @@ public class NurikabeSolver implements Solver {
 						Position pivot = new Position(yIndex, xIndex);
 						Set<Position> continueNotBlackPosSet = new HashSet<>();
 						continueNotBlackPosSet.add(pivot);
-						setContinueNotBlackPosSet2(pivot, continueNotBlackPosSet, null);
-						if (numbers[yIndex][xIndex] > continueNotBlackPosSet.size()) {
+						if (!setContinueNotBlackPosSet2(numbers[yIndex][xIndex], pivot, continueNotBlackPosSet, null)) {
 							// サイズ不足
 							return false;
 						}
 						Set<Position> continueWhitePosSet = new HashSet<>();
 						continueWhitePosSet.add(pivot);
-						if (!setContinueWhitePosSet(pivot, continueWhitePosSet, null)) {
-							// 別部屋と連結
-							return false;
-						}
-						if (numbers[yIndex][xIndex] < continueWhitePosSet.size()) {
-							// サイズ超過
+						if (!setContinueWhitePosSet(numbers[yIndex][xIndex], pivot, continueWhitePosSet, null)) {
+							// 別部屋と連結またはサイズ超過
 							return false;
 						}
 						if (numbers[yIndex][xIndex] == continueWhitePosSet.size()) {
@@ -193,8 +188,14 @@ public class NurikabeSolver implements Solver {
 		/**
 		 * posを起点に上下左右に黒確定でないマスをつなげていくが、
 		 * 繋げたマスの前後左右(自分が元いたマス以外)に数字マスを発見した場合はつながない。
+		 * サイズが不足しないと分かった時点でtrueを返す。
+		 * @param
 		 */
-		private void setContinueNotBlackPosSet2(Position pos, Set<Position> continuePosSet, Direction from) {
+		private boolean setContinueNotBlackPosSet2(int size, Position pos, Set<Position> continuePosSet,
+				Direction from) {
+			if (continuePosSet.size() >= size) {
+				return true;
+			}
 			if (pos.getyIndex() != 0 && from != Direction.UP) {
 				Position nextPos = new Position(pos.getyIndex() - 1, pos.getxIndex());
 				if (!continuePosSet.contains(nextPos)
@@ -209,7 +210,9 @@ public class NurikabeSolver implements Solver {
 						// つながない
 					} else {
 						continuePosSet.add(nextPos);
-						setContinueNotBlackPosSet2(nextPos, continuePosSet, Direction.DOWN);
+						if (setContinueNotBlackPosSet2(size, nextPos, continuePosSet, Direction.DOWN)) {
+							return true;
+						}
 					}
 				}
 			}
@@ -227,7 +230,9 @@ public class NurikabeSolver implements Solver {
 						// つながない
 					} else {
 						continuePosSet.add(nextPos);
-						setContinueNotBlackPosSet2(nextPos, continuePosSet, Direction.LEFT);
+						if (setContinueNotBlackPosSet2(size, nextPos, continuePosSet, Direction.LEFT)) {
+							return true;
+						}
 					}
 				}
 			}
@@ -245,7 +250,9 @@ public class NurikabeSolver implements Solver {
 						// つながない
 					} else {
 						continuePosSet.add(nextPos);
-						setContinueNotBlackPosSet2(nextPos, continuePosSet, Direction.UP);
+						if (setContinueNotBlackPosSet2(size, nextPos, continuePosSet, Direction.UP)) {
+							return true;
+						}
 					}
 				}
 			}
@@ -263,10 +270,13 @@ public class NurikabeSolver implements Solver {
 						// つながない
 					} else {
 						continuePosSet.add(nextPos);
-						setContinueNotBlackPosSet2(nextPos, continuePosSet, Direction.RIGHT);
+						if (setContinueNotBlackPosSet2(size, nextPos, continuePosSet, Direction.RIGHT)) {
+							return true;
+						}
 					}
 				}
 			}
+			return false;
 		}
 
 		/**
@@ -305,33 +315,33 @@ public class NurikabeSolver implements Solver {
 		 */
 		public boolean connectSolve() {
 			Set<Position> blackPosSet = new HashSet<>();
-			Position typicalBlackPos = null;
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
 					if (masu[yIndex][xIndex] == Masu.BLACK) {
 						Position blackPos = new Position(yIndex, xIndex);
-						blackPosSet.add(blackPos);
-						if (typicalBlackPos == null) {
-							typicalBlackPos = blackPos;
+						if (blackPosSet.size() == 0) {
+							blackPosSet.add(blackPos);
+							setContinuePosSet(blackPos, blackPosSet, null);
+						} else {
+							if (!blackPosSet.contains(blackPos)) {
+								return false;
+							}
 						}
 					}
 				}
 			}
-			if (typicalBlackPos == null) {
-				return true;
-			} else {
-				Set<Position> continuePosSet = new HashSet<>();
-				continuePosSet.add(typicalBlackPos);
-				setContinuePosSet(typicalBlackPos, continuePosSet, null);
-				blackPosSet.removeAll(continuePosSet);
-				return blackPosSet.isEmpty();
-			}
+			return true;
 		}
 
 		/**
-		 * posを起点に上下左右に白確定のマスを無制限につなぎ、違う数字にたどり着いたらfalseを返す。
+		 * posを起点に上下左右に白確定のマスを無制限につなぎ、違う数字にたどり着いたり
+		 * 想定サイズを超過したらfalseを返す。
 		 */
-		private boolean setContinueWhitePosSet(Position pos, Set<Position> continuePosSet, Direction from) {
+		private boolean setContinueWhitePosSet(Integer size, Position pos, Set<Position> continuePosSet,
+				Direction from) {
+			if (continuePosSet.size() > size) {
+				return false;
+			}
 			if (pos.getyIndex() != 0 && from != Direction.UP) {
 				Position nextPos = new Position(pos.getyIndex() - 1, pos.getxIndex());
 				if (!continuePosSet.contains(nextPos)
@@ -340,7 +350,7 @@ public class NurikabeSolver implements Solver {
 						return false;
 					}
 					continuePosSet.add(nextPos);
-					if (!setContinueWhitePosSet(nextPos, continuePosSet, Direction.DOWN)) {
+					if (!setContinueWhitePosSet(size, nextPos, continuePosSet, Direction.DOWN)) {
 						return false;
 					}
 				}
@@ -353,7 +363,7 @@ public class NurikabeSolver implements Solver {
 						return false;
 					}
 					continuePosSet.add(nextPos);
-					if (!setContinueWhitePosSet(nextPos, continuePosSet, Direction.LEFT)) {
+					if (!setContinueWhitePosSet(size, nextPos, continuePosSet, Direction.LEFT)) {
 						return false;
 					}
 				}
@@ -366,7 +376,7 @@ public class NurikabeSolver implements Solver {
 						return false;
 					}
 					continuePosSet.add(nextPos);
-					if (!setContinueWhitePosSet(nextPos, continuePosSet, Direction.UP)) {
+					if (!setContinueWhitePosSet(size, nextPos, continuePosSet, Direction.UP)) {
 						return false;
 					}
 				}
@@ -379,7 +389,7 @@ public class NurikabeSolver implements Solver {
 						return false;
 					}
 					continuePosSet.add(nextPos);
-					if (!setContinueWhitePosSet(nextPos, continuePosSet, Direction.RIGHT)) {
+					if (!setContinueWhitePosSet(size, nextPos, continuePosSet, Direction.RIGHT)) {
 						return false;
 					}
 				}
@@ -433,7 +443,6 @@ public class NurikabeSolver implements Solver {
 				Position nextPos = new Position(pos.getyIndex() - 1, pos.getxIndex());
 				if (!continuePosSet.contains(nextPos)
 						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.BLACK) {
-
 					continuePosSet.add(nextPos);
 					setContinueNotBlackPosSet(nextPos, continuePosSet, Direction.DOWN);
 				}
@@ -664,32 +673,6 @@ public class NurikabeSolver implements Solver {
 
 	}
 
-	public static class Room {
-		@Override
-		public String toString() {
-			return "Room [capacity=" + capacity + ", pivot=" + pivot + "]";
-		}
-
-		// 白マスが何マスあるか。
-		private final int capacity;
-		// 部屋に属するマスの集合
-		private final Position pivot;
-
-		public Room(int capacity, Position pivot) {
-			this.capacity = capacity;
-			this.pivot = pivot;
-		}
-
-		public int getCapacity() {
-			return capacity;
-		}
-
-		public Position getPivot() {
-			return pivot;
-		}
-
-	}
-
 	private final Field field;
 	private int count;
 
@@ -702,7 +685,7 @@ public class NurikabeSolver implements Solver {
 	}
 
 	public static void main(String[] args) {
-		String url = ""; //urlを入れれば試せる
+		String url = "https://puzz.link/p?http://pzv.jp/p.html?nurikabe/10/10/wap1k2kck3sak8p9y6h"; //urlを入れれば試せる
 		String[] params = url.split("/");
 		int height = Integer.parseInt(params[params.length - 2]);
 		int width = Integer.parseInt(params[params.length - 3]);
@@ -752,9 +735,9 @@ public class NurikabeSolver implements Solver {
 							: field.masu[yIndex][xIndex + 1];
 					Masu masuDown = yIndex == field.getYLength() - 1 ? Masu.BLACK
 							: field.masu[yIndex + 1][xIndex];
-					Masu masuLeft = xIndex == 0  ? Masu.BLACK
+					Masu masuLeft = xIndex == 0 ? Masu.BLACK
 							: field.masu[yIndex][xIndex - 1];
-					int whiteCnt =0;
+					int whiteCnt = 0;
 					if (masuUp == Masu.SPACE) {
 						whiteCnt++;
 					}
