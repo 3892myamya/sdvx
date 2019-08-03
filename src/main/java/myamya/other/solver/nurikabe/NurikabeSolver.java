@@ -19,6 +19,8 @@ public class NurikabeSolver implements Solver {
 		private Masu[][] masu;
 		// 数字の情報
 		private final Integer[][] numbers;
+		// 確定した部屋の位置情報。再調査しないことでスピードアップ
+		private Set<Position> fixedPosSet;
 
 		public Masu[][] getMasu() {
 			return masu;
@@ -39,6 +41,7 @@ public class NurikabeSolver implements Solver {
 		public Field(int height, int width, String param) {
 			masu = new Masu[height][width];
 			numbers = new Integer[height][width];
+			fixedPosSet = new HashSet<>();
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
 					masu[yIndex][xIndex] = Masu.SPACE;
@@ -91,6 +94,7 @@ public class NurikabeSolver implements Solver {
 					masu[yIndex][xIndex] = other.masu[yIndex][xIndex];
 				}
 			}
+			fixedPosSet = new HashSet<>(other.fixedPosSet);
 		}
 
 		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
@@ -143,6 +147,9 @@ public class NurikabeSolver implements Solver {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
 					if (numbers[yIndex][xIndex] != null && numbers[yIndex][xIndex] != -1) {
 						Position pivot = new Position(yIndex, xIndex);
+						if (fixedPosSet.contains(pivot)) {
+							continue;
+						}
 						Set<Position> continueNotBlackPosSet = new HashSet<>();
 						continueNotBlackPosSet.add(pivot);
 						if (!setContinueNotBlackPosSet2(numbers[yIndex][xIndex], pivot, continueNotBlackPosSet, null)) {
@@ -156,6 +163,7 @@ public class NurikabeSolver implements Solver {
 							return false;
 						}
 						if (numbers[yIndex][xIndex] == continueWhitePosSet.size()) {
+							fixedPosSet.addAll(continueWhitePosSet);
 							for (Position pos : continueWhitePosSet) {
 								if (pos.getyIndex() != 0) {
 									if (masu[pos.getyIndex() - 1][pos.getxIndex()] == Masu.SPACE) {
@@ -436,15 +444,21 @@ public class NurikabeSolver implements Solver {
 		}
 
 		/**
-		 * posを起点に上下左右に黒確定でないマスを無制限につなげていく。
+		 * posを起点に上下左右に黒確定でないマスを無制限につなげていくが、
+		 * 数字を見つけた時点でtrueを返す。
 		 */
-		private void setContinueNotBlackPosSet(Position pos, Set<Position> continuePosSet, Direction from) {
+		private boolean setContinueNotBlackPosSet(Position pos, Set<Position> continuePosSet, Direction from) {
+			if (numbers[pos.getyIndex()][pos.getxIndex()] != null) {
+				return true;
+			}
 			if (pos.getyIndex() != 0 && from != Direction.UP) {
 				Position nextPos = new Position(pos.getyIndex() - 1, pos.getxIndex());
 				if (!continuePosSet.contains(nextPos)
 						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.BLACK) {
 					continuePosSet.add(nextPos);
-					setContinueNotBlackPosSet(nextPos, continuePosSet, Direction.DOWN);
+					if (setContinueNotBlackPosSet(nextPos, continuePosSet, Direction.DOWN)) {
+						return true;
+					}
 				}
 			}
 			if (pos.getxIndex() != getXLength() - 1 && from != Direction.RIGHT) {
@@ -452,7 +466,9 @@ public class NurikabeSolver implements Solver {
 				if (!continuePosSet.contains(nextPos)
 						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.BLACK) {
 					continuePosSet.add(nextPos);
-					setContinueNotBlackPosSet(nextPos, continuePosSet, Direction.LEFT);
+					if (setContinueNotBlackPosSet(nextPos, continuePosSet, Direction.LEFT)) {
+						return true;
+					}
 				}
 			}
 			if (pos.getyIndex() != getYLength() - 1 && from != Direction.DOWN) {
@@ -460,7 +476,9 @@ public class NurikabeSolver implements Solver {
 				if (!continuePosSet.contains(nextPos)
 						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.BLACK) {
 					continuePosSet.add(nextPos);
-					setContinueNotBlackPosSet(nextPos, continuePosSet, Direction.UP);
+					if (setContinueNotBlackPosSet(nextPos, continuePosSet, Direction.UP)) {
+						return true;
+					}
 				}
 			}
 			if (pos.getxIndex() != 0 && from != Direction.LEFT) {
@@ -468,9 +486,12 @@ public class NurikabeSolver implements Solver {
 				if (!continuePosSet.contains(nextPos)
 						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.BLACK) {
 					continuePosSet.add(nextPos);
-					setContinueNotBlackPosSet(nextPos, continuePosSet, Direction.RIGHT);
+					if (setContinueNotBlackPosSet(nextPos, continuePosSet, Direction.RIGHT)) {
+						return true;
+					}
 				}
 			}
+			return false;
 		}
 
 		/**
@@ -513,7 +534,8 @@ public class NurikabeSolver implements Solver {
 			Set<Position> whitePosSet = new HashSet<>();
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					if (masu[yIndex][xIndex] == Masu.NOT_BLACK) {
+					if (numbers[yIndex][xIndex] == null && masu[yIndex][xIndex] == Masu.NOT_BLACK
+							&& !fixedPosSet.contains(new Position(yIndex, xIndex))) {
 						whitePosSet.add(new Position(yIndex, xIndex));
 					}
 				}
@@ -522,15 +544,7 @@ public class NurikabeSolver implements Solver {
 				Position typicalWhitePos = new ArrayList<>(whitePosSet).get(0);
 				Set<Position> continuePosSet = new HashSet<>();
 				continuePosSet.add(typicalWhitePos);
-				setContinueNotBlackPosSet(typicalWhitePos, continuePosSet, null);
-				boolean numberExists = false;
-				for (Position pos : continuePosSet) {
-					if (numbers[pos.getyIndex()][pos.getxIndex()] != null) {
-						numberExists = true;
-						break;
-					}
-				}
-				if (!numberExists) {
+				if (!setContinueNotBlackPosSet(typicalWhitePos, continuePosSet, null)) {
 					return false;
 				}
 				whitePosSet.removeAll(continuePosSet);
@@ -714,10 +728,10 @@ public class NurikabeSolver implements Solver {
 			}
 		}
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
-		System.out.println("難易度:" + (count));
+		System.out.println("難易度:" + (count / 2));
 		System.out.println(field);
 		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count).toString();
+				+ Difficulty.getByCount(count / 2).toString();
 	}
 
 	/**

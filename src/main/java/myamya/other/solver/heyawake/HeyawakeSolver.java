@@ -541,31 +541,26 @@ public class HeyawakeSolver implements Solver {
 		}
 
 		/**
-		 * 白マスが1つながりになっていない場合falseを返す。
+		 * 白マスがひとつながりにならない場合Falseを返す。
 		 */
 		public boolean connectSolve() {
 			Set<Position> whitePosSet = new HashSet<>();
-			Position typicalWhitePos = null;
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
 					if (masu[yIndex][xIndex] == Masu.NOT_BLACK) {
 						Position whitePos = new Position(yIndex, xIndex);
-						whitePosSet.add(whitePos);
-						if (typicalWhitePos == null) {
-							typicalWhitePos = whitePos;
+						if (whitePosSet.size() == 0) {
+							whitePosSet.add(whitePos);
+							setContinueWhitePosSet(whitePos, whitePosSet, null);
+						} else {
+							if (!whitePosSet.contains(whitePos)) {
+								return false;
+							}
 						}
 					}
 				}
 			}
-			if (typicalWhitePos == null) {
-				return true;
-			} else {
-				Set<Position> continuePosSet = new HashSet<>();
-				continuePosSet.add(typicalWhitePos);
-				setContinueWhitePosSet(typicalWhitePos, continuePosSet, null);
-				whitePosSet.removeAll(continuePosSet);
-				return whitePosSet.isEmpty();
-			}
+			return true;
 		}
 
 		/**
