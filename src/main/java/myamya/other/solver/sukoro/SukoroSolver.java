@@ -25,7 +25,7 @@ public class SukoroSolver implements Solver {
 			return numbersCand;
 		}
 
-		public Integer[][] getArrows() {
+		public Integer[][] getNumbers() {
 			return numbers;
 		}
 
