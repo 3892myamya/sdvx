@@ -199,7 +199,6 @@ public class SudokuSolver implements Solver {
 			int index = 0;
 			long start = System.nanoTime();
 			while (!wkField.isSolved()) {
-				System.out.println(wkField);
 				int yIndex = index / 9;
 				int xIndex = index % 9;
 				if (wkField.numbersCand[yIndex][xIndex].size() != 0) {
@@ -232,7 +231,32 @@ public class SudokuSolver implements Solver {
 						virtual.numbersCand[pos.getyIndex()][pos.getxIndex()].add(number + 1);
 					}
 				}
-				String solveResult = new SudokuSolver(virtual) {
+				int solveResult = new SudokuSolver(virtual) {
+					public int solve2() {
+						while (!field.isSolved()) {
+							String befStr = field.getStateDump();
+							if (!field.solveAndCheck()) {
+								return -1;
+							}
+							count = count + field.cnt;
+							field.cnt = 0;
+							if (field.getStateDump().equals(befStr)) {
+								if (!candSolve(field, 0)) {
+									return -1;
+								}
+								if (field.getStateDump().equals(befStr)) {
+									if (!candSolve(field, 1)) {
+										return -1;
+									}
+									if (field.getStateDump().equals(befStr)) {
+										return -1;
+									}
+								}
+							}
+						}
+						int level = (int) Math.sqrt(count) - 10;
+						return  (level < 1 ? 1 : level);
+					}
 					@Override
 					protected boolean candSolve(Field field, int recursive) {
 						if (this.count >= 100000) {
@@ -241,20 +265,18 @@ public class SudokuSolver implements Solver {
 							return super.candSolve(field, recursive);
 						}
 					}
-				}.solve();
-				if (solveResult.contains("解けました")) {
+				}.solve2();
+				if (solveResult != -1) {
 					for (Position pos : hintPattern.getPosSet(numIdx)) {
 						wkField.numbersCand[pos.getyIndex()][pos.getxIndex()] = new ArrayList<>();
 						for (int number = 0; number < wkField.getYLength(); number++) {
 							wkField.numbersCand[pos.getyIndex()][pos.getxIndex()].add(number + 1);
 						}
-						level = Integer.parseInt(solveResult.split(":")[1]);
+						level = solveResult;
 					}
 				}
 			}
 			Field field = new Field(wkField.numbersCand);
-			System.out.println(level);
-			System.out.println(field);
 			String status = "Lv:" + level + "の問題を獲得！(ヒント数" + field.getHintCount() + ")";
 			String url = field.getPuzPreURL();
 			String link = "<a href=\"" + url + "\" target=\"_blank\">ぱずぷれv3で解く</a>";
@@ -335,6 +357,9 @@ public class SudokuSolver implements Solver {
 			}
 			sb.append("</svg>");
 			System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
+			System.out.println(level);
+			System.out.println(field.getHintCount() );
+			System.out.println(field);
 			String txt = field.getTxt();
 			return new SudokuGeneratorResult(status, sb.toString(), link, url, level, txt);
 
@@ -715,7 +740,7 @@ public class SudokuSolver implements Solver {
 
 	}
 
-	private final Field field;
+	protected final Field field;
 	private final boolean isExtended;
 	protected int count;
 
@@ -782,7 +807,6 @@ public class SudokuSolver implements Solver {
 		System.out.println("難易度:" + (count));
 		System.out.println(field);
 		return "解けました。推定難易度:" + (level < 1 ? 1 : level);
-
 	}
 
 	/**
