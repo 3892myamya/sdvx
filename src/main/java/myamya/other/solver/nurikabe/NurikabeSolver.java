@@ -197,7 +197,6 @@ public class NurikabeSolver implements Solver {
 		 * posを起点に上下左右に黒確定でないマスをつなげていくが、
 		 * 繋げたマスの前後左右(自分が元いたマス以外)に数字マスを発見した場合はつながない。
 		 * サイズが不足しないと分かった時点でtrueを返す。
-		 * @param
 		 */
 		private boolean setContinueNotBlackPosSet2(int size, Position pos, Set<Position> continuePosSet,
 				Direction from) {
