@@ -55,6 +55,7 @@ public class MochikoroSolver implements Solver {
 					int capacity;
 					if (ch == '.') {
 						Position pos = new Position(index / getXLength(), index % getXLength());
+						numbers[pos.getyIndex()][pos.getxIndex()] = -1;
 						masu[pos.getyIndex()][pos.getxIndex()] = Masu.NOT_BLACK;
 					} else {
 						if (ch == '-') {
@@ -102,13 +103,16 @@ public class MochikoroSolver implements Solver {
 					if (numbers[yIndex][xIndex] != null) {
 						if (numbers[yIndex][xIndex] > 99) {
 							sb.append("99");
-						}
-						String capacityStr = String.valueOf(numbers[yIndex][xIndex]);
-						int index = HALF_NUMS.indexOf(capacityStr);
-						if (index >= 0) {
-							sb.append(FULL_NUMS.substring(index / 2, index / 2 + 1));
+						} else if (numbers[yIndex][xIndex] == -1) {
+							sb.append("？");
 						} else {
-							sb.append(capacityStr);
+							String capacityStr = String.valueOf(numbers[yIndex][xIndex]);
+							int index = HALF_NUMS.indexOf(capacityStr);
+							if (index >= 0) {
+								sb.append(FULL_NUMS.substring(index / 2, index / 2 + 1));
+							} else {
+								sb.append(capacityStr);
+							}
 						}
 					} else {
 						sb.append(masu[yIndex][xIndex]);
@@ -136,7 +140,7 @@ public class MochikoroSolver implements Solver {
 		public boolean roomSolve() {
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					if (numbers[yIndex][xIndex] != null) {
+					if (numbers[yIndex][xIndex] != null && numbers[yIndex][xIndex] != -1) {
 						Position pivot = new Position(yIndex, xIndex);
 						if (fixedPosSet.contains(pivot)) {
 							continue;
@@ -417,7 +421,7 @@ public class MochikoroSolver implements Solver {
 							return false;
 						}
 						masu[yIndex][xIndex] = Masu.NOT_BLACK;
-						if (numbers[yIndex][xIndex] != null) {
+						if (numbers[yIndex][xIndex] != null && numbers[yIndex][xIndex] != -1) {
 							if (number != 0) {
 								return false;
 							}
@@ -694,7 +698,7 @@ public class MochikoroSolver implements Solver {
 	}
 
 	public static void main(String[] args) {
-		String url = "http://pzv.jp/p.html?mochikoro/8/9/h4l4j4w4k4p4s4g4l"; //urlを入れれば試せる
+		String url = ""; //urlを入れれば試せる
 		String[] params = url.split("/");
 		int height = Integer.parseInt(params[params.length - 2]);
 		int width = Integer.parseInt(params[params.length - 3]);
