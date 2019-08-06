@@ -332,7 +332,9 @@ public class PencilsSolver implements Solver {
 					if (numbers[yIndex][xIndex] != null) {
 						int upSpaceCnt = 0;
 						for (int targetY = yIndex - 1; targetY >= 0; targetY--) {
-							if (numbers[targetY][xIndex] != null || tateWall[targetY][xIndex] == Wall.EXISTS
+							if ((numbers[targetY][xIndex] != null
+									&& numbers[targetY][xIndex] != numbers[yIndex][xIndex])
+									|| tateWall[targetY][xIndex] == Wall.EXISTS
 									|| masu[targetY][xIndex] == Masu.BLACK) {
 								break;
 							}
@@ -340,7 +342,9 @@ public class PencilsSolver implements Solver {
 						}
 						int rightSpaceCnt = 0;
 						for (int targetX = xIndex + 1; targetX < getXLength(); targetX++) {
-							if (numbers[yIndex][targetX] != null || yokoWall[yIndex][targetX - 1] == Wall.EXISTS
+							if ((numbers[yIndex][targetX] != null
+									&& numbers[yIndex][targetX] != numbers[yIndex][xIndex])
+									|| yokoWall[yIndex][targetX - 1] == Wall.EXISTS
 									|| masu[yIndex][targetX] == Masu.BLACK) {
 								break;
 							}
@@ -348,7 +352,9 @@ public class PencilsSolver implements Solver {
 						}
 						int downSpaceCnt = 0;
 						for (int targetY = yIndex + 1; targetY < getYLength(); targetY++) {
-							if (numbers[targetY][xIndex] != null || tateWall[targetY - 1][xIndex] == Wall.EXISTS
+							if ((numbers[targetY][xIndex] != null
+									&& numbers[targetY][xIndex] != numbers[yIndex][xIndex])
+									|| tateWall[targetY - 1][xIndex] == Wall.EXISTS
 									|| masu[targetY][xIndex] == Masu.BLACK) {
 								break;
 							}
@@ -356,7 +362,9 @@ public class PencilsSolver implements Solver {
 						}
 						int leftSpaceCnt = 0;
 						for (int targetX = xIndex - 1; targetX >= 0; targetX--) {
-							if (numbers[yIndex][targetX] != null || yokoWall[yIndex][targetX] == Wall.EXISTS
+							if ((numbers[yIndex][targetX] != null
+									&& numbers[yIndex][targetX] != numbers[yIndex][xIndex])
+									|| yokoWall[yIndex][targetX] == Wall.EXISTS
 									|| masu[yIndex][targetX] == Masu.BLACK) {
 								break;
 							}
@@ -412,7 +420,9 @@ public class PencilsSolver implements Solver {
 					if (numbers[yIndex][xIndex] != null) {
 						int upWhiteCnt = 0;
 						for (int targetY = yIndex - 1; targetY >= 0; targetY--) {
-							if (numbers[targetY][xIndex] != null || tateWall[targetY][xIndex] != Wall.NOT_EXISTS
+							if ((numbers[targetY][xIndex] != null
+									&& numbers[targetY][xIndex] != numbers[yIndex][xIndex])
+									|| tateWall[targetY][xIndex] != Wall.NOT_EXISTS
 									|| masu[targetY][xIndex] != Masu.NOT_BLACK) {
 								break;
 							}
@@ -420,7 +430,9 @@ public class PencilsSolver implements Solver {
 						}
 						int rightWhiteCnt = 0;
 						for (int targetX = xIndex + 1; targetX < getXLength(); targetX++) {
-							if (numbers[yIndex][targetX] != null || yokoWall[yIndex][targetX - 1] != Wall.NOT_EXISTS
+							if ((numbers[yIndex][targetX] != null
+									&& numbers[yIndex][targetX] != numbers[yIndex][xIndex])
+									|| yokoWall[yIndex][targetX - 1] != Wall.NOT_EXISTS
 									|| masu[yIndex][targetX] != Masu.NOT_BLACK) {
 								break;
 							}
@@ -428,7 +440,9 @@ public class PencilsSolver implements Solver {
 						}
 						int downWhiteCnt = 0;
 						for (int targetY = yIndex + 1; targetY < getYLength(); targetY++) {
-							if (numbers[targetY][xIndex] != null || tateWall[targetY - 1][xIndex] != Wall.NOT_EXISTS
+							if ((numbers[targetY][xIndex] != null
+									&& numbers[targetY][xIndex] != numbers[yIndex][xIndex])
+									|| tateWall[targetY - 1][xIndex] != Wall.NOT_EXISTS
 									|| masu[targetY][xIndex] != Masu.NOT_BLACK) {
 								break;
 							}
@@ -436,7 +450,9 @@ public class PencilsSolver implements Solver {
 						}
 						int leftWhiteCnt = 0;
 						for (int targetX = xIndex - 1; targetX >= 0; targetX--) {
-							if (numbers[yIndex][targetX] != null || yokoWall[yIndex][targetX] != Wall.NOT_EXISTS
+							if ((numbers[yIndex][targetX] != null
+									&& numbers[yIndex][targetX] != numbers[yIndex][xIndex])
+									|| yokoWall[yIndex][targetX] != Wall.NOT_EXISTS
 									|| masu[yIndex][targetX] != Masu.NOT_BLACK) {
 								break;
 							}
@@ -525,22 +541,220 @@ public class PencilsSolver implements Solver {
 		}
 
 		/**
-		 * 白マスと黒マスは必ず1箇所で接続し黒マスの長さは白マスの長さ+1になる。
-		 * 白マスと黒マスが複数回入れ替わったり、長さの条件を満たさなければfalseを返す。
+		 * 部屋のサイズは3以上(数字がある場合は必ず数字*2+1)の奇数となる。
+		 * また、部屋は黒マスが必ず白マスより1つだけ多くなり、
+		 * かつ、部屋の中で白と黒が連続して複数回入れ替わってはならない。
+		 * 部屋が既定サイズに到達している場合、周囲を壁で埋める。
 		 */
-		public boolean pencilSolve() {
-			Set<Position> alreadyServeyPosSet = new HashSet<>();
+		public boolean roomSolve() {
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					if (masu[yIndex][xIndex] == Masu.NOT_BLACK) {
-						Position pivot = new Position(yIndex, xIndex);
-					} else if (masu[yIndex][xIndex] == Masu.BLACK) {
-						Position pivot = new Position(yIndex, xIndex);
+					Position pivot = new Position(yIndex, xIndex);
+					Set<Position> continueNotBlackPosSet = new HashSet<>();
+					continueNotBlackPosSet.add(pivot);
+					checkAndSetContinuePosSet(pivot, continueNotBlackPosSet, null);
+					if (continueNotBlackPosSet.size() < (numbers[yIndex][xIndex] == null ? 3
+							: numbers[yIndex][xIndex] * 2 + 1)) {
+						// サイズ不足
+						return false;
+					}
+					Set<Position> continueWhitePosSet = new HashSet<>();
+					continueWhitePosSet.add(pivot);
+					if (!checkAndSetContinueWhitePosSet(pivot, continueWhitePosSet, null,
+							numbers[yIndex][xIndex] == null ? Integer.MAX_VALUE : numbers[yIndex][xIndex] * 2 + 1,
+							masu[pivot.getyIndex()][pivot.getxIndex()] == Masu.NOT_BLACK,
+							masu[pivot.getyIndex()][pivot.getxIndex()] == Masu.BLACK)) {
+						// 複数回入れ替わりまたはサイズ超過
+						return false;
+					}
+					if (continueNotBlackPosSet.size() == continueWhitePosSet.size() ||
+							(numbers[yIndex][xIndex] != null
+									&& numbers[yIndex][xIndex] * 2 + 1 == continueWhitePosSet.size())) {
+						if (continueWhitePosSet.size() % 2 == 0) {
+							// 部屋の大きさは偶数には絶対ならない
+							return false;
+						}
+						// 部屋確定時の処理
+						int whiteCnt = 0;
+						int blackCnt = 0;
+						int spaceCnt = 0;
+						for (Position pos : continueWhitePosSet) {
+							if (masu[pos.getyIndex()][pos.getxIndex()] == Masu.NOT_BLACK) {
+								whiteCnt++;
+							} else if (masu[pos.getyIndex()][pos.getxIndex()] == Masu.BLACK) {
+								blackCnt++;
+							} else if (masu[pos.getyIndex()][pos.getxIndex()] == Masu.SPACE) {
+								spaceCnt++;
+							}
+							if (pos.getyIndex() != 0 && !continueWhitePosSet
+									.contains(new Position(pos.getyIndex() - 1, pos.getxIndex()))) {
+								tateWall[pos.getyIndex() - 1][pos.getxIndex()] = Wall.EXISTS;
+							}
+							if (pos.getxIndex() != getXLength() - 1 && !continueWhitePosSet
+									.contains(new Position(pos.getyIndex(), pos.getxIndex() + 1))) {
+								yokoWall[pos.getyIndex()][pos.getxIndex()] = Wall.EXISTS;
+							}
+							if (pos.getyIndex() != getYLength() - 1 && !continueWhitePosSet
+									.contains(new Position(pos.getyIndex() + 1, pos.getxIndex()))) {
+								tateWall[pos.getyIndex()][pos.getxIndex()] = Wall.EXISTS;
+							}
+							if (pos.getxIndex() != 0 && !continueWhitePosSet
+									.contains(new Position(pos.getyIndex(), pos.getxIndex() - 1))) {
+								yokoWall[pos.getyIndex()][pos.getxIndex() - 1] = Wall.EXISTS;
+							}
+						}
+						if (whiteCnt + 1 > blackCnt + spaceCnt) {
+							return false;
+						} else if (blackCnt > whiteCnt + 1 + spaceCnt) {
+							return false;
+						} else if (whiteCnt + 1 == blackCnt + spaceCnt) {
+							for (Position pos : continueWhitePosSet) {
+								if (masu[pos.getyIndex()][pos.getxIndex()] == Masu.SPACE) {
+									masu[pos.getyIndex()][pos.getxIndex()] = Masu.BLACK;
+								}
+							}
+						} else if (blackCnt == whiteCnt + 1 + spaceCnt) {
+							for (Position pos : continueWhitePosSet) {
+								if (masu[pos.getyIndex()][pos.getxIndex()] == Masu.SPACE) {
+									masu[pos.getyIndex()][pos.getxIndex()] = Masu.NOT_BLACK;
+								}
+							}
+						}
 					}
 				}
 			}
 			return true;
 		}
+
+		/**
+		 * posを起点に上下左右に壁なし確定マスをつなぎ、サイズが超過したり、
+		 * 白と黒が複数回入れ替わったらfalseを返す。
+		 */
+		private boolean checkAndSetContinueWhitePosSet(Position pos, Set<Position> continuePosSet, Direction from,
+				int size, boolean findWhite, boolean findBlack) {
+			if (continuePosSet.size() > size) {
+				return false;
+			}
+			if (pos.getyIndex() != 0 && from != Direction.UP) {
+				Position nextPos = new Position(pos.getyIndex() - 1, pos.getxIndex());
+				if (tateWall[pos.getyIndex() - 1][pos.getxIndex()] == Wall.NOT_EXISTS
+						&& !continuePosSet.contains(nextPos)) {
+					if (findWhite && masu[pos.getyIndex()][pos.getxIndex()] == Masu.BLACK
+							&& masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.NOT_BLACK) {
+						return false;
+					}
+					if (findBlack && masu[pos.getyIndex()][pos.getxIndex()] == Masu.NOT_BLACK
+							&& masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.BLACK) {
+						return false;
+					}
+					continuePosSet.add(nextPos);
+					if (!checkAndSetContinueWhitePosSet(nextPos, continuePosSet, Direction.DOWN, size,
+							findWhite || masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.NOT_BLACK,
+							findBlack || masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.BLACK)) {
+						return false;
+					}
+				}
+			}
+			if (pos.getxIndex() != getXLength() - 1 && from != Direction.RIGHT) {
+				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() + 1);
+				if (yokoWall[pos.getyIndex()][pos.getxIndex()] == Wall.NOT_EXISTS
+						&& !continuePosSet.contains(nextPos)) {
+					if (findWhite && masu[pos.getyIndex()][pos.getxIndex()] == Masu.BLACK
+							&& masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.NOT_BLACK) {
+						return false;
+					}
+					if (findBlack && masu[pos.getyIndex()][pos.getxIndex()] == Masu.NOT_BLACK
+							&& masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.BLACK) {
+						return false;
+					}
+					continuePosSet.add(nextPos);
+					if (!checkAndSetContinueWhitePosSet(nextPos, continuePosSet, Direction.LEFT, size,
+							findWhite || masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.NOT_BLACK,
+							findBlack || masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.BLACK)) {
+						return false;
+					}
+				}
+			}
+			if (pos.getyIndex() != getYLength() - 1 && from != Direction.DOWN) {
+				Position nextPos = new Position(pos.getyIndex() + 1, pos.getxIndex());
+				if (tateWall[pos.getyIndex()][pos.getxIndex()] == Wall.NOT_EXISTS
+						&& !continuePosSet.contains(nextPos)) {
+					if (findWhite && masu[pos.getyIndex()][pos.getxIndex()] == Masu.BLACK
+							&& masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.NOT_BLACK) {
+						return false;
+					}
+					if (findBlack && masu[pos.getyIndex()][pos.getxIndex()] == Masu.NOT_BLACK
+							&& masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.BLACK) {
+						return false;
+					}
+					continuePosSet.add(nextPos);
+					if (!checkAndSetContinueWhitePosSet(nextPos, continuePosSet, Direction.UP, size,
+							findWhite || masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.NOT_BLACK,
+							findBlack || masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.BLACK)) {
+						return false;
+					}
+				}
+			}
+			if (pos.getxIndex() != 0 && from != Direction.LEFT) {
+				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() - 1);
+				if (yokoWall[pos.getyIndex()][pos.getxIndex() - 1] == Wall.NOT_EXISTS
+						&& !continuePosSet.contains(nextPos)) {
+					if (findWhite && masu[pos.getyIndex()][pos.getxIndex()] == Masu.BLACK
+							&& masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.NOT_BLACK) {
+						return false;
+					}
+					if (findBlack && masu[pos.getyIndex()][pos.getxIndex()] == Masu.NOT_BLACK
+							&& masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.BLACK) {
+						return false;
+					}
+					continuePosSet.add(nextPos);
+					if (!checkAndSetContinueWhitePosSet(nextPos, continuePosSet, Direction.RIGHT, size,
+							findWhite || masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.NOT_BLACK,
+							findBlack || masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.BLACK)) {
+						return false;
+					}
+				}
+			}
+			return true;
+		}
+
+		/**
+		 * 壁がないマスを無制限につなぐ。
+		 */
+		private void checkAndSetContinuePosSet(Position pos, Set<Position> continuePosSet, Direction from) {
+			if (pos.getyIndex() != 0 && from != Direction.UP) {
+				Position nextPos = new Position(pos.getyIndex() - 1, pos.getxIndex());
+				if (tateWall[pos.getyIndex() - 1][pos.getxIndex()] != Wall.EXISTS
+						&& !continuePosSet.contains(nextPos)) {
+					continuePosSet.add(nextPos);
+					checkAndSetContinuePosSet(nextPos, continuePosSet, Direction.DOWN);
+				}
+			}
+			if (pos.getxIndex() != getXLength() - 1 && from != Direction.RIGHT) {
+				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() + 1);
+				if (yokoWall[pos.getyIndex()][pos.getxIndex()] != Wall.EXISTS && !continuePosSet.contains(nextPos)) {
+					continuePosSet.add(nextPos);
+					checkAndSetContinuePosSet(nextPos, continuePosSet, Direction.LEFT);
+				}
+			}
+			if (pos.getyIndex() != getYLength() - 1 && from != Direction.DOWN) {
+				Position nextPos = new Position(pos.getyIndex() + 1, pos.getxIndex());
+				if (tateWall[pos.getyIndex()][pos.getxIndex()] != Wall.EXISTS && !continuePosSet.contains(nextPos)) {
+					continuePosSet.add(nextPos);
+					checkAndSetContinuePosSet(nextPos, continuePosSet, Direction.UP);
+				}
+			}
+			if (pos.getxIndex() != 0 && from != Direction.LEFT) {
+				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() - 1);
+				if (yokoWall[pos.getyIndex()][pos.getxIndex() - 1] != Wall.EXISTS
+						&& !continuePosSet.contains(nextPos)) {
+					continuePosSet.add(nextPos);
+					checkAndSetContinuePosSet(nextPos, continuePosSet, Direction.RIGHT);
+				}
+			}
+		}
+
+		/**
 
 		/**
 		 * 各種チェックを1セット実行
@@ -549,13 +763,13 @@ public class PencilsSolver implements Solver {
 		 */
 		public boolean solveAndCheck() {
 			String str = getStateDump();
-			if (!wallSolve()) {
-				return false;
-			}
 			if (!lengthSolve()) {
 				return false;
 			}
-			if (!pencilSolve()) {
+			if (!roomSolve()) {
+				return false;
+			}
+			if (!wallSolve()) {
 				return false;
 			}
 			if (!getStateDump().equals(str)) {
@@ -603,7 +817,7 @@ public class PencilsSolver implements Solver {
 	}
 
 	public static void main(String[] args) {
-		String url = "https://puzz.link/p?pencils/8/8/323t2n4q2q1t21u231m"; //urlを入れれば試せる
+		String url = ""; //urlを入れれば試せる
 		String[] params = url.split("/");
 		int height = Integer.parseInt(params[params.length - 2]);
 		int width = Integer.parseInt(params[params.length - 3]);
@@ -618,24 +832,27 @@ public class PencilsSolver implements Solver {
 			System.out.println(field);
 			String befStr = field.getStateDump();
 			if (!field.solveAndCheck()) {
+				System.out.println(field);
 				return "問題に矛盾がある可能性があります。途中経過を返します。";
 			}
 			int recursiveCnt = 0;
 			while (field.getStateDump().equals(befStr) && recursiveCnt < 3) {
 				if (!candSolve(field, recursiveCnt == 2 ? 999 : recursiveCnt)) {
+					System.out.println(field);
 					return "問題に矛盾がある可能性があります。途中経過を返します。";
 				}
 				recursiveCnt++;
 			}
 			if (recursiveCnt == 3 && field.getStateDump().equals(befStr)) {
+				System.out.println(field);
 				return "解けませんでした。途中経過を返します。";
 			}
 		}
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
-		System.out.println("難易度:" + (count));
+		System.out.println("難易度:" + (count / 50));
 		System.out.println(field);
 		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count).toString();
+				+ Difficulty.getByCount(count / 50).toString();
 	}
 
 	/**
@@ -664,8 +881,52 @@ public class PencilsSolver implements Solver {
 				}
 			}
 		}
+		for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+			for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+				if (field.masu[yIndex][xIndex] == Masu.SPACE) {
+					count++;
+					if (!oneCandSolve(field, yIndex, xIndex, recursive)) {
+						return false;
+					}
+				}
+			}
+		}
 		if (!field.getStateDump().equals(str)) {
 			return candSolve(field, recursive);
+		}
+		return true;
+	}
+
+	/**
+	 * 1つのマスに対する仮置き調査
+	 */
+	private boolean oneCandSolve(Field field, int yIndex, int xIndex, int recursive) {
+		Field virtual = new Field(field);
+		virtual.masu[yIndex][xIndex] = Masu.BLACK;
+		boolean allowBlack = virtual.solveAndCheck();
+		if (allowBlack && recursive > 0) {
+			if (!candSolve(virtual, recursive - 1)) {
+				allowBlack = false;
+			}
+		}
+		Field virtual2 = new Field(field);
+		virtual2.masu[yIndex][xIndex] = Masu.NOT_BLACK;
+		boolean allowNotBlack = virtual2.solveAndCheck();
+		if (allowNotBlack && recursive > 0) {
+			if (!candSolve(virtual2, recursive - 1)) {
+				allowNotBlack = false;
+			}
+		}
+		if (!allowBlack && !allowNotBlack) {
+			return false;
+		} else if (!allowBlack) {
+			field.masu = virtual2.masu;
+			field.tateWall = virtual2.tateWall;
+			field.yokoWall = virtual2.yokoWall;
+		} else if (!allowNotBlack) {
+			field.masu = virtual.masu;
+			field.tateWall = virtual.tateWall;
+			field.yokoWall = virtual.yokoWall;
 		}
 		return true;
 	}
