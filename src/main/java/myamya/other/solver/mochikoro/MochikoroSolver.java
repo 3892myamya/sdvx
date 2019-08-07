@@ -220,10 +220,13 @@ public class MochikoroSolver implements Solver {
 				}
 				// 餅が数字を含む場合、このまま餅を膨らませて目的の数を満たせるか調査
 				if (number != 0) {
-					if ((maxY - minY + 1) * (maxX - minX + 1) != number) {
+					int maxYsize = getYLength();
+					int maxXsize = getXLength();
+					if ((maxY - minY + 1) * (maxX - minX + 1) == number) {
+						maxYsize = maxY - minY + 1;
+						maxXsize = maxX - minX + 1;
+					} else {
 						// 最大でどこまで膨らむか
-						int maxYsize = getYLength();
-						int maxXsize = getXLength();
 						for (int candY = minY; candY <= maxY; candY++) {
 							int xHukurami = 0;
 							int targetX = minX - 1;
@@ -279,7 +282,8 @@ public class MochikoroSolver implements Solver {
 						if (!isOkMochi) {
 							return false;
 						}
-					} else {
+					}
+					if (maxYsize == maxY - minY + 1 && maxXsize == maxX - minX + 1) {
 						// 餅の形状が確定
 						for (int candY = minY; candY <= maxY; candY++) {
 							for (int candX = minX; candX <= maxX; candX++) {
