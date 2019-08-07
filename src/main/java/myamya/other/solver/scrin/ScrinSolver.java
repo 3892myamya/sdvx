@@ -1,4 +1,4 @@
-package myamya.other.solver.mochikoro;
+package myamya.other.solver.scrin;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -10,7 +10,7 @@ import myamya.other.solver.Common.Masu;
 import myamya.other.solver.Common.Position;
 import myamya.other.solver.Solver;
 
-public class MochikoroSolver implements Solver {
+public class ScrinSolver implements Solver {
 
 	public static class Field {
 		static final String ALPHABET_FROM_G = "ghijklmnopqrstuvwxyz";
@@ -134,39 +134,9 @@ public class MochikoroSolver implements Solver {
 		}
 
 		/**
-		 * 置くと池ができるマスを白マスにする。
-		 * 既に池ができている場合falseを返す。
-		 */
-		public boolean pondSolve() {
-			for (int yIndex = 0; yIndex < getYLength() - 1; yIndex++) {
-				for (int xIndex = 0; xIndex < getXLength() - 1; xIndex++) {
-					Masu masu1 = masu[yIndex][xIndex];
-					Masu masu2 = masu[yIndex][xIndex + 1];
-					Masu masu3 = masu[yIndex + 1][xIndex];
-					Masu masu4 = masu[yIndex + 1][xIndex + 1];
-					if (masu1 == Masu.BLACK && masu2 == Masu.BLACK && masu3 == Masu.BLACK && masu4 == Masu.BLACK) {
-						return false;
-					}
-					if (masu1 == Masu.BLACK && masu2 == Masu.BLACK && masu3 == Masu.BLACK && masu4 == Masu.SPACE) {
-						masu[yIndex + 1][xIndex + 1] = Masu.NOT_BLACK;
-					}
-					if (masu1 == Masu.BLACK && masu2 == Masu.BLACK && masu3 == Masu.SPACE && masu4 == Masu.BLACK) {
-						masu[yIndex + 1][xIndex] = Masu.NOT_BLACK;
-					}
-					if (masu1 == Masu.BLACK && masu2 == Masu.SPACE && masu3 == Masu.BLACK && masu4 == Masu.BLACK) {
-						masu[yIndex][xIndex + 1] = Masu.NOT_BLACK;
-					}
-					if (masu1 == Masu.SPACE && masu2 == Masu.BLACK && masu3 == Masu.BLACK && masu4 == Masu.BLACK) {
-						masu[yIndex][xIndex] = Masu.NOT_BLACK;
-					}
-				}
-			}
-			return true;
-		}
-
-		/**
 		 * 餅は長方形になるように配置する。
 		 * 長方形にできなかった場合はfalseを返す。
+		 * // TODO なんか無駄な処理が多い気がする。
 		 */
 		public boolean rectSolve() {
 			Set<Position> whitePosSet = new HashSet<>();
@@ -212,54 +182,53 @@ public class MochikoroSolver implements Solver {
 						masu[yIndex][xIndex] = Masu.NOT_BLACK;
 						if (numbers[yIndex][xIndex] != null && numbers[yIndex][xIndex] != -1) {
 							if (number != 0) {
+								// 2個以上の数字取り込み禁止
 								return false;
 							}
 							number = numbers[yIndex][xIndex];
 						}
 					}
 				}
-				// 餅が数字を含む場合、このまま餅を膨らませて目的の数を満たせるか調査
-				if (number != 0) {
-					if ((maxY - minY + 1) * (maxX - minX + 1) != number) {
-						// 最大でどこまで膨らむか
-						int maxYsize = getYLength();
-						int maxXsize = getXLength();
-						for (int candY = minY; candY <= maxY; candY++) {
-							int xHukurami = 0;
-							int targetX = minX - 1;
-							while (targetX >= 0 && masu[candY][targetX] != Masu.BLACK
-									&& numbers[candY][targetX] == null) {
-								targetX--;
-								xHukurami++;
-							}
-							targetX = maxX + 1;
-							while (targetX < getXLength() && masu[candY][targetX] != Masu.BLACK
-									&& numbers[candY][targetX] == null) {
-								targetX++;
-								xHukurami++;
-							}
-							if (maxX - minX + 1 + xHukurami < maxXsize) {
-								maxXsize = maxX - minX + 1 + xHukurami;
-							}
+				// 最大でどこまで膨らむか
+				int maxYsize = getYLength();
+				int maxXsize = getXLength();
+				if (number != 0 && (maxY - minY + 1) * (maxX - minX + 1) == number) {
+					maxYsize = maxY - minY + 1;
+					maxXsize = maxX - minX + 1;
+				} else {
+					for (int candY = minY; candY <= maxY; candY++) {
+						int xHukurami = 0;
+						int targetX = minX - 1;
+						while (targetX >= 0 && masu[candY][targetX] != Masu.BLACK) {
+							targetX--;
+							xHukurami++;
 						}
-						for (int candX = minX; candX <= maxX; candX++) {
-							int yHukurami = 0;
-							int targetY = minY - 1;
-							while (targetY >= 0 && masu[targetY][candX] != Masu.BLACK
-									&& numbers[targetY][candX] == null) {
-								targetY--;
-								yHukurami++;
-							}
-							targetY = maxY + 1;
-							while (targetY < getYLength() && masu[targetY][candX] != Masu.BLACK
-									&& numbers[targetY][candX] == null) {
-								targetY++;
-								yHukurami++;
-							}
-							if (maxY - minY + 1 + yHukurami < maxYsize) {
-								maxYsize = maxY - minY + 1 + yHukurami;
-							}
+						targetX = maxX + 1;
+						while (targetX < getXLength() && masu[candY][targetX] != Masu.BLACK) {
+							targetX++;
+							xHukurami++;
 						}
+						if (maxX - minX + 1 + xHukurami < maxXsize) {
+							maxXsize = maxX - minX + 1 + xHukurami;
+						}
+					}
+					for (int candX = minX; candX <= maxX; candX++) {
+						int yHukurami = 0;
+						int targetY = minY - 1;
+						while (targetY >= 0 && masu[targetY][candX] != Masu.BLACK) {
+							targetY--;
+							yHukurami++;
+						}
+						targetY = maxY + 1;
+						while (targetY < getYLength() && masu[targetY][candX] != Masu.BLACK) {
+							targetY++;
+							yHukurami++;
+						}
+						if (maxY - minY + 1 + yHukurami < maxYsize) {
+							maxYsize = maxY - minY + 1 + yHukurami;
+						}
+					}
+					if (number != 0) {
 						// 膨らむ候補との突合せ
 						boolean isOkMochi = false;
 						for (int candY = maxY - minY + 1; candY <= maxYsize; candY++) {
@@ -279,28 +248,98 @@ public class MochikoroSolver implements Solver {
 						if (!isOkMochi) {
 							return false;
 						}
-					} else {
-						// 餅の形状が確定
+					}
+				}
+				// 餅の形状が確定。周囲を黒で囲み、頂点接続判定に進む
+				if (maxYsize == maxY - minY + 1 && maxXsize == maxX - minX + 1) {
+					for (int candY = minY; candY <= maxY; candY++) {
+						if (minX > 0) {
+							masu[candY][minX - 1] = Masu.BLACK;
+						}
+						if (maxX < getXLength() - 1) {
+							masu[candY][maxX + 1] = Masu.BLACK;
+						}
+					}
+					for (int candX = minX; candX <= maxX; candX++) {
+						if (minY > 0) {
+							masu[minY - 1][candX] = Masu.BLACK;
+						}
+						if (maxY < getYLength() - 1) {
+							masu[maxY + 1][candX] = Masu.BLACK;
+						}
+					}
+					int blackCnt = 0;
+					int whiteCnt = 0;
+					Masu masuUL1 = minY <= 0 || minX <= 0 ? Masu.BLACK : masu[minY - 1][minX - 1];
+					if (masuUL1 == Masu.BLACK) {
+						blackCnt++;
+					} else if (masuUL1 == Masu.NOT_BLACK) {
+						whiteCnt++;
+					}
+					Masu masuUR1 = minY <= 0 || maxX >= getXLength() - 1 ? Masu.BLACK : masu[minY - 1][maxX + 1];
+					if (masuUR1 == Masu.BLACK) {
+						blackCnt++;
+					} else if (masuUR1 == Masu.NOT_BLACK) {
+						whiteCnt++;
+					}
+					Masu masuDR1 = maxY >= getYLength() - 1 || maxX >= getXLength() - 1 ? Masu.BLACK
+							: masu[maxY + 1][maxX + 1];
+					if (masuDR1 == Masu.BLACK) {
+						blackCnt++;
+					} else if (masuDR1 == Masu.NOT_BLACK) {
+						whiteCnt++;
+					}
+					Masu masuDL1 = maxY >= getYLength() - 1 || minX <= 0 ? Masu.BLACK : masu[maxY + 1][minX - 1];
+					if (masuDL1 == Masu.BLACK) {
+						blackCnt++;
+					} else if (masuDL1 == Masu.NOT_BLACK) {
+						whiteCnt++;
+					}
+					// 頂点は必ず白マス2個、黒マス2個になる
+					if (2 < blackCnt) {
+						// 黒マス過剰
+						return false;
+					}
+					if (2 > 4 - whiteCnt) {
+						// 黒マス不足
+						return false;
+					}
+					if (2 == blackCnt) {
 						for (int candY = minY; candY <= maxY; candY++) {
 							for (int candX = minX; candX <= maxX; candX++) {
 								fixedPosSet.add(new Position(candY, candX));
 							}
 						}
+						if (masuUL1 == Masu.SPACE) {
+							masu[minY - 1][minX - 1] = Masu.NOT_BLACK;
+						}
+						if (masuUR1 == Masu.SPACE) {
+							masu[minY - 1][maxX + 1] = Masu.NOT_BLACK;
+						}
+						if (masuDR1 == Masu.SPACE) {
+							masu[maxY + 1][maxX + 1] = Masu.NOT_BLACK;
+						}
+						if (masuDL1 == Masu.SPACE) {
+							masu[maxY + 1][minX - 1] = Masu.NOT_BLACK;
+						}
+					}
+					if (2 == 4 - whiteCnt) {
 						for (int candY = minY; candY <= maxY; candY++) {
-							if (minX > 0) {
-								masu[candY][minX - 1] = Masu.BLACK;
-							}
-							if (maxX < getXLength() - 1) {
-								masu[candY][maxX + 1] = Masu.BLACK;
+							for (int candX = minX; candX <= maxX; candX++) {
+								fixedPosSet.add(new Position(candY, candX));
 							}
 						}
-						for (int candX = minX; candX <= maxX; candX++) {
-							if (minY > 0) {
-								masu[minY - 1][candX] = Masu.BLACK;
-							}
-							if (maxY < getYLength() - 1) {
-								masu[maxY + 1][candX] = Masu.BLACK;
-							}
+						if (masuUL1 == Masu.SPACE) {
+							masu[minY - 1][minX - 1] = Masu.BLACK;
+						}
+						if (masuUR1 == Masu.SPACE) {
+							masu[minY - 1][maxX + 1] = Masu.BLACK;
+						}
+						if (masuDR1 == Masu.SPACE) {
+							masu[maxY + 1][maxX + 1] = Masu.BLACK;
+						}
+						if (masuDL1 == Masu.SPACE) {
+							masu[maxY + 1][minX - 1] = Masu.BLACK;
 						}
 					}
 				}
@@ -446,9 +485,6 @@ public class MochikoroSolver implements Solver {
 		 */
 		private boolean solveAndCheck() {
 			String str = getStateDump();
-			if (!pondSolve()) {
-				return false;
-			}
 			if (!rectSolve()) {
 				return false;
 			}
@@ -472,12 +508,13 @@ public class MochikoroSolver implements Solver {
 			}
 			return solveAndCheck();
 		}
+
 	}
 
 	private final Field field;
 	private int count = 0;
 
-	public MochikoroSolver(int height, int width, String param) {
+	public ScrinSolver(int height, int width, String param) {
 		field = new Field(height, width, param);
 	}
 
@@ -491,7 +528,7 @@ public class MochikoroSolver implements Solver {
 		int height = Integer.parseInt(params[params.length - 2]);
 		int width = Integer.parseInt(params[params.length - 3]);
 		String param = params[params.length - 1];
-		System.out.println(new MochikoroSolver(height, width, param).solve());
+		System.out.println(new ScrinSolver(height, width, param).solve());
 	}
 
 	@Override
@@ -518,10 +555,10 @@ public class MochikoroSolver implements Solver {
 			}
 		}
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
-		System.out.println("難易度:" + (count / 2));
+		System.out.println("難易度:" + (count / 5));
 		System.out.println(field);
 		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count / 2).toString();
+				+ Difficulty.getByCount(count / 5).toString();
 	}
 
 	/**
