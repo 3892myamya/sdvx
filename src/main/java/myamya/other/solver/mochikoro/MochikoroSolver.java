@@ -204,21 +204,26 @@ public class MochikoroSolver implements Solver {
 					}
 				}
 				int number = 0;
+				boolean existsNumber = false;
 				for (int yIndex = minY; yIndex <= maxY; yIndex++) {
 					for (int xIndex = minX; xIndex <= maxX; xIndex++) {
 						if (masu[yIndex][xIndex] == Masu.BLACK) {
 							return false;
 						}
 						masu[yIndex][xIndex] = Masu.NOT_BLACK;
-						if (numbers[yIndex][xIndex] != null && numbers[yIndex][xIndex] != -1) {
-							if (number != 0) {
+						if (numbers[yIndex][xIndex] != null) {
+							if (existsNumber) {
+								// 2個以上の数字取り込み禁止
 								return false;
 							}
-							number = numbers[yIndex][xIndex];
+							existsNumber = true;
+							if (numbers[yIndex][xIndex] != -1) {
+								number = numbers[yIndex][xIndex];
+							}
 						}
 					}
 				}
-				// 餅が数字を含む場合、このまま餅を膨らませて目的の数を満たせるか調査
+				// 餅が有効な数字を含む場合、このまま餅を膨らませて目的の数を満たせるか調査
 				if (number != 0) {
 					int maxYsize = getYLength();
 					int maxXsize = getXLength();

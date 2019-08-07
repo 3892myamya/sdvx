@@ -174,37 +174,62 @@ public class ScrinSolver implements Solver {
 					}
 				}
 				int number = 0;
+				boolean existsNumber = false;
 				for (int yIndex = minY; yIndex <= maxY; yIndex++) {
 					for (int xIndex = minX; xIndex <= maxX; xIndex++) {
 						if (masu[yIndex][xIndex] == Masu.BLACK) {
 							return false;
 						}
 						masu[yIndex][xIndex] = Masu.NOT_BLACK;
-						if (numbers[yIndex][xIndex] != null && numbers[yIndex][xIndex] != -1) {
-							if (number != 0) {
+						if (numbers[yIndex][xIndex] != null) {
+							if (existsNumber) {
 								// 2個以上の数字取り込み禁止
 								return false;
 							}
-							number = numbers[yIndex][xIndex];
+							existsNumber = true;
+							if (numbers[yIndex][xIndex] != -1) {
+								number = numbers[yIndex][xIndex];
+							}
 						}
 					}
 				}
-				// 最大でどこまで膨らむか
+				// 餅の形状が未確定の場合、数字が有効ならこのまま餅を膨らませて目的の数を満たせるか調査
 				int maxYsize = getYLength();
 				int maxXsize = getXLength();
 				if (number != 0 && (maxY - minY + 1) * (maxX - minX + 1) == number) {
 					maxYsize = maxY - minY + 1;
 					maxXsize = maxX - minX + 1;
 				} else {
+					// 最大でどこまで膨らむか
 					for (int candY = minY; candY <= maxY; candY++) {
 						int xHukurami = 0;
 						int targetX = minX - 1;
-						while (targetX >= 0 && masu[candY][targetX] != Masu.BLACK) {
+						while (targetX >= 0 && masu[candY][targetX] != Masu.BLACK
+								&& numbers[candY][targetX] == null) {
+							// 周囲に数字があってもだめ
+							if (existsNumber) {
+								Integer masuUp = candY == 0 ? null : numbers[candY - 1][targetX];
+								Integer masuDown = candY == getYLength() - 1 ? null : numbers[candY + 1][targetX];
+								Integer masuLeft = targetX == 0 ? null : numbers[candY][targetX - 1];
+								if (masuUp != null || masuDown != null && masuLeft != null) {
+									break;
+								}
+							}
 							targetX--;
 							xHukurami++;
 						}
 						targetX = maxX + 1;
-						while (targetX < getXLength() && masu[candY][targetX] != Masu.BLACK) {
+						while (targetX < getXLength() && masu[candY][targetX] != Masu.BLACK
+								&& numbers[candY][targetX] == null) {
+							// 周囲に数字があってもだめ
+							if (existsNumber) {
+								Integer masuUp = candY == 0 ? null : numbers[candY - 1][targetX];
+								Integer masuRight = targetX == getXLength() - 1 ? null : numbers[candY][targetX + 1];
+								Integer masuDown = candY == getYLength() - 1 ? null : numbers[candY + 1][targetX];
+								if (masuUp != null || masuRight != null && masuDown != null) {
+									break;
+								}
+							}
 							targetX++;
 							xHukurami++;
 						}
@@ -215,12 +240,32 @@ public class ScrinSolver implements Solver {
 					for (int candX = minX; candX <= maxX; candX++) {
 						int yHukurami = 0;
 						int targetY = minY - 1;
-						while (targetY >= 0 && masu[targetY][candX] != Masu.BLACK) {
+						while (targetY >= 0 && masu[targetY][candX] != Masu.BLACK
+								&& numbers[targetY][candX] == null) {
+							// 周囲に数字があってもだめ
+							if (existsNumber) {
+								Integer masuUp = targetY == 0 ? null : numbers[targetY - 1][candX];
+								Integer masuRight = candX == getXLength() - 1 ? null : numbers[targetY][candX + 1];
+								Integer masuLeft = candX == 0 ? null : numbers[targetY][candX - 1];
+								if (masuUp != null || masuRight != null && masuLeft != null) {
+									break;
+								}
+							}
 							targetY--;
 							yHukurami++;
 						}
 						targetY = maxY + 1;
-						while (targetY < getYLength() && masu[targetY][candX] != Masu.BLACK) {
+						while (targetY < getYLength() && masu[targetY][candX] != Masu.BLACK
+								&& numbers[targetY][candX] == null) {
+							// 周囲に数字があってもだめ
+							if (existsNumber) {
+								Integer masuRight = candX == getXLength() - 1 ? null : numbers[targetY][candX + 1];
+								Integer masuDown = targetY == getYLength() - 1 ? null : numbers[targetY + 1][candX];
+								Integer masuLeft = candX == 0 ? null : numbers[targetY][candX - 1];
+								if (masuRight != null || masuDown != null && masuLeft != null) {
+									break;
+								}
+							}
 							targetY++;
 							yHukurami++;
 						}
@@ -251,7 +296,7 @@ public class ScrinSolver implements Solver {
 					}
 				}
 				// 餅の形状が確定。周囲を黒で囲み、頂点接続判定に進む
-				if (maxYsize == maxY - minY + 1 && maxXsize == maxX - minX + 1) {
+				if (maxYsize == maxY - minY + 1 && maxXsize == maxX - minX + 1){
 					for (int candY = minY; candY <= maxY; candY++) {
 						if (minX > 0) {
 							masu[candY][minX - 1] = Masu.BLACK;
@@ -346,6 +391,7 @@ public class ScrinSolver implements Solver {
 				whitePosSet.removeAll(continuePosSet);
 			}
 			return true;
+
 		}
 
 		/**
@@ -523,7 +569,7 @@ public class ScrinSolver implements Solver {
 	}
 
 	public static void main(String[] args) {
-		String url = ""; //urlを入れれば試せる
+		String url = "https://puzz.link/p?scrin/10/10/v4l3k.3v2l9l2v3l3l4m"; //urlを入れれば試せる
 		String[] params = url.split("/");
 		int height = Integer.parseInt(params[params.length - 2]);
 		int width = Integer.parseInt(params[params.length - 3]);
