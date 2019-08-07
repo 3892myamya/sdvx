@@ -232,12 +232,26 @@ public class MochikoroSolver implements Solver {
 							int targetX = minX - 1;
 							while (targetX >= 0 && masu[candY][targetX] != Masu.BLACK
 									&& numbers[candY][targetX] == null) {
+								// 周囲に数字があってもだめ
+								Integer masuUp = candY == 0 ? null : numbers[candY - 1][targetX];
+								Integer masuDown = candY == getYLength() - 1 ? null : numbers[candY + 1][targetX];
+								Integer masuLeft = targetX == 0 ? null : numbers[candY][targetX - 1];
+								if (masuUp != null || masuDown != null && masuLeft != null) {
+									break;
+								}
 								targetX--;
 								xHukurami++;
 							}
 							targetX = maxX + 1;
 							while (targetX < getXLength() && masu[candY][targetX] != Masu.BLACK
 									&& numbers[candY][targetX] == null) {
+								// 周囲に数字があってもだめ
+								Integer masuUp = candY == 0 ? null : numbers[candY - 1][targetX];
+								Integer masuRight = targetX == getXLength() - 1 ? null : numbers[candY][targetX + 1];
+								Integer masuDown = candY == getYLength() - 1 ? null : numbers[candY + 1][targetX];
+								if (masuUp != null || masuRight != null && masuDown != null) {
+									break;
+								}
 								targetX++;
 								xHukurami++;
 							}
@@ -250,12 +264,26 @@ public class MochikoroSolver implements Solver {
 							int targetY = minY - 1;
 							while (targetY >= 0 && masu[targetY][candX] != Masu.BLACK
 									&& numbers[targetY][candX] == null) {
+								// 周囲に数字があってもだめ
+								Integer masuUp = targetY == 0 ? null : numbers[targetY - 1][candX];
+								Integer masuRight = candX == getXLength() - 1 ? null : numbers[targetY][candX + 1];
+								Integer masuLeft = candX == 0 ? null : numbers[targetY][candX - 1];
+								if (masuUp != null || masuRight != null && masuLeft != null) {
+									break;
+								}
 								targetY--;
 								yHukurami++;
 							}
 							targetY = maxY + 1;
 							while (targetY < getYLength() && masu[targetY][candX] != Masu.BLACK
 									&& numbers[targetY][candX] == null) {
+								// 周囲に数字があってもだめ
+								Integer masuRight = candX == getXLength() - 1 ? null : numbers[targetY][candX + 1];
+								Integer masuDown = targetY == getYLength() - 1 ? null : numbers[targetY + 1][candX];
+								Integer masuLeft = candX == 0 ? null : numbers[targetY][candX - 1];
+								if (masuRight != null || masuDown != null && masuLeft != null) {
+									break;
+								}
 								targetY++;
 								yHukurami++;
 							}
