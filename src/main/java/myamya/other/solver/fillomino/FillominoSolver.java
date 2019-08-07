@@ -317,58 +317,81 @@ public class FillominoSolver implements Solver {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
 					if (numbers[yIndex][xIndex] != null) {
 						int number = numbers[yIndex][xIndex];
-						if (yIndex != 0 && numbers[yIndex - 1][xIndex] != null) {
-							if (numbers[yIndex - 1][xIndex] == number) {
-								if (tateWall[yIndex - 1][xIndex] == Wall.EXISTS) {
-									return false;
+						if (yIndex != 0) {
+							if (numbers[yIndex - 1][xIndex] != null) {
+								if (numbers[yIndex - 1][xIndex] == number) {
+									if (tateWall[yIndex - 1][xIndex] == Wall.EXISTS) {
+										return false;
+									}
+									tateWall[yIndex - 1][xIndex] = Wall.NOT_EXISTS;
+								} else {
+									if (tateWall[yIndex - 1][xIndex] == Wall.NOT_EXISTS) {
+										return false;
+									}
+									tateWall[yIndex - 1][xIndex] = Wall.EXISTS;
 								}
-								tateWall[yIndex - 1][xIndex] = Wall.NOT_EXISTS;
 							} else {
 								if (tateWall[yIndex - 1][xIndex] == Wall.NOT_EXISTS) {
-									return false;
+									numbers[yIndex - 1][xIndex] = number;
 								}
-								tateWall[yIndex - 1][xIndex] = Wall.EXISTS;
 							}
 						}
-						if (xIndex != getXLength() - 1 && numbers[yIndex][xIndex + 1] != null) {
-							if (numbers[yIndex][xIndex + 1] == number) {
-								if (yokoWall[yIndex][xIndex] == Wall.EXISTS) {
-									return false;
+						if (xIndex != getXLength() - 1) {
+							if (numbers[yIndex][xIndex + 1] != null) {
+								if (numbers[yIndex][xIndex + 1] == number) {
+									if (yokoWall[yIndex][xIndex] == Wall.EXISTS) {
+										return false;
+									}
+									yokoWall[yIndex][xIndex] = Wall.NOT_EXISTS;
+								} else {
+									if (yokoWall[yIndex][xIndex] == Wall.NOT_EXISTS) {
+										return false;
+									}
+									yokoWall[yIndex][xIndex] = Wall.EXISTS;
 								}
-								yokoWall[yIndex][xIndex] = Wall.NOT_EXISTS;
-
 							} else {
 								if (yokoWall[yIndex][xIndex] == Wall.NOT_EXISTS) {
-									return false;
+									numbers[yIndex][xIndex + 1] = number;
 								}
-								yokoWall[yIndex][xIndex] = Wall.EXISTS;
 							}
 						}
-						if (yIndex != getYLength() - 1 && numbers[yIndex + 1][xIndex] != null) {
-							if (numbers[yIndex + 1][xIndex] == number) {
-								if (tateWall[yIndex][xIndex] == Wall.EXISTS) {
-									return false;
-								}
-								tateWall[yIndex][xIndex] = Wall.NOT_EXISTS;
+						if (yIndex != getYLength() - 1) {
+							if (numbers[yIndex + 1][xIndex] != null) {
+								if (numbers[yIndex + 1][xIndex] == number) {
+									if (tateWall[yIndex][xIndex] == Wall.EXISTS) {
+										return false;
+									}
+									tateWall[yIndex][xIndex] = Wall.NOT_EXISTS;
 
+								} else {
+									if (tateWall[yIndex][xIndex] == Wall.NOT_EXISTS) {
+										return false;
+									}
+									tateWall[yIndex][xIndex] = Wall.EXISTS;
+								}
 							} else {
 								if (tateWall[yIndex][xIndex] == Wall.NOT_EXISTS) {
-									return false;
+									numbers[yIndex][xIndex] = number;
 								}
-								tateWall[yIndex][xIndex] = Wall.EXISTS;
 							}
 						}
-						if (xIndex != 0 && numbers[yIndex][xIndex - 1] != null) {
-							if (numbers[yIndex][xIndex - 1] == number) {
-								if (yokoWall[yIndex][xIndex - 1] == Wall.EXISTS) {
-									return false;
+						if (xIndex != 0) {
+							if (numbers[yIndex][xIndex - 1] != null) {
+								if (numbers[yIndex][xIndex - 1] == number) {
+									if (yokoWall[yIndex][xIndex - 1] == Wall.EXISTS) {
+										return false;
+									}
+									yokoWall[yIndex][xIndex - 1] = Wall.NOT_EXISTS;
+								} else {
+									if (yokoWall[yIndex][xIndex - 1] == Wall.NOT_EXISTS) {
+										return false;
+									}
+									yokoWall[yIndex][xIndex - 1] = Wall.EXISTS;
 								}
-								yokoWall[yIndex][xIndex - 1] = Wall.NOT_EXISTS;
 							} else {
 								if (yokoWall[yIndex][xIndex - 1] == Wall.NOT_EXISTS) {
-									return false;
+									numbers[yIndex][xIndex - 1] = number;
 								}
-								yokoWall[yIndex][xIndex - 1] = Wall.EXISTS;
 							}
 						}
 					}
@@ -389,7 +412,9 @@ public class FillominoSolver implements Solver {
 			if (pos.getyIndex() != 0 && from != Direction.UP) {
 				Position nextPos = new Position(pos.getyIndex() - 1, pos.getxIndex());
 				if (tateWall[pos.getyIndex() - 1][pos.getxIndex()] != Wall.EXISTS
-						&& !continuePosSet.contains(nextPos)) {
+						&& !continuePosSet.contains(nextPos)
+						&& !(numbers[nextPos.getyIndex()][nextPos.getxIndex()] != null
+								&& numbers[nextPos.getyIndex()][nextPos.getxIndex()] != size)) {
 					continuePosSet.add(nextPos);
 					if (checkAndSetContinuePosSet(nextPos, continuePosSet, Direction.DOWN, size)) {
 						return true;
@@ -399,7 +424,9 @@ public class FillominoSolver implements Solver {
 			}
 			if (pos.getxIndex() != getXLength() - 1 && from != Direction.RIGHT) {
 				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() + 1);
-				if (yokoWall[pos.getyIndex()][pos.getxIndex()] != Wall.EXISTS && !continuePosSet.contains(nextPos)) {
+				if (yokoWall[pos.getyIndex()][pos.getxIndex()] != Wall.EXISTS && !continuePosSet.contains(nextPos)
+						&& !(numbers[nextPos.getyIndex()][nextPos.getxIndex()] != null
+								&& numbers[nextPos.getyIndex()][nextPos.getxIndex()] != size)) {
 					continuePosSet.add(nextPos);
 					if (checkAndSetContinuePosSet(nextPos, continuePosSet, Direction.LEFT, size)) {
 						return true;
@@ -408,7 +435,9 @@ public class FillominoSolver implements Solver {
 			}
 			if (pos.getyIndex() != getYLength() - 1 && from != Direction.DOWN) {
 				Position nextPos = new Position(pos.getyIndex() + 1, pos.getxIndex());
-				if (tateWall[pos.getyIndex()][pos.getxIndex()] != Wall.EXISTS && !continuePosSet.contains(nextPos)) {
+				if (tateWall[pos.getyIndex()][pos.getxIndex()] != Wall.EXISTS && !continuePosSet.contains(nextPos)
+						&& !(numbers[nextPos.getyIndex()][nextPos.getxIndex()] != null
+								&& numbers[nextPos.getyIndex()][nextPos.getxIndex()] != size)) {
 					continuePosSet.add(nextPos);
 					if (checkAndSetContinuePosSet(nextPos, continuePosSet, Direction.UP, size)) {
 						return true;
@@ -418,7 +447,9 @@ public class FillominoSolver implements Solver {
 			if (pos.getxIndex() != 0 && from != Direction.LEFT) {
 				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() - 1);
 				if (yokoWall[pos.getyIndex()][pos.getxIndex() - 1] != Wall.EXISTS
-						&& !continuePosSet.contains(nextPos)) {
+						&& !continuePosSet.contains(nextPos)
+						&& !(numbers[nextPos.getyIndex()][nextPos.getxIndex()] != null
+								&& numbers[nextPos.getyIndex()][nextPos.getxIndex()] != size)) {
 					continuePosSet.add(nextPos);
 					if (checkAndSetContinuePosSet(nextPos, continuePosSet, Direction.RIGHT, size)) {
 						return true;
@@ -478,6 +509,76 @@ public class FillominoSolver implements Solver {
 		}
 
 		/**
+		 * 柱から伸びる壁は1枚にならない。
+		 * 違反する場合はfalseを返す。
+		 */
+		private boolean pileSolve() {
+			for (int yIndex = 0; yIndex < getYLength() - 1; yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength() - 1; xIndex++) {
+					int exists = 0;
+					int notExists = 0;
+					Wall wall1 = tateWall[yIndex][xIndex];
+					Wall wall2 = tateWall[yIndex][xIndex + 1];
+					Wall wall3 = yokoWall[yIndex][xIndex];
+					Wall wall4 = yokoWall[yIndex + 1][xIndex];
+					if (wall1 == Wall.EXISTS) {
+						exists++;
+					} else if (wall1 == Wall.NOT_EXISTS) {
+						notExists++;
+					}
+					if (wall2 == Wall.EXISTS) {
+						exists++;
+					} else if (wall2 == Wall.NOT_EXISTS) {
+						notExists++;
+					}
+					if (wall3 == Wall.EXISTS) {
+						exists++;
+					} else if (wall3 == Wall.NOT_EXISTS) {
+						notExists++;
+					}
+					if (wall4 == Wall.EXISTS) {
+						exists++;
+					} else if (wall4 == Wall.NOT_EXISTS) {
+						notExists++;
+					}
+					// 壁枚数は1以外
+					if (exists == 1 && notExists == 3) {
+						return false;
+					} else if (notExists == 3) {
+						// 壁枚数0確定
+						if (wall1 == Wall.SPACE) {
+							tateWall[yIndex][xIndex] = Wall.NOT_EXISTS;
+						}
+						if (wall2 == Wall.SPACE) {
+							tateWall[yIndex][xIndex + 1] = Wall.NOT_EXISTS;
+						}
+						if (wall3 == Wall.SPACE) {
+							yokoWall[yIndex][xIndex] = Wall.NOT_EXISTS;
+						}
+						if (wall4 == Wall.SPACE) {
+							yokoWall[yIndex + 1][xIndex] = Wall.NOT_EXISTS;
+						}
+					} else if (notExists == 2 && exists == 1) {
+						// 壁枚数2確定
+						if (wall1 == Wall.SPACE) {
+							tateWall[yIndex][xIndex] = Wall.EXISTS;
+						}
+						if (wall2 == Wall.SPACE) {
+							tateWall[yIndex][xIndex + 1] = Wall.EXISTS;
+						}
+						if (wall3 == Wall.SPACE) {
+							yokoWall[yIndex][xIndex] = Wall.EXISTS;
+						}
+						if (wall4 == Wall.SPACE) {
+							yokoWall[yIndex + 1][xIndex] = Wall.EXISTS;
+						}
+					}
+				}
+			}
+			return true;
+		}
+
+		/**
 		 * 各種チェックを1セット実行
 		 * @param recursive
 		 */
@@ -487,6 +588,9 @@ public class FillominoSolver implements Solver {
 				return false;
 			}
 			if (!roomSolve()) {
+				return false;
+			}
+			if (!pileSolve()) {
 				return false;
 			}
 			if (!standAloneSolve()) {
@@ -506,6 +610,9 @@ public class FillominoSolver implements Solver {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
 					if (numbers[yIndex][xIndex] == null) {
 						Position pivot = new Position(yIndex, xIndex);
+						if (fixedPosSet.contains(pivot)) {
+							continue;
+						}
 						Set<Position> continueNotBlackPosSet = new HashSet<>();
 						continueNotBlackPosSet.add(pivot);
 						if (!setContinuePosSetContainsNumber(pivot, continueNotBlackPosSet, null)) {
@@ -514,6 +621,7 @@ public class FillominoSolver implements Solver {
 							if (checkAndSetContinueWhitePosSet(pivot, continueWhitePosSet, null,
 									continueNotBlackPosSet.size())) {
 								if (continueWhitePosSet.size() == continueNotBlackPosSet.size()) {
+									fixedPosSet.addAll(continueNotBlackPosSet);
 									for (Position pos : continueNotBlackPosSet) {
 										numbers[pos.getyIndex()][pos.getxIndex()] = continueNotBlackPosSet.size();
 									}
