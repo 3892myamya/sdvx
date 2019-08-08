@@ -404,7 +404,6 @@ public class KurochuteSolver implements Solver {
 		String param = params[params.length - 1];
 		System.out.println(new KurochuteSolver(height, width, param).solve());
 	}
-
 	@Override
 	public String solve() {
 		long start = System.nanoTime();
@@ -412,16 +411,19 @@ public class KurochuteSolver implements Solver {
 			System.out.println(field);
 			String befStr = field.getStateDump();
 			if (!field.solveAndCheck()) {
+				System.out.println(field);
 				return "問題に矛盾がある可能性があります。途中経過を返します。";
 			}
 			int recursiveCnt = 0;
 			while (field.getStateDump().equals(befStr) && recursiveCnt < 3) {
 				if (!candSolve(field, recursiveCnt)) {
+					System.out.println(field);
 					return "問題に矛盾がある可能性があります。途中経過を返します。";
 				}
 				recursiveCnt++;
 			}
 			if (recursiveCnt == 3 && field.getStateDump().equals(befStr)) {
+				System.out.println(field);
 				return "解けませんでした。途中経過を返します。";
 			}
 		}
@@ -436,7 +438,6 @@ public class KurochuteSolver implements Solver {
 	 * 仮置きして調べる
 	 */
 	private boolean candSolve(Field field, int recursive) {
-		System.out.println(field);
 		String str = field.getStateDump();
 		for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 			for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {

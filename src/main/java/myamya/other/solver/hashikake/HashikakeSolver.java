@@ -853,13 +853,14 @@ public class HashikakeSolver implements Solver {
 			}
 			int recursiveCnt = 0;
 			while (field.getStateDump().equals(befStr) && recursiveCnt < 3) {
-				if (!candSolve(field, recursiveCnt)) {
+				if (!candSolve(field, recursiveCnt == 2 ? 999 : recursiveCnt)) {
 					System.out.println(field);
 					return "問題に矛盾がある可能性があります。途中経過を返します。";
 				}
 				recursiveCnt++;
 			}
 			if (recursiveCnt == 3 && field.getStateDump().equals(befStr)) {
+				System.out.println(field);
 				return "解けませんでした。途中経過を返します。";
 			}
 		}
@@ -875,7 +876,7 @@ public class HashikakeSolver implements Solver {
 	 * @param posSet
 	 */
 	private boolean candSolve(Field field, int recursive) {
-		//		 System.out.println(field);
+//				 System.out.println(field);
 		String str = field.getStateDump();
 		for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 			for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
