@@ -41,6 +41,14 @@ public class HashikakeSolver implements Solver {
 			return tateWall;
 		}
 
+		public Integer[][] getYokoWallGate() {
+			return yokoWallGate;
+		}
+
+		public Integer[][] getTateWallGate() {
+			return tateWallGate;
+		}
+
 		public Integer[][] getNumbers() {
 			return numbers;
 		}
@@ -297,6 +305,7 @@ public class HashikakeSolver implements Solver {
 
 		/**
 		 * 数字は周りのゲートの合計値である。誤っている場合falseを返す。
+		 * TODO 強化余地あり。2つはかからないが最低1本はかけるとかの判定を入れたい
 		 */
 		private boolean isleSolve() {
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
@@ -876,7 +885,7 @@ public class HashikakeSolver implements Solver {
 	 * @param posSet
 	 */
 	private boolean candSolve(Field field, int recursive) {
-//				 System.out.println(field);
+		//				 System.out.println(field);
 		String str = field.getStateDump();
 		for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 			for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {

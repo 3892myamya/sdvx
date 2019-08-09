@@ -94,26 +94,48 @@ public class CellsSolver implements Solver {
 						Position pos = new Position(index / getXLength(), index % getXLength());
 						numbers[pos.getyIndex()][pos.getxIndex()] = num;
 						if (num == 7) {
+							// 7は無効マス扱いとする。
 							numbers[pos.getyIndex()][pos.getxIndex()] = -1;
-							// 7は無効マス扱いとする。周囲の壁を閉鎖。
-							if (pos.getyIndex() != 0) {
-								tateWall[pos.getyIndex() - 1][pos.getxIndex()] = Wall.EXISTS;
-							}
-							if (pos.getxIndex() != getXLength() - 1) {
-								yokoWall[pos.getyIndex()][pos.getxIndex()] = Wall.EXISTS;
-							}
-							if (pos.getyIndex() != getYLength() - 1) {
-								tateWall[pos.getyIndex()][pos.getxIndex()] = Wall.EXISTS;
-							}
-							if (pos.getxIndex() != 0) {
-								yokoWall[pos.getyIndex()][pos.getxIndex() - 1] = Wall.EXISTS;
-							}
 						}
 					}
 					index++;
 				}
 			}
-
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					if (numbers[yIndex][xIndex] != null && numbers[yIndex][xIndex] == -1) {
+						// 無効マスの周囲の壁を確定。
+						if (yIndex != 0) {
+							if (numbers[yIndex - 1][xIndex] != null && numbers[yIndex - 1][xIndex] == -1) {
+								tateWall[yIndex - 1][xIndex] = Wall.NOT_EXISTS;
+							} else {
+								tateWall[yIndex - 1][xIndex] = Wall.EXISTS;
+							}
+						}
+						if (xIndex != getXLength() - 1) {
+							if (numbers[yIndex][xIndex + 1] != null && numbers[yIndex][xIndex + 1] == -1) {
+								yokoWall[yIndex][xIndex] = Wall.NOT_EXISTS;
+							} else {
+								yokoWall[yIndex][xIndex] = Wall.EXISTS;
+							}
+						}
+						if (yIndex != getYLength() - 1) {
+							if (numbers[yIndex + 1][xIndex] != null && numbers[yIndex + 1][xIndex] == -1) {
+								tateWall[yIndex][xIndex] = Wall.NOT_EXISTS;
+							} else {
+								tateWall[yIndex][xIndex] = Wall.EXISTS;
+							}
+						}
+						if (xIndex != 0) {
+							if (numbers[yIndex][xIndex - 1] != null && numbers[yIndex][xIndex - 1] == -1) {
+								yokoWall[yIndex][xIndex - 1] = Wall.NOT_EXISTS;
+							} else {
+								yokoWall[yIndex][xIndex - 1] = Wall.EXISTS;
+							}
+						}
+					}
+				}
+			}
 		}
 
 		public Field(Field other) {
