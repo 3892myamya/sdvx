@@ -191,7 +191,7 @@ public class HeyaSolver {
 				}
 			}
 		}
-		return true;
+		return connectSolve();
 	}
 
 	int cnt;
