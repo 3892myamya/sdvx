@@ -236,15 +236,15 @@ public class MochikoroSolver implements Solver {
 						int targetX = minX - 1;
 						while (targetX >= 0 && masu[candY][targetX] != Masu.BLACK) {
 							// 数字取り込み判定。周囲まで取り込む
-							Integer masuUp = candY == 0 ? null : numbers[candY - 1][targetX];
-							Integer masuDown = candY == getYLength() - 1 ? null : numbers[candY + 1][targetX];
-							Integer masuLeft = targetX == 0 ? null : numbers[candY][targetX - 1];
-							if (numbers[candY][targetX] != null || masuUp != null
-									|| masuDown != null && masuLeft != null) {
-								if (existsNumber) {
+							if (existsNumber) {
+								// TODO ふくらまし中に数字を発見したかどうかを反映したいけど、
+								// 同じマスが複数回走査されることを考慮しないといけない…
+								Integer masuUp = candY == 0 ? null : numbers[candY - 1][targetX];
+								Integer masuDown = candY == getYLength() - 1 ? null : numbers[candY + 1][targetX];
+								Integer masuLeft = targetX == 0 ? null : numbers[candY][targetX - 1];
+								if (numbers[candY][targetX] != null || masuUp != null
+										|| masuDown != null && masuLeft != null) {
 									break;
-								} else {
-									existsNumber = true;
 								}
 							}
 							targetX--;
@@ -253,15 +253,13 @@ public class MochikoroSolver implements Solver {
 						targetX = maxX + 1;
 						while (targetX < getXLength() && masu[candY][targetX] != Masu.BLACK) {
 							// 数字取り込み判定。周囲まで取り込む
-							Integer masuUp = candY == 0 ? null : numbers[candY - 1][targetX];
-							Integer masuRight = targetX == getXLength() - 1 ? null : numbers[candY][targetX + 1];
-							Integer masuDown = candY == getYLength() - 1 ? null : numbers[candY + 1][targetX];
-							if (numbers[candY][targetX] != null || masuUp != null
-									|| masuRight != null && masuDown != null) {
-								if (existsNumber) {
+							if (existsNumber) {
+								Integer masuUp = candY == 0 ? null : numbers[candY - 1][targetX];
+								Integer masuRight = targetX == getXLength() - 1 ? null : numbers[candY][targetX + 1];
+								Integer masuDown = candY == getYLength() - 1 ? null : numbers[candY + 1][targetX];
+								if (numbers[candY][targetX] != null || masuUp != null
+										|| masuRight != null && masuDown != null) {
 									break;
-								} else {
-									existsNumber = true;
 								}
 							}
 							targetX++;
@@ -276,15 +274,13 @@ public class MochikoroSolver implements Solver {
 						int targetY = minY - 1;
 						while (targetY >= 0 && masu[targetY][candX] != Masu.BLACK) {
 							// 数字取り込み判定。周囲まで取り込む
-							Integer masuUp = targetY == 0 ? null : numbers[targetY - 1][candX];
-							Integer masuRight = candX == getXLength() - 1 ? null : numbers[targetY][candX + 1];
-							Integer masuLeft = candX == 0 ? null : numbers[targetY][candX - 1];
-							if (numbers[targetY][candX] != null || masuUp != null
-									|| masuRight != null && masuLeft != null) {
-								if (existsNumber) {
+							if (existsNumber) {
+								Integer masuUp = targetY == 0 ? null : numbers[targetY - 1][candX];
+								Integer masuRight = candX == getXLength() - 1 ? null : numbers[targetY][candX + 1];
+								Integer masuLeft = candX == 0 ? null : numbers[targetY][candX - 1];
+								if (numbers[targetY][candX] != null || masuUp != null
+										|| masuRight != null && masuLeft != null) {
 									break;
-								} else {
-									existsNumber = true;
 								}
 							}
 							targetY--;
@@ -293,15 +289,13 @@ public class MochikoroSolver implements Solver {
 						targetY = maxY + 1;
 						while (targetY < getYLength() && masu[targetY][candX] != Masu.BLACK) {
 							// 数字取り込み判定。周囲まで取り込む
-							Integer masuRight = candX == getXLength() - 1 ? null : numbers[targetY][candX + 1];
-							Integer masuDown = targetY == getYLength() - 1 ? null : numbers[targetY + 1][candX];
-							Integer masuLeft = candX == 0 ? null : numbers[targetY][candX - 1];
-							if (numbers[targetY][candX] != null || masuRight != null
-									|| masuDown != null && masuLeft != null) {
-								if (existsNumber) {
+							if (existsNumber) {
+								Integer masuRight = candX == getXLength() - 1 ? null : numbers[targetY][candX + 1];
+								Integer masuDown = targetY == getYLength() - 1 ? null : numbers[targetY + 1][candX];
+								Integer masuLeft = candX == 0 ? null : numbers[targetY][candX - 1];
+								if (numbers[targetY][candX] != null || masuRight != null
+										|| masuDown != null && masuLeft != null) {
 									break;
-								} else {
-									existsNumber = true;
 								}
 							}
 							targetY++;
