@@ -224,78 +224,86 @@ public class MochikoroSolver implements Solver {
 					}
 				}
 				// 餅が有効な数字を含む場合、このまま餅を膨らませて目的の数を満たせるか調査
-				if (number != 0) {
-					int maxYsize = getYLength();
-					int maxXsize = getXLength();
-					if ((maxY - minY + 1) * (maxX - minX + 1) == number) {
-						maxYsize = maxY - minY + 1;
-						maxXsize = maxX - minX + 1;
-					} else {
-						// 最大でどこまで膨らむか
-						for (int candY = minY; candY <= maxY; candY++) {
-							int xHukurami = 0;
-							int targetX = minX - 1;
-							while (targetX >= 0 && masu[candY][targetX] != Masu.BLACK
-									&& numbers[candY][targetX] == null) {
-								// 周囲に数字があってもだめ
+				int maxYsize = getYLength();
+				int maxXsize = getXLength();
+				if (number != 0 && (maxY - minY + 1) * (maxX - minX + 1) == number) {
+					maxYsize = maxY - minY + 1;
+					maxXsize = maxX - minX + 1;
+				} else {
+					// 最大でどこまで膨らむか
+					for (int candY = minY; candY <= maxY; candY++) {
+						int xHukurami = 0;
+						int targetX = minX - 1;
+						while (targetX >= 0 && masu[candY][targetX] != Masu.BLACK
+								&& numbers[candY][targetX] == null) {
+							// 周囲に数字があってもだめ
+							if (existsNumber) {
 								Integer masuUp = candY == 0 ? null : numbers[candY - 1][targetX];
 								Integer masuDown = candY == getYLength() - 1 ? null : numbers[candY + 1][targetX];
 								Integer masuLeft = targetX == 0 ? null : numbers[candY][targetX - 1];
 								if (masuUp != null || masuDown != null && masuLeft != null) {
 									break;
 								}
-								targetX--;
-								xHukurami++;
 							}
-							targetX = maxX + 1;
-							while (targetX < getXLength() && masu[candY][targetX] != Masu.BLACK
-									&& numbers[candY][targetX] == null) {
-								// 周囲に数字があってもだめ
+							targetX--;
+							xHukurami++;
+						}
+						targetX = maxX + 1;
+						while (targetX < getXLength() && masu[candY][targetX] != Masu.BLACK
+								&& numbers[candY][targetX] == null) {
+							// 周囲に数字があってもだめ
+							if (existsNumber) {
 								Integer masuUp = candY == 0 ? null : numbers[candY - 1][targetX];
 								Integer masuRight = targetX == getXLength() - 1 ? null : numbers[candY][targetX + 1];
 								Integer masuDown = candY == getYLength() - 1 ? null : numbers[candY + 1][targetX];
 								if (masuUp != null || masuRight != null && masuDown != null) {
 									break;
 								}
-								targetX++;
-								xHukurami++;
 							}
-							if (maxX - minX + 1 + xHukurami < maxXsize) {
-								maxXsize = maxX - minX + 1 + xHukurami;
-							}
+							targetX++;
+							xHukurami++;
 						}
-						for (int candX = minX; candX <= maxX; candX++) {
-							int yHukurami = 0;
-							int targetY = minY - 1;
-							while (targetY >= 0 && masu[targetY][candX] != Masu.BLACK
-									&& numbers[targetY][candX] == null) {
-								// 周囲に数字があってもだめ
+						if (maxX - minX + 1 + xHukurami < maxXsize) {
+							maxXsize = maxX - minX + 1 + xHukurami;
+						}
+					}
+					for (int candX = minX; candX <= maxX; candX++) {
+						int yHukurami = 0;
+						int targetY = minY - 1;
+						while (targetY >= 0 && masu[targetY][candX] != Masu.BLACK
+								&& numbers[targetY][candX] == null) {
+							// 周囲に数字があってもだめ
+							if (existsNumber) {
 								Integer masuUp = targetY == 0 ? null : numbers[targetY - 1][candX];
 								Integer masuRight = candX == getXLength() - 1 ? null : numbers[targetY][candX + 1];
 								Integer masuLeft = candX == 0 ? null : numbers[targetY][candX - 1];
 								if (masuUp != null || masuRight != null && masuLeft != null) {
 									break;
 								}
-								targetY--;
-								yHukurami++;
 							}
-							targetY = maxY + 1;
-							while (targetY < getYLength() && masu[targetY][candX] != Masu.BLACK
-									&& numbers[targetY][candX] == null) {
-								// 周囲に数字があってもだめ
+							targetY--;
+							yHukurami++;
+						}
+						targetY = maxY + 1;
+						while (targetY < getYLength() && masu[targetY][candX] != Masu.BLACK
+								&& numbers[targetY][candX] == null) {
+							// 周囲に数字があってもだめ
+							if (existsNumber) {
 								Integer masuRight = candX == getXLength() - 1 ? null : numbers[targetY][candX + 1];
 								Integer masuDown = targetY == getYLength() - 1 ? null : numbers[targetY + 1][candX];
 								Integer masuLeft = candX == 0 ? null : numbers[targetY][candX - 1];
 								if (masuRight != null || masuDown != null && masuLeft != null) {
 									break;
 								}
-								targetY++;
-								yHukurami++;
 							}
-							if (maxY - minY + 1 + yHukurami < maxYsize) {
-								maxYsize = maxY - minY + 1 + yHukurami;
-							}
+							targetY++;
+							yHukurami++;
 						}
+						if (maxY - minY + 1 + yHukurami < maxYsize) {
+							maxYsize = maxY - minY + 1 + yHukurami;
+						}
+					}
+					if (number != 0) {
 						// 膨らむ候補との突合せ
 						boolean isOkMochi = false;
 						for (int candY = maxY - minY + 1; candY <= maxYsize; candY++) {
@@ -316,28 +324,28 @@ public class MochikoroSolver implements Solver {
 							return false;
 						}
 					}
-					if (maxYsize == maxY - minY + 1 && maxXsize == maxX - minX + 1) {
-						// 餅の形状が確定
-						for (int candY = minY; candY <= maxY; candY++) {
-							for (int candX = minX; candX <= maxX; candX++) {
-								fixedPosSet.add(new Position(candY, candX));
-							}
-						}
-						for (int candY = minY; candY <= maxY; candY++) {
-							if (minX > 0) {
-								masu[candY][minX - 1] = Masu.BLACK;
-							}
-							if (maxX < getXLength() - 1) {
-								masu[candY][maxX + 1] = Masu.BLACK;
-							}
-						}
+				}
+				if (maxYsize == maxY - minY + 1 && maxXsize == maxX - minX + 1) {
+					// 餅の形状が確定
+					for (int candY = minY; candY <= maxY; candY++) {
 						for (int candX = minX; candX <= maxX; candX++) {
-							if (minY > 0) {
-								masu[minY - 1][candX] = Masu.BLACK;
-							}
-							if (maxY < getYLength() - 1) {
-								masu[maxY + 1][candX] = Masu.BLACK;
-							}
+							fixedPosSet.add(new Position(candY, candX));
+						}
+					}
+					for (int candY = minY; candY <= maxY; candY++) {
+						if (minX > 0) {
+							masu[candY][minX - 1] = Masu.BLACK;
+						}
+						if (maxX < getXLength() - 1) {
+							masu[candY][maxX + 1] = Masu.BLACK;
+						}
+					}
+					for (int candX = minX; candX <= maxX; candX++) {
+						if (minY > 0) {
+							masu[minY - 1][candX] = Masu.BLACK;
+						}
+						if (maxY < getYLength() - 1) {
+							masu[maxY + 1][candX] = Masu.BLACK;
 						}
 					}
 				}
