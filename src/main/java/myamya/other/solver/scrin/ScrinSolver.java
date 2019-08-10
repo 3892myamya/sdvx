@@ -571,7 +571,7 @@ public class ScrinSolver implements Solver {
 	}
 
 	public static void main(String[] args) {
-		String url = "https://puzz.link/p?https://puzz.link/p?scrin/10/10/n.i3p1h1z2l5l4l2v2m2i2h"; //urlを入れれば試せる
+		String url = ""; //urlを入れれば試せる
 		String[] params = url.split("/");
 		int height = Integer.parseInt(params[params.length - 2]);
 		int width = Integer.parseInt(params[params.length - 3]);
