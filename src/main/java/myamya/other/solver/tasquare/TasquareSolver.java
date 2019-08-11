@@ -158,24 +158,21 @@ public class TasquareSolver implements Solver {
 		 * 超過や不足が確定したらfalseを返す。
 		 */
 		private boolean countSolve() {
-			// TODO クロットでやってる打ち切りロジックを入れること
-			// たすくえあでは-1は1以上なので注意
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
 					if (numbers[yIndex][xIndex] != null) {
 						Position pivot = new Position(yIndex, xIndex);
-						Set<Position> continueBlackPosSet = new HashSet<>();
-						setContinueBlackPosSet(pivot, continueBlackPosSet, null);
-						if (numbers[yIndex][xIndex] != -1 && numbers[yIndex][xIndex] < continueBlackPosSet.size()) {
-							// サイズ超過
-							return false;
-						}
-						Set<Position> continueNotWhitePosSet = new HashSet<>();
-						setContinueNotWhitePosSet(pivot, continueNotWhitePosSet, null);
-						if (numbers[yIndex][xIndex] > continueNotWhitePosSet.size()
-								|| (numbers[yIndex][xIndex] == -1 && continueNotWhitePosSet.isEmpty())) {
+						if (!setContinueNotWhitePosSet(pivot,
+								numbers[yIndex][xIndex] == -1 ? 1 : numbers[yIndex][xIndex])) {
 							// サイズ不足
 							return false;
+						}
+						if (numbers[yIndex][xIndex] != -1) {
+							Set<Position> continueBlackPosSet = new HashSet<>();
+							if (!setContinueBlackPosSet(pivot, continueBlackPosSet, numbers[yIndex][xIndex], null)) {
+								// サイズ超過
+								return false;
+							}
 						}
 					}
 				}
@@ -197,11 +194,10 @@ public class TasquareSolver implements Solver {
 				}
 			}
 			while (!whitePosSet.isEmpty()) {
-				// TODO これじゃ長方形
 				Position typicalWhitePos = new ArrayList<>(whitePosSet).get(0);
 				Set<Position> continuePosSet = new HashSet<>();
 				continuePosSet.add(typicalWhitePos);
-				setContinueBlackPosSet(typicalWhitePos, continuePosSet, null);
+				setContinueBlackPosSet(typicalWhitePos, continuePosSet, 999, null);
 				int minY = getYLength() - 1;
 				int maxY = 0;
 				int minX = getXLength() - 1;
@@ -228,59 +224,228 @@ public class TasquareSolver implements Solver {
 						masu[yIndex][xIndex] = Masu.BLACK;
 					}
 				}
+				int ySize = maxY - minY + 1;
+				int xSize = maxX - minX + 1;
+				if (ySize > xSize) {
+					int minCandX = 0;
+					int maxCandX = getXLength() - 1;
+					for (int candY = minY; candY <= maxY; candY++) {
+						int targetX = minX;
+						while (targetX - 1 >= 0 && masu[candY][targetX - 1] != Masu.NOT_BLACK) {
+							targetX--;
+						}
+						if (minCandX < targetX) {
+							minCandX = targetX;
+						}
+						targetX = maxX;
+						while (targetX + 1 < getXLength() && masu[candY][targetX + 1] != Masu.NOT_BLACK) {
+							targetX++;
+						}
+						if (maxCandX > targetX) {
+							maxCandX = targetX;
+						}
+						if (ySize > maxCandX - minCandX + 1) {
+							// 正方形にできない
+							return false;
+						}
+					}
+				} else if (ySize < xSize) {
+					int minCandY = 0;
+					int maxCandY = getXLength() - 1;
+					for (int candX = minX; candX <= maxX; candX++) {
+						int targetY = minY;
+						while (targetY - 1 >= 0 && masu[targetY - 1][candX] != Masu.NOT_BLACK) {
+							targetY--;
+						}
+						if (minCandY < targetY) {
+							minCandY = targetY;
+						}
+						targetY = maxY;
+						while (targetY + 1 < getYLength() && masu[targetY + 1][candX] != Masu.NOT_BLACK) {
+							targetY++;
+						}
+						if (maxCandY > targetY) {
+							maxCandY = targetY;
+						}
+						if (xSize > maxCandY - minCandY + 1) {
+							// 正方形にできない
+							return false;
+						}
+					}
+				}
 				whitePosSet.removeAll(continuePosSet);
 			}
 			return true;
 		}
 
 		/**
-		 * posを起点に上下左右に白確定でないマスを無制限につなげていく。
+		 * posを起点に上下左右に白確定でないマスをつなげていく。
+		 * sizeが不足しないと分かった時点でtrueを返す。
 		 */
-		private void setContinueNotWhitePosSet(Position pos, Set<Position> continuePosSet, Direction from) {
-			if (pos.getyIndex() != 0 && from != Direction.UP) {
-				Position nextPos = new Position(pos.getyIndex() - 1, pos.getxIndex());
-				if (masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.NOT_BLACK
-						&& !continuePosSet.contains(nextPos)) {
-					continuePosSet.add(nextPos);
-					setContinueNotWhitePosSet(nextPos, continuePosSet, Direction.DOWN);
+		private boolean setContinueNotWhitePosSet(Position pos, int size) {
+			int maxSize = 0;
+			int upCnt = 0;
+			int adjust = 1;
+			while (pos.getyIndex() - adjust >= 0) {
+				if (masu[pos.getyIndex() - adjust][pos.getxIndex()] == Masu.NOT_BLACK) {
+					break;
 				}
-			}
-			if (pos.getxIndex() != getXLength() - 1 && from != Direction.RIGHT) {
-				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() + 1);
-				if (masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.NOT_BLACK
-						&& !continuePosSet.contains(nextPos)) {
-					continuePosSet.add(nextPos);
-					setContinueNotWhitePosSet(nextPos, continuePosSet, Direction.LEFT);
+				// 膨らませ調査
+				int minX = 0;
+				int maxX = getXLength() - 1;
+				for (int candY = pos.getyIndex() - adjust; candY <= pos.getyIndex() - 1; candY++) {
+					int candX = pos.getxIndex();
+					while (candX - 1 >= 0 && masu[candY][candX - 1] != Masu.NOT_BLACK) {
+						candX--;
+					}
+					if (minX < candX) {
+						minX = candX;
+					}
+					candX = pos.getxIndex();
+					while (candX + 1 < getXLength() && masu[candY][candX + 1] != Masu.NOT_BLACK) {
+						candX++;
+					}
+					if (maxX > candX) {
+						maxX = candX;
+					}
 				}
-			}
-			if (pos.getyIndex() != getYLength() - 1 && from != Direction.DOWN) {
-				Position nextPos = new Position(pos.getyIndex() + 1, pos.getxIndex());
-				if (masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.NOT_BLACK
-						&& !continuePosSet.contains(nextPos)) {
-					continuePosSet.add(nextPos);
-					setContinueNotWhitePosSet(nextPos, continuePosSet, Direction.UP);
+				if (maxX - minX + 1 < adjust) {
+					break;
 				}
+				upCnt++;
+				adjust++;
 			}
-			if (pos.getxIndex() != 0 && from != Direction.LEFT) {
-				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() - 1);
-				if (masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.NOT_BLACK
-						&& !continuePosSet.contains(nextPos)) {
-					continuePosSet.add(nextPos);
-					setContinueNotWhitePosSet(nextPos, continuePosSet, Direction.RIGHT);
+			maxSize = maxSize + upCnt * upCnt;
+			if (maxSize >= size) {
+				return true;
+			}
+
+			int rightCnt = 0;
+			adjust = 1;
+			while (pos.getxIndex() + adjust < getXLength()) {
+				if (masu[pos.getyIndex()][pos.getxIndex() + adjust] == Masu.NOT_BLACK) {
+					break;
 				}
+				// 膨らませ調査
+				int minY = 0;
+				int maxY = getYLength() - 1;
+				for (int candX = pos.getxIndex() + adjust; candX <= pos.getxIndex() + 1; candX++) {
+					int candY = pos.getyIndex();
+					while (candY - 1 >= 0 && masu[candY - 1][candX] != Masu.NOT_BLACK) {
+						candY--;
+					}
+					if (minY < candY) {
+						minY = candY;
+					}
+					candY = pos.getyIndex();
+					while (candY + 1 < getYLength() && masu[candY + 1][candX] != Masu.NOT_BLACK) {
+						candY++;
+					}
+					if (maxY > candY) {
+						maxY = candY;
+					}
+				}
+				if (maxY - minY + 1 < adjust) {
+					break;
+				}
+				rightCnt++;
+				adjust++;
 			}
+			maxSize = maxSize + rightCnt * rightCnt;
+			if (maxSize >= size) {
+				return true;
+			}
+
+			int downCnt = 0;
+			adjust = 1;
+			while (pos.getyIndex() + adjust < getYLength()) {
+				if (masu[pos.getyIndex() + adjust][pos.getxIndex()] == Masu.NOT_BLACK) {
+					break;
+				}
+				// 膨らませ調査
+				int minX = 0;
+				int maxX = getXLength() - 1;
+				for (int candY = pos.getyIndex() + adjust; candY <= pos.getyIndex() + 1; candY++) {
+					int candX = pos.getxIndex();
+					while (candX - 1 >= 0 && masu[candY][candX - 1] != Masu.NOT_BLACK) {
+						candX--;
+					}
+					if (minX < candX) {
+						minX = candX;
+					}
+					candX = pos.getxIndex();
+					while (candX + 1 < getXLength() && masu[candY][candX + 1] != Masu.NOT_BLACK) {
+						candX++;
+					}
+					if (maxX > candX) {
+						maxX = candX;
+					}
+				}
+				if (maxX - minX + 1 < adjust) {
+					break;
+				}
+				downCnt++;
+				adjust++;
+			}
+			maxSize = maxSize + downCnt * downCnt;
+			if (maxSize >= size) {
+				return true;
+			}
+
+			int leftCnt = 0;
+			adjust = 1;
+			while (pos.getxIndex() - adjust >= 0) {
+				if (masu[pos.getyIndex()][pos.getxIndex() - adjust] == Masu.NOT_BLACK) {
+					break;
+				}
+				// 膨らませ調査
+				int minY = 0;
+				int maxY = getYLength() - 1;
+				for (int candX = pos.getxIndex() + adjust; candX <= pos.getxIndex() - 1; candX++) {
+					int candY = pos.getyIndex();
+					while (candY - 1 >= 0 && masu[candY - 1][candX] != Masu.NOT_BLACK) {
+						candY--;
+					}
+					if (minY < candY) {
+						minY = candY;
+					}
+					candY = pos.getyIndex();
+					while (candY + 1 < getYLength() && masu[candY + 1][candX] != Masu.NOT_BLACK) {
+						candY++;
+					}
+					if (maxY > candY) {
+						maxY = candY;
+					}
+				}
+				if (maxY - minY + 1 < adjust) {
+					break;
+				}
+				leftCnt++;
+				adjust++;
+			}
+			maxSize = maxSize + leftCnt * leftCnt;
+			if (maxSize >= size) {
+				return true;
+			}
+			return false;
 		}
 
 		/**
-		 * posを起点に上下左右に黒確定マスを無制限につなげていく。
+		 * posを起点に上下左右に黒確定マスをつなげていく。
+		 * sizeが超過すると分かった時点でfalseを返す。
 		 */
-		private void setContinueBlackPosSet(Position pos, Set<Position> continuePosSet, Direction from) {
+		private boolean setContinueBlackPosSet(Position pos, Set<Position> continuePosSet, int size, Direction from) {
+			if (continuePosSet.size() > size) {
+				return false;
+			}
 			if (pos.getyIndex() != 0 && from != Direction.UP) {
 				Position nextPos = new Position(pos.getyIndex() - 1, pos.getxIndex());
 				if (masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.BLACK
 						&& !continuePosSet.contains(nextPos)) {
 					continuePosSet.add(nextPos);
-					setContinueBlackPosSet(nextPos, continuePosSet, Direction.DOWN);
+					if (!setContinueBlackPosSet(nextPos, continuePosSet, size, Direction.DOWN)) {
+						return false;
+					}
 				}
 			}
 			if (pos.getxIndex() != getXLength() - 1 && from != Direction.RIGHT) {
@@ -288,7 +453,9 @@ public class TasquareSolver implements Solver {
 				if (masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.BLACK
 						&& !continuePosSet.contains(nextPos)) {
 					continuePosSet.add(nextPos);
-					setContinueBlackPosSet(nextPos, continuePosSet, Direction.LEFT);
+					if (!setContinueBlackPosSet(nextPos, continuePosSet, size, Direction.LEFT)) {
+						return false;
+					}
 				}
 			}
 			if (pos.getyIndex() != getYLength() - 1 && from != Direction.DOWN) {
@@ -296,7 +463,9 @@ public class TasquareSolver implements Solver {
 				if (masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.BLACK
 						&& !continuePosSet.contains(nextPos)) {
 					continuePosSet.add(nextPos);
-					setContinueBlackPosSet(nextPos, continuePosSet, Direction.UP);
+					if (!setContinueBlackPosSet(nextPos, continuePosSet, size, Direction.UP)) {
+						return false;
+					}
 				}
 			}
 			if (pos.getxIndex() != 0 && from != Direction.LEFT) {
@@ -304,9 +473,12 @@ public class TasquareSolver implements Solver {
 				if (masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.BLACK
 						&& !continuePosSet.contains(nextPos)) {
 					continuePosSet.add(nextPos);
-					setContinueBlackPosSet(nextPos, continuePosSet, Direction.RIGHT);
+					if (!setContinueBlackPosSet(nextPos, continuePosSet, size, Direction.RIGHT)) {
+						return false;
+					}
 				}
 			}
+			return true;
 		}
 
 		/**
@@ -421,6 +593,8 @@ public class TasquareSolver implements Solver {
 	}
 
 	public static void main(String[] args) {
+		// http://pzv.jp/p.html?tasquare/10/10/g2zw5g3i-13p.s1v5j2g1g2h./
+		// http://pzv.jp/p.html?tasquare/10/10/g2zw5g3h-12-13p.s1v5j2g1g2h./
 		String url = ""; //urlを入れれば試せる
 		String[] params = url.split("/");
 		int height = Integer.parseInt(params[params.length - 2]);
@@ -440,7 +614,7 @@ public class TasquareSolver implements Solver {
 			}
 			int recursiveCnt = 0;
 			while (field.getStateDump().equals(befStr) && recursiveCnt < 3) {
-				if (!candSolve(field, recursiveCnt == 2 ? 999 : recursiveCnt)) {
+				if (!candSolve(field, recursiveCnt)) {
 					return "問題に矛盾がある可能性があります。途中経過を返します。";
 				}
 				recursiveCnt++;
@@ -460,6 +634,7 @@ public class TasquareSolver implements Solver {
 	 * 仮置きして調べる
 	 */
 	private boolean candSolve(Field field, int recursive) {
+		System.out.println(field);
 		String str = field.getStateDump();
 		for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 			for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
