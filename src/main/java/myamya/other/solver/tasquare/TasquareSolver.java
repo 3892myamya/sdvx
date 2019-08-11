@@ -593,8 +593,6 @@ public class TasquareSolver implements Solver {
 	}
 
 	public static void main(String[] args) {
-		// http://pzv.jp/p.html?tasquare/10/10/g2zw5g3i-13p.s1v5j2g1g2h./
-		// http://pzv.jp/p.html?tasquare/10/10/g2zw5g3h-12-13p.s1v5j2g1g2h./
 		String url = ""; //urlを入れれば試せる
 		String[] params = url.split("/");
 		int height = Integer.parseInt(params[params.length - 2]);
