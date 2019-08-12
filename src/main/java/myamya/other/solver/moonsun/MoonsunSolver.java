@@ -21,7 +21,7 @@ public class MoonsunSolver implements Solver {
 
 		// マスの情報
 		private Masu[][] masu;
-		// 月と太陽の情報
+		// 月と太陽の情報。1が太陽、2が月
 		private final Integer[][] moonsuns;
 		// 横をふさぐ壁が存在するか
 		// 0,0 = trueなら、0,0と0,1の間に壁があるという意味
@@ -42,6 +42,10 @@ public class MoonsunSolver implements Solver {
 
 		public Masu[][] getMasu() {
 			return masu;
+		}
+
+		public Integer[][] getMoonSuns() {
+			return moonsuns;
 		}
 
 		public boolean[][] getYokoRoomWall() {

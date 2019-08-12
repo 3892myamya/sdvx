@@ -26,6 +26,10 @@ public class ScrinSolver implements Solver {
 			return masu;
 		}
 
+		public Integer[][] getNumbers() {
+			return numbers;
+		}
+
 		public int getYLength() {
 			return masu.length;
 		}
