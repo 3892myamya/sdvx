@@ -1,4 +1,4 @@
-package myamya.other.solver.iceburn;
+package myamya.other.solver.icebarn;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -56,18 +56,26 @@ public class IcebarnSolver implements Solver {
 			return masu[0].length;
 		}
 
-		public Field(int height, int width, String param) {
+		public Field(int height, int width, String param, int start, int goal) {
 			masu = new Masu[height][width];
 			yokoExtraWall = new Wall[height][width + 1];
 			tateExtraWall = new Wall[height + 1][width];
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength() + 1; xIndex++) {
-					yokoExtraWall[yIndex][xIndex] = Wall.SPACE;
+					if (xIndex == 0 || xIndex == getXLength()) {
+						yokoExtraWall[yIndex][xIndex] = Wall.EXISTS;
+					} else {
+						yokoExtraWall[yIndex][xIndex] = Wall.SPACE;
+					}
 				}
 			}
 			for (int yIndex = 0; yIndex < getYLength() + 1; yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					tateExtraWall[yIndex][xIndex] = Wall.SPACE;
+					if (yIndex == 0 || yIndex == getYLength()) {
+						tateExtraWall[yIndex][xIndex] = Wall.EXISTS;
+					} else {
+						tateExtraWall[yIndex][xIndex] = Wall.SPACE;
+					}
 				}
 			}
 			// アイスバーンとそうでないマスの判別のため一時的にマスを色分け
@@ -143,22 +151,62 @@ public class IcebarnSolver implements Solver {
 			for (int i = readPos; i < param.length(); i++) {
 				char ch = param.charAt(i);
 				index = index + Character.getNumericValue(ch);
-				if (index < (height * (width -1))) {
+				if (ch == 'z') {
+					continue;
+				}
+				if (index < (height * (width - 1))) {
 					// 左向き
 					int wkIndex = index;
-				} else if (index < (height * (width -1)) + ((height -1) * width)){
+					yokoExtraWallDirection[wkIndex / (width - 1)][wkIndex % (width - 1) + 1] = Direction.LEFT;
+					yokoExtraWall[wkIndex / (width - 1)][wkIndex % (width - 1) + 1] = Wall.NOT_EXISTS;
+				} else if (index < (height * (width - 1)) + ((height - 1) * width)) {
 					// 上向き
-					int wkIndex = index - (height * (width -1));
-				} else if (index < (height * (width -1)) + ((height -1) * width) + (height * (width -1))){
+					int wkIndex = index - (height * (width - 1));
+					tateExtraWallDirection[wkIndex / width + 1][wkIndex % width] = Direction.UP;
+					tateExtraWall[wkIndex / width + 1][wkIndex % width] = Wall.NOT_EXISTS;
+				} else if (index == (height * (width - 1)) + ((height - 1) * width)) {
+					continue;
+				} else if (index < (height * (width - 1)) + ((height - 1) * width) + (height * (width - 1))) {
 					// 右向き
-					int wkIndex = index - (height * (width -1)) - ((height -1) * width);
-				} else {
+					int wkIndex = index - (height * (width - 1)) - ((height - 1) * width);
+					yokoExtraWallDirection[wkIndex / (width - 1)][wkIndex % (width - 1) + 1] = Direction.RIGHT;
+					yokoExtraWall[wkIndex / (width - 1)][wkIndex % (width - 1) + 1] = Wall.NOT_EXISTS;
+				} else if (index < (height * (width - 1)) + ((height - 1) * width) + (height * (width - 1))
+						+ ((height - 1) * width)) {
 					// 下向き
-					int wkIndex = index - (height * (width -1)) - ((height -1) * width) - (height * (width -1));
-
+					int wkIndex = index - (height * (width - 1)) - ((height - 1) * width) - (height * (width - 1));
+					tateExtraWallDirection[wkIndex / width + 1][wkIndex % width] = Direction.DOWN;
+					tateExtraWall[wkIndex / width + 1][wkIndex % width] = Wall.NOT_EXISTS;
 				}
-
 				index++;
+			}
+			// 入口と出口
+			if (start < width) {
+				tateExtraWallDirection[0][start] = Direction.DOWN;
+				tateExtraWall[0][start] = Wall.NOT_EXISTS;
+			} else if (start < width * 2) {
+				tateExtraWallDirection[getYLength()][start - width] = Direction.UP;
+				tateExtraWall[getYLength()][start - width] = Wall.NOT_EXISTS;
+			} else if (start < width * 2 + height) {
+				yokoExtraWallDirection[goal - width - height][0] = Direction.RIGHT;
+				yokoExtraWall[start - width - height][0] = Wall.NOT_EXISTS;
+			} else {
+				yokoExtraWallDirection[goal - width - height - width][getXLength()] = Direction.LEFT;
+				yokoExtraWall[start - width - height - width][getXLength()] = Wall.NOT_EXISTS;
+			}
+
+			if (goal < width) {
+				tateExtraWallDirection[0][goal] = Direction.UP;
+				tateExtraWall[0][goal] = Wall.NOT_EXISTS;
+			} else if (goal < width * 2) {
+				tateExtraWallDirection[getYLength()][goal - width] = Direction.DOWN;
+				tateExtraWall[getYLength()][goal - width] = Wall.NOT_EXISTS;
+			} else if (goal < width * 2 + height) {
+				yokoExtraWallDirection[goal - width - height][0] = Direction.LEFT;
+				yokoExtraWall[goal - width - height][0] = Wall.NOT_EXISTS;
+			} else {
+				yokoExtraWallDirection[goal - width - height - width][getXLength()] = Direction.RIGHT;
+				yokoExtraWall[goal - width - height - width][getXLength()] = Wall.NOT_EXISTS;
 			}
 
 		}
@@ -220,24 +268,33 @@ public class IcebarnSolver implements Solver {
 			}
 		}
 
-		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
-		private static final String FULL_NUMS = "０１２３４５６７８９";
-
 		@Override
 		public String toString() {
 			StringBuilder sb = new StringBuilder();
 			for (int yIndex = 0; yIndex < getYLength() + 1; yIndex++) {
 				sb.append("□");
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					sb.append(tateExtraWall[yIndex][xIndex]);
+					if (tateExtraWallDirection[yIndex][xIndex] != null) {
+						sb.append(tateExtraWallDirection[yIndex][xIndex].getDirectString());
+					} else {
+						sb.append(tateExtraWall[yIndex][xIndex]);
+					}
 					sb.append("□");
 				}
 				sb.append(System.lineSeparator());
 				if (yIndex != getYLength()) {
 					for (int xIndex = 0; xIndex < getXLength() + 1; xIndex++) {
-						sb.append(yokoExtraWall[yIndex][xIndex]);
+						if (yokoExtraWallDirection[yIndex][xIndex] != null) {
+							sb.append(yokoExtraWallDirection[yIndex][xIndex].getDirectString());
+						} else {
+							sb.append(yokoExtraWall[yIndex][xIndex]);
+						}
 						if (xIndex != getXLength()) {
-							sb.append(masu[yIndex][xIndex]);
+							if (icebarnPosSet.contains(new Position(yIndex, xIndex))) {
+								sb.append("氷");
+							} else {
+								sb.append(masu[yIndex][xIndex]);
+							}
 						}
 					}
 				}
@@ -274,14 +331,66 @@ public class IcebarnSolver implements Solver {
 			if (!nextSolve()) {
 				return false;
 			}
+			if (!icebarnSolve()) {
+				return false;
+			}
+			if (!continueSolve()) {
+				return false;
+			}
+			if (!flowSolve()) {
+				return false;
+			}
 			if (!getStateDump().equals(str)) {
 				return solveAndCheck();
 			}
 			return true;
 		}
 
+		private boolean flowSolve() {
+			// TODO 自動生成されたメソッド・スタブ
+			return false;
+		}
+
 		/**
-		 * 黒マスの周囲の壁を埋め、隣接セルを白マスにする
+		 * 白マスを進むとゴールまで行ける。いけない場合falseを返す。
+		 * @return
+		 */
+		private boolean continueSolve() {
+			return true;
+		}
+
+		/**
+		 * 各アイスバーンには1マスは白マスが必要。
+		 * 違反の場合はfalseを返す。
+		 */
+		private boolean icebarnSolve() {
+			for (Set<Position> icebarn : icebarns) {
+				boolean discoverWhite = false;
+				Position spacePos = null;
+				for (Position pos : icebarn) {
+					if (masu[pos.getyIndex()][pos.getxIndex()] == Masu.NOT_BLACK) {
+						discoverWhite = true;
+						break;
+					} else if (masu[pos.getyIndex()][pos.getxIndex()] == Masu.SPACE) {
+						if (spacePos != null) {
+							break;
+						}
+						spacePos = pos;
+					}
+				}
+				if (!discoverWhite) {
+					if (spacePos == null) {
+						return false;
+					} else {
+						masu[spacePos.getyIndex()][spacePos.getxIndex()] = Masu.NOT_BLACK;
+					}
+				}
+			}
+			return true;
+		}
+
+		/**
+		 * 黒マスの周囲の壁を埋める。
 		 * また、白マス隣接セルの周辺の壁の数は、アイスバーンなら0または2(直進)、
 		 * それ以外なら2になるので、矛盾する場合はfalseを返す。
 		 */
@@ -334,9 +443,150 @@ public class IcebarnSolver implements Solver {
 							notExistsCount++;
 						}
 						if (icebarnPosSet.contains(new Position(yIndex, xIndex))) {
-
+							if (masu[yIndex][xIndex] == Masu.NOT_BLACK) {
+								// 氷の上の場合、自分が白マスなら壁は0マスか2マス
+								if (existsCount > 2 || (existsCount == 1 && notExistsCount == 3)) {
+									return false;
+								}
+								// カーブ禁止
+								if ((wallUp == Wall.EXISTS && wallRight == Wall.EXISTS)
+										|| (wallUp == Wall.EXISTS && wallLeft == Wall.EXISTS)
+										|| (wallRight == Wall.EXISTS && wallDown == Wall.EXISTS)
+										|| (wallDown == Wall.EXISTS && wallLeft == Wall.EXISTS)) {
+									return false;
+								}
+								if (existsCount == 1 && notExistsCount == 2) {
+									if (wallUp == Wall.SPACE) {
+										tateExtraWall[yIndex][xIndex] = Wall.EXISTS;
+									}
+									if (wallRight == Wall.SPACE) {
+										yokoExtraWall[yIndex][xIndex + 1] = Wall.EXISTS;
+									}
+									if (wallDown == Wall.SPACE) {
+										tateExtraWall[yIndex + 1][xIndex] = Wall.EXISTS;
+									}
+									if (wallLeft == Wall.SPACE) {
+										yokoExtraWall[yIndex][xIndex] = Wall.EXISTS;
+									}
+								} else if (existsCount == 2) {
+									if (wallUp == Wall.SPACE) {
+										tateExtraWall[yIndex][xIndex] = Wall.NOT_EXISTS;
+									}
+									if (wallRight == Wall.SPACE) {
+										yokoExtraWall[yIndex][xIndex + 1] = Wall.NOT_EXISTS;
+									}
+									if (wallDown == Wall.SPACE) {
+										tateExtraWall[yIndex + 1][xIndex] = Wall.NOT_EXISTS;
+									}
+									if (wallLeft == Wall.SPACE) {
+										yokoExtraWall[yIndex][xIndex] = Wall.NOT_EXISTS;
+									}
+								} else if (notExistsCount == 3) {
+									if (wallUp == Wall.SPACE) {
+										tateExtraWall[yIndex][xIndex] = Wall.NOT_EXISTS;
+									}
+									if (wallRight == Wall.SPACE) {
+										yokoExtraWall[yIndex][xIndex + 1] = Wall.NOT_EXISTS;
+									}
+									if (wallDown == Wall.SPACE) {
+										tateExtraWall[yIndex + 1][xIndex] = Wall.NOT_EXISTS;
+									}
+									if (wallLeft == Wall.SPACE) {
+										yokoExtraWall[yIndex][xIndex] = Wall.NOT_EXISTS;
+									}
+								}
+								if (wallUp == Wall.NOT_EXISTS) {
+									tateExtraWall[yIndex + 1][xIndex] = Wall.NOT_EXISTS;
+								}
+								if (wallRight == Wall.NOT_EXISTS) {
+									yokoExtraWall[yIndex][xIndex] = Wall.NOT_EXISTS;
+								}
+								if (wallDown == Wall.NOT_EXISTS) {
+									tateExtraWall[yIndex][xIndex] = Wall.NOT_EXISTS;
+								}
+								if (wallLeft == Wall.NOT_EXISTS) {
+									yokoExtraWall[yIndex][xIndex + 1] = Wall.NOT_EXISTS;
+								}
+							} else if (masu[yIndex][xIndex] == Masu.SPACE) {
+								// 氷の上の場合、自分が不確定マスなら壁は0マスか2マスか4マス
+								if ((existsCount == 3 && notExistsCount == 1)
+										|| (existsCount == 1 && notExistsCount == 3)) {
+									return false;
+								}
+								if (existsCount > 2) {
+									masu[yIndex][xIndex] = Masu.BLACK;
+									if (existsCount == 3) {
+										if (wallUp == Wall.SPACE) {
+											tateExtraWall[yIndex][xIndex] = Wall.EXISTS;
+										}
+										if (wallRight == Wall.SPACE) {
+											yokoExtraWall[yIndex][xIndex + 1] = Wall.EXISTS;
+										}
+										if (wallDown == Wall.SPACE) {
+											tateExtraWall[yIndex + 1][xIndex] = Wall.EXISTS;
+										}
+										if (wallLeft == Wall.SPACE) {
+											yokoExtraWall[yIndex][xIndex] = Wall.EXISTS;
+										}
+									}
+								} else if (notExistsCount != 0) {
+									masu[yIndex][xIndex] = Masu.NOT_BLACK;
+									if (existsCount == 1 && notExistsCount == 2) {
+										if (wallUp == Wall.SPACE) {
+											tateExtraWall[yIndex][xIndex] = Wall.EXISTS;
+										}
+										if (wallRight == Wall.SPACE) {
+											yokoExtraWall[yIndex][xIndex + 1] = Wall.EXISTS;
+										}
+										if (wallDown == Wall.SPACE) {
+											tateExtraWall[yIndex + 1][xIndex] = Wall.EXISTS;
+										}
+										if (wallLeft == Wall.SPACE) {
+											yokoExtraWall[yIndex][xIndex] = Wall.EXISTS;
+										}
+									} else if (existsCount == 2) {
+										if (wallUp == Wall.SPACE) {
+											tateExtraWall[yIndex][xIndex] = Wall.NOT_EXISTS;
+										}
+										if (wallRight == Wall.SPACE) {
+											yokoExtraWall[yIndex][xIndex + 1] = Wall.NOT_EXISTS;
+										}
+										if (wallDown == Wall.SPACE) {
+											tateExtraWall[yIndex + 1][xIndex] = Wall.NOT_EXISTS;
+										}
+										if (wallLeft == Wall.SPACE) {
+											yokoExtraWall[yIndex][xIndex] = Wall.NOT_EXISTS;
+										}
+									} else if (notExistsCount == 3) {
+										if (wallUp == Wall.SPACE) {
+											tateExtraWall[yIndex][xIndex] = Wall.NOT_EXISTS;
+										}
+										if (wallRight == Wall.SPACE) {
+											yokoExtraWall[yIndex][xIndex + 1] = Wall.NOT_EXISTS;
+										}
+										if (wallDown == Wall.SPACE) {
+											tateExtraWall[yIndex + 1][xIndex] = Wall.NOT_EXISTS;
+										}
+										if (wallLeft == Wall.SPACE) {
+											yokoExtraWall[yIndex][xIndex] = Wall.NOT_EXISTS;
+										}
+									}
+								}
+								if (wallUp == Wall.NOT_EXISTS) {
+									tateExtraWall[yIndex + 1][xIndex] = Wall.NOT_EXISTS;
+								}
+								if (wallRight == Wall.NOT_EXISTS) {
+									yokoExtraWall[yIndex][xIndex] = Wall.NOT_EXISTS;
+								}
+								if (wallDown == Wall.NOT_EXISTS) {
+									tateExtraWall[yIndex][xIndex] = Wall.NOT_EXISTS;
+								}
+								if (wallLeft == Wall.NOT_EXISTS) {
+									yokoExtraWall[yIndex][xIndex + 1] = Wall.NOT_EXISTS;
+								}
+							}
 						} else {
-							// 自分が白マスなら壁は必ず2マス
+							// 氷の上でない場合、自分が白マスなら壁は必ず2マス
 							if (masu[yIndex][xIndex] == Masu.NOT_BLACK) {
 								if (existsCount > 2 || notExistsCount > 2) {
 									return false;
@@ -369,7 +619,7 @@ public class IcebarnSolver implements Solver {
 									}
 								}
 							} else if (masu[yIndex][xIndex] == Masu.SPACE) {
-								// 自分が不確定マスなら壁は2マスか4マス
+								// 氷の上でない場合、自分が不確定マスなら壁は2マスか4マス
 								if ((existsCount == 3 && notExistsCount == 1)
 										|| notExistsCount > 2) {
 									return false;
@@ -431,8 +681,8 @@ public class IcebarnSolver implements Solver {
 	private final Field field;
 	private int count = 0;
 
-	public IcebarnSolver(int height, int width, String param) {
-		field = new Field(height, width, param);
+	public IcebarnSolver(int height, int width, String param, int start, int goal) {
+		field = new Field(height, width, param, start, goal);
 	}
 
 	public Field getField() {
@@ -442,10 +692,12 @@ public class IcebarnSolver implements Solver {
 	public static void main(String[] args) {
 		String url = ""; //urlを入れれば試せる
 		String[] params = url.split("/");
-		int height = Integer.parseInt(params[params.length - 2]);
-		int width = Integer.parseInt(params[params.length - 3]);
-		String param = params[params.length - 1];
-		System.out.println(new IcebarnSolver(height, width, param).solve());
+		int height = Integer.parseInt(params[params.length - 4]);
+		int width = Integer.parseInt(params[params.length - 5]);
+		String param = params[params.length - 3];
+		int start = Integer.parseInt(params[params.length - 2]);
+		int goal = Integer.parseInt(params[params.length - 1]);
+		System.out.println(new IcebarnSolver(height, width, param, start, goal).solve());
 	}
 
 	@Override
@@ -479,6 +731,7 @@ public class IcebarnSolver implements Solver {
 	 * 仮置きして調べる
 	 */
 	private boolean candSolve(Field field, int recursive) {
+		System.out.println(field);
 		String str = field.getStateDump();
 		for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 			for (int xIndex = 0; xIndex < field.getXLength() + 1; xIndex++) {
