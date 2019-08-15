@@ -76,6 +76,14 @@ public class KakuroSolver implements Solver {
 		// グループ情報
 		protected List<Group> groups;
 
+		public List<Integer>[][] getNumbersCand() {
+			return numbersCand;
+		}
+
+		public Map<Position, Block> getBlocks() {
+			return blocks;
+		}
+
 		public int getYLength() {
 			return numbersCand.length;
 		}
@@ -385,10 +393,10 @@ public class KakuroSolver implements Solver {
 			}
 		}
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
-		System.out.println("難易度:" + (count * count / 20000));
+		System.out.println("難易度:" + ((long) count * (long) count / 20000));
 		System.out.println(field);
 		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count * count / 20000).toString();
+				+ Difficulty.getByCount((int) ((long) count * (long) count / 20000)).toString();
 	}
 
 	/**
