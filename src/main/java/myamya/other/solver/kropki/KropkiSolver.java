@@ -537,10 +537,10 @@ public class KropkiSolver implements Solver {
 			}
 		}
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
-		System.out.println("難易度:" + (count));
+		System.out.println("難易度:" + (count * 50));
 		System.out.println(field);
 		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count).toString();
+				+ Difficulty.getByCount(count * 50).toString();
 	}
 
 	/**
