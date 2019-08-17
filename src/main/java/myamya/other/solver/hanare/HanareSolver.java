@@ -52,6 +52,18 @@ public class HanareSolver implements Solver {
 			return masu[0].length;
 		}
 
+		/**
+		 * 表示用に部屋の大きさを返す
+		 */
+		public int getRoomSize(Position pos) {
+			for (Set<Position> room : rooms) {
+				if (room.contains(pos)) {
+					return room.size();
+				}
+			}
+			return -1;
+		}
+
 		@SuppressWarnings("unchecked")
 		public Field(int height, int width, String param) {
 			fixedMasuSet = new HashSet<>();

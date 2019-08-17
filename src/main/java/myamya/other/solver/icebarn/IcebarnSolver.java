@@ -48,12 +48,24 @@ public class IcebarnSolver implements Solver {
 			return tateExtraWall;
 		}
 
+		public Direction[][] getYokoExtraWallDirection() {
+			return yokoExtraWallDirection;
+		}
+
+		public Direction[][] getTateExtraWallDirection() {
+			return tateExtraWallDirection;
+		}
+
 		public int getYLength() {
 			return masu.length;
 		}
 
 		public int getXLength() {
 			return masu[0].length;
+		}
+
+		public Set<Position> getIcebarnPosSet() {
+			return icebarnPosSet;
 		}
 
 		public Field(int height, int width, String param, int start, int goal) {
