@@ -4103,33 +4103,21 @@ public class SolverWeb extends HttpServlet {
 					Wall left = xIndex == 0 ? Wall.EXISTS
 							: field.getYokoWall()[yIndex][xIndex - 1];
 					if (up == Wall.NOT_EXISTS && right == Wall.NOT_EXISTS
-							&& down == Wall.EXISTS &&
-							left == Wall.EXISTS) {
-						str = "└";
-					} else if (up == Wall.NOT_EXISTS && right == Wall.EXISTS
-							&& down == Wall.NOT_EXISTS &&
-							left == Wall.EXISTS) {
-						str = "│";
-					} else if (up == Wall.NOT_EXISTS && right == Wall.EXISTS
-							&& down == Wall.EXISTS &&
-							left == Wall.NOT_EXISTS) {
-						str = "┘";
-					} else if (up == Wall.EXISTS && right == Wall.NOT_EXISTS
-							&& down == Wall.NOT_EXISTS &&
-							left == Wall.EXISTS) {
-						str = "┌";
-					} else if (up == Wall.EXISTS && right == Wall.NOT_EXISTS
-							&& down == Wall.EXISTS &&
-							left == Wall.NOT_EXISTS) {
-						str = "─";
-					} else if (up == Wall.EXISTS && right == Wall.EXISTS
-							&& down == Wall.NOT_EXISTS &&
-							left == Wall.NOT_EXISTS) {
-						str = "┐";
-					} else if (up == Wall.NOT_EXISTS && right == Wall.NOT_EXISTS
 							&& down == Wall.NOT_EXISTS &&
 							left == Wall.NOT_EXISTS) {
 						str = "┼";
+					} else if (up == Wall.NOT_EXISTS && right == Wall.NOT_EXISTS) {
+						str = "└";
+					} else if (up == Wall.NOT_EXISTS && down == Wall.NOT_EXISTS) {
+						str = "│";
+					} else if (up == Wall.NOT_EXISTS && left == Wall.NOT_EXISTS) {
+						str = "┘";
+					} else if (right == Wall.NOT_EXISTS && down == Wall.NOT_EXISTS) {
+						str = "┌";
+					} else if (right == Wall.NOT_EXISTS && left == Wall.NOT_EXISTS) {
+						str = "─";
+					} else if (down == Wall.NOT_EXISTS && left == Wall.NOT_EXISTS) {
+						str = "┐";
 					} else {
 						str = "　";
 					}
@@ -4224,33 +4212,21 @@ public class SolverWeb extends HttpServlet {
 					Wall left = xIndex == 0 ? Wall.EXISTS
 							: field.getYokoWall()[yIndex][xIndex - 1];
 					if (up == Wall.NOT_EXISTS && right == Wall.NOT_EXISTS
-							&& down == Wall.EXISTS &&
-							left == Wall.EXISTS) {
-						str = "└";
-					} else if (up == Wall.NOT_EXISTS && right == Wall.EXISTS
-							&& down == Wall.NOT_EXISTS &&
-							left == Wall.EXISTS) {
-						str = "│";
-					} else if (up == Wall.NOT_EXISTS && right == Wall.EXISTS
-							&& down == Wall.EXISTS &&
-							left == Wall.NOT_EXISTS) {
-						str = "┘";
-					} else if (up == Wall.EXISTS && right == Wall.NOT_EXISTS
-							&& down == Wall.NOT_EXISTS &&
-							left == Wall.EXISTS) {
-						str = "┌";
-					} else if (up == Wall.EXISTS && right == Wall.NOT_EXISTS
-							&& down == Wall.EXISTS &&
-							left == Wall.NOT_EXISTS) {
-						str = "─";
-					} else if (up == Wall.EXISTS && right == Wall.EXISTS
-							&& down == Wall.NOT_EXISTS &&
-							left == Wall.NOT_EXISTS) {
-						str = "┐";
-					} else if (up == Wall.NOT_EXISTS && right == Wall.NOT_EXISTS
 							&& down == Wall.NOT_EXISTS &&
 							left == Wall.NOT_EXISTS) {
 						str = "┼";
+					} else if (up == Wall.NOT_EXISTS && right == Wall.NOT_EXISTS) {
+						str = "└";
+					} else if (up == Wall.NOT_EXISTS && down == Wall.NOT_EXISTS) {
+						str = "│";
+					} else if (up == Wall.NOT_EXISTS && left == Wall.NOT_EXISTS) {
+						str = "┘";
+					} else if (right == Wall.NOT_EXISTS && down == Wall.NOT_EXISTS) {
+						str = "┌";
+					} else if (right == Wall.NOT_EXISTS && left == Wall.NOT_EXISTS) {
+						str = "─";
+					} else if (down == Wall.NOT_EXISTS && left == Wall.NOT_EXISTS) {
+						str = "┐";
 					} else {
 						str = "　";
 					}
@@ -4351,33 +4327,21 @@ public class SolverWeb extends HttpServlet {
 					Wall left = xIndex == 0 ? Wall.EXISTS
 							: field.getYokoWall()[yIndex][xIndex - 1];
 					if (up == Wall.NOT_EXISTS && right == Wall.NOT_EXISTS
-							&& down == Wall.EXISTS &&
-							left == Wall.EXISTS) {
-						str = "└";
-					} else if (up == Wall.NOT_EXISTS && right == Wall.EXISTS
-							&& down == Wall.NOT_EXISTS &&
-							left == Wall.EXISTS) {
-						str = "│";
-					} else if (up == Wall.NOT_EXISTS && right == Wall.EXISTS
-							&& down == Wall.EXISTS &&
-							left == Wall.NOT_EXISTS) {
-						str = "┘";
-					} else if (up == Wall.EXISTS && right == Wall.NOT_EXISTS
-							&& down == Wall.NOT_EXISTS &&
-							left == Wall.EXISTS) {
-						str = "┌";
-					} else if (up == Wall.EXISTS && right == Wall.NOT_EXISTS
-							&& down == Wall.EXISTS &&
-							left == Wall.NOT_EXISTS) {
-						str = "─";
-					} else if (up == Wall.EXISTS && right == Wall.EXISTS
-							&& down == Wall.NOT_EXISTS &&
-							left == Wall.NOT_EXISTS) {
-						str = "┐";
-					} else if (up == Wall.NOT_EXISTS && right == Wall.NOT_EXISTS
 							&& down == Wall.NOT_EXISTS &&
 							left == Wall.NOT_EXISTS) {
 						str = "┼";
+					} else if (up == Wall.NOT_EXISTS && right == Wall.NOT_EXISTS) {
+						str = "└";
+					} else if (up == Wall.NOT_EXISTS && down == Wall.NOT_EXISTS) {
+						str = "│";
+					} else if (up == Wall.NOT_EXISTS && left == Wall.NOT_EXISTS) {
+						str = "┘";
+					} else if (right == Wall.NOT_EXISTS && down == Wall.NOT_EXISTS) {
+						str = "┌";
+					} else if (right == Wall.NOT_EXISTS && left == Wall.NOT_EXISTS) {
+						str = "─";
+					} else if (down == Wall.NOT_EXISTS && left == Wall.NOT_EXISTS) {
+						str = "┐";
 					} else {
 						str = "　";
 					}
@@ -4476,33 +4440,21 @@ public class SolverWeb extends HttpServlet {
 					Wall left = xIndex == 0 ? Wall.EXISTS
 							: field.getYokoWall()[yIndex][xIndex - 1];
 					if (up == Wall.NOT_EXISTS && right == Wall.NOT_EXISTS
-							&& down == Wall.EXISTS &&
-							left == Wall.EXISTS) {
-						str = "└";
-					} else if (up == Wall.NOT_EXISTS && right == Wall.EXISTS
-							&& down == Wall.NOT_EXISTS &&
-							left == Wall.EXISTS) {
-						str = "│";
-					} else if (up == Wall.NOT_EXISTS && right == Wall.EXISTS
-							&& down == Wall.EXISTS &&
-							left == Wall.NOT_EXISTS) {
-						str = "┘";
-					} else if (up == Wall.EXISTS && right == Wall.NOT_EXISTS
-							&& down == Wall.NOT_EXISTS &&
-							left == Wall.EXISTS) {
-						str = "┌";
-					} else if (up == Wall.EXISTS && right == Wall.NOT_EXISTS
-							&& down == Wall.EXISTS &&
-							left == Wall.NOT_EXISTS) {
-						str = "─";
-					} else if (up == Wall.EXISTS && right == Wall.EXISTS
-							&& down == Wall.NOT_EXISTS &&
-							left == Wall.NOT_EXISTS) {
-						str = "┐";
-					} else if (up == Wall.NOT_EXISTS && right == Wall.NOT_EXISTS
 							&& down == Wall.NOT_EXISTS &&
 							left == Wall.NOT_EXISTS) {
 						str = "┼";
+					} else if (up == Wall.NOT_EXISTS && right == Wall.NOT_EXISTS) {
+						str = "└";
+					} else if (up == Wall.NOT_EXISTS && down == Wall.NOT_EXISTS) {
+						str = "│";
+					} else if (up == Wall.NOT_EXISTS && left == Wall.NOT_EXISTS) {
+						str = "┘";
+					} else if (right == Wall.NOT_EXISTS && down == Wall.NOT_EXISTS) {
+						str = "┌";
+					} else if (right == Wall.NOT_EXISTS && left == Wall.NOT_EXISTS) {
+						str = "─";
+					} else if (down == Wall.NOT_EXISTS && left == Wall.NOT_EXISTS) {
+						str = "┐";
 					} else {
 						str = "　";
 					}
@@ -4706,33 +4658,21 @@ public class SolverWeb extends HttpServlet {
 					Wall left = xIndex == 0 ? Wall.EXISTS
 							: field.getYokoWall()[yIndex][xIndex - 1];
 					if (up == Wall.NOT_EXISTS && right == Wall.NOT_EXISTS
-							&& down == Wall.EXISTS &&
-							left == Wall.EXISTS) {
-						str = "└";
-					} else if (up == Wall.NOT_EXISTS && right == Wall.EXISTS
-							&& down == Wall.NOT_EXISTS &&
-							left == Wall.EXISTS) {
-						str = "│";
-					} else if (up == Wall.NOT_EXISTS && right == Wall.EXISTS
-							&& down == Wall.EXISTS &&
-							left == Wall.NOT_EXISTS) {
-						str = "┘";
-					} else if (up == Wall.EXISTS && right == Wall.NOT_EXISTS
-							&& down == Wall.NOT_EXISTS &&
-							left == Wall.EXISTS) {
-						str = "┌";
-					} else if (up == Wall.EXISTS && right == Wall.NOT_EXISTS
-							&& down == Wall.EXISTS &&
-							left == Wall.NOT_EXISTS) {
-						str = "─";
-					} else if (up == Wall.EXISTS && right == Wall.EXISTS
-							&& down == Wall.NOT_EXISTS &&
-							left == Wall.NOT_EXISTS) {
-						str = "┐";
-					} else if (up == Wall.NOT_EXISTS && right == Wall.NOT_EXISTS
 							&& down == Wall.NOT_EXISTS &&
 							left == Wall.NOT_EXISTS) {
 						str = "┼";
+					} else if (up == Wall.NOT_EXISTS && right == Wall.NOT_EXISTS) {
+						str = "└";
+					} else if (up == Wall.NOT_EXISTS && down == Wall.NOT_EXISTS) {
+						str = "│";
+					} else if (up == Wall.NOT_EXISTS && left == Wall.NOT_EXISTS) {
+						str = "┘";
+					} else if (right == Wall.NOT_EXISTS && down == Wall.NOT_EXISTS) {
+						str = "┌";
+					} else if (right == Wall.NOT_EXISTS && left == Wall.NOT_EXISTS) {
+						str = "─";
+					} else if (down == Wall.NOT_EXISTS && left == Wall.NOT_EXISTS) {
+						str = "┐";
 					} else {
 						str = "　";
 					}
@@ -4808,33 +4748,21 @@ public class SolverWeb extends HttpServlet {
 					Wall left = xIndex == 0 ? Wall.EXISTS
 							: field.getYokoWall()[yIndex][xIndex - 1];
 					if (up == Wall.NOT_EXISTS && right == Wall.NOT_EXISTS
-							&& down == Wall.EXISTS &&
-							left == Wall.EXISTS) {
-						str = "└";
-					} else if (up == Wall.NOT_EXISTS && right == Wall.EXISTS
-							&& down == Wall.NOT_EXISTS &&
-							left == Wall.EXISTS) {
-						str = "│";
-					} else if (up == Wall.NOT_EXISTS && right == Wall.EXISTS
-							&& down == Wall.EXISTS &&
-							left == Wall.NOT_EXISTS) {
-						str = "┘";
-					} else if (up == Wall.EXISTS && right == Wall.NOT_EXISTS
-							&& down == Wall.NOT_EXISTS &&
-							left == Wall.EXISTS) {
-						str = "┌";
-					} else if (up == Wall.EXISTS && right == Wall.NOT_EXISTS
-							&& down == Wall.EXISTS &&
-							left == Wall.NOT_EXISTS) {
-						str = "─";
-					} else if (up == Wall.EXISTS && right == Wall.EXISTS
-							&& down == Wall.NOT_EXISTS &&
-							left == Wall.NOT_EXISTS) {
-						str = "┐";
-					} else if (up == Wall.NOT_EXISTS && right == Wall.NOT_EXISTS
 							&& down == Wall.NOT_EXISTS &&
 							left == Wall.NOT_EXISTS) {
 						str = "┼";
+					} else if (up == Wall.NOT_EXISTS && right == Wall.NOT_EXISTS) {
+						str = "└";
+					} else if (up == Wall.NOT_EXISTS && down == Wall.NOT_EXISTS) {
+						str = "│";
+					} else if (up == Wall.NOT_EXISTS && left == Wall.NOT_EXISTS) {
+						str = "┘";
+					} else if (right == Wall.NOT_EXISTS && down == Wall.NOT_EXISTS) {
+						str = "┌";
+					} else if (right == Wall.NOT_EXISTS && left == Wall.NOT_EXISTS) {
+						str = "─";
+					} else if (down == Wall.NOT_EXISTS && left == Wall.NOT_EXISTS) {
+						str = "┐";
 					} else {
 						str = "　";
 					}
@@ -7337,33 +7265,21 @@ public class SolverWeb extends HttpServlet {
 					Wall down = field.getTateExtraWall()[yIndex + 1][xIndex];
 					Wall left = field.getYokoExtraWall()[yIndex][xIndex];
 					if (up == Wall.NOT_EXISTS && right == Wall.NOT_EXISTS
-							&& down == Wall.EXISTS &&
-							left == Wall.EXISTS) {
-						str = "└";
-					} else if (up == Wall.NOT_EXISTS && right == Wall.EXISTS
-							&& down == Wall.NOT_EXISTS &&
-							left == Wall.EXISTS) {
-						str = "│";
-					} else if (up == Wall.NOT_EXISTS && right == Wall.EXISTS
-							&& down == Wall.EXISTS &&
-							left == Wall.NOT_EXISTS) {
-						str = "┘";
-					} else if (up == Wall.EXISTS && right == Wall.NOT_EXISTS
-							&& down == Wall.NOT_EXISTS &&
-							left == Wall.EXISTS) {
-						str = "┌";
-					} else if (up == Wall.EXISTS && right == Wall.NOT_EXISTS
-							&& down == Wall.EXISTS &&
-							left == Wall.NOT_EXISTS) {
-						str = "─";
-					} else if (up == Wall.EXISTS && right == Wall.EXISTS
-							&& down == Wall.NOT_EXISTS &&
-							left == Wall.NOT_EXISTS) {
-						str = "┐";
-					} else if (up == Wall.NOT_EXISTS && right == Wall.NOT_EXISTS
 							&& down == Wall.NOT_EXISTS &&
 							left == Wall.NOT_EXISTS) {
 						str = "┼";
+					} else if (up == Wall.NOT_EXISTS && right == Wall.NOT_EXISTS) {
+						str = "└";
+					} else if (up == Wall.NOT_EXISTS && down == Wall.NOT_EXISTS) {
+						str = "│";
+					} else if (up == Wall.NOT_EXISTS && left == Wall.NOT_EXISTS) {
+						str = "┘";
+					} else if (right == Wall.NOT_EXISTS && down == Wall.NOT_EXISTS) {
+						str = "┌";
+					} else if (right == Wall.NOT_EXISTS && left == Wall.NOT_EXISTS) {
+						str = "─";
+					} else if (down == Wall.NOT_EXISTS && left == Wall.NOT_EXISTS) {
+						str = "┐";
 					} else {
 						str = "　";
 					}
