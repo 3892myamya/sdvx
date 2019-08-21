@@ -138,30 +138,51 @@ public class HerugolfSolver implements Solver {
 					}
 				}
 			}
+			System.out.println("移動候補作成負荷：" + cnt * 5);
 		}
 
-		// TODO 他のボールやホールにクロスする候補を除外する。
-		// TODO ここでの候補数を難易度の基準にしたい。
+		int cnt = 0;
+
 		private void setCandidate(int cnt, Position pos, List<List<Position>> oneCandidateList,
 				List<Position> oneCandidate) {
+			this.cnt++;
 			if (pos.getyIndex() - cnt >= 0) {
 				Position nextPos = new Position(pos.getyIndex() - cnt, pos.getxIndex());
 				if (!pond[nextPos.getyIndex()][nextPos.getxIndex()]) {
 					boolean cross = false;
+					// 自分の線とのクロス判定
 					for (int i = 0; i < oneCandidate.size() - 1; i++) {
-						if (isCross(oneCandidate.get(i), oneCandidate.get(i + 1), nextPos, nextPos)) {
-							cross = true;
-							break;
+						if (i == oneCandidate.size() - 2) {
+							// 最後は線判定だと確実にクロスになってしまうので点で判定
+							if (isCross(oneCandidate.get(i), oneCandidate.get(i + 1), nextPos, nextPos)) {
+								cross = true;
+								break;
+							}
+						} else {
+							if (isCross(oneCandidate.get(i), oneCandidate.get(i + 1), pos, nextPos)) {
+								cross = true;
+								break;
+							}
 						}
 					}
 					if (!cross) {
-						oneCandidate.add(nextPos);
-						if (hole[nextPos.getyIndex()][nextPos.getxIndex()]) {
-							oneCandidateList.add(new ArrayList<>(oneCandidate));
-						} else if (cnt > 1) {
-							setCandidate(cnt - 1, nextPos, oneCandidateList, oneCandidate);
+						// 数字またはホールとのクロス判定
+						for (int yIndex = pos.getyIndex() - 1; yIndex > nextPos.getyIndex(); yIndex--) {
+							if (numbers[yIndex][pos.getxIndex()] != null
+									|| hole[yIndex][pos.getxIndex()]) {
+								cross = true;
+								break;
+							}
 						}
-						oneCandidate.remove(nextPos);
+						if (!cross) {
+							oneCandidate.add(nextPos);
+							if (hole[nextPos.getyIndex()][nextPos.getxIndex()]) {
+								oneCandidateList.add(new ArrayList<>(oneCandidate));
+							} else if (cnt > 1) {
+								setCandidate(cnt - 1, nextPos, oneCandidateList, oneCandidate);
+							}
+							oneCandidate.remove(nextPos);
+						}
 					}
 				}
 			}
@@ -170,19 +191,35 @@ public class HerugolfSolver implements Solver {
 				if (!pond[nextPos.getyIndex()][nextPos.getxIndex()]) {
 					boolean cross = false;
 					for (int i = 0; i < oneCandidate.size() - 1; i++) {
-						if (isCross(oneCandidate.get(i), oneCandidate.get(i + 1), nextPos, nextPos)) {
-							cross = true;
-							break;
+						if (i == oneCandidate.size() - 2) {
+							if (isCross(oneCandidate.get(i), oneCandidate.get(i + 1), nextPos, nextPos)) {
+								cross = true;
+								break;
+							}
+						} else {
+							if (isCross(oneCandidate.get(i), oneCandidate.get(i + 1), pos, nextPos)) {
+								cross = true;
+								break;
+							}
 						}
 					}
 					if (!cross) {
-						oneCandidate.add(nextPos);
-						if (hole[nextPos.getyIndex()][nextPos.getxIndex()]) {
-							oneCandidateList.add(new ArrayList<>(oneCandidate));
-						} else if (cnt > 1) {
-							setCandidate(cnt - 1, nextPos, oneCandidateList, oneCandidate);
+						for (int xIndex = pos.getxIndex() + 1; xIndex < nextPos.getxIndex(); xIndex++) {
+							if (numbers[pos.getyIndex()][xIndex] != null
+									|| hole[pos.getyIndex()][xIndex]) {
+								cross = true;
+								break;
+							}
 						}
-						oneCandidate.remove(nextPos);
+						if (!cross) {
+							oneCandidate.add(nextPos);
+							if (hole[nextPos.getyIndex()][nextPos.getxIndex()]) {
+								oneCandidateList.add(new ArrayList<>(oneCandidate));
+							} else if (cnt > 1) {
+								setCandidate(cnt - 1, nextPos, oneCandidateList, oneCandidate);
+							}
+							oneCandidate.remove(nextPos);
+						}
 					}
 				}
 			}
@@ -191,19 +228,35 @@ public class HerugolfSolver implements Solver {
 				if (!pond[nextPos.getyIndex()][nextPos.getxIndex()]) {
 					boolean cross = false;
 					for (int i = 0; i < oneCandidate.size() - 1; i++) {
-						if (isCross(oneCandidate.get(i), oneCandidate.get(i + 1), nextPos, nextPos)) {
-							cross = true;
-							break;
+						if (i == oneCandidate.size() - 2) {
+							if (isCross(oneCandidate.get(i), oneCandidate.get(i + 1), nextPos, nextPos)) {
+								cross = true;
+								break;
+							}
+						} else {
+							if (isCross(oneCandidate.get(i), oneCandidate.get(i + 1), pos, nextPos)) {
+								cross = true;
+								break;
+							}
 						}
 					}
 					if (!cross) {
-						oneCandidate.add(nextPos);
-						if (hole[nextPos.getyIndex()][nextPos.getxIndex()]) {
-							oneCandidateList.add(new ArrayList<>(oneCandidate));
-						} else if (cnt > 1) {
-							setCandidate(cnt - 1, nextPos, oneCandidateList, oneCandidate);
+						for (int yIndex = pos.getyIndex() + 1; yIndex < nextPos.getyIndex(); yIndex++) {
+							if (numbers[yIndex][pos.getxIndex()] != null
+									|| hole[yIndex][pos.getxIndex()]) {
+								cross = true;
+								break;
+							}
 						}
-						oneCandidate.remove(nextPos);
+						if (!cross) {
+							oneCandidate.add(nextPos);
+							if (hole[nextPos.getyIndex()][nextPos.getxIndex()]) {
+								oneCandidateList.add(new ArrayList<>(oneCandidate));
+							} else if (cnt > 1) {
+								setCandidate(cnt - 1, nextPos, oneCandidateList, oneCandidate);
+							}
+							oneCandidate.remove(nextPos);
+						}
 					}
 				}
 			}
@@ -212,20 +265,36 @@ public class HerugolfSolver implements Solver {
 				if (!pond[nextPos.getyIndex()][nextPos.getxIndex()]) {
 					boolean cross = false;
 					for (int i = 0; i < oneCandidate.size() - 1; i++) {
-						if (isCross(oneCandidate.get(i), oneCandidate.get(i + 1), nextPos, nextPos)) {
-							cross = true;
-							break;
+						if (i == oneCandidate.size() - 2) {
+							if (isCross(oneCandidate.get(i), oneCandidate.get(i + 1), nextPos, nextPos)) {
+								cross = true;
+								break;
+							}
+						} else {
+							if (isCross(oneCandidate.get(i), oneCandidate.get(i + 1), pos, nextPos)) {
+								cross = true;
+								break;
+							}
 						}
 					}
 					if (!cross) {
+						for (int xIndex = pos.getxIndex() - 1; xIndex > nextPos.getxIndex(); xIndex--) {
+							if (numbers[pos.getyIndex()][xIndex] != null
+									|| hole[pos.getyIndex()][xIndex]) {
+								cross = true;
+								break;
+							}
+						}
+						if (!cross) {
+							oneCandidate.add(nextPos);
+							if (hole[nextPos.getyIndex()][nextPos.getxIndex()]) {
+								oneCandidateList.add(new ArrayList<>(oneCandidate));
+							} else if (cnt > 1) {
+								setCandidate(cnt - 1, nextPos, oneCandidateList, oneCandidate);
+							}
+							oneCandidate.remove(nextPos);
+						}
 					}
-					oneCandidate.add(nextPos);
-					if (hole[nextPos.getyIndex()][nextPos.getxIndex()]) {
-						oneCandidateList.add(new ArrayList<>(oneCandidate));
-					} else if (cnt > 1) {
-						setCandidate(cnt - 1, nextPos, oneCandidateList, oneCandidate);
-					}
-					oneCandidate.remove(nextPos);
 				}
 			}
 		}
@@ -269,6 +338,7 @@ public class HerugolfSolver implements Solver {
 							sb.append("　");
 						}
 						for (Entry<Position, List<List<Position>>> entry : candidates.entrySet()) {
+							// TODO 候補が複数あっても、途中まで同じだったらそこまで表示したい
 							if (entry.getValue().size() == 1) {
 								List<Position> fixedList = entry.getValue().get(0);
 								for (int i = 0; i < fixedList.size() - 1; i++) {
@@ -418,7 +488,7 @@ public class HerugolfSolver implements Solver {
 	}
 
 	public static void main(String[] args) {
-		String url = "http://pzv.jp/p.html?herugolf/48/48/0027g0600000fvvoo060017s1v03e004dg0c0o800g001g6080200060o33vo040fvsvo0010008v0000fg01hs0003v003vg000vu003v0003no0064000sng01ng003me004v00061g01hc000ke007o01vsfg00vgfvvu7vo0pvhvs03vvo7vjv003vvvvv20003vfvvv0e063jvvvvvs1u1vvvvvvg7ufvvvvvu1vvvvvvvvs1vvvvvvo0vg3vvvvg07v00vvvg01vu007vg00fvs00rg003vvo060000vvv01g0003vvu0c00011vuc300003gv30g00003o1o6030007vvp00700fopvs00607v37vu00c3vscvvv00pvohi1vv00vsuefrvv03ufppvpvu0vjv33vovo7svucfvpv1ufvppvvpsfjvv77vvjhuvvssvvvmzzqhk21i5nhyhihj3jhi2jhk4khm3i1ihj3rhp3jhrhphx3k2j2ihjhthihs46j93zja2iho4jhlh1vhkhk4nhyhqhkhv1hw3k3r3jh4w4khihm3v3n3j6r6xht23zmhl5mhyhl5yhzjhihs4j9uhhzv3jhlhkhzhhmhu2ihk3r4i6k2jhihlhm4m4uhuh1m4r1hj3hi2zjho3i2qhzx4lhuhzzihzzzzzhzk8zzzlhsczzzzzzzzzn3wh1hzvhihy3zzl5shshzo1hi1hi1hi1hn2ihk4ohx1zjhi2znhihq5l2ihqhzl2ihk1ihi2phkhzm22ihkhn4m4khi2zm9k6thp3zihhlhj3ihohl5m7zl3zzr3jhj2hjhzzzj4zzj6mhzziep3whlhn7v2zo2zmh9z3jhzlh3zzr1zohzj-2ehzp6ziho-14zihzi"; //urlを入れれば試せる
+		String url = ""; //urlを入れれば試せる
 		String[] params = url.split("/");
 		int height = Integer.parseInt(params[params.length - 2]);
 		int width = Integer.parseInt(params[params.length - 3]);
@@ -460,10 +530,10 @@ public class HerugolfSolver implements Solver {
 			}
 		}
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
-		System.out.println("難易度:" + (count * 3));
+		System.out.println("難易度:" + (count * 25 + field.cnt * 5));
 		System.out.println(field);
 		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count * 3).toString();
+				+ Difficulty.getByCount(count * 25 + field.cnt * 5).toString();
 	}
 
 	/**
