@@ -192,8 +192,15 @@ public class KurottoSolver implements Solver {
 							Set<Position> continueNotWhitePosSet = new HashSet<>();
 							if (!setContinueNotWhitePosSet(pivot, continueNotWhitePosSet, numbers[yIndex][xIndex],
 									null)) {
-								// サイズ不足
-								return false;
+								if (numbers[yIndex][xIndex] == continueNotWhitePosSet.size()) {
+									for (Position pos : continueNotWhitePosSet) {
+										alreadyPosSet.add(pos);
+										masu[pos.getyIndex()][pos.getxIndex()] = Masu.BLACK;
+									}
+								} else {
+									// サイズ不足
+									return false;
+								}
 							}
 						}
 					}
@@ -208,7 +215,7 @@ public class KurottoSolver implements Solver {
 		 */
 		private boolean setContinueNotWhitePosSet(Position pos, Set<Position> continuePosSet, int size,
 				Direction from) {
-			if (continuePosSet.size() >= size) {
+			if (continuePosSet.size() > size) {
 				return true;
 			}
 			if (pos.getyIndex() != 0 && from != Direction.UP) {
@@ -463,6 +470,15 @@ public class KurottoSolver implements Solver {
 			field.masu = virtual2.masu;
 		} else if (!allowNotBlack) {
 			field.masu = virtual.masu;
+		} else {
+			// どちらにしても理論
+			for (int y = 0; y < field.getYLength(); y++) {
+				for (int x = 0; x < field.getXLength(); x++) {
+					if (virtual2.masu[y][x] == virtual.masu[y][x]) {
+						field.masu[y][x] = virtual.masu[y][x];
+					}
+				}
+			}
 		}
 		return true;
 	}
