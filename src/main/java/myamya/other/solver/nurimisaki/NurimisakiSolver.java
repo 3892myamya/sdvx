@@ -859,6 +859,15 @@ public class NurimisakiSolver implements Solver {
 				field.masu = virtual2.masu;
 			} else if (!allowNotBlack) {
 				field.masu = virtual.masu;
+			} else {
+				// どちらにしても理論
+				for (int y = 0; y < field.getYLength(); y++) {
+					for (int x = 0; x < field.getXLength(); x++) {
+						if (virtual2.masu[y][x] == virtual.masu[y][x]) {
+							field.masu[y][x] = virtual.masu[y][x];
+						}
+					}
+				}
 			}
 		}
 		return true;
