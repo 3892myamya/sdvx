@@ -223,21 +223,21 @@ public class FillominoSolver implements Solver {
 									numbers[pos.getyIndex()][pos.getxIndex()] = originNumbers[yIndex][xIndex];
 									if (originNumbers[yIndex][xIndex] == continueNotBlackPosSet.size()) {
 										fixedPosSet.addAll(continueNotBlackPosSet);
-										if (pos.getyIndex() != 0 && !continueNotBlackPosSet
+										if (pos.getyIndex() != 0 && continueNotBlackPosSet
 												.contains(new Position(pos.getyIndex() - 1, pos.getxIndex()))) {
-											tateWall[pos.getyIndex() - 1][pos.getxIndex()] = Wall.EXISTS;
+											tateWall[pos.getyIndex() - 1][pos.getxIndex()] = Wall.NOT_EXISTS;
 										}
-										if (pos.getxIndex() != getXLength() - 1 && !continueNotBlackPosSet
+										if (pos.getxIndex() != getXLength() - 1 && continueNotBlackPosSet
 												.contains(new Position(pos.getyIndex(), pos.getxIndex() + 1))) {
-											yokoWall[pos.getyIndex()][pos.getxIndex()] = Wall.EXISTS;
+											yokoWall[pos.getyIndex()][pos.getxIndex()] = Wall.NOT_EXISTS;
 										}
-										if (pos.getyIndex() != getYLength() - 1 && !continueNotBlackPosSet
+										if (pos.getyIndex() != getYLength() - 1 && continueNotBlackPosSet
 												.contains(new Position(pos.getyIndex() + 1, pos.getxIndex()))) {
-											tateWall[pos.getyIndex()][pos.getxIndex()] = Wall.EXISTS;
+											tateWall[pos.getyIndex()][pos.getxIndex()] = Wall.NOT_EXISTS;
 										}
-										if (pos.getxIndex() != 0 && !continueNotBlackPosSet
+										if (pos.getxIndex() != 0 && continueNotBlackPosSet
 												.contains(new Position(pos.getyIndex(), pos.getxIndex() - 1))) {
-											yokoWall[pos.getyIndex()][pos.getxIndex() - 1] = Wall.EXISTS;
+											yokoWall[pos.getyIndex()][pos.getxIndex() - 1] = Wall.NOT_EXISTS;
 										}
 									}
 								}
