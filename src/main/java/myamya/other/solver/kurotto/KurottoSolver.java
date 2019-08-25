@@ -193,8 +193,8 @@ public class KurottoSolver implements Solver {
 							if (!setContinueNotWhitePosSet(pivot, continueNotWhitePosSet, numbers[yIndex][xIndex],
 									null)) {
 								if (numbers[yIndex][xIndex] == continueNotWhitePosSet.size()) {
+									alreadyPosSet.add(pivot);
 									for (Position pos : continueNotWhitePosSet) {
-										alreadyPosSet.add(pos);
 										masu[pos.getyIndex()][pos.getxIndex()] = Masu.BLACK;
 									}
 								} else {

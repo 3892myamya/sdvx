@@ -153,8 +153,38 @@ public class NurikabeSolver implements Solver {
 						Set<Position> continueNotBlackPosSet = new HashSet<>();
 						continueNotBlackPosSet.add(pivot);
 						if (!setContinueNotBlackPosSet2(numbers[yIndex][xIndex], pivot, continueNotBlackPosSet, null)) {
-							// サイズ不足
-							return false;
+							if (continueNotBlackPosSet.size() != numbers[yIndex][xIndex]) {
+								// サイズ不足
+								return false;
+							} else {
+								for (Position pos : continueNotBlackPosSet) {
+									masu[pos.getyIndex()][pos.getxIndex()] = Masu.NOT_BLACK;
+								}
+								fixedPosSet.addAll(continueNotBlackPosSet);
+								for (Position pos : continueNotBlackPosSet) {
+									if (pos.getyIndex() != 0) {
+										if (masu[pos.getyIndex() - 1][pos.getxIndex()] == Masu.SPACE) {
+											masu[pos.getyIndex() - 1][pos.getxIndex()] = Masu.BLACK;
+										}
+									}
+									if (pos.getxIndex() != getXLength() - 1) {
+										if (masu[pos.getyIndex()][pos.getxIndex() + 1] == Masu.SPACE) {
+											masu[pos.getyIndex()][pos.getxIndex() + 1] = Masu.BLACK;
+										}
+									}
+									if (pos.getyIndex() != getYLength() - 1) {
+										if (masu[pos.getyIndex() + 1][pos.getxIndex()] == Masu.SPACE) {
+											masu[pos.getyIndex() + 1][pos.getxIndex()] = Masu.BLACK;
+										}
+									}
+									if (pos.getxIndex() != 0) {
+										if (masu[pos.getyIndex()][pos.getxIndex() - 1] == Masu.SPACE) {
+											masu[pos.getyIndex()][pos.getxIndex() - 1] = Masu.BLACK;
+										}
+									}
+								}
+								continue;
+							}
 						}
 						Set<Position> continueWhitePosSet = new HashSet<>();
 						continueWhitePosSet.add(pivot);
@@ -200,7 +230,7 @@ public class NurikabeSolver implements Solver {
 		 */
 		private boolean setContinueNotBlackPosSet2(int size, Position pos, Set<Position> continuePosSet,
 				Direction from) {
-			if (continuePosSet.size() >= size) {
+			if (continuePosSet.size() > size) {
 				return true;
 			}
 			if (pos.getyIndex() != 0 && from != Direction.UP) {
@@ -805,6 +835,15 @@ public class NurikabeSolver implements Solver {
 			field.masu = virtual2.masu;
 		} else if (!allowNotBlack) {
 			field.masu = virtual.masu;
+		} else {
+			// どちらにしても理論
+			for (int y = 0; y < field.getYLength(); y++) {
+				for (int x = 0; x < field.getXLength(); x++) {
+					if (virtual2.masu[y][x] == virtual.masu[y][x]) {
+						field.masu[y][x] = virtual.masu[y][x];
+					}
+				}
+			}
 		}
 		return true;
 	}

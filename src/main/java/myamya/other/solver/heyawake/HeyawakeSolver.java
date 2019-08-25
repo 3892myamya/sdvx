@@ -185,11 +185,11 @@ public class HeyawakeSolver implements Solver {
 			for (int i = 0; i < rooms.size(); i++) {
 				Room room = rooms.get(i);
 				if (room.getBlackCnt() != -1) {
-					Position leftUp = room.getMember().get(0);
-					Position rightDown = room.getMember().get(room.getMember().size() - 1);
-					int roomHeight = rightDown.getyIndex() - leftUp.getyIndex() + 1;
-					int roomWidth = rightDown.getxIndex() - leftUp.getxIndex() + 1;
-					if (roomHeight * roomWidth <= 50) {
+					if (room.member.size() <= 50 && room.isRect()) {
+						Position leftUp = room.getMember().get(0);
+						Position rightDown = room.getMember().get(room.getMember().size() - 1);
+						int roomHeight = rightDown.getyIndex() - leftUp.getyIndex() + 1;
+						int roomWidth = rightDown.getxIndex() - leftUp.getxIndex() + 1;
 						HeyaSolver heyaSolver = new HeyaSolver(roomHeight, roomWidth, room.getBlackCnt(),
 								leftUp.getyIndex() == 0, rightDown.getxIndex() == getXLength() - 1,
 								rightDown.getyIndex() == getYLength() - 1, leftUp.getxIndex() == 0, 10000);
@@ -686,6 +686,38 @@ public class HeyawakeSolver implements Solver {
 				}
 			}
 			return new Position(yIndex, xIndex);
+		}
+
+		/**
+		 * 自身が長方形かどうか
+		 */
+		public boolean isRect() {
+			int minY = Integer.MAX_VALUE;
+			int maxY = 0;
+			int minX = Integer.MAX_VALUE;
+			int maxX = 0;
+			for (Position pos : member) {
+				if (pos.getyIndex() < minY) {
+					minY = pos.getyIndex();
+				}
+				if (pos.getyIndex() > maxY) {
+					maxY = pos.getyIndex();
+				}
+				if (pos.getxIndex() < minX) {
+					minX = pos.getxIndex();
+				}
+				if (pos.getxIndex() > maxX) {
+					maxX = pos.getxIndex();
+				}
+			}
+			for (int yIndex = minY; yIndex <= maxY; yIndex++) {
+				for (int xIndex = minX; xIndex <= maxX; xIndex++) {
+					if (!member.contains(new Position(yIndex, xIndex))) {
+						return false;
+					}
+				}
+			}
+			return true;
 		}
 	}
 

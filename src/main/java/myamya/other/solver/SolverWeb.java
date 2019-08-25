@@ -8160,7 +8160,7 @@ public class SolverWeb extends HttpServlet {
 					t = new NurikabeSolverThread(height, width, param);
 				} else if (puzzleType.contains("stostone")) {
 					t = new StostoneSolverThread(height, width, param);
-				} else if (puzzleType.contains("heyawake")) {
+				} else if (puzzleType.contains("heyawake") || puzzleType.contains("heyawacky")) {
 					t = new HeyawakeSolverThread(height, width, param);
 				} else if (puzzleType.contains("lits")) {
 					t = new LitsSolverThread(height, width, param);
