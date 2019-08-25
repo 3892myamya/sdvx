@@ -20,8 +20,11 @@ public class MakaroSolver implements Solver {
 
 		// 矢印情報
 		protected final Direction[][] arrows;
+		// 固定数字(表示用)
+		private final Integer[][] numbers;
 		// 数字の候補情報
 		protected List<Integer>[][] numbersCand;
+
 		// 横をふさぐ壁が存在するか
 		// 0,0 = trueなら、0,0と0,1の間に壁があるという意味
 		private final boolean[][] yokoWall;
@@ -55,9 +58,14 @@ public class MakaroSolver implements Solver {
 			return numbersCand[0].length;
 		}
 
+		public Integer[][] getNumbers() {
+			return numbers;
+		}
+
 		@SuppressWarnings("unchecked")
 		public Field(int height, int width, String param) {
 			arrows = new Direction[height][width];
+			numbers = new Integer[height][width];
 			numbersCand = new ArrayList[height][width];
 			// パラメータを解釈して壁の有無を入れる
 			yokoWall = new boolean[height][width - 1];
@@ -168,6 +176,7 @@ public class MakaroSolver implements Solver {
 							Position pos = new Position(index / getXLength(), index % getXLength());
 							numbersCand[pos.getyIndex()][pos.getxIndex()] = new ArrayList<>();
 							numbersCand[pos.getyIndex()][pos.getxIndex()].add(num);
+							numbers[pos.getyIndex()][pos.getxIndex()] = num;
 							i++;
 							i++;
 						} else {
@@ -183,6 +192,7 @@ public class MakaroSolver implements Solver {
 								Position pos = new Position(index / getXLength(), index % getXLength());
 								numbersCand[pos.getyIndex()][pos.getxIndex()] = new ArrayList<>();
 								numbersCand[pos.getyIndex()][pos.getxIndex()].add(num);
+								numbers[pos.getyIndex()][pos.getxIndex()] = num;
 							}
 						}
 					}
@@ -195,6 +205,7 @@ public class MakaroSolver implements Solver {
 		@SuppressWarnings("unchecked")
 		public Field(Field other) {
 			arrows = other.arrows;
+			numbers = other.numbers;
 			numbersCand = new ArrayList[other.getYLength()][other.getXLength()];
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
@@ -707,10 +718,10 @@ public class MakaroSolver implements Solver {
 			}
 		}
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
-		System.out.println("難易度:" + (count / 5));
+		System.out.println("難易度:" + (count / 4));
 		System.out.println(field);
 		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count / 5).toString();
+				+ Difficulty.getByCount(count / 4).toString();
 	}
 
 	/**

@@ -29,6 +29,18 @@ public class HerugolfSolver implements Solver {
 			return numbers;
 		}
 
+		public boolean[][] getPond() {
+			return pond;
+		}
+
+		public boolean[][] getHole() {
+			return hole;
+		}
+
+		public Map<Position, List<List<Position>>> getCandidates() {
+			return candidates;
+		}
+
 		public int getYLength() {
 			return numbers.length;
 		}
@@ -474,6 +486,7 @@ public class HerugolfSolver implements Solver {
 			}
 			return solveAndCheck();
 		}
+
 	}
 
 	private final Field field;

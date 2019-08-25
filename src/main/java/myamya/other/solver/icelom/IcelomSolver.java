@@ -15,6 +15,9 @@ public class IcelomSolver implements Solver {
 	public static class Field {
 		static final String ALPHABET_FROM_G = "ghijklmnopqrstuvwxyz";
 
+		// アイスローム2かどうか
+		// TODO アイスローム2のルールをちゃんと理解すること…
+		private final boolean isIcelom2;
 		// マスの情報
 		private Masu[][] masu;
 		// 数字の情報
@@ -28,8 +31,25 @@ public class IcelomSolver implements Solver {
 		// アイスバーン全体
 		private final Set<Position> icebarnPosSet;
 
+		// スタート地点の数字を上書きしなかった場合の開始位置
+		private final Position startPos;
+		// ゴール地点の数字を上書きしたかどうか
+		private final Position goalPos;
+
 		public Masu[][] getMasu() {
 			return masu;
+		}
+
+		public Integer[][] getNumbers() {
+			return numbers;
+		}
+
+		public Position getStartPos() {
+			return startPos;
+		}
+
+		public Position getGoalPos() {
+			return goalPos;
 		}
 
 		public Wall[][] getYokoExtraWall() {
@@ -48,7 +68,12 @@ public class IcelomSolver implements Solver {
 			return masu[0].length;
 		}
 
-		public Field(int height, int width, String param, int start, int goal) {
+		public Set<Position> getIcebarnPosSet() {
+			return icebarnPosSet;
+		}
+
+		public Field(int height, int width, String param, int start, int goal, boolean isIcelom2) {
+			this.isIcelom2 = isIcelom2;
 			masu = new Masu[height][width];
 			numbers = new Integer[height][width];
 			yokoExtraWall = new Wall[height][width + 1];
@@ -90,7 +115,7 @@ public class IcelomSolver implements Solver {
 						Position pos = new Position((cnt - mod + 0) / (getXLength()), (cnt - mod + 0) % (getXLength()));
 						if (bit / 16 % 2 == 1) {
 							icebarnPosSet.add(pos);
-						} else {
+						} else if (!isIcelom2) {
 							masu[pos.getyIndex()][pos.getxIndex()] = Masu.NOT_BLACK;
 						}
 					}
@@ -98,7 +123,7 @@ public class IcelomSolver implements Solver {
 						Position pos = new Position((cnt - mod + 1) / (getXLength()), (cnt - mod + 1) % (getXLength()));
 						if (bit / 8 % 2 == 1) {
 							icebarnPosSet.add(pos);
-						} else {
+						} else if (!isIcelom2) {
 							masu[pos.getyIndex()][pos.getxIndex()] = Masu.NOT_BLACK;
 						}
 					}
@@ -106,7 +131,7 @@ public class IcelomSolver implements Solver {
 						Position pos = new Position((cnt - mod + 2) / (getXLength()), (cnt - mod + 2) % (getXLength()));
 						if (bit / 4 % 2 == 1) {
 							icebarnPosSet.add(pos);
-						} else {
+						} else if (!isIcelom2) {
 							masu[pos.getyIndex()][pos.getxIndex()] = Masu.NOT_BLACK;
 						}
 					}
@@ -114,7 +139,7 @@ public class IcelomSolver implements Solver {
 						Position pos = new Position((cnt - mod + 3) / (getXLength()), (cnt - mod + 3) % (getXLength()));
 						if (bit / 2 % 2 == 1) {
 							icebarnPosSet.add(pos);
-						} else {
+						} else if (!isIcelom2) {
 							masu[pos.getyIndex()][pos.getxIndex()] = Masu.NOT_BLACK;
 						}
 					}
@@ -122,7 +147,7 @@ public class IcelomSolver implements Solver {
 						Position pos = new Position((cnt - mod + 4) / (getXLength()), (cnt - mod + 4) % (getXLength()));
 						if (bit / 1 % 2 == 1) {
 							icebarnPosSet.add(pos);
-						} else {
+						} else if (!isIcelom2) {
 							masu[pos.getyIndex()][pos.getxIndex()] = Masu.NOT_BLACK;
 						}
 					}
@@ -170,21 +195,33 @@ public class IcelomSolver implements Solver {
 				tateExtraWall[0][start] = Wall.NOT_EXISTS;
 				if (numbers[0][start] == null) {
 					numbers[0][start] = 0;
+					startPos = new Position(0, start);
+				} else {
+					startPos = null;
 				}
 			} else if (start < width * 2) {
 				tateExtraWall[getYLength()][start - width] = Wall.NOT_EXISTS;
 				if (numbers[getYLength() - 1][start - width] == null) {
 					numbers[getYLength() - 1][start - width] = 0;
+					startPos = new Position(getYLength() - 1, start - width);
+				} else {
+					startPos = null;
 				}
 			} else if (start < width * 2 + height) {
 				yokoExtraWall[start - width - width][0] = Wall.NOT_EXISTS;
 				if (numbers[start - width - width][0] == null) {
 					numbers[start - width - width][0] = 0;
+					startPos = new Position(start - width - width, 0);
+				} else {
+					startPos = null;
 				}
 			} else {
 				yokoExtraWall[start - width - width - height][getXLength()] = Wall.NOT_EXISTS;
 				if (numbers[start - width - width - height][getXLength() - 1] == null) {
 					numbers[start - width - width - height][getXLength() - 1] = 0;
+					startPos = new Position(start - width - width - height, getXLength() - 1);
+				} else {
+					startPos = null;
 				}
 			}
 
@@ -192,27 +229,40 @@ public class IcelomSolver implements Solver {
 				tateExtraWall[0][goal] = Wall.NOT_EXISTS;
 				if (numbers[0][goal] == null) {
 					numbers[0][goal] = maxNum + 1;
+					goalPos = new Position(0, goal);
+				} else {
+					goalPos = null;
 				}
 			} else if (goal < width * 2) {
 				tateExtraWall[getYLength()][goal - width] = Wall.NOT_EXISTS;
 				if (numbers[getYLength() - 1][goal - width] == null) {
 					numbers[getYLength() - 1][goal - width] = maxNum + 1;
+					goalPos = new Position(getYLength() - 1, goal - width);
+				} else {
+					goalPos = null;
 				}
 			} else if (goal < width * 2 + height) {
 				yokoExtraWall[goal - width - width][0] = Wall.NOT_EXISTS;
 				if (numbers[goal - width - width][0] == null) {
 					numbers[goal - width - width][0] = maxNum + 1;
+					goalPos = new Position(goal - width - width, 0);
+				} else {
+					goalPos = null;
 				}
 			} else {
 				yokoExtraWall[goal - width - width - height][getXLength()] = Wall.NOT_EXISTS;
 				if (numbers[goal - width - width - height][getXLength() - 1] == null) {
 					numbers[goal - width - width - height][getXLength() - 1] = maxNum + 1;
+					goalPos = new Position(goal - width - width - height, getXLength() - 1);
+				} else {
+					goalPos = null;
 				}
 			}
 
 		}
 
 		public Field(Field other) {
+			isIcelom2 = other.isIcelom2;
 			masu = new Masu[other.getYLength()][other.getXLength()];
 			yokoExtraWall = new Wall[other.getYLength()][other.getXLength() + 1];
 			tateExtraWall = new Wall[other.getYLength() + 1][other.getXLength()];
@@ -233,6 +283,8 @@ public class IcelomSolver implements Solver {
 			}
 			numbers = other.numbers;
 			icebarnPosSet = other.icebarnPosSet;
+			startPos = other.startPos;
+			goalPos = other.goalPos;
 		}
 
 		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
@@ -720,8 +772,8 @@ public class IcelomSolver implements Solver {
 	private final Field field;
 	private int count = 0;
 
-	public IcelomSolver(int height, int width, String param, int start, int goal) {
-		field = new Field(height, width, param, start, goal);
+	public IcelomSolver(int height, int width, String param, int start, int goal, boolean isIcelom2) {
+		field = new Field(height, width, param, start, goal, isIcelom2);
 	}
 
 	public Field getField() {
@@ -736,7 +788,7 @@ public class IcelomSolver implements Solver {
 		String param = params[params.length - 3];
 		int start = Integer.parseInt(params[params.length - 2]);
 		int goal = Integer.parseInt(params[params.length - 1]);
-		System.out.println(new IcelomSolver(height, width, param, start, goal).solve());
+		System.out.println(new IcelomSolver(height, width, param, start, goal, false).solve());
 	}
 
 	@Override

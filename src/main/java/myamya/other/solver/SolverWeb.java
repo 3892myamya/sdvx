@@ -42,9 +42,11 @@ import myamya.other.solver.hakoiri.HakoiriSolver;
 import myamya.other.solver.hanare.HanareSolver;
 import myamya.other.solver.hashikake.HashikakeSolver;
 import myamya.other.solver.hebi.HebiSolver;
+import myamya.other.solver.herugolf.HerugolfSolver;
 import myamya.other.solver.heyawake.HeyawakeSolver;
 import myamya.other.solver.hitori.HitoriSolver;
 import myamya.other.solver.icebarn.IcebarnSolver;
+import myamya.other.solver.icelom.IcelomSolver;
 import myamya.other.solver.juosan.JuosanSolver;
 import myamya.other.solver.kakuro.KakuroSolver;
 import myamya.other.solver.kakuro.KakuroSolver.Block;
@@ -54,6 +56,7 @@ import myamya.other.solver.kurodoko.KurodokoSolver;
 import myamya.other.solver.kurodoko.KurodokoSolver.NumberMasu;
 import myamya.other.solver.lits.LitsSolver;
 import myamya.other.solver.loopsp.LoopspSolver;
+import myamya.other.solver.makaro.MakaroSolver;
 import myamya.other.solver.masyu.MasyuSolver;
 import myamya.other.solver.masyu.MasyuSolver.Pearl;
 import myamya.other.solver.moonsun.MoonsunSolver;
@@ -7478,6 +7481,650 @@ public class SolverWeb extends HttpServlet {
 		}
 	}
 
+	static class HerugolfSolverThread extends AbsSolverThlead {
+
+		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
+		private static final String FULL_NUMS = "０１２３４５６７８９";
+
+		HerugolfSolverThread(int height, int width, String param) {
+			super(height, width, param);
+		}
+
+		@Override
+		protected Solver getSolver() {
+			return new HerugolfSolver(height, width, param);
+		}
+
+		@Override
+		public String makeCambus() {
+			HerugolfSolver.Field field = ((HerugolfSolver) solver).getField();
+			int baseSize = 20;
+			int margin = 5;
+			StringBuilder sb = new StringBuilder();
+			sb.append(
+					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
+							+ "height=\"" + (field.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
+							+ (field.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			// 池描画
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					if (field.getPond()[yIndex][xIndex]) {
+						sb.append("<rect y=\"" + (yIndex * baseSize + margin)
+								+ "\" x=\""
+								+ (xIndex * baseSize + baseSize)
+								+ "\" width=\""
+								+ (baseSize)
+								+ "\" height=\""
+								+ (baseSize)
+								+ "\" fill=\""
+								+ "lightblue"
+								+ "\">"
+								+ "</rect>");
+					}
+				}
+			}
+			// ホール描画
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					if (field.getHole()[yIndex][xIndex]) {
+						sb.append("<text y=\"" + (yIndex * baseSize + baseSize + margin - 4)
+								+ "\" x=\""
+								+ (xIndex * baseSize + baseSize + 2)
+								+ "\" font-size=\""
+								+ (baseSize - 5)
+								+ "\" textLength=\""
+								+ (baseSize - 5)
+								+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+								+ "Ｈ"
+								+ "</text>");
+					}
+				}
+			}
+			for (Entry<Position, List<List<Position>>> entry : field.getCandidates().entrySet()) {
+				Position originPos = entry.getKey();
+				if (entry.getValue().size() == 1) {
+					List<Position> movedPosList = new ArrayList<>(entry.getValue()).get(0);
+					for (int i = 0; i < movedPosList.size() - 1; i++) {
+						Position fixedFrom = movedPosList.get(i);
+						Position fixedTo = movedPosList.get(i + 1);
+						if (i == 0) {
+							sb.append("<circle cy=\"" + (fixedFrom.getyIndex() * baseSize + (baseSize / 2) + margin)
+									+ "\" cx=\""
+									+ (fixedFrom.getxIndex() * baseSize + baseSize + (baseSize / 2))
+									+ "\" r=\""
+									+ (baseSize / 2 - 2)
+									+ "\" fill=\"gray\", stroke=\"gray\">"
+									+ "</circle>");
+						}
+						sb.append("<circle cy=\"" + (fixedFrom.getyIndex() * baseSize + (baseSize / 2) + margin)
+								+ "\" cx=\""
+								+ (fixedFrom.getxIndex() * baseSize + baseSize + (baseSize / 2))
+								+ "\" r=\""
+								+ (baseSize / 4 - 2)
+								+ "\" fill=\"gray\", stroke=\"gray\">"
+								+ "</circle>");
+						if (i == movedPosList.size() - 2) {
+							sb.append("<circle cy=\"" + (fixedTo.getyIndex() * baseSize + (baseSize / 2) + margin)
+									+ "\" cx=\""
+									+ (fixedTo.getxIndex() * baseSize + baseSize + (baseSize / 2))
+									+ "\" r=\""
+									+ (baseSize / 2 - 2)
+									+ "\" fill=\"lightgray\", stroke=\"black\">"
+									+ "</circle>");
+							if (field.getNumbers()[originPos.getyIndex()][originPos.getxIndex()] != -1) {
+								String numberStr = String
+										.valueOf(field.getNumbers()[originPos.getyIndex()][originPos.getxIndex()] - i
+												- 1);
+								int index = HALF_NUMS.indexOf(numberStr);
+								String masuStr = null;
+								if (index >= 0) {
+									masuStr = FULL_NUMS.substring(index / 2, index / 2 + 1);
+								} else {
+									masuStr = numberStr;
+								}
+								sb.append("<text y=\"" + (fixedTo.getyIndex() * baseSize + baseSize + margin - 4)
+										+ "\" x=\""
+										+ (fixedTo.getxIndex() * baseSize + baseSize + 2)
+										+ "\" font-size=\""
+										+ (baseSize - 5)
+										+ "\" textLength=\""
+										+ (baseSize - 5)
+										+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+										+ masuStr
+										+ "</text>");
+							}
+						}
+						if (fixedTo.getyIndex() < fixedFrom.getyIndex()) {
+							for (int yIndex = fixedFrom.getyIndex(); yIndex > fixedTo.getyIndex(); yIndex--) {
+								sb.append("<line y1=\""
+										+ (yIndex * baseSize - (yIndex == fixedTo.getyIndex() + 1 ? baseSize / 2 : 0)
+												+ margin)
+										+ "\" x1=\""
+										+ (fixedTo.getxIndex() * baseSize + baseSize + baseSize / 2)
+										+ "\" y2=\""
+										+ (yIndex * baseSize + baseSize
+												- (yIndex == fixedFrom.getyIndex() ? baseSize / 2 : 0) + margin)
+										+ "\" x2=\""
+										+ (fixedTo.getxIndex() * baseSize + baseSize + baseSize / 2)
+										+ "\" stroke-width=\"1\" fill=\"none\"");
+								sb.append("stroke=\"green\" ");
+								sb.append(">"
+										+ "</line>");
+							}
+						} else if (fixedTo.getxIndex() > fixedFrom.getxIndex()) {
+							for (int xIndex = fixedFrom.getxIndex(); xIndex < fixedTo.getxIndex(); xIndex++) {
+								sb.append("<line y1=\""
+										+ (fixedTo.getyIndex() * baseSize + baseSize / 2 + margin)
+										+ "\" x1=\""
+										+ (xIndex * baseSize + baseSize
+												+ (xIndex == fixedFrom.getxIndex() ? baseSize / 2 : 0))
+										+ "\" y2=\""
+										+ (fixedTo.getyIndex() * baseSize + baseSize / 2 + margin)
+										+ "\" x2=\""
+										+ (xIndex * baseSize + baseSize + baseSize
+												+ (xIndex == fixedTo.getxIndex() - 1 ? baseSize / 2 : 0))
+										+ "\" stroke-width=\"1\" fill=\"none\"");
+								sb.append("stroke=\"green\" ");
+								sb.append(">"
+										+ "</line>");
+							}
+						} else if (fixedTo.getyIndex() > fixedFrom.getyIndex()) {
+							for (int yIndex = fixedFrom.getyIndex(); yIndex < fixedTo.getyIndex(); yIndex++) {
+								sb.append("<line y1=\""
+										+ (yIndex * baseSize + (yIndex == fixedFrom.getyIndex() ? baseSize / 2 : 0)
+												+ margin)
+										+ "\" x1=\""
+										+ (fixedTo.getxIndex() * baseSize + baseSize + baseSize / 2)
+										+ "\" y2=\""
+										+ (yIndex * baseSize + baseSize
+												+ (yIndex == fixedTo.getyIndex() - 1 ? baseSize / 2 : 0) + margin)
+										+ "\" x2=\""
+										+ (fixedTo.getxIndex() * baseSize + baseSize + baseSize / 2)
+										+ "\" stroke-width=\"1\" fill=\"none\"");
+								sb.append("stroke=\"green\" ");
+								sb.append(">"
+										+ "</line>");
+							}
+						} else if (fixedTo.getxIndex() < fixedFrom.getxIndex()) {
+							for (int xIndex = fixedFrom.getxIndex(); xIndex > fixedTo.getxIndex(); xIndex--) {
+								sb.append("<line y1=\""
+										+ (fixedTo.getyIndex() * baseSize + baseSize / 2 + margin)
+										+ "\" x1=\""
+										+ (xIndex * baseSize + baseSize
+												- (xIndex == fixedTo.getxIndex() + 1 ? baseSize / 2 : 0))
+										+ "\" y2=\""
+										+ (fixedTo.getyIndex() * baseSize + baseSize / 2 + margin)
+										+ "\" x2=\""
+										+ (xIndex * baseSize + baseSize + baseSize
+												- (xIndex == fixedFrom.getxIndex() ? baseSize / 2 : 0))
+										+ "\" stroke-width=\"1\" fill=\"none\"");
+								sb.append("stroke=\"green\" ");
+								sb.append(">"
+										+ "</line>");
+							}
+						}
+					}
+				} else {
+					// 途中まで確定した候補を表示
+					List<Position> halfwayCand = new ArrayList<>();
+					int idx = 0;
+					outer: while (true) {
+						Position oneCand = null;
+						for (List<Position> movedPosList : entry.getValue()) {
+							if (movedPosList.size() < idx) {
+								break outer;
+							} else {
+								if (oneCand != null && !oneCand.equals(movedPosList.get(idx))) {
+									break outer;
+								} else {
+									oneCand = movedPosList.get(idx);
+								}
+							}
+						}
+						halfwayCand.add(oneCand);
+						idx++;
+					}
+					if (halfwayCand.size() == 1) {
+						sb.append("<circle cy=\"" + (originPos.getyIndex() * baseSize + (baseSize / 2) + margin)
+								+ "\" cx=\""
+								+ (originPos.getxIndex() * baseSize + baseSize + (baseSize / 2))
+								+ "\" r=\""
+								+ (baseSize / 2 - 2)
+								+ "\" fill=\"white\", stroke=\"black\">"
+								+ "</circle>");
+						if (field.getNumbers()[originPos.getyIndex()][originPos.getxIndex()] != -1) {
+							String numberStr = String
+									.valueOf(field.getNumbers()[originPos.getyIndex()][originPos.getxIndex()]);
+							int index = HALF_NUMS.indexOf(numberStr);
+							String masuStr = null;
+							if (index >= 0) {
+								masuStr = FULL_NUMS.substring(index / 2, index / 2 + 1);
+							} else {
+								masuStr = numberStr;
+							}
+							sb.append("<text y=\"" + (originPos.getyIndex() * baseSize + baseSize + margin - 4)
+									+ "\" x=\""
+									+ (originPos.getxIndex() * baseSize + baseSize + 2)
+									+ "\" font-size=\""
+									+ (baseSize - 5)
+									+ "\" textLength=\""
+									+ (baseSize - 5)
+									+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+									+ masuStr
+									+ "</text>");
+						}
+					} else {
+						for (int i = 0; i < halfwayCand.size() - 1; i++) {
+							Position fixedFrom = halfwayCand.get(i);
+							Position fixedTo = halfwayCand.get(i + 1);
+							if (i == 0) {
+								sb.append("<circle cy=\"" + (fixedFrom.getyIndex() * baseSize + (baseSize / 2) + margin)
+										+ "\" cx=\""
+										+ (fixedFrom.getxIndex() * baseSize + baseSize + (baseSize / 2))
+										+ "\" r=\""
+										+ (baseSize / 2 - 2)
+										+ "\" fill=\"gray\", stroke=\"gray\">"
+										+ "</circle>");
+							}
+							sb.append("<circle cy=\"" + (fixedFrom.getyIndex() * baseSize + (baseSize / 2) + margin)
+									+ "\" cx=\""
+									+ (fixedFrom.getxIndex() * baseSize + baseSize + (baseSize / 2))
+									+ "\" r=\""
+									+ (baseSize / 4 - 2)
+									+ "\" fill=\"gray\", stroke=\"gray\">"
+									+ "</circle>");
+							if (i == halfwayCand.size() - 2) {
+								sb.append("<circle cy=\"" + (fixedTo.getyIndex() * baseSize + (baseSize / 2) + margin)
+										+ "\" cx=\""
+										+ (fixedTo.getxIndex() * baseSize + baseSize + (baseSize / 2))
+										+ "\" r=\""
+										+ (baseSize / 2 - 2)
+										+ "\" fill=\"white\", stroke=\"black\">"
+										+ "</circle>");
+								if (field.getNumbers()[originPos.getyIndex()][originPos.getxIndex()] != -1) {
+									String numberStr = String
+											.valueOf(
+													field.getNumbers()[originPos.getyIndex()][originPos.getxIndex()] - i
+															- 1);
+									int index = HALF_NUMS.indexOf(numberStr);
+									String masuStr = null;
+									if (index >= 0) {
+										masuStr = FULL_NUMS.substring(index / 2, index / 2 + 1);
+									} else {
+										masuStr = numberStr;
+									}
+									sb.append("<text y=\"" + (fixedTo.getyIndex() * baseSize + baseSize + margin - 4)
+											+ "\" x=\""
+											+ (fixedTo.getxIndex() * baseSize + baseSize + 2)
+											+ "\" font-size=\""
+											+ (baseSize - 5)
+											+ "\" textLength=\""
+											+ (baseSize - 5)
+											+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+											+ masuStr
+											+ "</text>");
+								}
+							}
+							if (fixedTo.getyIndex() < fixedFrom.getyIndex()) {
+								for (int yIndex = fixedFrom.getyIndex(); yIndex > fixedTo.getyIndex(); yIndex--) {
+									sb.append("<line y1=\""
+											+ (yIndex * baseSize
+													- (yIndex == fixedTo.getyIndex() + 1 ? baseSize / 2 : 0)
+													+ margin)
+											+ "\" x1=\""
+											+ (fixedTo.getxIndex() * baseSize + baseSize + baseSize / 2)
+											+ "\" y2=\""
+											+ (yIndex * baseSize + baseSize
+													- (yIndex == fixedFrom.getyIndex() ? baseSize / 2 : 0) + margin)
+											+ "\" x2=\""
+											+ (fixedTo.getxIndex() * baseSize + baseSize + baseSize / 2)
+											+ "\" stroke-width=\"1\" fill=\"none\"");
+									sb.append("stroke=\"green\" ");
+									sb.append(">"
+											+ "</line>");
+								}
+							} else if (fixedTo.getxIndex() > fixedFrom.getxIndex()) {
+								for (int xIndex = fixedFrom.getxIndex(); xIndex < fixedTo.getxIndex(); xIndex++) {
+									sb.append("<line y1=\""
+											+ (fixedTo.getyIndex() * baseSize + baseSize / 2 + margin)
+											+ "\" x1=\""
+											+ (xIndex * baseSize + baseSize
+													+ (xIndex == fixedFrom.getxIndex() ? baseSize / 2 : 0))
+											+ "\" y2=\""
+											+ (fixedTo.getyIndex() * baseSize + baseSize / 2 + margin)
+											+ "\" x2=\""
+											+ (xIndex * baseSize + baseSize + baseSize
+													+ (xIndex == fixedTo.getxIndex() - 1 ? baseSize / 2 : 0))
+											+ "\" stroke-width=\"1\" fill=\"none\"");
+									sb.append("stroke=\"green\" ");
+									sb.append(">"
+											+ "</line>");
+								}
+							} else if (fixedTo.getyIndex() > fixedFrom.getyIndex()) {
+								for (int yIndex = fixedFrom.getyIndex(); yIndex < fixedTo.getyIndex(); yIndex++) {
+									sb.append("<line y1=\""
+											+ (yIndex * baseSize + (yIndex == fixedFrom.getyIndex() ? baseSize / 2 : 0)
+													+ margin)
+											+ "\" x1=\""
+											+ (fixedTo.getxIndex() * baseSize + baseSize + baseSize / 2)
+											+ "\" y2=\""
+											+ (yIndex * baseSize + baseSize
+													+ (yIndex == fixedTo.getyIndex() - 1 ? baseSize / 2 : 0) + margin)
+											+ "\" x2=\""
+											+ (fixedTo.getxIndex() * baseSize + baseSize + baseSize / 2)
+											+ "\" stroke-width=\"1\" fill=\"none\"");
+									sb.append("stroke=\"green\" ");
+									sb.append(">"
+											+ "</line>");
+								}
+							} else if (fixedTo.getxIndex() < fixedFrom.getxIndex()) {
+								for (int xIndex = fixedFrom.getxIndex(); xIndex > fixedTo.getxIndex(); xIndex--) {
+									sb.append("<line y1=\""
+											+ (fixedTo.getyIndex() * baseSize + baseSize / 2 + margin)
+											+ "\" x1=\""
+											+ (xIndex * baseSize + baseSize
+													- (xIndex == fixedTo.getxIndex() + 1 ? baseSize / 2 : 0))
+											+ "\" y2=\""
+											+ (fixedTo.getyIndex() * baseSize + baseSize / 2 + margin)
+											+ "\" x2=\""
+											+ (xIndex * baseSize + baseSize + baseSize
+													- (xIndex == fixedFrom.getxIndex() ? baseSize / 2 : 0))
+											+ "\" stroke-width=\"1\" fill=\"none\"");
+									sb.append("stroke=\"green\" ");
+									sb.append(">"
+											+ "</line>");
+								}
+							}
+						}
+					}
+				}
+
+			}
+			sb.append("</svg>");
+			return sb.toString();
+		}
+	}
+
+	static class IcelomSolverThread extends AbsSolverThlead {
+		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
+		private static final String FULL_NUMS = "０１２３４５６７８９";
+		private final int start;
+		private final int goal;
+		private final boolean isIcelom2;
+
+		IcelomSolverThread(int height, int width, String param, int start, int goal, boolean isIcelom2) {
+			super(height, width, param);
+			this.start = start;
+			this.goal = goal;
+			this.isIcelom2 = isIcelom2;
+		}
+
+		@Override
+		protected Solver getSolver() {
+			return new IcelomSolver(height, width, param, start, goal, isIcelom2);
+		}
+
+		@Override
+		public String makeCambus() {
+			StringBuilder sb = new StringBuilder();
+			IcelomSolver.Field field = ((IcelomSolver) solver).getField();
+			int baseSize = 20;
+			int margin = baseSize;
+			sb.append(
+					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
+							+ "height=\"" + (field.getYLength() * baseSize + 3 * baseSize) + "\" width=\""
+							+ (field.getXLength() * baseSize + 3 * baseSize) + "\" >");
+
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					Position pos = new Position(yIndex, xIndex);
+					if (field.getNumbers()[yIndex][xIndex] != null) {
+						if (field.getNumbers()[yIndex][xIndex] != -1 &&
+								!(field.getStartPos() != null
+										&& field.getStartPos().equals(new Position(yIndex, xIndex)))
+								&&
+								!(field.getGoalPos() != null
+										&& field.getGoalPos().equals(new Position(yIndex, xIndex)))) {
+							String numberStr = String.valueOf(field.getNumbers()[yIndex][xIndex]);
+							int index = HALF_NUMS.indexOf(numberStr);
+							String masuStr = null;
+							if (index >= 0) {
+								masuStr = FULL_NUMS.substring(index / 2, index / 2 + 1);
+							} else {
+								masuStr = numberStr;
+							}
+							sb.append("<text y=\"" + (yIndex * baseSize + baseSize + baseSize - 4)
+									+ "\" x=\""
+									+ (xIndex * baseSize + baseSize)
+									+ "\" font-size=\""
+									+ (baseSize - 2)
+									+ "\" textLength=\""
+									+ (baseSize - 2)
+									+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+									+ masuStr
+									+ "</text>");
+						}
+					}
+					if (field.getIcebarnPosSet().contains(pos)) {
+						sb.append("<rect y=\"" + (yIndex * baseSize + margin)
+								+ "\" x=\""
+								+ (xIndex * baseSize + baseSize)
+								+ "\" width=\""
+								+ (baseSize)
+								+ "\" height=\""
+								+ (baseSize)
+								+ "\" fill=\""
+								+ "lightblue"
+								+ "\">"
+								+ "</rect>");
+					}
+					String str = "";
+					Wall up = field.getTateExtraWall()[yIndex][xIndex];
+					Wall right = field.getYokoExtraWall()[yIndex][xIndex + 1];
+					Wall down = field.getTateExtraWall()[yIndex + 1][xIndex];
+					Wall left = field.getYokoExtraWall()[yIndex][xIndex];
+					if (up == Wall.NOT_EXISTS && right == Wall.NOT_EXISTS
+							&& down == Wall.NOT_EXISTS &&
+							left == Wall.NOT_EXISTS) {
+						str = "┼";
+					} else if (up == Wall.NOT_EXISTS && right == Wall.NOT_EXISTS) {
+						str = "└";
+					} else if (up == Wall.NOT_EXISTS && down == Wall.NOT_EXISTS) {
+						str = "│";
+					} else if (up == Wall.NOT_EXISTS && left == Wall.NOT_EXISTS) {
+						str = "┘";
+					} else if (right == Wall.NOT_EXISTS && down == Wall.NOT_EXISTS) {
+						str = "┌";
+					} else if (right == Wall.NOT_EXISTS && left == Wall.NOT_EXISTS) {
+						str = "─";
+					} else if (down == Wall.NOT_EXISTS && left == Wall.NOT_EXISTS) {
+						str = "┐";
+					} else {
+						str = "　";
+					}
+					sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 2 + margin)
+							+ "\" x=\""
+							+ (xIndex * baseSize + baseSize)
+							+ "\" font-size=\""
+							+ (baseSize)
+							+ "\" textLength=\""
+							+ (baseSize)
+							+ "\" fill=\""
+							+ "green"
+							+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+							+ str
+							+ "</text>");
+				}
+			}
+			// 横壁描画
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = -1; xIndex < field.getXLength(); xIndex++) {
+					boolean oneYokoWall = xIndex == -1 || xIndex == field.getXLength() - 1;
+					if (oneYokoWall) {
+						sb.append("<rect y=\"" + (yIndex * baseSize + margin)
+								+ "\" x=\""
+								+ (xIndex * baseSize + 2 * baseSize)
+								+ "\" width=\""
+								+ (1)
+								+ "\" height=\""
+								+ (baseSize)
+								+ "\">"
+								+ "</rect>");
+					}
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = -1; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					boolean oneTateWall = yIndex == -1 || yIndex == field.getYLength() - 1;
+					if (oneTateWall) {
+						sb.append("<rect y=\"" + (yIndex * baseSize + baseSize + margin)
+								+ "\" x=\""
+								+ (xIndex * baseSize + baseSize)
+								+ "\" width=\""
+								+ (baseSize)
+								+ "\" height=\""
+								+ (1)
+								+ "\">"
+								+ "</rect>");
+					}
+				}
+			}
+			sb.append("</svg>");
+			return sb.toString();
+		}
+	}
+
+	static class MakaroSolverThread extends AbsSolverThlead {
+		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
+		private static final String FULL_NUMS = "０１２３４５６７８９";
+
+		MakaroSolverThread(int height, int width, String param) {
+			super(height, width, param);
+		}
+
+		@Override
+		protected Solver getSolver() {
+			return new MakaroSolver(height, width, param);
+		}
+
+		@Override
+		public String makeCambus() {
+			MakaroSolver.Field field = ((MakaroSolver) solver).getField();
+			StringBuilder sb = new StringBuilder();
+			int baseSize = 20;
+			sb.append(
+					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
+							+ "height=\"" + (field.getYLength() * baseSize + 2 * baseSize) + "\" width=\""
+							+ (field.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					if (field.getNumbers()[yIndex][xIndex] != null) {
+						sb.append("<rect y=\"" + (yIndex * baseSize)
+								+ "\" x=\""
+								+ (xIndex * baseSize + baseSize)
+								+ "\" width=\""
+								+ (baseSize)
+								+ "\" height=\""
+								+ (baseSize)
+								+ "\" fill=\"lightgray\" >"
+								+ "</rect>");
+					}
+					if (field.getNumbersCand()[yIndex][xIndex].size() == 1) {
+						if (field.getNumbersCand()[yIndex][xIndex].get(0) == -1) {
+							sb.append("<rect y=\"" + (yIndex * baseSize)
+									+ "\" x=\""
+									+ (xIndex * baseSize + baseSize)
+									+ "\" width=\""
+									+ (baseSize)
+									+ "\" height=\""
+									+ (baseSize)
+									+ "\">"
+									+ "</rect>");
+							if (field.getArrows()[yIndex][xIndex] != null) {
+								int lengthAdjust = 0;
+								Direction dir = field.getArrows()[yIndex][xIndex];
+								if (dir == Direction.UP ||
+										dir == Direction.DOWN) {
+									lengthAdjust = 6;
+								}
+								sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 4)
+										+ "\" x=\""
+										+ (xIndex * baseSize + baseSize + (lengthAdjust / 2))
+										+ "\" fill=\""
+										+ "white"
+										+ "\" font-size=\""
+										+ (baseSize - 2)
+										+ "\" textLength=\""
+										+ (baseSize - 2 - lengthAdjust)
+										+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+										+ dir.getDirectString()
+										+ "</text>");
+							}
+						} else {
+							String numberStr = String.valueOf(field.getNumbersCand()[yIndex][xIndex].get(0));
+							String masuStr;
+							int idx = HALF_NUMS.indexOf(numberStr);
+							if (idx >= 0) {
+								masuStr = FULL_NUMS.substring(idx / 2, idx / 2 + 1);
+							} else {
+								masuStr = numberStr;
+							}
+							sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 4)
+									+ "\" x=\""
+									+ (xIndex * baseSize + baseSize + 2)
+									+ "\" font-size=\""
+									+ (baseSize - 5)
+									+ "\" textLength=\""
+									+ (baseSize - 5)
+									+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+									+ masuStr
+									+ "</text>");
+						}
+					}
+				}
+			}
+			// 横壁描画
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = -1; xIndex < field.getXLength(); xIndex++) {
+					boolean oneYokoWall = xIndex == -1 || xIndex == field.getXLength() - 1
+							|| field.getYokoWall()[yIndex][xIndex];
+					if (oneYokoWall) {
+						sb.append("<rect y=\"" + (yIndex * baseSize)
+								+ "\" x=\""
+								+ (xIndex * baseSize + 2 * baseSize)
+								+ "\" width=\""
+								+ (1)
+								+ "\" height=\""
+								+ (baseSize)
+								+ "\">"
+								+ "</rect>");
+					}
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = -1; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					boolean oneTateWall = yIndex == -1 || yIndex == field.getYLength() - 1
+							|| field.getTateWall()[yIndex][xIndex];
+					if (oneTateWall) {
+						sb.append("<rect y=\"" + (yIndex * baseSize + baseSize)
+								+ "\" x=\""
+								+ (xIndex * baseSize + baseSize)
+								+ "\" width=\""
+								+ (baseSize)
+								+ "\" height=\""
+								+ (1)
+								+ "\">"
+								+ "</rect>");
+					}
+				}
+			}
+			sb.append("</svg>");
+			return sb.toString();
+		}
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -7485,151 +8132,167 @@ public class SolverWeb extends HttpServlet {
 		Map<String, Object> resultMap = new HashMap<>();
 		try {
 			List<String> parts = getURLparts(request.getParameter("url"));
-			int height = Integer.parseInt(parts.get(2));
-			int width = Integer.parseInt(parts.get(1));
 			String puzzleType = parts.get(0);
-			String param = parts.get(3).split("@")[0];
 			AbsSolverThlead t;
-			if (puzzleType.contains("yajilin") || puzzleType.contains("yajirin")) {
-				if (puzzleType.contains("regions")) {
-					t = new YajilinRegionsSolverThlead(height, width, param, puzzleType.contains("out"));
-				} else {
-					t = new YajilinSolverThlead(height, width, param, puzzleType.contains("out"));
+			if (puzzleType.contains("icelom")) {
+				boolean isIcelom2 = parts.get(1).equals("b");
+				if (isIcelom2) {
+					// TODO アイスローム2は未完成なので封じる
+					throw new IllegalArgumentException();
 				}
-			} else if (puzzleType.contains("nurikabe")) {
-				t = new NurikabeSolverThread(height, width, param);
-			} else if (puzzleType.contains("stostone")) {
-				t = new StostoneSolverThread(height, width, param);
-			} else if (puzzleType.contains("heyawake")) {
-				t = new HeyawakeSolverThread(height, width, param);
-			} else if (puzzleType.contains("lits")) {
-				t = new LitsSolverThread(height, width, param);
-			} else if (puzzleType.contains("norinori")) {
-				t = new NorinoriSolverThread(height, width, param);
-			} else if (puzzleType.contains("shimaguni")) {
-				t = new ShimaguniSolverThread(height, width, param);
-			} else if (puzzleType.contains("shikaku")) {
-				t = new ShikakuSolverThread(height, width, param);
-			} else if (puzzleType.contains("akari") || puzzleType.contains("lightup")) {
-				t = new AkariSolverThread(height, width, param);
-			} else if (puzzleType.contains("yinyang")) {
-				t = new YinyangSolverThread(height, width, param);
-			} else if (puzzleType.contains("nurimisaki")) {
-				t = new NurimisakiSolverThread(height, width, param);
-			} else if (puzzleType.contains("trimisaki")) {
-				t = new TrimisakiSolverThread(height, width, param);
-			} else if (puzzleType.contains("hitori")) {
-				t = new HitoriSolverThread(height, width, param);
-			} else if (puzzleType.contains("dosufuwa")) {
-				t = new DosufuwaSolverThread(height, width, param);
-			} else if (puzzleType.contains("kurodoko")) {
-				t = new KurodokoSolverThread(height, width, param);
-			} else if (puzzleType.contains("slither")) {
-				t = new SlitherSolverThread(height, width, param);
-			} else if (puzzleType.contains("kurohoui")) {
-				t = new KurohouiSolverThread(height, width, param);
-			} else if (puzzleType.contains("yajikazu")) {
-				t = new YajikazuSolverThread(height, width, param);
-			} else if (puzzleType.contains("mashu") || puzzleType.contains("masyu")
-					|| puzzleType.contains("pearl")) {
-				t = puzzleType.contains("ura") ? new UraMasyuSolverThread(height, width, param)
-						: new MasyuSolverThread(height, width, param);
-			} else if (puzzleType.contains("sashigane")) {
-				t = new SashiganeSolverThread(height, width, param);
-			} else if (puzzleType.contains("bag")) {
-				t = new BagSolverThread(height, width, param);
-			} else if (puzzleType.contains("shakashaka")) {
-				t = new ShakashakaSolverThread(height, width, param);
-			} else if (puzzleType.contains("tapa")) {
-				t = new TapaSolverThread(height, width, param);
-			} else if (puzzleType.contains("starbattle")) {
-				int starCnt = Integer.parseInt(parts.get(3));
-				param = parts.get(4).split("@")[0];
-				t = new StarBattleSolverThread(height, width, starCnt, param);
-			} else if (puzzleType.contains("sudoku")) {
-				t = new SudokuSolverThread(height, width, param);
-			} else if (puzzleType.contains("country")) {
-				t = new CountrySolverThread(height, width, param);
-			} else if (puzzleType.contains("fillomino")) {
-				t = new FillominoSolverThread(height, width, param);
-			} else if (puzzleType.contains("firefly")) {
-				t = new FireflySolverThread(height, width, param);
-			} else if (puzzleType.contains("nagare")) {
-				t = new NagareSolverThread(height, width, param);
-			} else if (puzzleType.contains("ripple") || puzzleType.contains("hakyukoka")) {
-				t = new RippleSolverThread(height, width, param);
-			} else if (puzzleType.contains("sato")) {
-				t = new SatogaeriSolverThread(height, width, param);
-			} else if (puzzleType.contains("barns")) {
-				t = new BarnsSolverThread(height, width, param);
-			} else if (puzzleType.contains("loopsp")) {
-				t = new LoopspSolverThread(height, width, param);
-			} else if (puzzleType.contains("pipelink")) {
-				if (puzzleType.contains("pipelinkr")) {
-					t = new PipelinkrSolverThread(height, width, param);
-				} else {
-					t = new PipelinkSolverThread(height, width, param);
-				}
-			} else if (puzzleType.contains("reflect")) {
-				t = new ReflectSolverThread(height, width, param);
-			} else if (puzzleType.contains("ringring")) {
-				t = new RingringSolverThread(height, width, param);
-			} else if (puzzleType.contains("rectslider")) {
-				t = new RectsliderSolverThread(height, width, param);
-			} else if (puzzleType.contains("hebi") || puzzleType.contains("snakes")) {
-				t = new HebiSolverThread(height, width, param);
-			} else if (puzzleType.contains("shwolf")) {
-				t = new ShwolfSolverThread(height, width, param);
-			} else if (puzzleType.contains("shugaku")) {
-				t = new ShugakuSolverThread(height, width, param);
-			} else if (puzzleType.contains("angleloop")) {
-				t = new AngleloopSolverThread(height, width, param);
-				//			} else if (puzzleType.contains("numlin") || puzzleType.contains("numberlink")) {
-				//				t = new NumlinSolverThread(height, width, param);
-			} else if (puzzleType.contains("hashi")) {
-				t = new HashikakeSolverThread(height, width, param);
-			} else if (puzzleType.contains("cells")) {
-				t = new CellsSolverThread(height, width, param, puzzleType.contains("fourcells") ? 4 : 5);
-			} else if (puzzleType.contains("kurochute")) {
-				t = new KurochuteSolverThread(height, width, param);
-			} else if (puzzleType.contains("nondango")) {
-				t = new NondangoSolverThread(height, width, param);
-			} else if (puzzleType.contains("juosan")) {
-				t = new JuosanSolverThread(height, width, param);
-			} else if (puzzleType.contains("moonsun")) {
-				t = new MoonsunSolverThread(height, width, param);
-			} else if (puzzleType.contains("scrin")) {
-				t = new ScrinSolverThread(height, width, param);
-			} else if (puzzleType.contains("usoone")) {
-				t = new UsooneSolverThread(height, width, param);
-			} else if (puzzleType.contains("kakuro")) {
-				t = new KakuroSolverThread(height, width, param);
-			} else if (puzzleType.contains("kropki")) {
-				t = new KropkiSolverThread(height, width, param);
-			} else if (puzzleType.contains("nanro")) {
-				t = new NanroSolverThread(height, width, param);
-			} else if (puzzleType.contains("sukoro")) {
-				t = new SukoroSolverThread(height, width, param);
-			} else if (puzzleType.contains("hakoiri")) {
-				t = new HakoiriSolverThread(height, width, param);
-			} else if (puzzleType.contains("hanare")) {
-				t = new HanareSolverThread(height, width, param);
-			} else if (puzzleType.contains("icebarn")) {
-				int start = Integer.parseInt(parts.get(4));
-				int goal = Integer.parseInt(parts.get(5));
-				t = new IcebarnSolverThread(height, width, param, start, goal);
-			} else if (puzzleType.contains("roma")) {
-				t = new RomaSolverThread(height, width, param);
+				int height = Integer.parseInt(parts.get(3));
+				int width = Integer.parseInt(parts.get(2));
+				String param = parts.get(4).split("@")[0];
+				int start = Integer.parseInt(parts.get(5));
+				int goal = Integer.parseInt(parts.get(6));
+				t = new IcelomSolverThread(height, width, param, start, goal, isIcelom2);
 			} else {
-				throw new IllegalArgumentException();
+				int width = Integer.parseInt(parts.get(1));
+				int height = Integer.parseInt(parts.get(2));
+				String param = parts.get(3).split("@")[0];
+				if (puzzleType.contains("yajilin") || puzzleType.contains("yajirin")) {
+					if (puzzleType.contains("regions")) {
+						t = new YajilinRegionsSolverThlead(height, width, param, puzzleType.contains("out"));
+					} else {
+						t = new YajilinSolverThlead(height, width, param, puzzleType.contains("out"));
+					}
+				} else if (puzzleType.contains("nurikabe")) {
+					t = new NurikabeSolverThread(height, width, param);
+				} else if (puzzleType.contains("stostone")) {
+					t = new StostoneSolverThread(height, width, param);
+				} else if (puzzleType.contains("heyawake")) {
+					t = new HeyawakeSolverThread(height, width, param);
+				} else if (puzzleType.contains("lits")) {
+					t = new LitsSolverThread(height, width, param);
+				} else if (puzzleType.contains("norinori")) {
+					t = new NorinoriSolverThread(height, width, param);
+				} else if (puzzleType.contains("shimaguni")) {
+					t = new ShimaguniSolverThread(height, width, param);
+				} else if (puzzleType.contains("shikaku")) {
+					t = new ShikakuSolverThread(height, width, param);
+				} else if (puzzleType.contains("akari") || puzzleType.contains("lightup")) {
+					t = new AkariSolverThread(height, width, param);
+				} else if (puzzleType.contains("yinyang")) {
+					t = new YinyangSolverThread(height, width, param);
+				} else if (puzzleType.contains("nurimisaki")) {
+					t = new NurimisakiSolverThread(height, width, param);
+				} else if (puzzleType.contains("trimisaki")) {
+					t = new TrimisakiSolverThread(height, width, param);
+				} else if (puzzleType.contains("hitori")) {
+					t = new HitoriSolverThread(height, width, param);
+				} else if (puzzleType.contains("dosufuwa")) {
+					t = new DosufuwaSolverThread(height, width, param);
+				} else if (puzzleType.contains("kurodoko")) {
+					t = new KurodokoSolverThread(height, width, param);
+				} else if (puzzleType.contains("slither")) {
+					t = new SlitherSolverThread(height, width, param);
+				} else if (puzzleType.contains("kurohoui")) {
+					t = new KurohouiSolverThread(height, width, param);
+				} else if (puzzleType.contains("yajikazu")) {
+					t = new YajikazuSolverThread(height, width, param);
+				} else if (puzzleType.contains("mashu") || puzzleType.contains("masyu")
+						|| puzzleType.contains("pearl")) {
+					t = puzzleType.contains("ura") ? new UraMasyuSolverThread(height, width, param)
+							: new MasyuSolverThread(height, width, param);
+				} else if (puzzleType.contains("sashigane")) {
+					t = new SashiganeSolverThread(height, width, param);
+				} else if (puzzleType.contains("bag")) {
+					t = new BagSolverThread(height, width, param);
+				} else if (puzzleType.contains("shakashaka")) {
+					t = new ShakashakaSolverThread(height, width, param);
+				} else if (puzzleType.contains("tapa")) {
+					t = new TapaSolverThread(height, width, param);
+				} else if (puzzleType.contains("starbattle")) {
+					int starCnt = Integer.parseInt(parts.get(3));
+					param = parts.get(4).split("@")[0];
+					t = new StarBattleSolverThread(height, width, starCnt, param);
+				} else if (puzzleType.contains("sudoku")) {
+					t = new SudokuSolverThread(height, width, param);
+				} else if (puzzleType.contains("country")) {
+					t = new CountrySolverThread(height, width, param);
+				} else if (puzzleType.contains("fillomino")) {
+					t = new FillominoSolverThread(height, width, param);
+				} else if (puzzleType.contains("firefly")) {
+					t = new FireflySolverThread(height, width, param);
+				} else if (puzzleType.contains("nagare")) {
+					t = new NagareSolverThread(height, width, param);
+				} else if (puzzleType.contains("ripple") || puzzleType.contains("hakyukoka")) {
+					t = new RippleSolverThread(height, width, param);
+				} else if (puzzleType.contains("sato")) {
+					t = new SatogaeriSolverThread(height, width, param);
+				} else if (puzzleType.contains("barns")) {
+					t = new BarnsSolverThread(height, width, param);
+				} else if (puzzleType.contains("loopsp")) {
+					t = new LoopspSolverThread(height, width, param);
+				} else if (puzzleType.contains("pipelink")) {
+					if (puzzleType.contains("pipelinkr")) {
+						t = new PipelinkrSolverThread(height, width, param);
+					} else {
+						t = new PipelinkSolverThread(height, width, param);
+					}
+				} else if (puzzleType.contains("reflect")) {
+					t = new ReflectSolverThread(height, width, param);
+				} else if (puzzleType.contains("ringring")) {
+					t = new RingringSolverThread(height, width, param);
+				} else if (puzzleType.contains("rectslider")) {
+					t = new RectsliderSolverThread(height, width, param);
+				} else if (puzzleType.contains("hebi") || puzzleType.contains("snakes")) {
+					t = new HebiSolverThread(height, width, param);
+				} else if (puzzleType.contains("shwolf")) {
+					t = new ShwolfSolverThread(height, width, param);
+				} else if (puzzleType.contains("shugaku")) {
+					t = new ShugakuSolverThread(height, width, param);
+				} else if (puzzleType.contains("angleloop")) {
+					t = new AngleloopSolverThread(height, width, param);
+					//			} else if (puzzleType.contains("numlin") || puzzleType.contains("numberlink")) {
+					//				t = new NumlinSolverThread(height, width, param);
+				} else if (puzzleType.contains("hashi")) {
+					t = new HashikakeSolverThread(height, width, param);
+				} else if (puzzleType.contains("cells")) {
+					t = new CellsSolverThread(height, width, param, puzzleType.contains("fourcells") ? 4 : 5);
+				} else if (puzzleType.contains("kurochute")) {
+					t = new KurochuteSolverThread(height, width, param);
+				} else if (puzzleType.contains("nondango")) {
+					t = new NondangoSolverThread(height, width, param);
+				} else if (puzzleType.contains("juosan")) {
+					t = new JuosanSolverThread(height, width, param);
+				} else if (puzzleType.contains("moonsun")) {
+					t = new MoonsunSolverThread(height, width, param);
+				} else if (puzzleType.contains("scrin")) {
+					t = new ScrinSolverThread(height, width, param);
+				} else if (puzzleType.contains("usoone")) {
+					t = new UsooneSolverThread(height, width, param);
+				} else if (puzzleType.contains("kakuro")) {
+					t = new KakuroSolverThread(height, width, param);
+				} else if (puzzleType.contains("kropki")) {
+					t = new KropkiSolverThread(height, width, param);
+				} else if (puzzleType.contains("nanro")) {
+					t = new NanroSolverThread(height, width, param);
+				} else if (puzzleType.contains("sukoro")) {
+					t = new SukoroSolverThread(height, width, param);
+				} else if (puzzleType.contains("hakoiri")) {
+					t = new HakoiriSolverThread(height, width, param);
+				} else if (puzzleType.contains("hanare")) {
+					t = new HanareSolverThread(height, width, param);
+				} else if (puzzleType.contains("icebarn")) {
+					int start = Integer.parseInt(parts.get(4));
+					int goal = Integer.parseInt(parts.get(5));
+					t = new IcebarnSolverThread(height, width, param, start, goal);
+				} else if (puzzleType.contains("roma")) {
+					t = new RomaSolverThread(height, width, param);
+				} else if (puzzleType.contains("herugolf")) {
+					t = new HerugolfSolverThread(height, width, param);
+				} else if (puzzleType.contains("makaro")) {
+					t = new MakaroSolverThread(height, width, param);
+				} else {
+					throw new IllegalArgumentException();
+				}
 			}
 			t.start();
 			t.join(28000);
 			resultMap.put("result", t.makeCambus());
 			resultMap.put("status", t.getStatus());
-		} catch (
-
-		Exception e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 			resultMap.put("result", "");
 			resultMap.put("status", "エラーが発生しました。urlを確認してください。短縮URLは認識できない場合があります。");
