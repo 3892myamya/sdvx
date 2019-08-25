@@ -637,6 +637,9 @@ public class MasyuSolver implements Solver {
 				if (!connectSolve()) {
 					return false;
 				}
+//				if (!paritySolve()) {
+//					return false;
+//				}
 			}
 			return true;
 		}
@@ -672,6 +675,83 @@ public class MasyuSolver implements Solver {
 				}
 				if (notExistsCount % 2 != 0) {
 					return false;
+				}
+			}
+			return true;
+		}
+		/**
+		 * 盤面を市松模様とみなした場合、奇属性と偶属性の白マスの数は同じになる。
+		 */
+		private boolean paritySolve() {
+			int evenWhite = 0;
+			int oddWhite = 0;
+			int evenSpace = 0;
+			int oddSpace = 0;
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					if (masu[yIndex][xIndex] == Masu.NOT_BLACK) {
+						if ((yIndex + xIndex) % 2 == 0) {
+							evenWhite++;
+						} else {
+							oddWhite++;
+						}
+					} else if (masu[yIndex][xIndex] == Masu.SPACE) {
+						if ((yIndex + xIndex) % 2 == 0) {
+							evenSpace++;
+						} else {
+							oddSpace++;
+						}
+					}
+				}
+			}
+			if (evenWhite + evenSpace < oddWhite) {
+				return false;
+			}
+			if (oddWhite + oddSpace < evenWhite) {
+				return false;
+			}
+			if (evenWhite + evenSpace == oddWhite) {
+				for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+					for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+						if (masu[yIndex][xIndex] == Masu.SPACE) {
+							if ((yIndex + xIndex) % 2 == 0) {
+								masu[yIndex][xIndex] = Masu.NOT_BLACK;
+							}
+						}
+					}
+				}
+			}
+			if (oddSpace == 0 && evenWhite == oddWhite) {
+				for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+					for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+						if (masu[yIndex][xIndex] == Masu.SPACE) {
+							if ((yIndex + xIndex) % 2 == 0) {
+								masu[yIndex][xIndex] = Masu.BLACK;
+							}
+						}
+					}
+				}
+			}
+			if (oddWhite + oddSpace == evenWhite) {
+				for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+					for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+						if (masu[yIndex][xIndex] == Masu.SPACE) {
+							if ((yIndex + xIndex) % 2 != 0) {
+								masu[yIndex][xIndex] = Masu.NOT_BLACK;
+							}
+						}
+					}
+				}
+			}
+			if (evenSpace == 0 && evenWhite == oddWhite) {
+				for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+					for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+						if (masu[yIndex][xIndex] == Masu.SPACE) {
+							if ((yIndex + xIndex) % 2 != 0) {
+								masu[yIndex][xIndex] = Masu.BLACK;
+							}
+						}
+					}
 				}
 			}
 			return true;
