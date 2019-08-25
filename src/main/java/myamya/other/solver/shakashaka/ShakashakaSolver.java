@@ -225,9 +225,6 @@ public class ShakashakaSolver implements Solver {
 			if (!rectSolve()) {
 				return false;
 			}
-			if (!wallSolve()) {
-				return false;
-			}
 			if (!whiteWallSolve()) {
 				return false;
 			}
@@ -248,10 +245,11 @@ public class ShakashakaSolver implements Solver {
 			boolean advance = false;
 			for (int yIndex = 0; yIndex < getYLength() - 1; yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength() - 1; xIndex++) {
-					Masu masu1 = masu[yIndex][xIndex];
-					Masu masu2 = masu[yIndex][xIndex + 1];
-					Masu masu3 = masu[yIndex + 1][xIndex];
-					Masu masu4 = masu[yIndex + 1][xIndex + 1];
+					Masu masu1 = numbers[yIndex][xIndex] != null ? Masu.NOT_BLACK : masu[yIndex][xIndex];
+					Masu masu2 = numbers[yIndex][xIndex + 1] != null ? Masu.NOT_BLACK : masu[yIndex][xIndex + 1];
+					Masu masu3 = numbers[yIndex + 1][xIndex] != null ? Masu.NOT_BLACK : masu[yIndex + 1][xIndex];
+					Masu masu4 = numbers[yIndex + 1][xIndex + 1] != null ? Masu.NOT_BLACK
+							: masu[yIndex + 1][xIndex + 1];
 					if (masu1 == Masu.BLACK && masu2 == Masu.BLACK && masu3 == Masu.BLACK && masu4 == Masu.NOT_BLACK) {
 						return false;
 					}
@@ -365,82 +363,8 @@ public class ShakashakaSolver implements Solver {
 		}
 
 		/**
-		 * 白マスと黒マスの間は必ず壁で隔て、黒マスと黒マスの間は必ず壁を隔てない。
-		 * 違反した場合falseを返す。
-		 */
-		private boolean wallSolve() {
-			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
-				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					if (numbers[yIndex][xIndex] == null) {
-						Masu myMasu = masu[yIndex][xIndex];
-						Masu masuUp = yIndex == 0 ? Masu.SPACE : masu[yIndex - 1][xIndex];
-						Masu masuRight = xIndex == getXLength() - 1 ? Masu.SPACE : masu[yIndex][xIndex + 1];
-						Masu masuDown = yIndex == getYLength() - 1 ? Masu.SPACE : masu[yIndex + 1][xIndex];
-						Masu masuLeft = xIndex == 0 ? Masu.SPACE : masu[yIndex][xIndex - 1];
-						if ((myMasu == Masu.NOT_BLACK && masuUp == Masu.BLACK) ||
-								(myMasu == Masu.BLACK && masuUp == Masu.NOT_BLACK)) {
-							if (tateWall[yIndex - 1][xIndex] == Wall.NOT_EXISTS) {
-								return false;
-							}
-							tateWall[yIndex - 1][xIndex] = Wall.EXISTS;
-						}
-						if (myMasu == Masu.BLACK && masuUp == Masu.BLACK) {
-							if (tateWall[yIndex - 1][xIndex] == Wall.EXISTS) {
-								return false;
-							}
-							tateWall[yIndex - 1][xIndex] = Wall.NOT_EXISTS;
-						}
-
-						if ((myMasu == Masu.NOT_BLACK && masuRight == Masu.BLACK) ||
-								(myMasu == Masu.BLACK && masuRight == Masu.NOT_BLACK)) {
-							if (yokoWall[yIndex][xIndex] == Wall.NOT_EXISTS) {
-								return false;
-							}
-							yokoWall[yIndex][xIndex] = Wall.EXISTS;
-						}
-						if (myMasu == Masu.BLACK && masuRight == Masu.BLACK) {
-							if (yokoWall[yIndex][xIndex] == Wall.EXISTS) {
-								return false;
-							}
-							yokoWall[yIndex][xIndex] = Wall.NOT_EXISTS;
-						}
-
-						if ((myMasu == Masu.NOT_BLACK && masuDown == Masu.BLACK) ||
-								(myMasu == Masu.BLACK && masuDown == Masu.NOT_BLACK)) {
-							if (tateWall[yIndex][xIndex] == Wall.NOT_EXISTS) {
-								return false;
-							}
-							tateWall[yIndex][xIndex] = Wall.EXISTS;
-						}
-						if (myMasu == Masu.BLACK && masuDown == Masu.BLACK) {
-							if (tateWall[yIndex][xIndex] == Wall.EXISTS) {
-								return false;
-							}
-							tateWall[yIndex][xIndex] = Wall.NOT_EXISTS;
-						}
-
-						if ((myMasu == Masu.NOT_BLACK && masuLeft == Masu.BLACK) ||
-								(myMasu == Masu.BLACK && masuLeft == Masu.NOT_BLACK)) {
-							if (yokoWall[yIndex][xIndex - 1] == Wall.NOT_EXISTS) {
-								return false;
-							}
-							yokoWall[yIndex][xIndex - 1] = Wall.EXISTS;
-						}
-						if (myMasu == Masu.BLACK && masuLeft == Masu.BLACK) {
-							if (yokoWall[yIndex][xIndex - 1] == Wall.EXISTS) {
-								return false;
-							}
-							yokoWall[yIndex][xIndex - 1] = Wall.NOT_EXISTS;
-						}
-					}
-				}
-			}
-			return true;
-		}
-
-		/**
-		 * 白マスの壁枚数は0枚、2枚(対面でないこと)のいずれかになる。
-		 * そうでなければ黒マスが確定する。違反する場合はfalseを返す。
+		 * 黒マスの壁枚数は4、白マスの壁枚数は0枚、2枚(対面でないこと)のいずれかになる。
+		 * 違反する場合はfalseを返す。
 		 */
 		private boolean whiteWallSolve() {
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
@@ -472,28 +396,28 @@ public class ShakashakaSolver implements Solver {
 						} else if (wallLeft == Wall.NOT_EXISTS) {
 							notExists++;
 						}
-						if (exists > 2
-								|| (exists == 1 && notExists == 3)) {
-							if (masu[yIndex][xIndex] == Masu.NOT_BLACK) {
-								return false;
+						if (masu[yIndex][xIndex] == Masu.SPACE) {
+							if (exists > 2
+									|| (exists == 1 && notExists == 3)) {
+								masu[yIndex][xIndex] = Masu.BLACK;
+							} else if (notExists > 0) {
+								masu[yIndex][xIndex] = Masu.NOT_BLACK;
 							}
-							masu[yIndex][xIndex] = Masu.BLACK;
-						} else if (exists > 0) {
-							// 壁2枚が確定。
-							if ((wallUp == Wall.EXISTS && wallDown == Wall.EXISTS)
-									|| (wallRight == Wall.EXISTS
-											&& wallLeft == Wall.EXISTS)) {
-								if (masu[yIndex][xIndex] == Masu.NOT_BLACK) {
+						}
+						if (masu[yIndex][xIndex] == Masu.NOT_BLACK) {
+							if (exists > 2
+									|| (exists == 1 && notExists == 3)) {
+								return false;
+							} else if (exists > 0) {
+								// 壁2枚が確定。
+								if ((wallUp == Wall.EXISTS && wallDown == Wall.EXISTS)
+										|| (wallRight == Wall.EXISTS
+												&& wallLeft == Wall.EXISTS)) {
+									return false;
+								} else if ((wallUp == Wall.NOT_EXISTS && wallDown == Wall.NOT_EXISTS)
+										|| (wallRight == Wall.NOT_EXISTS && wallLeft == Wall.NOT_EXISTS)) {
 									return false;
 								}
-								masu[yIndex][xIndex] = Masu.BLACK;
-							} else if ((wallUp == Wall.NOT_EXISTS && wallDown == Wall.NOT_EXISTS)
-									|| (wallRight == Wall.NOT_EXISTS && wallLeft == Wall.NOT_EXISTS)) {
-								if (masu[yIndex][xIndex] == Masu.NOT_BLACK) {
-									return false;
-								}
-								masu[yIndex][xIndex] = Masu.BLACK;
-							} else if (masu[yIndex][xIndex] == Masu.NOT_BLACK) {
 								if (wallUp == Wall.EXISTS && wallDown == Wall.SPACE) {
 									tateWall[yIndex][xIndex] = Wall.NOT_EXISTS;
 								}
@@ -518,9 +442,7 @@ public class ShakashakaSolver implements Solver {
 								if (wallLeft == Wall.NOT_EXISTS && wallRight == Wall.SPACE) {
 									yokoWall[yIndex][xIndex] = Wall.EXISTS;
 								}
-							}
-						} else if (notExists > 2) {
-							if (masu[yIndex][xIndex] == Masu.NOT_BLACK) {
+							} else if (notExists > 2) {
 								// 壁なしが確定。
 								if (wallUp == Wall.SPACE) {
 									tateWall[yIndex - 1][xIndex] = Wall.NOT_EXISTS;
@@ -534,6 +456,22 @@ public class ShakashakaSolver implements Solver {
 								if (wallLeft == Wall.SPACE) {
 									yokoWall[yIndex][xIndex - 1] = Wall.NOT_EXISTS;
 								}
+							}
+						} else if (masu[yIndex][xIndex] == Masu.BLACK) {
+							if (notExists > 0) {
+								return false;
+							}
+							if (wallUp == Wall.SPACE) {
+								tateWall[yIndex - 1][xIndex] = Wall.EXISTS;
+							}
+							if (wallRight == Wall.SPACE) {
+								yokoWall[yIndex][xIndex] = Wall.EXISTS;
+							}
+							if (wallDown == Wall.SPACE) {
+								tateWall[yIndex][xIndex] = Wall.EXISTS;
+							}
+							if (wallLeft == Wall.SPACE) {
+								yokoWall[yIndex][xIndex - 1] = Wall.EXISTS;
 							}
 						}
 					}
@@ -704,10 +642,10 @@ public class ShakashakaSolver implements Solver {
 			}
 		}
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
-		System.out.println("難易度:" + (count / 2));
+		System.out.println("難易度:" + (count * 20));
 		System.out.println(field);
 		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count / 2).toString();
+				+ Difficulty.getByCount(count * 20).toString();
 	}
 
 	/**
@@ -719,32 +657,6 @@ public class ShakashakaSolver implements Solver {
 		for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 			for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
 				if (field.masu[yIndex][xIndex] == Masu.SPACE && field.numbers[yIndex][xIndex] == null) {
-					Masu masuUp = yIndex == 0 || field.numbers[yIndex - 1][xIndex] != null ? Masu.BLACK
-							: field.masu[yIndex - 1][xIndex];
-					Masu masuRight = xIndex == field.getXLength() - 1 || field.numbers[yIndex][xIndex + 1] != null
-							? Masu.BLACK
-							: field.masu[yIndex][xIndex + 1];
-					Masu masuDown = yIndex == field.getYLength() - 1 || field.numbers[yIndex + 1][xIndex] != null
-							? Masu.BLACK
-							: field.masu[yIndex + 1][xIndex];
-					Masu masuLeft = xIndex == 0 || field.numbers[yIndex][xIndex - 1] != null ? Masu.BLACK
-							: field.masu[yIndex][xIndex - 1];
-					int whiteCnt = 0;
-					if (masuUp == Masu.SPACE) {
-						whiteCnt++;
-					}
-					if (masuRight == Masu.SPACE) {
-						whiteCnt++;
-					}
-					if (masuDown == Masu.SPACE) {
-						whiteCnt++;
-					}
-					if (masuLeft == Masu.SPACE) {
-						whiteCnt++;
-					}
-					if (whiteCnt > 2) {
-						continue;
-					}
 					count++;
 					if (!oneCandSolve(field, yIndex, xIndex, recursive)) {
 						return false;
