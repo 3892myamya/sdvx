@@ -417,13 +417,16 @@ public class SolverWeb extends HttpServlet {
 		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
 		private static final String FULL_NUMS = "０１２３４５６７８９";
 
-		HeyawakeSolverThread(int height, int width, String param) {
+		private final boolean ayeheya;
+
+		HeyawakeSolverThread(int height, int width, String param, boolean ayeheya) {
 			super(height, width, param);
+			this.ayeheya = ayeheya;
 		}
 
 		@Override
 		protected Solver getSolver() {
-			return new HeyawakeSolver(height, width, param);
+			return new HeyawakeSolver(height, width, param, ayeheya);
 		}
 
 		@Override
@@ -8160,8 +8163,9 @@ public class SolverWeb extends HttpServlet {
 					t = new NurikabeSolverThread(height, width, param);
 				} else if (puzzleType.contains("stostone")) {
 					t = new StostoneSolverThread(height, width, param);
-				} else if (puzzleType.contains("heyawake") || puzzleType.contains("heyawacky")) {
-					t = new HeyawakeSolverThread(height, width, param);
+				} else if (puzzleType.contains("heyawake") || puzzleType.contains("heyawacky")
+						|| puzzleType.contains("ayeheya")) {
+					t = new HeyawakeSolverThread(height, width, param, puzzleType.contains("ayeheya"));
 				} else if (puzzleType.contains("lits")) {
 					t = new LitsSolverThread(height, width, param);
 				} else if (puzzleType.contains("norinori")) {

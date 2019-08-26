@@ -287,74 +287,66 @@ public class ShakashakaSolver implements Solver {
 		}
 
 		/**
-		 * 柱から見て周りのマスがすべて白マスの場合、柱から伸びる壁は1にならない。
-		 * 矛盾する場合falseを返す。
+		 * 柱から伸びる壁は1にならない。矛盾する場合falseを返す。
 		 */
 		private boolean pondSolve() {
 			for (int yIndex = 0; yIndex < getYLength() - 1; yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength() - 1; xIndex++) {
-					Masu masu1 = masu[yIndex][xIndex];
-					Masu masu2 = masu[yIndex][xIndex + 1];
-					Masu masu3 = masu[yIndex + 1][xIndex];
-					Masu masu4 = masu[yIndex + 1][xIndex + 1];
-					if (masu1 == Masu.NOT_BLACK && masu2 == Masu.NOT_BLACK && masu3 == Masu.NOT_BLACK
-							&& masu4 == Masu.NOT_BLACK) {
-						int exists = 0;
-						int notExists = 0;
-						Wall wall1 = tateWall[yIndex][xIndex];
-						Wall wall2 = tateWall[yIndex][xIndex + 1];
-						Wall wall3 = yokoWall[yIndex][xIndex];
-						Wall wall4 = yokoWall[yIndex + 1][xIndex];
-						if (wall1 == Wall.EXISTS) {
-							exists++;
-						} else if (wall1 == Wall.NOT_EXISTS) {
-							notExists++;
+					int exists = 0;
+					int notExists = 0;
+					Wall wall1 = tateWall[yIndex][xIndex];
+					Wall wall2 = tateWall[yIndex][xIndex + 1];
+					Wall wall3 = yokoWall[yIndex][xIndex];
+					Wall wall4 = yokoWall[yIndex + 1][xIndex];
+					if (wall1 == Wall.EXISTS) {
+						exists++;
+					} else if (wall1 == Wall.NOT_EXISTS) {
+						notExists++;
+					}
+					if (wall2 == Wall.EXISTS) {
+						exists++;
+					} else if (wall2 == Wall.NOT_EXISTS) {
+						notExists++;
+					}
+					if (wall3 == Wall.EXISTS) {
+						exists++;
+					} else if (wall3 == Wall.NOT_EXISTS) {
+						notExists++;
+					}
+					if (wall4 == Wall.EXISTS) {
+						exists++;
+					} else if (wall4 == Wall.NOT_EXISTS) {
+						notExists++;
+					}
+					if (exists == 1 && notExists == 3) {
+						return false;
+					}
+					if (notExists == 3) {
+						if (wall1 == Wall.SPACE) {
+							tateWall[yIndex][xIndex] = Wall.NOT_EXISTS;
 						}
-						if (wall2 == Wall.EXISTS) {
-							exists++;
-						} else if (wall2 == Wall.NOT_EXISTS) {
-							notExists++;
+						if (wall2 == Wall.SPACE) {
+							tateWall[yIndex][xIndex + 1] = Wall.NOT_EXISTS;
 						}
-						if (wall3 == Wall.EXISTS) {
-							exists++;
-						} else if (wall3 == Wall.NOT_EXISTS) {
-							notExists++;
+						if (wall3 == Wall.SPACE) {
+							yokoWall[yIndex][xIndex] = Wall.NOT_EXISTS;
 						}
-						if (wall4 == Wall.EXISTS) {
-							exists++;
-						} else if (wall4 == Wall.NOT_EXISTS) {
-							notExists++;
+						if (wall4 == Wall.SPACE) {
+							yokoWall[yIndex + 1][xIndex] = Wall.NOT_EXISTS;
 						}
-						if (exists == 1 && notExists == 3) {
-							return false;
+					}
+					if (notExists == 2 && exists == 1) {
+						if (wall1 == Wall.SPACE) {
+							tateWall[yIndex][xIndex] = Wall.EXISTS;
 						}
-						if (notExists == 3) {
-							if (wall1 == Wall.SPACE) {
-								tateWall[yIndex][xIndex] = Wall.NOT_EXISTS;
-							}
-							if (wall2 == Wall.SPACE) {
-								tateWall[yIndex][xIndex + 1] = Wall.NOT_EXISTS;
-							}
-							if (wall3 == Wall.SPACE) {
-								yokoWall[yIndex][xIndex] = Wall.NOT_EXISTS;
-							}
-							if (wall4 == Wall.SPACE) {
-								yokoWall[yIndex + 1][xIndex] = Wall.NOT_EXISTS;
-							}
+						if (wall2 == Wall.SPACE) {
+							tateWall[yIndex][xIndex + 1] = Wall.EXISTS;
 						}
-						if (notExists == 2 && exists == 1) {
-							if (wall1 == Wall.SPACE) {
-								tateWall[yIndex][xIndex] = Wall.EXISTS;
-							}
-							if (wall2 == Wall.SPACE) {
-								tateWall[yIndex][xIndex + 1] = Wall.EXISTS;
-							}
-							if (wall3 == Wall.SPACE) {
-								yokoWall[yIndex][xIndex] = Wall.EXISTS;
-							}
-							if (wall4 == Wall.SPACE) {
-								yokoWall[yIndex + 1][xIndex] = Wall.EXISTS;
-							}
+						if (wall3 == Wall.SPACE) {
+							yokoWall[yIndex][xIndex] = Wall.EXISTS;
+						}
+						if (wall4 == Wall.SPACE) {
+							yokoWall[yIndex + 1][xIndex] = Wall.EXISTS;
 						}
 					}
 				}
@@ -397,8 +389,7 @@ public class ShakashakaSolver implements Solver {
 							notExists++;
 						}
 						if (masu[yIndex][xIndex] == Masu.SPACE) {
-							if (exists > 2
-									|| (exists == 1 && notExists == 3)) {
+							if (exists > 2) {
 								masu[yIndex][xIndex] = Masu.BLACK;
 							} else if (notExists > 0) {
 								masu[yIndex][xIndex] = Masu.NOT_BLACK;

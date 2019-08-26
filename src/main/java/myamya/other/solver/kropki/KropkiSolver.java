@@ -1,6 +1,7 @@
 package myamya.other.solver.kropki;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -104,6 +105,35 @@ public class KropkiSolver implements Solver {
 					numbersCand[yIndex][xIndex] = new ArrayList<>();
 					for (int i = 1; i <= getYLength() || i <= getXLength(); i++) {
 						numbersCand[yIndex][xIndex].add(i);
+					}
+				}
+			}
+			// 黒壁に挟まれているマスは半分より大きい数または奇数は入らない。
+			// 黒壁に隣接しているマスは半分より大きい数かつ奇数は入らない。
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					Wall upWall = yIndex == 0 ? null : tateWall[yIndex - 1][xIndex];
+					Wall rightWall = xIndex == getXLength() - 1 ? null : yokoWall[yIndex][xIndex];
+					Wall downWall = yIndex == getYLength() - 1 ? null : tateWall[yIndex][xIndex];
+					Wall leftWall = xIndex == 0 ? null : yokoWall[yIndex][xIndex - 1];
+					if ((upWall == Wall.EXISTS && downWall == Wall.EXISTS)
+							|| (rightWall == Wall.EXISTS && leftWall == Wall.EXISTS)) {
+						Set<Integer> removeCand = new HashSet<>();
+						for (Integer cand : numbersCand[yIndex][xIndex]) {
+							if (cand % 2 == 1 || cand * 2 > Collections.max(numbersCand[yIndex][xIndex])) {
+								removeCand.add(cand);
+							}
+						}
+						numbersCand[yIndex][xIndex].removeAll(removeCand);
+					} else if (upWall == Wall.EXISTS || rightWall == Wall.EXISTS || downWall == Wall.EXISTS
+							|| leftWall == Wall.EXISTS) {
+						Set<Integer> removeCand = new HashSet<>();
+						for (Integer cand : numbersCand[yIndex][xIndex]) {
+							if (cand % 2 == 1 && cand * 2 > Collections.max(numbersCand[yIndex][xIndex])) {
+								removeCand.add(cand);
+							}
+						}
+						numbersCand[yIndex][xIndex].removeAll(removeCand);
 					}
 				}
 			}
@@ -537,10 +567,10 @@ public class KropkiSolver implements Solver {
 			}
 		}
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
-		System.out.println("難易度:" + (count * 10));
+		System.out.println("難易度:" + (count * 50));
 		System.out.println(field);
 		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count * 10).toString();
+				+ Difficulty.getByCount(count * 50).toString();
 	}
 
 	/**
@@ -569,6 +599,11 @@ public class KropkiSolver implements Solver {
 							}
 						}
 						if (field.numbersCand[yIndex][xIndex].size() == 0) {
+							return false;
+						}
+					}
+					if (field.numbersCand[yIndex][xIndex].size() == 1) {
+						if (!field.solveAndCheck()) {
 							return false;
 						}
 					}

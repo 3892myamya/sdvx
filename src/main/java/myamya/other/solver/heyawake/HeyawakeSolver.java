@@ -33,6 +33,8 @@ public class HeyawakeSolver implements Solver {
 		private final List<Room> rooms;
 		// 同一グループに属するマスの情報
 		private final Map<Integer, List<String>> roomsCand;
+		// ayeheya
+		private final boolean ayeheya;
 
 		public Masu[][] getMasu() {
 			return masu;
@@ -58,7 +60,7 @@ public class HeyawakeSolver implements Solver {
 			return masu[0].length;
 		}
 
-		public Field(int height, int width, String param) {
+		public Field(int height, int width, String param, boolean ayeheya) {
 			masu = new Masu[height][width];
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
@@ -176,6 +178,7 @@ public class HeyawakeSolver implements Solver {
 				}
 			}
 			roomsCand = new HashMap<>();
+			this.ayeheya = ayeheya;
 		}
 
 		/**
@@ -221,6 +224,7 @@ public class HeyawakeSolver implements Solver {
 			for (Entry<Integer, List<String>> entry : other.roomsCand.entrySet()) {
 				roomsCand.put(entry.getKey(), new ArrayList<>(entry.getValue()));
 			}
+			this.ayeheya = other.ayeheya;
 		}
 
 		// posを起点に上下左右に壁または白確定でないマスを無制限につなげていく。
@@ -602,6 +606,61 @@ public class HeyawakeSolver implements Solver {
 		}
 
 		/**
+		 * ayeheyaの場合は点対称が必須。
+		 */
+		public boolean ayeheyaSolve() {
+			if (ayeheya) {
+				for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+					for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+						Position pos = new Position(yIndex, xIndex);
+						for (Room room : rooms) {
+							// TODO ここ毎回計算するの無駄なので事前に持ったほうがいい
+							int minY = Integer.MAX_VALUE;
+							int minX = Integer.MAX_VALUE;
+							int maxY = 0;
+							int maxX = 0;
+							boolean roomContains = false;
+							for (Position roomPos : room.getMember()) {
+								if (minY > roomPos.getyIndex()) {
+									minY = roomPos.getyIndex();
+								}
+								if (maxY < roomPos.getyIndex()) {
+									maxY = roomPos.getyIndex();
+								}
+								if (minX > roomPos.getxIndex()) {
+									minX = roomPos.getxIndex();
+								}
+								if (maxX < roomPos.getxIndex()) {
+									maxX = roomPos.getxIndex();
+								}
+								if (roomPos.equals(pos)) {
+									roomContains = true;
+								}
+							}
+							if (roomContains) {
+								Position anotherPos = new Position(minY + (maxY - pos.getyIndex()),
+										minX + (maxX - pos.getxIndex()));
+								if (!pos.equals(anotherPos)) {
+									if (masu[pos.getyIndex()][pos.getxIndex()] == Masu.SPACE
+											|| masu[anotherPos.getyIndex()][anotherPos.getxIndex()] == Masu.SPACE) {
+										masu[pos.getyIndex()][pos.getxIndex()] = masu[anotherPos.getyIndex()][anotherPos
+												.getxIndex()];
+										masu[anotherPos.getyIndex()][anotherPos.getxIndex()] = masu[pos.getyIndex()][pos
+												.getxIndex()];
+									} else if (masu[pos.getyIndex()][pos
+											.getxIndex()] != masu[anotherPos.getyIndex()][anotherPos.getxIndex()]) {
+										return false;
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+			return true;
+		}
+
+		/**
 		 * 各種チェックを1セット実行
 		 */
 		private boolean solveAndCheck() {
@@ -616,6 +675,9 @@ public class HeyawakeSolver implements Solver {
 				return false;
 			}
 			if (!roomCandSolve()) {
+				return false;
+			}
+			if (!ayeheyaSolve()) {
 				return false;
 			}
 			if (!getStateDump().equals(str)) {
@@ -724,8 +786,8 @@ public class HeyawakeSolver implements Solver {
 	private final Field field;
 	private int count = 0;
 
-	public HeyawakeSolver(int height, int width, String param) {
-		field = new Field(height, width, param);
+	public HeyawakeSolver(int height, int width, String param, boolean ayeheya) {
+		field = new Field(height, width, param, ayeheya);
 	}
 
 	public Field getField() {
@@ -738,7 +800,7 @@ public class HeyawakeSolver implements Solver {
 		int height = Integer.parseInt(params[params.length - 2]);
 		int width = Integer.parseInt(params[params.length - 3]);
 		String param = params[params.length - 1];
-		System.out.println(new HeyawakeSolver(height, width, param).solve());
+		System.out.println(new HeyawakeSolver(height, width, param, false).solve());
 	}
 
 	@Override
