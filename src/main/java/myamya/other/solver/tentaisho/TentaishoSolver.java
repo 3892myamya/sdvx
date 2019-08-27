@@ -413,6 +413,11 @@ public class TentaishoSolver implements Solver {
 						return false;
 					}
 				}
+				if (field.numbersCand[yIndex][xIndex].size() == 1) {
+					if (!field.solveAndCheck()) {
+						return false;
+					}
+				}
 			}
 		}
 		return true;
