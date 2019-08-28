@@ -229,6 +229,8 @@ public class CellsSolver implements Solver {
 		 * 部屋が既定サイズに到達している場合、周囲を壁で埋める。
 		 */
 		public boolean roomSolve() {
+			Set<Position> alreadyServeyedNotBlack = new HashSet<>();
+			Set<Position> alreadyServeyedWhite = new HashSet<>();
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
 					if (numbers[yIndex][xIndex] != null && numbers[yIndex][xIndex] == -1) {
@@ -238,38 +240,66 @@ public class CellsSolver implements Solver {
 					if (fixedPosSet.contains(pivot)) {
 						continue;
 					}
-					Set<Position> continueNotBlackPosSet = new HashSet<>();
-					continueNotBlackPosSet.add(pivot);
-					if (!checkAndSetContinuePosSet(pivot, continueNotBlackPosSet, null)) {
-						// サイズ不足
-						return false;
-					}
-					Set<Position> continueWhitePosSet = new HashSet<>();
-					continueWhitePosSet.add(pivot);
-					if (!checkAndSetContinueWhitePosSet(pivot, continueWhitePosSet, null)) {
-						// サイズ超過
-						return false;
-					}
-					if (continueWhitePosSet.size() == 5) {
-						fixedPosSet.addAll(continueWhitePosSet);
-						for (Position pos : continueWhitePosSet) {
-							if (pos.getyIndex() != 0 && !continueWhitePosSet
-									.contains(new Position(pos.getyIndex() - 1, pos.getxIndex()))) {
-								tateWall[pos.getyIndex() - 1][pos.getxIndex()] = Wall.EXISTS;
-							}
-							if (pos.getxIndex() != getXLength() - 1 && !continueWhitePosSet
-									.contains(new Position(pos.getyIndex(), pos.getxIndex() + 1))) {
-								yokoWall[pos.getyIndex()][pos.getxIndex()] = Wall.EXISTS;
-							}
-							if (pos.getyIndex() != getYLength() - 1 && !continueWhitePosSet
-									.contains(new Position(pos.getyIndex() + 1, pos.getxIndex()))) {
-								tateWall[pos.getyIndex()][pos.getxIndex()] = Wall.EXISTS;
-							}
-							if (pos.getxIndex() != 0 && !continueWhitePosSet
-									.contains(new Position(pos.getyIndex(), pos.getxIndex() - 1))) {
-								yokoWall[pos.getyIndex()][pos.getxIndex() - 1] = Wall.EXISTS;
+					if (!alreadyServeyedNotBlack.contains(pivot)) {
+						Set<Position> continueNotBlackPosSet = new HashSet<>();
+						continueNotBlackPosSet.add(pivot);
+						checkAndSetContinuePosSet(pivot, continueNotBlackPosSet, null);
+						if (continueNotBlackPosSet.size() % cellSize != 0) {
+							// セル数で割り切れない場合、失敗
+							return false;
+						}
+						if (continueNotBlackPosSet.size() == cellSize) {
+							fixedPosSet.addAll(continueNotBlackPosSet);
+							for (Position pos : continueNotBlackPosSet) {
+								if (pos.getyIndex() != 0 && continueNotBlackPosSet
+										.contains(new Position(pos.getyIndex() - 1, pos.getxIndex()))) {
+									tateWall[pos.getyIndex() - 1][pos.getxIndex()] = Wall.NOT_EXISTS;
+								}
+								if (pos.getxIndex() != getXLength() - 1 && continueNotBlackPosSet
+										.contains(new Position(pos.getyIndex(), pos.getxIndex() + 1))) {
+									yokoWall[pos.getyIndex()][pos.getxIndex()] = Wall.NOT_EXISTS;
+								}
+								if (pos.getyIndex() != getYLength() - 1 && continueNotBlackPosSet
+										.contains(new Position(pos.getyIndex() + 1, pos.getxIndex()))) {
+									tateWall[pos.getyIndex()][pos.getxIndex()] = Wall.NOT_EXISTS;
+								}
+								if (pos.getxIndex() != 0 && continueNotBlackPosSet
+										.contains(new Position(pos.getyIndex(), pos.getxIndex() - 1))) {
+									yokoWall[pos.getyIndex()][pos.getxIndex() - 1] = Wall.NOT_EXISTS;
+								}
 							}
 						}
+						alreadyServeyedNotBlack.addAll(continueNotBlackPosSet);
+					}
+					if (!alreadyServeyedWhite.contains(pivot)) {
+						Set<Position> continueWhitePosSet = new HashSet<>();
+						continueWhitePosSet.add(pivot);
+						if (!checkAndSetContinueWhitePosSet(pivot, continueWhitePosSet, null)) {
+							// サイズ超過
+							return false;
+						}
+						if (continueWhitePosSet.size() == cellSize) {
+							fixedPosSet.addAll(continueWhitePosSet);
+							for (Position pos : continueWhitePosSet) {
+								if (pos.getyIndex() != 0 && !continueWhitePosSet
+										.contains(new Position(pos.getyIndex() - 1, pos.getxIndex()))) {
+									tateWall[pos.getyIndex() - 1][pos.getxIndex()] = Wall.EXISTS;
+								}
+								if (pos.getxIndex() != getXLength() - 1 && !continueWhitePosSet
+										.contains(new Position(pos.getyIndex(), pos.getxIndex() + 1))) {
+									yokoWall[pos.getyIndex()][pos.getxIndex()] = Wall.EXISTS;
+								}
+								if (pos.getyIndex() != getYLength() - 1 && !continueWhitePosSet
+										.contains(new Position(pos.getyIndex() + 1, pos.getxIndex()))) {
+									tateWall[pos.getyIndex()][pos.getxIndex()] = Wall.EXISTS;
+								}
+								if (pos.getxIndex() != 0 && !continueWhitePosSet
+										.contains(new Position(pos.getyIndex(), pos.getxIndex() - 1))) {
+									yokoWall[pos.getyIndex()][pos.getxIndex() - 1] = Wall.EXISTS;
+								}
+							}
+						}
+						alreadyServeyedWhite.addAll(continueWhitePosSet);
 					}
 				}
 			}
@@ -277,40 +307,29 @@ public class CellsSolver implements Solver {
 		}
 
 		/**
-		 * posを起点に上下左右に壁で区切られていないマスをつなぎ、
-		 * サイズ不足にならないと分かった時点でtrueを返す。
+		 * posを起点に上下左右に壁で区切られていないマスを無制限につなぐ。
 		 */
-		private boolean checkAndSetContinuePosSet(Position pos, Set<Position> continuePosSet, Direction from) {
-			if (continuePosSet.size() >= cellSize) {
-				return true;
-			}
+		private void checkAndSetContinuePosSet(Position pos, Set<Position> continuePosSet, Direction from) {
 			if (pos.getyIndex() != 0 && from != Direction.UP) {
 				Position nextPos = new Position(pos.getyIndex() - 1, pos.getxIndex());
 				if (tateWall[pos.getyIndex() - 1][pos.getxIndex()] != Wall.EXISTS
 						&& !continuePosSet.contains(nextPos)) {
 					continuePosSet.add(nextPos);
-					if (checkAndSetContinuePosSet(nextPos, continuePosSet, Direction.DOWN)) {
-						return true;
-					}
-
+					checkAndSetContinuePosSet(nextPos, continuePosSet, Direction.DOWN);
 				}
 			}
 			if (pos.getxIndex() != getXLength() - 1 && from != Direction.RIGHT) {
 				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() + 1);
 				if (yokoWall[pos.getyIndex()][pos.getxIndex()] != Wall.EXISTS && !continuePosSet.contains(nextPos)) {
 					continuePosSet.add(nextPos);
-					if (checkAndSetContinuePosSet(nextPos, continuePosSet, Direction.LEFT)) {
-						return true;
-					}
+					checkAndSetContinuePosSet(nextPos, continuePosSet, Direction.LEFT);
 				}
 			}
 			if (pos.getyIndex() != getYLength() - 1 && from != Direction.DOWN) {
 				Position nextPos = new Position(pos.getyIndex() + 1, pos.getxIndex());
 				if (tateWall[pos.getyIndex()][pos.getxIndex()] != Wall.EXISTS && !continuePosSet.contains(nextPos)) {
 					continuePosSet.add(nextPos);
-					if (checkAndSetContinuePosSet(nextPos, continuePosSet, Direction.UP)) {
-						return true;
-					}
+					checkAndSetContinuePosSet(nextPos, continuePosSet, Direction.UP);
 				}
 			}
 			if (pos.getxIndex() != 0 && from != Direction.LEFT) {
@@ -318,12 +337,9 @@ public class CellsSolver implements Solver {
 				if (yokoWall[pos.getyIndex()][pos.getxIndex() - 1] != Wall.EXISTS
 						&& !continuePosSet.contains(nextPos)) {
 					continuePosSet.add(nextPos);
-					if (checkAndSetContinuePosSet(nextPos, continuePosSet, Direction.RIGHT)) {
-						return true;
-					}
+					checkAndSetContinuePosSet(nextPos, continuePosSet, Direction.RIGHT);
 				}
 			}
-			return false;
 		}
 
 		/**
@@ -669,6 +685,22 @@ public class CellsSolver implements Solver {
 		} else if (!allowNotBlack) {
 			field.tateWall = virtual.tateWall;
 			field.yokoWall = virtual.yokoWall;
+		} else {
+			// どちらにしても理論
+			for (int y = 0; y < field.getYLength(); y++) {
+				for (int x = 0; x < field.getXLength() - 1; x++) {
+					if (virtual2.yokoWall[y][x] == virtual.yokoWall[y][x]) {
+						field.yokoWall[y][x] = virtual.yokoWall[y][x];
+					}
+				}
+			}
+			for (int y = 0; y < field.getYLength() - 1; y++) {
+				for (int x = 0; x < field.getXLength(); x++) {
+					if (virtual2.tateWall[y][x] == virtual.tateWall[y][x]) {
+						field.tateWall[y][x] = virtual.tateWall[y][x];
+					}
+				}
+			}
 		}
 		return true;
 	}
@@ -698,6 +730,22 @@ public class CellsSolver implements Solver {
 		} else if (!allowNotBlack) {
 			field.tateWall = virtual.tateWall;
 			field.yokoWall = virtual.yokoWall;
+		} else {
+			// どちらにしても理論
+			for (int y = 0; y < field.getYLength(); y++) {
+				for (int x = 0; x < field.getXLength() - 1; x++) {
+					if (virtual2.yokoWall[y][x] == virtual.yokoWall[y][x]) {
+						field.yokoWall[y][x] = virtual.yokoWall[y][x];
+					}
+				}
+			}
+			for (int y = 0; y < field.getYLength() - 1; y++) {
+				for (int x = 0; x < field.getXLength(); x++) {
+					if (virtual2.tateWall[y][x] == virtual.tateWall[y][x]) {
+						field.tateWall[y][x] = virtual.tateWall[y][x];
+					}
+				}
+			}
 		}
 		return true;
 	}

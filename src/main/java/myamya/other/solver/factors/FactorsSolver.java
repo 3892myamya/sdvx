@@ -1,6 +1,7 @@
-package myamya.other.solver.ripple;
+package myamya.other.solver.factors;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -10,7 +11,54 @@ import myamya.other.solver.Common.Difficulty;
 import myamya.other.solver.Common.Position;
 import myamya.other.solver.Solver;
 
-public class RippleSolver implements Solver {
+public class FactorsSolver implements Solver {
+	public static class Room {
+		@Override
+		public String toString() {
+			return "Room [blackCnt=" + blackCnt + ", member=" + member + "]";
+		}
+
+		// 因子
+		private final int blackCnt;
+		// 部屋に属するマスの集合
+		private final List<Position> member;
+
+		public Room(int capacity, List<Position> member) {
+			this.blackCnt = capacity;
+			this.member = member;
+			this.member.sort(new Comparator<Position>() {
+				@Override
+				public int compare(Position o1, Position o2) {
+					return o1.getyIndex() * 100 + o1.getxIndex() - (o2.getyIndex() * 100 + o2.getxIndex());
+				}
+			});
+		}
+
+		public int getBlackCnt() {
+			return blackCnt;
+		}
+
+		public List<Position> getMember() {
+			return member;
+		}
+
+		// 一番左→一番上の位置を返す。画面の数字描画用。
+		public Position getNumberMasuPos() {
+			int yIndex = Integer.MAX_VALUE;
+			int xIndex = Integer.MAX_VALUE;
+			for (Position pos : member) {
+				if (pos.getxIndex() < xIndex) {
+					xIndex = pos.getxIndex();
+				}
+			}
+			for (Position pos : member) {
+				if (pos.getxIndex() == xIndex && pos.getyIndex() < yIndex) {
+					yIndex = pos.getyIndex();
+				}
+			}
+			return new Position(yIndex, xIndex);
+		}
+	}
 
 	public static class Field {
 		static final String ALPHABET_FROM_G = "ghijklmnopqrstuvwxyz";
@@ -26,7 +74,7 @@ public class RippleSolver implements Solver {
 		// 0,0 = trueなら、0,0と1,0の間に壁があるという意味
 		private final boolean[][] tateWall;
 		// 同一グループに属するマスの情報
-		private final List<Set<Position>> rooms;
+		private final List<Room> rooms;
 
 		public List<Integer>[][] getNumbersCand() {
 			return numbersCand;
@@ -115,13 +163,47 @@ public class RippleSolver implements Solver {
 				}
 			}
 			// 縦と横の壁の関係からにょろっと部屋を決めていく
+			List<Integer> blackCntList = new ArrayList<>();
+			for (; readPos < param.length(); readPos++) {
+				char ch = param.charAt(readPos);
+				int interval = ALPHABET_FROM_G.indexOf(ch);
+				if (interval != -1) {
+					for (int i = 0; i < interval + 1; i++) {
+						// 数字がない部屋の場合は、部屋の数字は-1として扱う。
+						blackCntList.add(-1);
+					}
+				} else {
+					//16 - 255は '-'
+					//256 - 4095は '+'
+					// TODO それ以上はちょっと面倒。逆から読んでいく必要があるっぽい
+					//4096 - 8191は '='
+					//8192 - 12239は '%'
+					int blackCnt;
+					if (ch == '-') {
+						blackCnt = Integer.parseInt("" + param.charAt(readPos + 1) + param.charAt(readPos + 2), 16);
+						readPos++;
+						readPos++;
+					} else if (ch == '+') {
+						blackCnt = Integer.parseInt(
+								"" + param.charAt(readPos + 1) + param.charAt(readPos + 2) + param.charAt(readPos + 3),
+								16);
+						readPos++;
+						readPos++;
+						readPos++;
+					} else {
+						blackCnt = Integer.parseInt(String.valueOf(ch), 16);
+					}
+					blackCntList.add(blackCnt);
+				}
+			}
 			rooms = new ArrayList<>();
+			int blackCntListIndex = 0;
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
 					Position pos = new Position(yIndex, xIndex);
 					boolean alreadyRoomed = false;
-					for (Set<Position> room : rooms) {
-						if (room.contains(pos)) {
+					for (Room room : rooms) {
+						if (room.getMember().contains(pos)) {
 							alreadyRoomed = true;
 							break;
 						}
@@ -130,60 +212,20 @@ public class RippleSolver implements Solver {
 						Set<Position> continuePosSet = new HashSet<>();
 						continuePosSet.add(pos);
 						setContinuePosSet(pos, continuePosSet);
-						rooms.add(continuePosSet);
+						rooms.add(new Room(blackCntList.get(blackCntListIndex), new ArrayList<>(continuePosSet)));
+						blackCntListIndex++;
 					}
 				}
 			}
-			// 部屋の大きさにより、初期候補数字を決定
+			// 縦横の数字により、初期候補数字を決定
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
 					numbersCand[yIndex][xIndex] = new ArrayList<>();
-					for (Set<Position> room : rooms) {
-						if (room.contains(new Position(yIndex, xIndex))) {
-							for (int number = 0; number < room.size(); number++) {
-								numbersCand[yIndex][xIndex].add(number + 1);
-							}
-							break;
-						}
+					for (int i = 1; i <= getYLength() || i <= getXLength(); i++) {
+						numbersCand[yIndex][xIndex].add(i);
 					}
 				}
 			}
-			int index = 0;
-			for (int i = readPos; i < param.length(); i++) {
-				char ch = param.charAt(i);
-				int interval = ALPHABET_FROM_G.indexOf(ch);
-				if (interval != -1) {
-					index = index + interval + 1;
-				} else {
-					//16 - 255は '-'
-					//256 - 999は '+'
-					int num;
-					if (ch == '.') {
-						//
-					} else {
-						if (ch == '-') {
-							num = Integer.parseInt("" + param.charAt(i + 1) + param.charAt(i + 2), 16);
-							i++;
-							i++;
-						} else if (ch == '+') {
-							num = Integer.parseInt(
-									"" + param.charAt(i + 1) + param.charAt(i + 2) + param.charAt(i + 3),
-									16);
-							i++;
-							i++;
-							i++;
-						} else {
-							num = Integer.parseInt(String.valueOf(ch), 16);
-						}
-						Position pos = new Position(index / getXLength(), index % getXLength());
-						numbersCand[pos.getyIndex()][pos.getxIndex()] = new ArrayList<>();
-						numbersCand[pos.getyIndex()][pos.getxIndex()].add(num);
-						numbers[pos.getyIndex()][pos.getxIndex()] = num;
-					}
-					index++;
-				}
-			}
-
 		}
 
 		@SuppressWarnings("unchecked")
@@ -297,91 +339,80 @@ public class RippleSolver implements Solver {
 		}
 
 		/**
-		 * 同じ部屋にいる数字を候補から除外する。
+		 * 今の候補の数字で部屋の因子となりうるかを調べ、
+		 * 因子となり得ない場合はfalseを返す。
+		 * // TODO 本当は因数分解をして明らかに因子にならない組み合わせを除外する方が速そうだが、
+		 * それをやらなくても十分なスピードが出る。
 		 */
 		public boolean roomSolve() {
-			for (Set<Position> room : rooms) {
-				for (Position pos : room) {
-					if (numbersCand[pos.getyIndex()][pos.getxIndex()].size() == 1) {
-						for (Position sameRoomPos : room) {
-							if (!sameRoomPos.equals(pos)) {
-								numbersCand[sameRoomPos.getyIndex()][sameRoomPos.getxIndex()]
-										.remove(numbersCand[pos.getyIndex()][pos.getxIndex()].get(0));
-							}
-							if (numbersCand[sameRoomPos.getyIndex()][sameRoomPos.getxIndex()].size() == 0) {
-								return false;
-							}
-						}
-					} else {
-						for (int cand : numbersCand[pos.getyIndex()][pos.getxIndex()]) {
-							boolean isHiddenSingle = true;
-							for (Position sameRoomPos : room) {
-								if (!sameRoomPos.equals(pos)) {
-									if (numbersCand[sameRoomPos.getyIndex()][sameRoomPos.getxIndex()].contains(cand)) {
-										isHiddenSingle = false;
-										break;
-									}
-								}
-							}
-							if (isHiddenSingle) {
-								numbersCand[pos.getyIndex()][pos.getxIndex()].clear();
-								numbersCand[pos.getyIndex()][pos.getxIndex()].add(cand);
-								break;
-							}
-						}
+			for (Room room : rooms) {
+				if (room.getBlackCnt() != -1) {
+					List<Integer> factorList = new ArrayList<>();
+					if (!isInsi(factorList, room)) {
+						return false;
 					}
 				}
 			}
 			return true;
 		}
 
+		public boolean isInsi(List<Integer> factorList, Room room) {
+			if (room.getMember().size() == factorList.size()) {
+				int answerCand = 1;
+				for (Integer factor : factorList) {
+					answerCand = answerCand * factor;
+				}
+				if (answerCand == room.getBlackCnt()) {
+					return true;
+				}
+			} else {
+				Position pos = room.getMember().get(factorList.size());
+				for (Integer oneCand : numbersCand[pos.getyIndex()][pos.getxIndex()]) {
+					factorList.add(oneCand);
+					if (isInsi(factorList, room)) {
+						return true;
+					}
+					factorList.remove(oneCand);
+				}
+			}
+			return false;
+		}
+
 		/**
-		 * 周辺数字の条件を満たさない数字を候補から除外する。
+		 * 同じ列・行にいる数字を候補から除外する。
 		 */
-		private boolean aroundSolve() {
+		public boolean lineSolve() {
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
 					if (numbersCand[yIndex][xIndex].size() == 1) {
-						Integer serveyNum = numbersCand[yIndex][xIndex].get(0);
-						int idx = 0;
-						for (int targetY = yIndex - 1; targetY >= 0; targetY--) {
-							if (idx < serveyNum) {
-								numbersCand[targetY][xIndex].remove(serveyNum);
+						for (int targetY = 0; targetY < getYLength(); targetY++)
+							if (yIndex != targetY) {
+								numbersCand[targetY][xIndex].remove((numbersCand[yIndex][xIndex]).get(0));
 								if (numbersCand[targetY][xIndex].size() == 0) {
 									return false;
 								}
 							}
-							idx++;
-						}
-						idx = 0;
-						for (int targetX = xIndex + 1; targetX < getXLength(); targetX++) {
-							if (idx < serveyNum) {
-								numbersCand[yIndex][targetX].remove(serveyNum);
+						for (int targetX = 0; targetX < getXLength(); targetX++) {
+							if (xIndex != targetX) {
+								numbersCand[yIndex][targetX].remove((numbersCand[yIndex][xIndex]).get(0));
 								if (numbersCand[yIndex][targetX].size() == 0) {
 									return false;
 								}
 							}
-							idx++;
 						}
-						idx = 0;
-						for (int targetY = yIndex + 1; targetY < getYLength(); targetY++) {
-							if (idx < serveyNum) {
-								numbersCand[targetY][xIndex].remove(serveyNum);
-								if (numbersCand[targetY][xIndex].size() == 0) {
-									return false;
-								}
+					} else {
+						for (int targetY = 0; targetY < getYLength(); targetY++) {
+							if (numbersCand[targetY][xIndex].size() == 1 && yIndex != targetY) {
+								numbersCand[yIndex][xIndex].remove((numbersCand[targetY][xIndex]).get(0));
 							}
-							idx++;
 						}
-						idx = 0;
-						for (int targetX = xIndex - 1; targetX >= 0; targetX--) {
-							if (idx < serveyNum) {
-								numbersCand[yIndex][targetX].remove(serveyNum);
-								if (numbersCand[yIndex][targetX].size() == 0) {
-									return false;
-								}
+						for (int targetX = 0; targetX < getXLength(); targetX++) {
+							if (numbersCand[yIndex][targetX].size() == 1 && xIndex != targetX) {
+								numbersCand[yIndex][xIndex].remove((numbersCand[yIndex][targetX]).get(0));
 							}
-							idx++;
+						}
+						if (numbersCand[yIndex][xIndex].size() == 0) {
+							return false;
 						}
 					}
 				}
@@ -394,14 +425,15 @@ public class RippleSolver implements Solver {
 		 */
 		private boolean solveAndCheck() {
 			String str = getStateDump();
-			if (!roomSolve()) {
-				return false;
-			}
-			if (!aroundSolve()) {
+			if (!lineSolve()) {
 				return false;
 			}
 			if (!getStateDump().equals(str)) {
 				return solveAndCheck();
+			} else {
+				if (!roomSolve()) {
+					return false;
+				}
 			}
 			return true;
 		}
@@ -422,7 +454,7 @@ public class RippleSolver implements Solver {
 	private final Field field;
 	private int count = 0;
 
-	public RippleSolver(int height, int width, String param) {
+	public FactorsSolver(int height, int width, String param) {
 		field = new Field(height, width, param);
 	}
 
@@ -436,7 +468,7 @@ public class RippleSolver implements Solver {
 		int height = Integer.parseInt(params[params.length - 2]);
 		int width = Integer.parseInt(params[params.length - 3]);
 		String param = params[params.length - 1];
-		System.out.println(new RippleSolver(height, width, param).solve());
+		System.out.println(new FactorsSolver(height, width, param).solve());
 	}
 
 	@Override
@@ -473,10 +505,10 @@ public class RippleSolver implements Solver {
 			}
 		}
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
-		System.out.println("難易度:" + (count * 25));
+		System.out.println("難易度:" + (count));
 		System.out.println(field);
 		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count * 25).toString();
+				+ Difficulty.getByCount(count).toString();
 	}
 
 	/**
