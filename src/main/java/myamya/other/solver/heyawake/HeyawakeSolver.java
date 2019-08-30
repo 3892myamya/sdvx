@@ -814,13 +814,13 @@ public class HeyawakeSolver implements Solver {
 				return "問題に矛盾がある可能性があります。途中経過を返します。";
 			}
 			int recursiveCnt = 0;
-			while (field.getStateDump().equals(befStr) && recursiveCnt < 3) {
+			while (field.getStateDump().equals(befStr) && recursiveCnt < 4) {
 				if (!candSolve(field, recursiveCnt)) {
 					return "問題に矛盾がある可能性があります。途中経過を返します。";
 				}
 				recursiveCnt++;
 			}
-			if (recursiveCnt == 3 && field.getStateDump().equals(befStr)) {
+			if (recursiveCnt == 4 && field.getStateDump().equals(befStr)) {
 				return "解けませんでした。途中経過を返します。";
 			}
 		}

@@ -184,4 +184,106 @@ public class Common {
 			return triangle;
 		}
 	}
+
+	/**
+	 * 四角の情報
+	 */
+	public static class Sikaku {
+		private final Position leftUp;
+		private final Position rightDown;
+
+		public Position getLeftUp() {
+			return leftUp;
+		}
+
+		public Position getRightDown() {
+			return rightDown;
+		}
+
+		/**
+		 * 自分とotherの領域がかぶっている場合trueを返す。
+		 */
+		public boolean isDuplicate(Sikaku other) {
+			if (this.rightDown.getyIndex() < other.leftUp.getyIndex()) {
+				return false;
+			}
+			if (this.rightDown.getxIndex() < other.leftUp.getxIndex()) {
+				return false;
+			}
+			if (this.leftUp.getyIndex() > other.rightDown.getyIndex()) {
+				return false;
+			}
+			if (this.leftUp.getxIndex() > other.rightDown.getxIndex()) {
+				return false;
+			}
+			return true;
+			// 自分の上が相手の下より上、かつ、自分の右が相手の左より右
+			// または、自分の左上が、相手の左上と右下の間にあれば、重複している
+		}
+
+		/**
+		 * 自分とposの領域がかぶっている場合trueを返す。
+		 */
+		public boolean isDuplicate(Position pos) {
+			if (this.rightDown.getyIndex() < pos.getyIndex()) {
+				return false;
+			}
+			if (this.rightDown.getxIndex() < pos.getxIndex()) {
+				return false;
+			}
+			if (this.leftUp.getyIndex() > pos.getyIndex()) {
+				return false;
+			}
+			if (this.leftUp.getxIndex() > pos.getxIndex()) {
+				return false;
+			}
+			return true;
+			// 自分の上が相手の下より上、かつ、自分の右が相手の左より右
+			// または、自分の左上が、相手の左上と右下の間にあれば、重複している
+		}
+
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + ((leftUp == null) ? 0 : leftUp.hashCode());
+			result = prime * result + ((rightDown == null) ? 0 : rightDown.hashCode());
+			return result;
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (obj == null)
+				return false;
+			if (getClass() != obj.getClass())
+				return false;
+			Sikaku other = (Sikaku) obj;
+			if (leftUp == null) {
+				if (other.leftUp != null)
+					return false;
+			} else if (!leftUp.equals(other.leftUp))
+				return false;
+			if (rightDown == null) {
+				if (other.rightDown != null)
+					return false;
+			} else if (!rightDown.equals(other.rightDown))
+				return false;
+			return true;
+		}
+
+		public Sikaku(Position leftUp, Position rightDown) {
+			super();
+			this.leftUp = leftUp;
+			this.rightDown = rightDown;
+		}
+
+		@Override
+		public String toString() {
+			return "[" + leftUp + ", " + rightDown + "]";
+		}
+
+	}
+
 }

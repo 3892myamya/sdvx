@@ -1,4 +1,4 @@
-package myamya.other.solver.nawabari;
+package myamya.other.solver.tatamibari;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -9,10 +9,10 @@ import myamya.other.solver.Common.Position;
 import myamya.other.solver.Common.Sikaku;
 import myamya.other.solver.Solver;
 
-public class NawabariSolver implements Solver {
+public class TatamibariSolver implements Solver {
 
 	public static class Field {
-		static final String ALPHABET_FROM = "abcdefghijklmnopqrstuvwxyz";
+		static final String ALPHABET_FROM_G = "ghijklmnopqrstuvwxyz";
 
 		// 記号の情報。1が縦、2が横、3が十字。
 		private final Integer[][] numbers;
@@ -43,7 +43,7 @@ public class NawabariSolver implements Solver {
 			int index = 0;
 			for (int i = readPos; i < param.length(); i++) {
 				char ch = param.charAt(i);
-				int interval = ALPHABET_FROM.indexOf(ch);
+				int interval = ALPHABET_FROM_G.indexOf(ch);
 				if (interval != -1) {
 					index = index + interval + 1;
 				} else {
@@ -81,31 +81,31 @@ public class NawabariSolver implements Solver {
 						List<Sikaku> sikakuList = new ArrayList<>();
 						for (int ySize = 1; ySize <= getYLength(); ySize++) {
 							for (int xSize = 1; xSize <= getXLength(); xSize++) {
+								if (numbers[yIndex][xIndex] == 1) {
+									// 縦長限定
+									if (ySize <= xSize) {
+										continue;
+									}
+								} else if (numbers[yIndex][xIndex] == 2) {
+									// 横長限定
+									if (xSize <= ySize) {
+										continue;
+									}
+								} else if (numbers[yIndex][xIndex] == 3) {
+									// 正方形限定
+									if (xSize != ySize) {
+										continue;
+									}
+								}
 								int minY = yIndex - ySize + 1 < 0 ? 0 : yIndex - ySize + 1;
 								int maxY = yIndex + ySize > getYLength() ? getYLength() - ySize : yIndex;
 								int minX = xIndex - xSize + 1 < 0 ? 0 : xIndex - xSize + 1;
 								int maxX = xIndex + xSize > getXLength() ? getXLength() - xSize : xIndex;
+
 								for (int y = minY; y <= maxY; y++) {
 									for (int x = minX; x <= maxX; x++) {
 										Sikaku sikaku = new Sikaku(new Position(y, x),
 												new Position(y + ySize - 1, x + xSize - 1));
-										// 縄の数字は周りの壁の数である。満たさない候補は最初から除外
-										int cnt = 0;
-										if (y == yIndex) {
-											cnt++;
-										}
-										if (y + ySize - 1 == yIndex) {
-											cnt++;
-										}
-										if (x == xIndex) {
-											cnt++;
-										}
-										if (x + xSize - 1 == xIndex) {
-											cnt++;
-										}
-										if (cnt != numbers[yIndex][xIndex]) {
-											continue;
-										}
 										boolean addSikaku = true;
 										// 他の部屋のpivotが含まれる候補をあらかじめ除外する。
 										outer: for (int otherY = 0; otherY < getYLength(); otherY++) {
@@ -281,7 +281,7 @@ public class NawabariSolver implements Solver {
 		}
 
 		/**
-		 * 各部屋の他の部屋とかぶる候補を消す。
+		 * 各部屋の他の部屋とかぶったり、4つ角ができる候補を消す。
 		 * 候補の数が0になってしまったらfalseを返す。
 		 */
 		public boolean roomSolve() {
@@ -296,7 +296,15 @@ public class NawabariSolver implements Solver {
 									for (Iterator<Sikaku> iterator = roomCand[otherY][otherX].iterator(); iterator
 											.hasNext();) {
 										Sikaku anotherSikaku = iterator.next();
-										if (mySikaku.isDuplicate(anotherSikaku)) {
+										if (mySikaku.isDuplicate(anotherSikaku)
+												||
+												new Position(mySikaku.getLeftUp().getyIndex() - 1,
+														mySikaku.getLeftUp().getxIndex() - 1)
+																.equals(anotherSikaku.getRightDown())
+												||
+												new Position(mySikaku.getRightDown().getyIndex() + 1,
+														mySikaku.getRightDown().getxIndex() + 1)
+																.equals(anotherSikaku.getLeftUp())) {
 											iterator.remove();
 										}
 									}
@@ -344,7 +352,7 @@ public class NawabariSolver implements Solver {
 	private final Field field;
 	private int count = 0;
 
-	public NawabariSolver(int height, int width, String param) {
+	public TatamibariSolver(int height, int width, String param) {
 		field = new Field(height, width, param);
 	}
 
@@ -353,12 +361,12 @@ public class NawabariSolver implements Solver {
 	}
 
 	public static void main(String[] args) {
-		String url = "http://pzv.jp/p.html?nawabari/5/5/f0a1g2a1f"; //urlを入れれば試せる
+		String url = "http://pzv.jp/p.html?tatamibari/10/10/2i3l1g3i3j3i2g1h3g3i2h1i3p2i2h2i3g2h3g3i2j1i2g3l2i2"; //urlを入れれば試せる
 		String[] params = url.split("/");
 		int height = Integer.parseInt(params[params.length - 2]);
 		int width = Integer.parseInt(params[params.length - 3]);
 		String param = params[params.length - 1];
-		System.out.println(new NawabariSolver(height, width, param).solve());
+		System.out.println(new TatamibariSolver(height, width, param).solve());
 	}
 
 	@Override
