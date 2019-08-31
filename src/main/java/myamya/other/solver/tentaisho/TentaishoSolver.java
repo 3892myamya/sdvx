@@ -35,6 +35,13 @@ public class TentaishoSolver implements Solver {
 		public Map<Integer, Position> getNumbers() {
 			return numbers;
 		}
+		public boolean isBlack(Integer number) {
+			return isBlack.get(number);
+		}
+
+		public List<Integer>[][] getNumbersCand() {
+			return numbersCand;
+		}
 
 		public int getYLength() {
 			return height;
@@ -350,6 +357,7 @@ public class TentaishoSolver implements Solver {
 	public String solve() {
 		long start = System.nanoTime();
 		while (!field.isSolved()) {
+			count++;
 			System.out.println(field);
 			String befStr = field.getStateDump();
 			if (!field.solveAndCheck()) {
@@ -380,10 +388,10 @@ public class TentaishoSolver implements Solver {
 			}
 		}
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
-		System.out.println("難易度:" + (count * 50));
+		System.out.println("難易度:" + (count * 15));
 		System.out.println(field);
 		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count * 50).toString();
+				+ Difficulty.getByCount(count * 15).toString();
 	}
 
 	/**

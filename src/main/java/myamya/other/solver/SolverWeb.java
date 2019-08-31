@@ -44,6 +44,7 @@ import myamya.other.solver.hanare.HanareSolver;
 import myamya.other.solver.hashikake.HashikakeSolver;
 import myamya.other.solver.hebi.HebiSolver;
 import myamya.other.solver.herugolf.HerugolfSolver;
+import myamya.other.solver.heyabon.HeyabonSolver;
 import myamya.other.solver.heyawake.HeyawakeSolver;
 import myamya.other.solver.hitori.HitoriSolver;
 import myamya.other.solver.icebarn.IcebarnSolver;
@@ -91,6 +92,7 @@ import myamya.other.solver.stostone.StostoneSolver;
 import myamya.other.solver.sudoku.SudokuSolver;
 import myamya.other.solver.sukoro.SukoroSolver;
 import myamya.other.solver.tapa.TapaSolver;
+import myamya.other.solver.tentaisho.TentaishoSolver;
 import myamya.other.solver.usoone.UsooneSolver;
 import myamya.other.solver.yajikazu.YajikazuSolver;
 import myamya.other.solver.yajikazu.YajikazuSolver.Arrow;
@@ -8128,6 +8130,330 @@ public class SolverWeb extends HttpServlet {
 		}
 	}
 
+	static class TentaishoSolverThread extends AbsSolverThlead {
+
+		TentaishoSolverThread(int height, int width, String param) {
+			super(height, width, param);
+		}
+
+		@Override
+		protected Solver getSolver() {
+			return new TentaishoSolver(height, width, param);
+		}
+
+		@Override
+		public String makeCambus() {
+			TentaishoSolver.Field field = ((TentaishoSolver) solver).getField();
+			StringBuilder sb = new StringBuilder();
+			int baseSize = 20;
+			int margin = 5;
+			sb.append(
+					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
+							+ "height=\"" + (field.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
+							+ (field.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			// マスを塗る
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					if (field.getNumbersCand()[yIndex][xIndex].size() == 1) {
+						Integer number = field.getNumbersCand()[yIndex][xIndex].get(0);
+						if (field.isBlack(number)) {
+							sb.append("<rect y=\"" + (yIndex * baseSize + margin)
+									+ "\" x=\""
+									+ (xIndex * baseSize + baseSize)
+									+ "\" width=\""
+									+ (baseSize)
+									+ "\" height=\""
+									+ (baseSize)
+									+ "\" fill=\"darkgray\" >"
+									+ "</rect>");
+						}
+					}
+				}
+			}
+
+			// 横壁描画
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = -1; xIndex < field.getXLength(); xIndex++) {
+					boolean oneYokoWall = xIndex == -1 || xIndex == field.getXLength() - 1 ||
+							!new ArrayList<>(field.getNumbersCand()[yIndex][xIndex])
+									.removeAll(field.getNumbersCand()[yIndex][xIndex + 1]);
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + margin)
+							+ "\" x1=\""
+							+ (xIndex * baseSize + 2 * baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ (xIndex * baseSize + 2 * baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneYokoWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">"
+							+ "</line>");
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = -1; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					boolean oneTateWall = yIndex == -1 || yIndex == field.getYLength() - 1 ||
+							!new ArrayList<>(field.getNumbersCand()[yIndex][xIndex])
+									.removeAll(field.getNumbersCand()[yIndex + 1][xIndex]);
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x1=\""
+							+ (xIndex * baseSize + baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ (xIndex * baseSize + baseSize + baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneTateWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">"
+							+ "</line>");
+				}
+			}
+			// 丸描画
+			for (Entry<Integer, Position> entry : field.getNumbers().entrySet()) {
+				if (field.isBlack(entry.getKey())) {
+					sb.append(
+							"<circle cy=\"" + (entry.getValue().getyIndex() * (baseSize / 2) + (baseSize / 2) + margin)
+									+ "\" cx=\""
+									+ (entry.getValue().getxIndex() * (baseSize / 2) + (baseSize / 2) + baseSize)
+									+ "\" r=\""
+									+ 2
+									+ "\" fill=\"black\", stroke=\"black\">"
+									+ "</circle>");
+				} else {
+					sb.append(
+							"<circle cy=\"" + (entry.getValue().getyIndex() * (baseSize / 2) + (baseSize / 2) + margin)
+									+ "\" cx=\""
+									+ (entry.getValue().getxIndex() * (baseSize / 2) + (baseSize / 2) + baseSize)
+									+ "\" r=\""
+									+ 2
+									+ "\" fill=\"white\", stroke=\"black\">"
+									+ "</circle>");
+				}
+			}
+			sb.append("</svg>");
+			return sb.toString();
+		}
+	}
+
+	static class HeyabonSolverThread extends AbsSolverThlead {
+		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
+		private static final String FULL_NUMS = "０１２３４５６７８９";
+
+		private final boolean heyabon;
+
+		HeyabonSolverThread(int height, int width, String param, boolean heyabon) {
+			super(height, width, param);
+			this.heyabon = heyabon;
+		}
+
+		@Override
+		protected Solver getSolver() {
+			return new HeyabonSolver(height, width, param, heyabon);
+		}
+
+		@Override
+		public String makeCambus() {
+			HeyabonSolver.Field field = ((HeyabonSolver) solver).getField();
+			int baseSize = 20;
+			int margin = 5;
+			StringBuilder sb = new StringBuilder();
+			sb.append(
+					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
+							+ "height=\"" + (field.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
+							+ (field.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			for (Entry<Position, Set<Position>> entry : field.getCandidates().entrySet()) {
+				Position originPos = entry.getKey();
+				if (entry.getValue().size() == 1) {
+					Position movedPos = new ArrayList<>(entry.getValue()).get(0);
+					sb.append("<circle cy=\"" + (originPos.getyIndex() * baseSize + (baseSize / 2) + margin)
+							+ "\" cx=\""
+							+ (originPos.getxIndex() * baseSize + baseSize + (baseSize / 2))
+							+ "\" r=\""
+							+ (baseSize / 2 - 2)
+							+ "\" fill=\"gray\", stroke=\"gray\">"
+							+ "</circle>");
+					sb.append("<circle cy=\"" + (movedPos.getyIndex() * baseSize + (baseSize / 2) + margin)
+							+ "\" cx=\""
+							+ (movedPos.getxIndex() * baseSize + baseSize + (baseSize / 2))
+							+ "\" r=\""
+							+ (baseSize / 2 - 2)
+							+ "\" fill=\"lightgray\", stroke=\"black\">"
+							+ "</circle>");
+					if (movedPos.getyIndex() < originPos.getyIndex()) {
+						for (int yIndex = originPos.getyIndex(); yIndex > movedPos.getyIndex(); yIndex--) {
+							sb.append("<line y1=\""
+									+ (yIndex * baseSize - (yIndex == movedPos.getyIndex() + 1 ? baseSize / 2 : 0)
+											+ margin)
+									+ "\" x1=\""
+									+ (movedPos.getxIndex() * baseSize + baseSize + baseSize / 2)
+									+ "\" y2=\""
+									+ (yIndex * baseSize + baseSize
+											- (yIndex == originPos.getyIndex() ? baseSize / 2 : 0) + margin)
+									+ "\" x2=\""
+									+ (movedPos.getxIndex() * baseSize + baseSize + baseSize / 2)
+									+ "\" stroke-width=\"1\" fill=\"none\"");
+							sb.append("stroke=\"green\" ");
+							sb.append(">"
+									+ "</line>");
+						}
+					} else if (movedPos.getxIndex() > originPos.getxIndex()) {
+						for (int xIndex = originPos.getxIndex(); xIndex < movedPos.getxIndex(); xIndex++) {
+							sb.append("<line y1=\""
+									+ (movedPos.getyIndex() * baseSize + baseSize / 2 + margin)
+									+ "\" x1=\""
+									+ (xIndex * baseSize + baseSize
+											+ (xIndex == originPos.getxIndex() ? baseSize / 2 : 0))
+									+ "\" y2=\""
+									+ (movedPos.getyIndex() * baseSize + baseSize / 2 + margin)
+									+ "\" x2=\""
+									+ (xIndex * baseSize + baseSize + baseSize
+											+ (xIndex == movedPos.getxIndex() - 1 ? baseSize / 2 : 0))
+									+ "\" stroke-width=\"1\" fill=\"none\"");
+							sb.append("stroke=\"green\" ");
+							sb.append(">"
+									+ "</line>");
+						}
+					} else if (movedPos.getyIndex() > originPos.getyIndex()) {
+						for (int yIndex = originPos.getyIndex(); yIndex < movedPos.getyIndex(); yIndex++) {
+							sb.append("<line y1=\""
+									+ (yIndex * baseSize + (yIndex == originPos.getyIndex() ? baseSize / 2 : 0)
+											+ margin)
+									+ "\" x1=\""
+									+ (movedPos.getxIndex() * baseSize + baseSize + baseSize / 2)
+									+ "\" y2=\""
+									+ (yIndex * baseSize + baseSize
+											+ (yIndex == movedPos.getyIndex() - 1 ? baseSize / 2 : 0) + margin)
+									+ "\" x2=\""
+									+ (movedPos.getxIndex() * baseSize + baseSize + baseSize / 2)
+									+ "\" stroke-width=\"1\" fill=\"none\"");
+							sb.append("stroke=\"green\" ");
+							sb.append(">"
+									+ "</line>");
+						}
+					} else if (movedPos.getxIndex() < originPos.getxIndex()) {
+						for (int xIndex = originPos.getxIndex(); xIndex > movedPos.getxIndex(); xIndex--) {
+							sb.append("<line y1=\""
+									+ (movedPos.getyIndex() * baseSize + baseSize / 2 + margin)
+									+ "\" x1=\""
+									+ (xIndex * baseSize + baseSize
+											- (xIndex == movedPos.getxIndex() + 1 ? baseSize / 2 : 0))
+									+ "\" y2=\""
+									+ (movedPos.getyIndex() * baseSize + baseSize / 2 + margin)
+									+ "\" x2=\""
+									+ (xIndex * baseSize + baseSize + baseSize
+											- (xIndex == originPos.getxIndex() ? baseSize / 2 : 0))
+									+ "\" stroke-width=\"1\" fill=\"none\"");
+							sb.append("stroke=\"green\" ");
+							sb.append(">"
+									+ "</line>");
+						}
+					}
+					if (field.getNumbers()[originPos.getyIndex()][originPos.getxIndex()] != -1) {
+						String numberStr = String
+								.valueOf(field.getNumbers()[originPos.getyIndex()][originPos.getxIndex()]);
+						int index = HALF_NUMS.indexOf(numberStr);
+						String masuStr = null;
+						if (index >= 0) {
+							masuStr = FULL_NUMS.substring(index / 2, index / 2 + 1);
+						} else {
+							masuStr = numberStr;
+						}
+						sb.append("<text y=\"" + (movedPos.getyIndex() * baseSize + baseSize + margin - 4)
+								+ "\" x=\""
+								+ (movedPos.getxIndex() * baseSize + baseSize + 2)
+								+ "\" font-size=\""
+								+ (baseSize - 5)
+								+ "\" textLength=\""
+								+ (baseSize - 5)
+								+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+								+ masuStr
+								+ "</text>");
+					}
+				} else {
+					sb.append("<circle cy=\"" + (originPos.getyIndex() * baseSize + (baseSize / 2) + margin)
+							+ "\" cx=\""
+							+ (originPos.getxIndex() * baseSize + baseSize + (baseSize / 2))
+							+ "\" r=\""
+							+ (baseSize / 2 - 2)
+							+ "\" fill=\"white\", stroke=\"black\">"
+							+ "</circle>");
+					if (field.getNumbers()[originPos.getyIndex()][originPos.getxIndex()] != -1) {
+						String numberStr = String
+								.valueOf(field.getNumbers()[originPos.getyIndex()][originPos.getxIndex()]);
+						int index = HALF_NUMS.indexOf(numberStr);
+						String masuStr = null;
+						if (index >= 0) {
+							masuStr = FULL_NUMS.substring(index / 2, index / 2 + 1);
+						} else {
+							masuStr = numberStr;
+						}
+						sb.append("<text y=\"" + (originPos.getyIndex() * baseSize + baseSize + margin - 4)
+								+ "\" x=\""
+								+ (originPos.getxIndex() * baseSize + baseSize + 2)
+								+ "\" font-size=\""
+								+ (baseSize - 5)
+								+ "\" textLength=\""
+								+ (baseSize - 5)
+								+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+								+ masuStr
+								+ "</text>");
+					}
+				}
+
+			}
+
+			// 横壁描画
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = -1; xIndex < field.getXLength(); xIndex++) {
+					boolean oneYokoWall = xIndex == -1 || xIndex == field.getXLength() - 1
+							|| field.getRoomYokoWall()[yIndex][xIndex];
+					if (oneYokoWall) {
+						sb.append("<rect y=\"" + (yIndex * baseSize + margin)
+								+ "\" x=\""
+								+ (xIndex * baseSize + 2 * baseSize)
+								+ "\" width=\""
+								+ (1)
+								+ "\" height=\""
+								+ (baseSize)
+								+ "\">"
+								+ "</rect>");
+					}
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = -1; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					boolean oneTateWall = yIndex == -1 || yIndex == field.getYLength() - 1
+							|| field.getRoomTateWall()[yIndex][xIndex];
+					if (oneTateWall) {
+						sb.append("<rect y=\"" + (yIndex * baseSize + baseSize + margin)
+								+ "\" x=\""
+								+ (xIndex * baseSize + baseSize)
+								+ "\" width=\""
+								+ (baseSize)
+								+ "\" height=\""
+								+ (1)
+								+ "\">"
+								+ "</rect>");
+					}
+				}
+			}
+			sb.append("</svg>");
+			return sb.toString();
+		}
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -8149,6 +8475,12 @@ public class SolverWeb extends HttpServlet {
 				int start = Integer.parseInt(parts.get(5));
 				int goal = Integer.parseInt(parts.get(6));
 				t = new IcelomSolverThread(height, width, param, start, goal, isIcelom2);
+			} else if (puzzleType.contains("bonsan")) {
+				boolean heyabon = !parts.get(1).equals("c");
+				int height = Integer.parseInt(parts.get(3));
+				int width = Integer.parseInt(parts.get(2));
+				String param = parts.get(4).split("@")[0];
+				t = new HeyabonSolverThread(height, width, param, heyabon);
 			} else {
 				int width = Integer.parseInt(parts.get(1));
 				int height = Integer.parseInt(parts.get(2));
@@ -8288,6 +8620,10 @@ public class SolverWeb extends HttpServlet {
 					t = new HerugolfSolverThread(height, width, param);
 				} else if (puzzleType.contains("makaro")) {
 					t = new MakaroSolverThread(height, width, param);
+				} else if (puzzleType.contains("tentaisho")) {
+					t = new TentaishoSolverThread(height, width, param);
+				} else if (puzzleType.contains("heyabon")) {
+					t = new HeyabonSolverThread(height, width, param, true);
 				} else {
 					throw new IllegalArgumentException();
 				}
