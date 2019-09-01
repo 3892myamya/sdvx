@@ -438,7 +438,7 @@ public class NurimisakiSolver implements Solver {
 			Set<Position> whitePosSet = new HashSet<>();
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					if (masu[yIndex][xIndex] == Masu.NOT_BLACK) {
+					if (!misaki[yIndex][xIndex] && masu[yIndex][xIndex] == Masu.NOT_BLACK) {
 						Position whitePos = new Position(yIndex, xIndex);
 						if (whitePosSet.size() == 0) {
 							whitePosSet.add(whitePos);
@@ -460,7 +460,7 @@ public class NurimisakiSolver implements Solver {
 		private void setContinuePosSet(Position pos, Set<Position> continuePosSet, Direction from) {
 			if (pos.getyIndex() != 0 && from != Direction.UP) {
 				Position nextPos = new Position(pos.getyIndex() - 1, pos.getxIndex());
-				if (!continuePosSet.contains(nextPos)
+				if (!continuePosSet.contains(nextPos) && !misaki[nextPos.getyIndex()][nextPos.getxIndex()]
 						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.BLACK) {
 					continuePosSet.add(nextPos);
 					setContinuePosSet(nextPos, continuePosSet, Direction.DOWN);
@@ -468,7 +468,7 @@ public class NurimisakiSolver implements Solver {
 			}
 			if (pos.getxIndex() != getXLength() - 1 && from != Direction.RIGHT) {
 				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() + 1);
-				if (!continuePosSet.contains(nextPos)
+				if (!continuePosSet.contains(nextPos) && !misaki[nextPos.getyIndex()][nextPos.getxIndex()]
 						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.BLACK) {
 					continuePosSet.add(nextPos);
 					setContinuePosSet(nextPos, continuePosSet, Direction.LEFT);
@@ -476,7 +476,7 @@ public class NurimisakiSolver implements Solver {
 			}
 			if (pos.getyIndex() != getYLength() - 1 && from != Direction.DOWN) {
 				Position nextPos = new Position(pos.getyIndex() + 1, pos.getxIndex());
-				if (!continuePosSet.contains(nextPos)
+				if (!continuePosSet.contains(nextPos) && !misaki[nextPos.getyIndex()][nextPos.getxIndex()]
 						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.BLACK) {
 					continuePosSet.add(nextPos);
 					setContinuePosSet(nextPos, continuePosSet, Direction.UP);
@@ -484,12 +484,337 @@ public class NurimisakiSolver implements Solver {
 			}
 			if (pos.getxIndex() != 0 && from != Direction.LEFT) {
 				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() - 1);
-				if (!continuePosSet.contains(nextPos)
+				if (!continuePosSet.contains(nextPos) && !misaki[nextPos.getyIndex()][nextPos.getxIndex()]
 						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.BLACK) {
 					continuePosSet.add(nextPos);
 					setContinuePosSet(nextPos, continuePosSet, Direction.RIGHT);
 				}
 			}
+		}
+
+		/**
+		 * 手筋による先読み
+		 * TODO 実装中
+		 */
+		private boolean exSolve() {
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					if (!misaki[yIndex][xIndex]) {
+						// くぼみ禁止
+						Masu masuUp = yIndex == 0 ? Masu.BLACK : masu[yIndex - 1][xIndex];
+						Masu masuUR = yIndex == 0 || xIndex == getXLength() - 1 ? Masu.BLACK
+								: masu[yIndex - 1][xIndex + 1];
+						Masu masuRight = xIndex == getXLength() - 1 ? Masu.BLACK : masu[yIndex][xIndex + 1];
+						Masu masuRD = xIndex == getXLength() - 1 || yIndex == getYLength() - 1 ? Masu.BLACK
+								: masu[yIndex + 1][xIndex + 1];
+						Masu masuDown = yIndex == getYLength() - 1 ? Masu.BLACK : masu[yIndex + 1][xIndex];
+						Masu masuDL = yIndex == getYLength() - 1 || xIndex == 0 ? Masu.BLACK
+								: masu[yIndex + 1][xIndex - 1];
+						Masu masuLeft = xIndex == 0 ? Masu.BLACK : masu[yIndex][xIndex - 1];
+						Masu masuLU = xIndex == 0 || yIndex == 0 ? Masu.BLACK : masu[yIndex - 1][xIndex - 1];
+
+						if (masuUp == Masu.BLACK && masuLeft == Masu.BLACK && masuRD == Masu.NOT_BLACK) {
+							if (masu[yIndex][xIndex] == Masu.NOT_BLACK) {
+								return false;
+							}
+							masu[yIndex][xIndex] = Masu.BLACK;
+						}
+						if (masuUp == Masu.BLACK && masuRight == Masu.BLACK && masuDL == Masu.NOT_BLACK) {
+							if (masu[yIndex][xIndex] == Masu.NOT_BLACK) {
+								return false;
+							}
+							masu[yIndex][xIndex] = Masu.BLACK;
+						}
+						if (masuDown == Masu.BLACK && masuRight == Masu.BLACK && masuLU == Masu.NOT_BLACK) {
+							if (masu[yIndex][xIndex] == Masu.NOT_BLACK) {
+								return false;
+							}
+							masu[yIndex][xIndex] = Masu.BLACK;
+						}
+						if (masuDown == Masu.BLACK && masuLeft == Masu.BLACK && masuUR == Masu.NOT_BLACK) {
+							if (masu[yIndex][xIndex] == Masu.NOT_BLACK) {
+								return false;
+							}
+							masu[yIndex][xIndex] = Masu.BLACK;
+						}
+					}
+				}
+			}
+			for (int yIndex = 0; yIndex < getYLength() - 1; yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength() - 1; xIndex++) {
+					if (!misaki[yIndex][xIndex]) {
+						// カップ禁止
+						Masu masuUp = yIndex == 0 ? Masu.NOT_BLACK : masu[yIndex - 1][xIndex];
+						Masu masuUR = yIndex == 0 || xIndex == getXLength() - 1 ? Masu.NOT_BLACK
+								: masu[yIndex - 1][xIndex + 1];
+						Masu masuRight = xIndex == getXLength() - 1 ? Masu.NOT_BLACK : masu[yIndex][xIndex + 1];
+						Masu masuRD = xIndex == getXLength() - 1 || yIndex == getYLength() - 1 ? Masu.NOT_BLACK
+								: masu[yIndex + 1][xIndex + 1];
+						Masu masuDown = yIndex == getYLength() - 1 ? Masu.NOT_BLACK : masu[yIndex + 1][xIndex];
+						Masu masuDL = yIndex == getYLength() - 1 || xIndex == 0 ? Masu.NOT_BLACK
+								: masu[yIndex + 1][xIndex - 1];
+						Masu masuLeft = xIndex == 0 ? Masu.NOT_BLACK : masu[yIndex][xIndex - 1];
+						Masu masuLU = xIndex == 0 || yIndex == 0 ? Masu.NOT_BLACK : masu[yIndex - 1][xIndex - 1];
+						boolean misakiU = yIndex == 0 ? false : misaki[yIndex - 1][xIndex];
+						boolean misakiR = xIndex == getXLength() - 1 ? false : misaki[yIndex][xIndex + 1];
+						boolean misakiD = yIndex == getYLength() - 1 ? false : misaki[yIndex + 1][xIndex];
+						boolean misakiL = xIndex == 0 ? false : misaki[yIndex][xIndex - 1];
+						Masu masuR2 = xIndex >= getXLength() - 2 ? Masu.NOT_BLACK : masu[yIndex][xIndex + 2];
+						Masu masuD2 = yIndex >= getYLength() - 2 ? Masu.NOT_BLACK : masu[yIndex + 2][xIndex];
+
+						if (masuLeft == Masu.BLACK && masuDown == Masu.BLACK && masuRD == Masu.BLACK
+								&& masuR2 == Masu.BLACK && !misakiR) {
+							return false;
+						}
+						if (masuLeft == Masu.SPACE && masuDown == Masu.BLACK && masuRD == Masu.BLACK
+								&& masuR2 == Masu.BLACK && !misakiR) {
+							masu[yIndex][xIndex - 1] = Masu.NOT_BLACK;
+						}
+						if (masuLeft == Masu.BLACK && masuDown == Masu.SPACE && masuRD == Masu.BLACK
+								&& masuR2 == Masu.BLACK && !misakiR) {
+							masu[yIndex + 1][xIndex] = Masu.NOT_BLACK;
+						}
+						if (masuLeft == Masu.BLACK && masuDown == Masu.BLACK && masuRD == Masu.SPACE
+								&& masuR2 == Masu.BLACK && !misakiR) {
+							masu[yIndex + 1][xIndex + 1] = Masu.NOT_BLACK;
+						}
+						if (masuLeft == Masu.BLACK && masuDown == Masu.BLACK && masuRD == Masu.BLACK
+								&& masuR2 == Masu.SPACE && !misakiR) {
+							masu[yIndex][xIndex + 2] = Masu.NOT_BLACK;
+						}
+						if (masuLeft == Masu.BLACK && masuUp == Masu.BLACK && masuUR == Masu.BLACK
+								&& masuR2 == Masu.BLACK && !misakiR) {
+							return false;
+						}
+						if (masuLeft == Masu.SPACE && masuUp == Masu.BLACK && masuUR == Masu.BLACK
+								&& masuR2 == Masu.BLACK && !misakiR) {
+							masu[yIndex][xIndex - 1] = Masu.NOT_BLACK;
+						}
+						if (masuLeft == Masu.BLACK && masuUp == Masu.SPACE && masuUR == Masu.BLACK
+								&& masuR2 == Masu.BLACK && !misakiR) {
+							masu[yIndex - 1][xIndex] = Masu.NOT_BLACK;
+						}
+						if (masuLeft == Masu.BLACK && masuUp == Masu.BLACK && masuUR == Masu.SPACE
+								&& masuR2 == Masu.BLACK && !misakiR) {
+							masu[yIndex - 1][xIndex + 1] = Masu.NOT_BLACK;
+						}
+						if (masuLeft == Masu.BLACK && masuUp == Masu.BLACK && masuUR == Masu.BLACK
+								&& masuR2 == Masu.SPACE && !misakiR) {
+							masu[yIndex][xIndex + 2] = Masu.NOT_BLACK;
+						}
+
+						if (masuUp == Masu.BLACK && masuLeft == Masu.BLACK && masuDL == Masu.BLACK
+								&& masuD2 == Masu.BLACK && !misakiD) {
+							return false;
+						}
+						if (masuUp == Masu.SPACE && masuLeft == Masu.BLACK && masuDL == Masu.BLACK
+								&& masuD2 == Masu.BLACK && !misakiD) {
+							masu[yIndex - 1][xIndex] = Masu.NOT_BLACK;
+						}
+						if (masuUp == Masu.BLACK && masuLeft == Masu.SPACE && masuDL == Masu.BLACK
+								&& masuD2 == Masu.BLACK && !misakiD) {
+							masu[yIndex][xIndex - 1] = Masu.NOT_BLACK;
+						}
+						if (masuUp == Masu.BLACK && masuLeft == Masu.BLACK && masuDL == Masu.SPACE
+								&& masuD2 == Masu.BLACK && !misakiD) {
+							masu[yIndex + 1][xIndex - 1] = Masu.NOT_BLACK;
+						}
+						if (masuUp == Masu.BLACK && masuLeft == Masu.BLACK && masuDL == Masu.BLACK
+								&& masuD2 == Masu.SPACE && !misakiD) {
+							masu[yIndex + 2][xIndex] = Masu.NOT_BLACK;
+						}
+
+						if (masuUp == Masu.BLACK && masuRight == Masu.BLACK && masuRD == Masu.BLACK
+								&& masuD2 == Masu.BLACK && !misakiD) {
+							return false;
+						}
+						if (masuUp == Masu.SPACE && masuRight == Masu.BLACK && masuRD == Masu.BLACK
+								&& masuD2 == Masu.BLACK && !misakiD) {
+							masu[yIndex - 1][xIndex] = Masu.NOT_BLACK;
+						}
+						if (masuUp == Masu.BLACK && masuRight == Masu.SPACE && masuRD == Masu.BLACK
+								&& masuD2 == Masu.BLACK && !misakiD) {
+							masu[yIndex][xIndex + 1] = Masu.NOT_BLACK;
+						}
+						if (masuUp == Masu.BLACK && masuRight == Masu.BLACK && masuRD == Masu.SPACE
+								&& masuD2 == Masu.BLACK && !misakiD) {
+							masu[yIndex + 1][xIndex + 1] = Masu.NOT_BLACK;
+						}
+						if (masuUp == Masu.BLACK && masuRight == Masu.BLACK && masuRD == Masu.BLACK
+								&& masuD2 == Masu.SPACE && !misakiD) {
+							masu[yIndex + 2][xIndex] = Masu.NOT_BLACK;
+						}
+
+						if (masuDL == Masu.BLACK && masu[yIndex][xIndex] == Masu.BLACK && masuRD == Masu.BLACK
+								&& masuR2 == Masu.BLACK && !misakiR && !misakiD) {
+							return false;
+						}
+						if (masuDL == Masu.SPACE && masu[yIndex][xIndex] == Masu.BLACK && masuRD == Masu.BLACK
+								&& masuR2 == Masu.BLACK && !misakiR && !misakiD) {
+							masu[yIndex + 1][xIndex - 1] = Masu.NOT_BLACK;
+						}
+						if (masuDL == Masu.BLACK && masu[yIndex][xIndex] == Masu.SPACE && masuRD == Masu.BLACK
+								&& masuR2 == Masu.BLACK && !misakiR && !misakiD) {
+							masu[yIndex][xIndex] = Masu.NOT_BLACK;
+						}
+						if (masuDL == Masu.BLACK && masu[yIndex][xIndex] == Masu.BLACK && masuRD == Masu.SPACE
+								&& masuR2 == Masu.BLACK && !misakiR && !misakiD) {
+							masu[yIndex + 1][xIndex + 1] = Masu.NOT_BLACK;
+						}
+						if (masuDL == Masu.BLACK && masu[yIndex][xIndex] == Masu.BLACK && masuRD == Masu.BLACK
+								&& masuR2 == Masu.SPACE && !misakiR && !misakiD) {
+							masu[yIndex][xIndex + 2] = Masu.NOT_BLACK;
+						}
+
+						if (masuLU == Masu.BLACK && masu[yIndex][xIndex] == Masu.BLACK && masuUR == Masu.BLACK
+								&& masuR2 == Masu.BLACK && !misakiR && !misakiU) {
+							return false;
+						}
+						if (masuLU == Masu.SPACE && masu[yIndex][xIndex] == Masu.BLACK && masuUR == Masu.BLACK
+								&& masuR2 == Masu.BLACK && !misakiR && !misakiU) {
+							masu[yIndex - 1][xIndex - 1] = Masu.NOT_BLACK;
+						}
+						if (masuLU == Masu.BLACK && masu[yIndex][xIndex] == Masu.SPACE && masuUR == Masu.BLACK
+								&& masuR2 == Masu.BLACK && !misakiR && !misakiU) {
+							masu[yIndex][xIndex] = Masu.NOT_BLACK;
+						}
+						if (masuLU == Masu.BLACK && masu[yIndex][xIndex] == Masu.BLACK && masuUR == Masu.SPACE
+								&& masuR2 == Masu.BLACK && !misakiR && !misakiU) {
+							masu[yIndex - 1][xIndex + 1] = Masu.NOT_BLACK;
+						}
+						if (masuLU == Masu.BLACK && masu[yIndex][xIndex] == Masu.BLACK && masuUR == Masu.BLACK
+								&& masuR2 == Masu.SPACE && !misakiR && !misakiU) {
+							masu[yIndex][xIndex + 2] = Masu.NOT_BLACK;
+						}
+
+						if (masuLU == Masu.BLACK && masu[yIndex][xIndex] == Masu.BLACK && masuDL == Masu.BLACK
+								&& masuD2 == Masu.BLACK && !misakiL && !misakiD) {
+							return false;
+						}
+						if (masuLU == Masu.SPACE && masu[yIndex][xIndex] == Masu.BLACK && masuDL == Masu.BLACK
+								&& masuD2 == Masu.BLACK && !misakiL && !misakiD) {
+							masu[yIndex - 1][xIndex - 1] = Masu.NOT_BLACK;
+						}
+						if (masuLU == Masu.BLACK && masu[yIndex][xIndex] == Masu.SPACE && masuDL == Masu.BLACK
+								&& masuD2 == Masu.BLACK && !misakiL && !misakiD) {
+							masu[yIndex][xIndex] = Masu.NOT_BLACK;
+						}
+						if (masuLU == Masu.BLACK && masu[yIndex][xIndex] == Masu.BLACK && masuDL == Masu.SPACE
+								&& masuD2 == Masu.BLACK && !misakiL && !misakiD) {
+							masu[yIndex + 1][xIndex - 1] = Masu.NOT_BLACK;
+						}
+						if (masuLU == Masu.BLACK && masu[yIndex][xIndex] == Masu.BLACK && masuDL == Masu.BLACK
+								&& masuD2 == Masu.SPACE && !misakiL && !misakiD) {
+							masu[yIndex + 2][xIndex] = Masu.NOT_BLACK;
+						}
+
+						if (masuUR == Masu.BLACK && masu[yIndex][xIndex] == Masu.BLACK && masuRD == Masu.BLACK
+								&& masuD2 == Masu.BLACK && !misakiR && !misakiD) {
+							return false;
+						}
+						if (masuUR == Masu.SPACE && masu[yIndex][xIndex] == Masu.BLACK && masuRD == Masu.BLACK
+								&& masuD2 == Masu.BLACK && !misakiR && !misakiD) {
+							masu[yIndex - 1][xIndex + 1] = Masu.NOT_BLACK;
+						}
+						if (masuUR == Masu.BLACK && masu[yIndex][xIndex] == Masu.SPACE && masuRD == Masu.BLACK
+								&& masuD2 == Masu.BLACK && !misakiR && !misakiD) {
+							masu[yIndex][xIndex] = Masu.NOT_BLACK;
+						}
+						if (masuUR == Masu.BLACK && masu[yIndex][xIndex] == Masu.BLACK && masuRD == Masu.SPACE
+								&& masuD2 == Masu.BLACK && !misakiR && !misakiD) {
+							masu[yIndex + 1][xIndex + 1] = Masu.NOT_BLACK;
+						}
+						if (masuUR == Masu.BLACK && masu[yIndex][xIndex] == Masu.BLACK && masuRD == Masu.BLACK
+								&& masuD2 == Masu.SPACE && !misakiR && !misakiD) {
+							masu[yIndex + 2][xIndex] = Masu.NOT_BLACK;
+						}
+						if (masuUR == Masu.BLACK && masu[yIndex][xIndex] == Masu.BLACK && masuRD == Masu.BLACK
+								&& masuDL == Masu.BLACK && !misakiR && !misakiD) {
+							return false;
+						}
+						if (masuUR == Masu.SPACE && masu[yIndex][xIndex] == Masu.BLACK && masuRD == Masu.BLACK
+								&& masuDL == Masu.BLACK && !misakiR && !misakiD) {
+							masu[yIndex - 1][xIndex + 1] = Masu.NOT_BLACK;
+						}
+						if (masuUR == Masu.BLACK && masu[yIndex][xIndex] == Masu.SPACE && masuRD == Masu.BLACK
+								&& masuDL == Masu.BLACK && !misakiR && !misakiD) {
+							masu[yIndex][xIndex] = Masu.NOT_BLACK;
+						}
+						if (masuUR == Masu.BLACK && masu[yIndex][xIndex] == Masu.BLACK && masuRD == Masu.SPACE
+								&& masuDL == Masu.BLACK && !misakiR && !misakiD) {
+							masu[yIndex + 1][xIndex + 1] = Masu.NOT_BLACK;
+						}
+						if (masuUR == Masu.BLACK && masu[yIndex][xIndex] == Masu.BLACK && masuRD == Masu.BLACK
+								&& masuDL == Masu.SPACE && !misakiR && !misakiD) {
+							masu[yIndex + 1][xIndex - 1] = Masu.NOT_BLACK;
+						}
+
+						if (masuUR == Masu.BLACK && masu[yIndex][xIndex] == Masu.BLACK && masuRD == Masu.BLACK
+								&& masuLU == Masu.BLACK && !misakiR && !misakiU) {
+							return false;
+						}
+						if (masuUR == Masu.SPACE && masu[yIndex][xIndex] == Masu.BLACK && masuRD == Masu.BLACK
+								&& masuLU == Masu.BLACK && !misakiR && !misakiU) {
+							masu[yIndex - 1][xIndex + 1] = Masu.NOT_BLACK;
+						}
+						if (masuUR == Masu.BLACK && masu[yIndex][xIndex] == Masu.SPACE && masuRD == Masu.BLACK
+								&& masuLU == Masu.BLACK && !misakiR && !misakiU) {
+							masu[yIndex][xIndex] = Masu.NOT_BLACK;
+						}
+						if (masuUR == Masu.BLACK && masu[yIndex][xIndex] == Masu.BLACK && masuRD == Masu.SPACE
+								&& masuLU == Masu.BLACK && !misakiR && !misakiU) {
+							masu[yIndex + 1][xIndex + 1] = Masu.NOT_BLACK;
+						}
+						if (masuUR == Masu.BLACK && masu[yIndex][xIndex] == Masu.BLACK && masuRD == Masu.BLACK
+								&& masuLU == Masu.SPACE && !misakiR && !misakiU) {
+							masu[yIndex - 1][xIndex - 1] = Masu.NOT_BLACK;
+						}
+
+						if (masuUR == Masu.BLACK && masu[yIndex][xIndex] == Masu.BLACK && masuDL == Masu.BLACK
+								&& masuLU == Masu.BLACK && !misakiL && !misakiU) {
+							return false;
+						}
+						if (masuUR == Masu.SPACE && masu[yIndex][xIndex] == Masu.BLACK && masuDL == Masu.BLACK
+								&& masuLU == Masu.BLACK && !misakiL && !misakiU) {
+							masu[yIndex - 1][xIndex + 1] = Masu.NOT_BLACK;
+						}
+						if (masuUR == Masu.BLACK && masu[yIndex][xIndex] == Masu.SPACE && masuDL == Masu.BLACK
+								&& masuLU == Masu.BLACK && !misakiL && !misakiU) {
+							masu[yIndex][xIndex] = Masu.NOT_BLACK;
+						}
+						if (masuUR == Masu.BLACK && masu[yIndex][xIndex] == Masu.BLACK && masuDL == Masu.SPACE
+								&& masuLU == Masu.BLACK && !misakiL && !misakiU) {
+							masu[yIndex + 1][xIndex - 1] = Masu.NOT_BLACK;
+						}
+						if (masuUR == Masu.BLACK && masu[yIndex][xIndex] == Masu.BLACK && masuDL == Masu.BLACK
+								&& masuLU == Masu.SPACE && !misakiL && !misakiU) {
+							masu[yIndex - 1][xIndex - 1] = Masu.NOT_BLACK;
+						}
+
+						if (masuRD == Masu.BLACK && masu[yIndex][xIndex] == Masu.BLACK && masuDL == Masu.BLACK
+								&& masuLU == Masu.BLACK && !misakiL && !misakiD) {
+							return false;
+						}
+						if (masuRD == Masu.SPACE && masu[yIndex][xIndex] == Masu.BLACK && masuDL == Masu.BLACK
+								&& masuLU == Masu.BLACK && !misakiL && !misakiD) {
+							masu[yIndex + 1][xIndex + 1] = Masu.NOT_BLACK;
+						}
+						if (masuRD == Masu.BLACK && masu[yIndex][xIndex] == Masu.SPACE && masuDL == Masu.BLACK
+								&& masuLU == Masu.BLACK && !misakiL && !misakiD) {
+							masu[yIndex][xIndex] = Masu.NOT_BLACK;
+						}
+						if (masuRD == Masu.BLACK && masu[yIndex][xIndex] == Masu.BLACK && masuDL == Masu.SPACE
+								&& masuLU == Masu.BLACK && !misakiL && !misakiD) {
+							masu[yIndex + 1][xIndex - 1] = Masu.NOT_BLACK;
+						}
+						if (masuRD == Masu.BLACK && masu[yIndex][xIndex] == Masu.BLACK && masuDL == Masu.BLACK
+								&& masuLU == Masu.SPACE && !misakiL && !misakiD) {
+							masu[yIndex - 1][xIndex - 1] = Masu.NOT_BLACK;
+						}
+					}
+				}
+			}
+			return true;
 		}
 
 		/**
@@ -546,6 +871,9 @@ public class NurimisakiSolver implements Solver {
 			if (!pondSolve()) {
 				return false;
 			}
+//			if (!exSolve()) {
+//				return false;
+//			}
 			if (!getStateDump().equals(str)) {
 				return solveAndCheck();
 			} else {
