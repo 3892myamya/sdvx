@@ -69,7 +69,6 @@ import myamya.other.solver.norinori.NorinoriSolver;
 import myamya.other.solver.numlin.NumlinSolver;
 import myamya.other.solver.nurikabe.NurikabeSolver;
 import myamya.other.solver.nurimisaki.NurimisakiSolver;
-import myamya.other.solver.nurimisaki.NurimisakiSolver.Misaki;
 import myamya.other.solver.pipelink.PipelinkSolver;
 import myamya.other.solver.rectslider.RectsliderSolver;
 import myamya.other.solver.reflect.ReflectSolver;
@@ -1087,7 +1086,7 @@ public class SolverWeb extends HttpServlet {
 							+ (field.getXLength() * baseSize + baseSize) + "\" >");
 			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
-					NurimisakiSolver.Masu oneMasu = field.getMasu()[yIndex][xIndex];
+					Masu oneMasu = field.getMasu()[yIndex][xIndex];
 					if (oneMasu.toString().equals("■")) {
 						sb.append("<rect y=\"" + (yIndex * baseSize)
 								+ "\" x=\""
@@ -1098,16 +1097,18 @@ public class SolverWeb extends HttpServlet {
 								+ (baseSize)
 								+ "\">"
 								+ "</rect>");
-					} else if (oneMasu instanceof Misaki) {
-						sb.append("<circle cy=\"" + (yIndex * baseSize + (baseSize / 2))
-								+ "\" cx=\""
-								+ (xIndex * baseSize + baseSize + (baseSize / 2))
-								+ "\" r=\""
-								+ (baseSize / 2 - 2)
-								+ "\" fill=\"white\", stroke=\"black\">"
-								+ "</circle>");
-						if (((Misaki) oneMasu).getCnt() != -1) {
-							String numberStr = String.valueOf(((Misaki) oneMasu).getCnt());
+					} else if (field.getMisaki()[yIndex][xIndex] || field.getNumbers()[yIndex][xIndex] != null) {
+						if (field.getMisaki()[yIndex][xIndex]) {
+							sb.append("<circle cy=\"" + (yIndex * baseSize + (baseSize / 2))
+									+ "\" cx=\""
+									+ (xIndex * baseSize + baseSize + (baseSize / 2))
+									+ "\" r=\""
+									+ (baseSize / 2 - 2)
+									+ "\" fill=\"white\", stroke=\"black\">"
+									+ "</circle>");
+						}
+						if (field.getNumbers()[yIndex][xIndex] != null) {
+							String numberStr = String.valueOf(field.getNumbers()[yIndex][xIndex]);
 							int index = HALF_NUMS.indexOf(numberStr);
 							String masuStr = null;
 							if (index >= 0) {
@@ -1126,7 +1127,6 @@ public class SolverWeb extends HttpServlet {
 									+ masuStr
 									+ "</text>");
 						}
-
 					} else {
 						sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 4)
 								+ "\" x=\""
