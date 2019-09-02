@@ -96,7 +96,7 @@ public class NurimisakiSolver implements Solver {
 				for (int i = 0; i < getYLength() * getXLength(); i++) {
 					int yIndex = i / getXLength();
 					int xIndex = i % getXLength();
-					if (!misaki[yIndex][xIndex] ) {
+					if (!misaki[yIndex][xIndex]) {
 						interval++;
 						if (interval == 20) {
 							sb.append("z");
@@ -125,7 +125,7 @@ public class NurimisakiSolver implements Solver {
 				if (interval != 0) {
 					sb.append(ALPHABET_FROM_G.substring(interval - 1, interval));
 				}
-				if (sb.charAt(sb.length()-1) == '.') {
+				if (sb.charAt(sb.length() - 1) == '.') {
 					sb.append("/");
 				}
 				return sb.toString();
@@ -278,7 +278,8 @@ public class NurimisakiSolver implements Solver {
 					}
 				}
 				// 解けるかな？
-				if (new NurimisakiSolverForGenerator(new NurimisakiSolver.Field(wkField), 300).solve2() == -1) {
+				level = new NurimisakiSolverForGenerator(new NurimisakiSolver.Field(wkField), 300).solve2();
+				if (level == -1) {
 					// 解けなければやり直し
 					wkField = new ExtendedField(height, width);
 					index = 0;
