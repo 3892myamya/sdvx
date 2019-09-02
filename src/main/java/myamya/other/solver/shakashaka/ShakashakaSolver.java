@@ -1,12 +1,344 @@
 package myamya.other.solver.shakashaka;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 import myamya.other.solver.Common.Difficulty;
+import myamya.other.solver.Common.GeneratorResult;
 import myamya.other.solver.Common.Masu;
 import myamya.other.solver.Common.Position;
 import myamya.other.solver.Common.Wall;
+import myamya.other.solver.Generator;
 import myamya.other.solver.Solver;
 
 public class ShakashakaSolver implements Solver {
+
+	public static class ShakashakaGenerator implements Generator {
+		static class ShakashakaSolverForGenerator extends ShakashakaSolver {
+			private final int limit;
+
+			public ShakashakaSolverForGenerator(Field field, int limit) {
+				super(field);
+				this.limit = limit;
+			}
+
+			public int solve2() {
+				while (!field.isSolved()) {
+					String befStr = field.getStateDump();
+					if (!field.solveAndCheck()) {
+						return -1;
+					}
+					int recursiveCnt = 0;
+					while (field.getStateDump().equals(befStr) && recursiveCnt < 3) {
+						if (!candSolve(field, recursiveCnt)) {
+							return -1;
+						}
+						recursiveCnt++;
+					}
+					if (recursiveCnt == 3 && field.getStateDump().equals(befStr)) {
+						return -1;
+					}
+				}
+				return count;
+			}
+
+			@Override
+			protected boolean candSolve(Field field, int recursive) {
+				if (this.count >= limit) {
+					return false;
+				} else {
+					return super.candSolve(field, recursive);
+				}
+			}
+		}
+
+		private final int height;
+		private final int width;
+
+		public ShakashakaGenerator(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		public static void main(String[] args) {
+			new ShakashakaGenerator(10, 10).generate();
+		}
+
+		private static final String FULL_NUMS = "０１２３４５６７８９";
+
+		@Override
+		public GeneratorResult generate() {
+			ShakashakaSolver.Field wkField = new ShakashakaSolver.Field(height, width);
+			List<Integer> indexList = new ArrayList<>();
+			for (int i = 0; i < height * width; i++) {
+				indexList.add(i);
+			}
+			Collections.shuffle(indexList);
+			int index = 0;
+			int level = 0;
+			long start = System.nanoTime();
+			while (true) {
+				// 問題生成部
+				while (!wkField.isSolved()) {
+					if (index >= height * width) {
+						// 稀にマスが埋まっても壁が埋まりきらないことがある。その場合は最初からやり直し。
+						wkField = new ShakashakaSolver.Field(height, width);
+						index = 0;
+						continue;
+					}
+					int yIndex = indexList.get(index) / width;
+					int xIndex = indexList.get(index) % width;
+					if (wkField.masu[yIndex][xIndex] == Masu.SPACE) {
+						boolean isOk = false;
+						List<Integer> numIdxList = new ArrayList<>();
+						for (int i = 0; i < 4; i++) {
+							numIdxList.add(i);
+						}
+						Collections.shuffle(numIdxList);
+						boolean isNotBlackTry = false;
+						for (int masuNum : numIdxList) {
+							ShakashakaSolver.Field virtual = new ShakashakaSolver.Field(wkField, true);
+							if (masuNum < 2 && !isNotBlackTry) {
+								virtual.masu[yIndex][xIndex] = Masu.NOT_BLACK;
+								isNotBlackTry = true;
+							} else if (masuNum < 3) {
+								virtual.masu[yIndex][xIndex] = Masu.BLACK;
+							} else if (masuNum < 4) {
+								virtual.numbers[yIndex][xIndex] = -1;
+								if (yIndex != 0) {
+									if (virtual.tateWall[yIndex - 1][xIndex] == Wall.NOT_EXISTS) {
+										continue;
+									}
+									virtual.tateWall[yIndex - 1][xIndex] = Wall.EXISTS;
+								}
+								if (xIndex != virtual.getXLength() - 1) {
+									if (virtual.yokoWall[yIndex][xIndex] == Wall.NOT_EXISTS) {
+										continue;
+									}
+									virtual.yokoWall[yIndex][xIndex] = Wall.EXISTS;
+								}
+								if (yIndex != virtual.getYLength() - 1) {
+									if (virtual.tateWall[yIndex][xIndex] == Wall.NOT_EXISTS) {
+										continue;
+									}
+									virtual.tateWall[yIndex][xIndex] = Wall.EXISTS;
+								}
+								if (xIndex != 0) {
+									if (virtual.yokoWall[yIndex][xIndex - 1] == Wall.NOT_EXISTS) {
+										continue;
+									}
+									virtual.yokoWall[yIndex][xIndex - 1] = Wall.EXISTS;
+								}
+							}
+							if (virtual.solveAndCheck()) {
+								isOk = true;
+								wkField.masu = virtual.masu;
+								wkField.numbers = virtual.numbers;
+								wkField.tateWall = virtual.tateWall;
+								wkField.yokoWall = virtual.yokoWall;
+								break;
+							}
+						}
+						if (!isOk) {
+							// 破綻したら0から作り直す。
+							wkField = new ShakashakaSolver.Field(height, width);
+							index = 0;
+							continue;
+						}
+					}
+					index++;
+				}
+				// 数字埋め＆マス初期化
+				// まず数字を埋める
+				List<Position> numberPosList = new ArrayList<>();
+				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+						if (wkField.numbers[yIndex][xIndex] != null) {
+							int whiteCnt = 0;
+							Masu masuUp = yIndex == 0 || wkField.numbers[yIndex - 1][xIndex] != null ? Masu.BLACK
+									: wkField.masu[yIndex - 1][xIndex];
+							Masu masuRight = xIndex == wkField.getXLength() - 1
+									|| wkField.numbers[yIndex][xIndex + 1] != null ? Masu.BLACK
+											: wkField.masu[yIndex][xIndex + 1];
+							Masu masuDown = yIndex == wkField.getYLength() - 1
+									|| wkField.numbers[yIndex + 1][xIndex] != null ? Masu.BLACK
+											: wkField.masu[yIndex + 1][xIndex];
+							Masu masuLeft = xIndex == 0 || wkField.numbers[yIndex][xIndex - 1] != null ? Masu.BLACK
+									: wkField.masu[yIndex][xIndex - 1];
+							if (masuUp == Masu.NOT_BLACK) {
+								whiteCnt++;
+							}
+							if (masuRight == Masu.NOT_BLACK) {
+								whiteCnt++;
+							}
+							if (masuDown == Masu.NOT_BLACK) {
+								whiteCnt++;
+							}
+							if (masuLeft == Masu.NOT_BLACK) {
+								whiteCnt++;
+							}
+							wkField.numbers[yIndex][xIndex] = whiteCnt;
+							numberPosList.add(new Position(yIndex, xIndex));
+						}
+					}
+				}
+				// マスを戻す
+				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+						if (wkField.numbers[yIndex][xIndex] == null) {
+							wkField.masu[yIndex][xIndex] = Masu.SPACE;
+							if (yIndex != 0) {
+								wkField.tateWall[yIndex - 1][xIndex] = Wall.SPACE;
+							}
+							if (xIndex != wkField.getXLength() - 1) {
+								wkField.yokoWall[yIndex][xIndex] = Wall.SPACE;
+							}
+							if (yIndex != wkField.getYLength() - 1) {
+								wkField.tateWall[yIndex][xIndex] = Wall.SPACE;
+							}
+							if (xIndex != 0) {
+								wkField.yokoWall[yIndex][xIndex - 1] = Wall.SPACE;
+							}
+						}
+					}
+				}
+				// 壁を初期化
+				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+						if (wkField.numbers[yIndex][xIndex] != null) {
+							if (yIndex != 0) {
+								wkField.tateWall[yIndex - 1][xIndex] = Wall.EXISTS;
+							}
+							if (xIndex != wkField.getXLength() - 1) {
+								wkField.yokoWall[yIndex][xIndex] = Wall.EXISTS;
+							}
+							if (yIndex != wkField.getYLength() - 1) {
+								wkField.tateWall[yIndex][xIndex] = Wall.EXISTS;
+							}
+							if (xIndex != 0) {
+								wkField.yokoWall[yIndex][xIndex - 1] = Wall.EXISTS;
+							}
+						}
+					}
+				}
+				// 解けるかな？
+				if (new ShakashakaSolverForGenerator(wkField, 150).solve2() == -1) {
+					// 解けなければやり直し
+					wkField = new ShakashakaSolver.Field(height, width);
+					index = 0;
+				} else {
+					// ヒントを限界まで減らす
+					Collections.shuffle(numberPosList);
+					for (Position numberPos : numberPosList) {
+						ShakashakaSolver.Field virtual = new ShakashakaSolver.Field(wkField, true);
+						virtual.numbers[numberPos.getyIndex()][numberPos.getxIndex()] = -1;
+						int solveResult = new ShakashakaSolverForGenerator(virtual, 200).solve2();
+						if (solveResult != -1) {
+							wkField.numbers[numberPos.getyIndex()][numberPos.getxIndex()] = -1;
+							level = solveResult;
+						}
+					}
+					break;
+				}
+			}
+			level = (int) Math.sqrt(level * 20 / 3) + 1;
+			String status = "Lv:" + level + "の問題を獲得！(数字/黒：" + wkField.getHintCount().split("/")[0] + "/"
+					+ wkField.getHintCount().split("/")[1] + ")";
+			String url = wkField.getPuzPreURL();
+			String link = "<a href=\"" + url + "\" target=\"_blank\">ぱずぷれv3で解く</a>";
+			StringBuilder sb = new StringBuilder();
+			int baseSize = 20;
+			int margin = 5;
+			sb.append(
+					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
+							+ "height=\"" + (wkField.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
+							+ (wkField.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+					if (wkField.getNumbers()[yIndex][xIndex] != null) {
+						sb.append("<rect y=\"" + (yIndex * baseSize + margin)
+								+ "\" x=\""
+								+ (xIndex * baseSize + baseSize)
+								+ "\" width=\""
+								+ (baseSize)
+								+ "\" height=\""
+								+ (baseSize)
+								+ "\">"
+								+ "</rect>");
+						if (wkField.getNumbers()[yIndex][xIndex] != -1) {
+							sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 5 + margin)
+									+ "\" x=\""
+									+ (xIndex * baseSize + baseSize + 2)
+									+ "\" fill=\""
+									+ "white"
+									+ "\" font-size=\""
+									+ (baseSize - 5)
+									+ "\" textLength=\""
+									+ (baseSize - 5)
+									+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+									+ FULL_NUMS.substring(wkField.getNumbers()[yIndex][xIndex],
+											wkField.getNumbers()[yIndex][xIndex] + 1)
+									+ "</text>");
+						}
+					}
+				}
+			}
+
+			// 横壁描画
+			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = -1; xIndex < wkField.getXLength(); xIndex++) {
+					boolean oneYokoWall = xIndex == -1 || xIndex == wkField.getXLength() - 1;
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + margin)
+							+ "\" x1=\""
+							+ (xIndex * baseSize + 2 * baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ (xIndex * baseSize + 2 * baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneYokoWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">"
+							+ "</line>");
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = -1; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+					boolean oneTateWall = yIndex == -1 || yIndex == wkField.getYLength() - 1;
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x1=\""
+							+ (xIndex * baseSize + baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ (xIndex * baseSize + baseSize + baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneTateWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">"
+							+ "</line>");
+				}
+			}
+			sb.append("</svg>");
+			System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
+			System.out.println(level);
+			System.out.println(wkField.getHintCount());
+			System.out.println(wkField);
+			return new GeneratorResult(status, sb.toString(), link, url, level, "");
+
+		}
+
+	}
 
 	public static class Field {
 		static final String ALPHABET = "abcde";
@@ -24,6 +356,99 @@ public class ShakashakaSolver implements Solver {
 
 		public Masu[][] getMasu() {
 			return masu;
+		}
+
+		public String getPuzPreURL() {
+			StringBuilder sb = new StringBuilder();
+			sb.append("http://pzv.jp/p.html?shakashaka/" + getXLength() + "/" + getYLength() + "/");
+			int interval = 0;
+			for (int i = 0; i < getYLength() * getXLength(); i++) {
+				int yIndex = i / getXLength();
+				int xIndex = i % getXLength();
+				if (numbers[yIndex][xIndex] == null) {
+					interval++;
+					if (interval == 20) {
+						sb.append("z");
+						interval = 0;
+					}
+				} else {
+					Integer num = numbers[yIndex][xIndex];
+					String numStr = null;
+					if (num == -1) {
+						numStr = ".";
+					} else {
+						Integer numP1 = null;
+						if (i + 1 < getYLength() * getXLength()) {
+							int yIndexP1 = (i + 1) / getXLength();
+							int xIndexP1 = (i + 1) % getXLength();
+							numP1 = numbers[yIndexP1][xIndexP1];
+						}
+						Integer numP2 = null;
+						if (numP1 == null && i + 2 < getYLength() * getXLength()) {
+							int yIndexP2 = (i + 2) / getXLength();
+							int xIndexP2 = (i + 2) % getXLength();
+							numP2 = numbers[yIndexP2][xIndexP2];
+						}
+						if (numP1 == null && numP2 == null) {
+							if (num == 0) {
+								numStr = "a";
+							} else if (num == 1) {
+								numStr = "b";
+							} else if (num == 2) {
+								numStr = "c";
+							} else if (num == 3) {
+								numStr = "d";
+							} else if (num == 4) {
+								numStr = "e";
+							}
+							i++;
+							i++;
+						} else if (numP1 == null) {
+							if (num == 0) {
+								numStr = "5";
+							} else if (num == 1) {
+								numStr = "6";
+							} else if (num == 2) {
+								numStr = "7";
+							} else if (num == 3) {
+								numStr = "8";
+							} else if (num == 4) {
+								numStr = "9";
+							}
+							i++;
+						} else {
+							numStr = String.valueOf(num);
+						}
+					}
+					if (interval == 0) {
+						sb.append(numStr);
+					} else {
+						sb.append(ALPHABET_FROM_G.substring(interval - 1, interval));
+						sb.append(numStr);
+						interval = 0;
+					}
+				}
+			}
+			if (interval != 0) {
+				sb.append(ALPHABET_FROM_G.substring(interval - 1, interval));
+			}
+			return sb.toString();
+		}
+
+		public String getHintCount() {
+			int kuroCnt = 0;
+			int numberCnt = 0;
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					if (numbers[yIndex][xIndex] != null) {
+						kuroCnt++;
+						if (numbers[yIndex][xIndex] != -1) {
+							numberCnt++;
+						}
+					}
+				}
+			}
+			return String.valueOf(numberCnt + "/" + kuroCnt);
 		}
 
 		public Integer[][] getNumbers() {
@@ -44,6 +469,31 @@ public class ShakashakaSolver implements Solver {
 
 		public int getXLength() {
 			return masu[0].length;
+		}
+
+		/**
+		 * プレーンなフィールド作成
+		 */
+		public Field(int height, int width) {
+			masu = new Masu[height][width];
+			numbers = new Integer[height][width];
+			yokoWall = new Wall[height][width - 1];
+			tateWall = new Wall[height - 1][width];
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					masu[yIndex][xIndex] = Masu.SPACE;
+				}
+			}
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength() - 1; xIndex++) {
+					yokoWall[yIndex][xIndex] = Wall.SPACE;
+				}
+			}
+			for (int yIndex = 0; yIndex < getYLength() - 1; yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					tateWall[yIndex][xIndex] = Wall.SPACE;
+				}
+			}
 		}
 
 		public Field(int height, int width, String param) {
@@ -128,6 +578,32 @@ public class ShakashakaSolver implements Solver {
 				}
 			}
 			numbers = other.numbers;
+			yokoWall = new Wall[other.getYLength()][other.getXLength() - 1];
+			tateWall = new Wall[other.getYLength() - 1][other.getXLength()];
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength() - 1; xIndex++) {
+					yokoWall[yIndex][xIndex] = other.yokoWall[yIndex][xIndex];
+				}
+			}
+			for (int yIndex = 0; yIndex < getYLength() - 1; yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					tateWall[yIndex][xIndex] = other.tateWall[yIndex][xIndex];
+				}
+			}
+		}
+
+		/**
+		 * numbersをイミュータブルにするためのコンストラクタ。flagはダミー
+		 */
+		public Field(Field other, boolean flag) {
+			masu = new Masu[other.getYLength()][other.getXLength()];
+			numbers = new Integer[other.getYLength()][other.getXLength()];
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					masu[yIndex][xIndex] = other.masu[yIndex][xIndex];
+					numbers[yIndex][xIndex] = other.numbers[yIndex][xIndex];
+				}
+			}
 			yokoWall = new Wall[other.getYLength()][other.getXLength() - 1];
 			tateWall = new Wall[other.getYLength() - 1][other.getXLength()];
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
@@ -592,11 +1068,15 @@ public class ShakashakaSolver implements Solver {
 
 	}
 
-	private final Field field;
-	private int count = 0;
+	protected final Field field;
+	protected int count = 0;
 
 	public ShakashakaSolver(int height, int width, String param) {
 		field = new Field(height, width, param);
+	}
+
+	public ShakashakaSolver(Field field) {
+		this.field = new Field(field);
 	}
 
 	public Field getField() {
@@ -643,7 +1123,7 @@ public class ShakashakaSolver implements Solver {
 	 * 仮置きして調べる
 	 * @param posSet
 	 */
-	private boolean candSolve(Field field, int recursive) {
+	protected boolean candSolve(Field field, int recursive) {
 		String str = field.getStateDump();
 		for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 			for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {

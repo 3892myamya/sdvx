@@ -286,4 +286,56 @@ public class Common {
 
 	}
 
+	public static class GeneratorResult {
+
+		private final String status;
+		private final String result;
+		private final String link;
+		private final String url;
+		private final int level;
+		private final String txt;
+
+		public GeneratorResult(String status) {
+			this.status = status;
+			result = "";
+			link = "";
+			url = "";
+			level = 0;
+			txt = "";
+		}
+
+		public GeneratorResult(String status, String result, String link, String url, int level, String txt) {
+			this.status = status;
+			this.result = result;
+			this.link = link;
+			this.url = url;
+			this.level = level;
+			this.txt = txt;
+		}
+
+		public String getStatus() {
+			return status;
+		}
+
+		public String getResult() {
+			return result;
+		}
+
+		public String getLink() {
+			return link;
+		}
+
+		public String getUrl() {
+			return url;
+		}
+
+		public int getLevel() {
+			return level;
+		}
+
+		public String getTxt() {
+			return txt;
+		}
+
+	}
 }

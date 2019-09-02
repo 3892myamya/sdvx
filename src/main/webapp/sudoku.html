@@ -11,14 +11,21 @@
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>数独ガチャ</title>
-    <meta name="keywords" content="数独, sudoku, ナンプレ, number place, 自動生成, ガチャ, ジェネレータ"/>
     <meta name="description" content="自動生成された数独の問題がゲットできるガチャです。あなたは高レベルのレア数独をゲットできるか？引いた問題はそのままぱずぷれv3さんで解くことが可能です。"/>
     <link rel="stylesheet" href="css/sudoku.css?ver=20190712"/>
     <script src="js/jquery-3.3.1.min.js"></script>
-    <script src="js/sudoku.js?ver=20190712"></script>
+    <script src="js/sudoku.js?ver=20190902"></script>
 </head>
 <body>
 <div id="div_title">数独ガチャ</div>
+<div>
+<label id="lbl_type" for="sel_type">ガチャの種類</label>
+<select id="sel_type" name="sel_type">
+	<option value="sudoku">数独ガチャ</option>
+	<option value="shakashaka">シャカシャカガチャ</option>
+	<option value="nurimisaki">ぬりみさきガチャ</option>
+</select>
+</div>
 <div>
 <label id="lbl_pattern" for="sel_pattern">問題の形</label>
 <select id="sel_pattern" name="sel_pattern">
@@ -30,6 +37,16 @@
 	<option value="5">／対称</option>
 	<option value="6">上下左右対称</option>
 	<option value="7">卍型</option>
+</select>
+<label id="lbl_size" for="sel_size">サイズ</label>
+<select id="sel_size" name="sel_size">
+	<option value="4">4 x 4</option>
+	<option value="5">5 x 5</option>
+	<option value="6">6 x 6</option>
+	<option value="7">7 x 7</option>
+	<option value="8">8 x 8</option>
+	<option value="9">9 x 9</option>
+	<option value="10">10 x 10</option>
 </select>
 </div>
 

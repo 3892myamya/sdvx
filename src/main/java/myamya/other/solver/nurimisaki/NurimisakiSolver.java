@@ -1,26 +1,409 @@
 package myamya.other.solver.nurimisaki;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import myamya.other.solver.Common.Difficulty;
 import myamya.other.solver.Common.Direction;
+import myamya.other.solver.Common.GeneratorResult;
 import myamya.other.solver.Common.Masu;
 import myamya.other.solver.Common.Position;
+import myamya.other.solver.Generator;
 import myamya.other.solver.Solver;
 
 public class NurimisakiSolver implements Solver {
+
+	public static class NurimisakiGenerator implements Generator {
+
+		static class NurimisakiSolverForGenerator extends NurimisakiSolver {
+
+			private final int limit;
+
+			public NurimisakiSolverForGenerator(Field field, int limit) {
+				super(field);
+				this.limit = limit;
+			}
+
+			public int solve2() {
+				while (!field.isSolved()) {
+					String befStr = field.getStateDump();
+					if (!field.solveAndCheck()) {
+						return -1;
+					}
+					int recursiveCnt = 0;
+					while (field.getStateDump().equals(befStr) && recursiveCnt < 3) {
+						if (!candSolve(field, recursiveCnt)) {
+							return -1;
+						}
+						recursiveCnt++;
+					}
+					if (recursiveCnt == 3 && field.getStateDump().equals(befStr)) {
+						return -1;
+					}
+				}
+				return count;
+			}
+
+			@Override
+			protected boolean candSolve(Field field, int recursive) {
+				if (this.count >= limit) {
+					return false;
+				} else {
+					return super.candSolve(field, recursive);
+				}
+			}
+		}
+
+		static class ExtendedField extends NurimisakiSolver.Field {
+			public ExtendedField(Field other) {
+				super(other);
+			}
+
+			public ExtendedField(int height, int width) {
+				super(height, width);
+			}
+
+			@Override
+			public boolean misakiSolve() {
+				// 岬があとから決まるので、ここではじいてしまうとダメ。
+				// 全通過させる
+				return true;
+			}
+
+			public String getHintCount() {
+				int misakiCnt = 0;
+				int numberCnt = 0;
+				for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+					for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+						if (misaki[yIndex][xIndex]) {
+							misakiCnt++;
+						}
+						if (numbers[yIndex][xIndex] != null) {
+							numberCnt++;
+						}
+					}
+				}
+				return String.valueOf(numberCnt + "/" + misakiCnt);
+			}
+
+			public String getPuzPreURL() {
+				StringBuilder sb = new StringBuilder();
+				sb.append("http://pzv.jp/p.html?nurimisaki/" + getXLength() + "/" + getYLength() + "/");
+				int interval = 0;
+				for (int i = 0; i < getYLength() * getXLength(); i++) {
+					int yIndex = i / getXLength();
+					int xIndex = i % getXLength();
+					if (!misaki[yIndex][xIndex] ) {
+						interval++;
+						if (interval == 20) {
+							sb.append("z");
+							interval = 0;
+						}
+					} else {
+						Integer num = numbers[yIndex][xIndex];
+						String numStr = null;
+						if (num == null) {
+							numStr = ".";
+						} else if (num == 10) {
+							// TODO 10マス以上に拡張するなら要修正
+							numStr = "a";
+						} else {
+							numStr = String.valueOf(num);
+						}
+						if (interval == 0) {
+							sb.append(numStr);
+						} else {
+							sb.append(ALPHABET_FROM_G.substring(interval - 1, interval));
+							sb.append(numStr);
+							interval = 0;
+						}
+					}
+				}
+				if (interval != 0) {
+					sb.append(ALPHABET_FROM_G.substring(interval - 1, interval));
+				}
+				return sb.toString();
+			}
+		}
+
+		private final int height;
+		private final int width;
+
+		public NurimisakiGenerator(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		public static void main(String[] args) {
+			new NurimisakiGenerator(10, 10).generate();
+		}
+
+		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
+		private static final String FULL_NUMS = "０１２３４５６７８９";
+
+		@Override
+		public GeneratorResult generate() {
+			ExtendedField wkField = new ExtendedField(height, width);
+			List<Integer> indexList = new ArrayList<>();
+			for (int i = 0; i < height * width; i++) {
+				indexList.add(i);
+			}
+			Collections.shuffle(indexList);
+			int index = 0;
+			int level = 0;
+			long start = System.nanoTime();
+			while (true) {
+				// 問題生成部
+				while (!wkField.isSolved()) {
+					int yIndex = indexList.get(index) / width;
+					int xIndex = indexList.get(index) % width;
+					if (wkField.masu[yIndex][xIndex] == Masu.SPACE) {
+						boolean isOk = false;
+						List<Integer> numIdxList = new ArrayList<>();
+						for (int i = 0; i < 3; i++) {
+							numIdxList.add(i);
+						}
+						Collections.shuffle(numIdxList);
+						boolean isNotBlackTry = false;
+						for (int masuNum : numIdxList) {
+							ExtendedField virtual = new ExtendedField(wkField);
+							if (masuNum < 2 && !isNotBlackTry) {
+								virtual.masu[yIndex][xIndex] = Masu.NOT_BLACK;
+								isNotBlackTry = true;
+							} else if (masuNum < 3) {
+								virtual.masu[yIndex][xIndex] = Masu.BLACK;
+							}
+							if (virtual.solveAndCheck()) {
+								isOk = true;
+								wkField.masu = virtual.masu;
+								break;
+							}
+						}
+						if (!isOk) {
+							// 破綻したら0から作り直す。
+							wkField = new ExtendedField(height, width);
+							index = 0;
+							continue;
+						}
+					}
+					index++;
+				}
+				// 数字＆岬埋め
+				List<Position> numberPosList = new ArrayList<>();
+				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+						if (wkField.masu[yIndex][xIndex] == Masu.NOT_BLACK) {
+							int blackCnt = 0;
+							int whiteCnt = 0;
+							Masu masuUp = yIndex == 0 ? Masu.BLACK
+									: wkField.masu[yIndex - 1][xIndex];
+							Masu masuRight = xIndex == wkField.getXLength() - 1
+									? Masu.BLACK
+									: wkField.masu[yIndex][xIndex + 1];
+							Masu masuDown = yIndex == wkField.getYLength() - 1
+									? Masu.BLACK
+									: wkField.masu[yIndex + 1][xIndex];
+							Masu masuLeft = xIndex == 0 ? Masu.BLACK
+									: wkField.masu[yIndex][xIndex - 1];
+							if (masuUp == Masu.BLACK) {
+								blackCnt++;
+							} else if (masuUp == Masu.NOT_BLACK) {
+								whiteCnt++;
+							}
+							if (masuRight == Masu.BLACK) {
+								blackCnt++;
+							} else if (masuRight == Masu.NOT_BLACK) {
+								whiteCnt++;
+							}
+							if (masuDown == Masu.BLACK) {
+								blackCnt++;
+							} else if (masuDown == Masu.NOT_BLACK) {
+								whiteCnt++;
+							}
+							if (masuLeft == Masu.BLACK) {
+								blackCnt++;
+							} else if (masuLeft == Masu.NOT_BLACK) {
+								whiteCnt++;
+							}
+							if (blackCnt == 3 && whiteCnt == 1) {
+								numberPosList.add(new Position(yIndex, xIndex));
+								wkField.misaki[yIndex][xIndex] = true;
+							}
+							if (wkField.misaki[yIndex][xIndex]) {
+								int upWhiteCnt = 0;
+								for (int targetY = yIndex - 1; targetY >= 0; targetY--) {
+									if (wkField.masu[targetY][xIndex] != Masu.NOT_BLACK) {
+										break;
+									}
+									upWhiteCnt++;
+								}
+								int rightWhiteCnt = 0;
+								for (int targetX = xIndex + 1; targetX < wkField.getXLength(); targetX++) {
+									if (wkField.masu[yIndex][targetX] != Masu.NOT_BLACK) {
+										break;
+									}
+									rightWhiteCnt++;
+								}
+								int downWhiteCnt = 0;
+								for (int targetY = yIndex + 1; targetY < wkField.getYLength(); targetY++) {
+									if (wkField.masu[targetY][xIndex] != Masu.NOT_BLACK) {
+										break;
+									}
+									downWhiteCnt++;
+								}
+								int leftWhiteCnt = 0;
+								for (int targetX = xIndex - 1; targetX >= 0; targetX--) {
+									if (wkField.masu[yIndex][targetX] != Masu.NOT_BLACK) {
+										break;
+									}
+									leftWhiteCnt++;
+								}
+								int aroundWhiteCnt = 1 + upWhiteCnt + rightWhiteCnt + downWhiteCnt + leftWhiteCnt;
+								wkField.numbers[yIndex][xIndex] = aroundWhiteCnt;
+							}
+						}
+					}
+				}
+				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+						if (!wkField.misaki[yIndex][xIndex]) {
+							wkField.masu[yIndex][xIndex] = Masu.SPACE;
+						}
+					}
+				}
+				// 解けるかな？
+				if (new NurimisakiSolverForGenerator(new NurimisakiSolver.Field(wkField), 300).solve2() == -1) {
+					// 解けなければやり直し
+					wkField = new ExtendedField(height, width);
+					index = 0;
+				} else {
+					// ヒントを限界まで減らす
+					Collections.shuffle(numberPosList);
+					for (Position numberPos : numberPosList) {
+						NurimisakiSolver.Field virtual = new NurimisakiSolver.Field(wkField, true);
+						virtual.numbers[numberPos.getyIndex()][numberPos.getxIndex()] = null;
+						int solveResult = new NurimisakiSolverForGenerator(virtual, 3000).solve2();
+						if (solveResult != -1) {
+							wkField.numbers[numberPos.getyIndex()][numberPos.getxIndex()] = null;
+							level = solveResult;
+						}
+					}
+					break;
+				}
+			}
+			level = (int) Math.sqrt(level) + 1;
+			String status = "Lv" + level + "の問題を獲得！(数字/岬：" + wkField.getHintCount().split("/")[0] + "/"
+					+ wkField.getHintCount().split("/")[1] + ")";
+			String url = wkField.getPuzPreURL();
+			String link = "<a href=\"" + url + "\" target=\"_blank\">ぱずぷれv3で解く</a>";
+			StringBuilder sb = new StringBuilder();
+			int baseSize = 20;
+			int margin = 5;
+			sb.append(
+					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
+							+ "height=\"" + (wkField.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
+							+ (wkField.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+					if (wkField.getMisaki()[yIndex][xIndex] || wkField.getNumbers()[yIndex][xIndex] != null) {
+						if (wkField.getMisaki()[yIndex][xIndex]) {
+							sb.append("<circle cy=\"" + (yIndex * baseSize + (baseSize / 2) + margin)
+									+ "\" cx=\""
+									+ (xIndex * baseSize + baseSize + (baseSize / 2))
+									+ "\" r=\""
+									+ (baseSize / 2 - 2)
+									+ "\" fill=\"white\", stroke=\"black\">"
+									+ "</circle>");
+						}
+						if (wkField.getNumbers()[yIndex][xIndex] != null) {
+							String numberStr = String.valueOf(wkField.getNumbers()[yIndex][xIndex]);
+							int numIdx = HALF_NUMS.indexOf(numberStr);
+							String masuStr = null;
+							if (numIdx >= 0) {
+								masuStr = FULL_NUMS.substring(numIdx / 2, numIdx / 2 + 1);
+							} else {
+								masuStr = numberStr;
+							}
+							sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 4 + margin)
+									+ "\" x=\""
+									+ (xIndex * baseSize + baseSize + 2)
+									+ "\" font-size=\""
+									+ (baseSize - 5)
+									+ "\" textLength=\""
+									+ (baseSize - 5)
+									+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+									+ masuStr
+									+ "</text>");
+						}
+					}
+				}
+			}
+			// 横壁描画
+			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = -1; xIndex < wkField.getXLength(); xIndex++) {
+					boolean oneYokoWall = xIndex == -1 || xIndex == wkField.getXLength() - 1;
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + margin)
+							+ "\" x1=\""
+							+ (xIndex * baseSize + 2 * baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ (xIndex * baseSize + 2 * baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneYokoWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">"
+							+ "</line>");
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = -1; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+					boolean oneTateWall = yIndex == -1 || yIndex == wkField.getYLength() - 1;
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x1=\""
+							+ (xIndex * baseSize + baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ (xIndex * baseSize + baseSize + baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneTateWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">"
+							+ "</line>");
+				}
+			}
+			sb.append("</svg>");
+			System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
+			System.out.println(level);
+			System.out.println(wkField.getHintCount());
+			System.out.println(wkField);
+			return new GeneratorResult(status, sb.toString(), link, url, level, "");
+		}
+	}
 
 	public static class Field {
 		static final String ALPHABET = "abcde";
 		static final String ALPHABET_FROM_G = "ghijklmnopqrstuvwxyz";
 
 		// マスの情報
-		private Masu[][] masu;
+		protected Masu[][] masu;
 		// 岬かどうか
-		private final boolean[][] misaki;
+		protected final boolean[][] misaki;
 		// 数字の情報
-		private final Integer[][] numbers;
+		protected final Integer[][] numbers;
 		// ぬりみさ木モード
 		private boolean tree;
 
@@ -42,6 +425,17 @@ public class NurimisakiSolver implements Solver {
 
 		public int getXLength() {
 			return masu[0].length;
+		}
+
+		public Field(int height, int width) {
+			masu = new Masu[height][width];
+			misaki = new boolean[height][width];
+			numbers = new Integer[height][width];
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					masu[yIndex][xIndex] = Masu.SPACE;
+				}
+			}
 		}
 
 		public Field(int height, int width, String param, boolean tree) {
@@ -101,6 +495,22 @@ public class NurimisakiSolver implements Solver {
 				}
 			}
 			numbers = other.numbers;
+			misaki = other.misaki;
+			tree = other.tree;
+		}
+
+		/**
+		 * numbersをイミュータブルにするためのコンストラクタ。flagはダミー
+		 */
+		public Field(Field other, boolean flag) {
+			masu = new Masu[other.getYLength()][other.getXLength()];
+			numbers = new Integer[other.getYLength()][other.getXLength()];
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					masu[yIndex][xIndex] = other.masu[yIndex][xIndex];
+					numbers[yIndex][xIndex] = other.numbers[yIndex][xIndex];
+				}
+			}
 			misaki = other.misaki;
 			tree = other.tree;
 		}
@@ -278,7 +688,7 @@ public class NurimisakiSolver implements Solver {
 		/**
 		 * 岬の周りは黒マス3個、岬でないマスかつ自身が白マスなら黒マス2個以下。
 		 */
-		private boolean misakiSolve() {
+		public boolean misakiSolve() {
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
 					int blackCnt = 0;
@@ -871,9 +1281,9 @@ public class NurimisakiSolver implements Solver {
 			if (!pondSolve()) {
 				return false;
 			}
-//			if (!exSolve()) {
-//				return false;
-//			}
+			//			if (!exSolve()) {
+			//				return false;
+			//			}
 			if (!getStateDump().equals(str)) {
 				return solveAndCheck();
 			} else {
@@ -981,11 +1391,15 @@ public class NurimisakiSolver implements Solver {
 
 	}
 
-	private final Field field;
-	private int count = 0;
+	protected final Field field;
+	protected int count = 0;
 
 	public NurimisakiSolver(int height, int width, String param, boolean tree) {
 		field = new Field(height, width, param, tree);
+	}
+
+	public NurimisakiSolver(Field field) {
+		this.field = new Field(field);
 	}
 
 	public Field getField() {
@@ -1031,7 +1445,7 @@ public class NurimisakiSolver implements Solver {
 	/**
 	 * 仮置きして調べる
 	 */
-	private boolean candSolve(Field field, int recursive) {
+	protected boolean candSolve(Field field, int recursive) {
 		String str = field.getStateDump();
 		for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 			for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {

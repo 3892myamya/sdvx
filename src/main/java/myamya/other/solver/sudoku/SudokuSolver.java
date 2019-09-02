@@ -7,13 +7,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import myamya.other.solver.Common.GeneratorResult;
 import myamya.other.solver.Common.Position;
+import myamya.other.solver.Generator;
 import myamya.other.solver.Solver;
-import myamya.other.solver.sudoku.SudokuGachaWeb.SudokuGeneratorResult;
 
 public class SudokuSolver implements Solver {
 
-	public static class SudokuGenerator {
+	public static class SudokuGenerator implements Generator {
 
 		enum HintPattern {
 			NONE(0, 81) {
@@ -193,7 +194,8 @@ public class SudokuSolver implements Solver {
 		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
 		private static final String FULL_NUMS = "０１２３４５６７８９";
 
-		public SudokuGeneratorResult generate() {
+		@Override
+		public GeneratorResult generate() {
 			HintPattern hintPattern = HintPattern.getByVal(pattern);
 			SudokuSolver.Field wkField = new SudokuSolver.Field(9, 9);
 			int index = 0;
@@ -255,8 +257,9 @@ public class SudokuSolver implements Solver {
 							}
 						}
 						int level = (int) Math.sqrt(count) - 10;
-						return  (level < 1 ? 1 : level);
+						return (level < 1 ? 1 : level);
 					}
+
 					@Override
 					protected boolean candSolve(Field field, int recursive) {
 						if (this.count >= 100000) {
@@ -277,7 +280,7 @@ public class SudokuSolver implements Solver {
 				}
 			}
 			Field field = new Field(wkField.numbersCand);
-			String status = "Lv:" + level + "の問題を獲得！(ヒント数" + field.getHintCount() + ")";
+			String status = "Lv" + level + "の問題を獲得！(ヒント数" + field.getHintCount() + ")";
 			String url = field.getPuzPreURL();
 			String link = "<a href=\"" + url + "\" target=\"_blank\">ぱずぷれv3で解く</a>";
 			StringBuilder sb = new StringBuilder();
@@ -358,10 +361,10 @@ public class SudokuSolver implements Solver {
 			sb.append("</svg>");
 			System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
 			System.out.println(level);
-			System.out.println(field.getHintCount() );
+			System.out.println(field.getHintCount());
 			System.out.println(field);
 			String txt = field.getTxt();
-			return new SudokuGeneratorResult(status, sb.toString(), link, url, level, txt);
+			return new GeneratorResult(status, sb.toString(), link, url, level, txt);
 
 		}
 
