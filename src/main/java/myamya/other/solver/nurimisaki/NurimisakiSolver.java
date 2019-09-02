@@ -125,6 +125,9 @@ public class NurimisakiSolver implements Solver {
 				if (interval != 0) {
 					sb.append(ALPHABET_FROM_G.substring(interval - 1, interval));
 				}
+				if (sb.charAt(sb.length()-1) == '.') {
+					sb.append("/");
+				}
 				return sb.toString();
 			}
 		}
