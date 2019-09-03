@@ -55,7 +55,6 @@ import myamya.other.solver.kakuro.KakuroSolver.Block;
 import myamya.other.solver.kropki.KropkiSolver;
 import myamya.other.solver.kurochute.KurochuteSolver;
 import myamya.other.solver.kurodoko.KurodokoSolver;
-import myamya.other.solver.kurodoko.KurodokoSolver.NumberMasu;
 import myamya.other.solver.lits.LitsSolver;
 import myamya.other.solver.loopsp.LoopspSolver;
 import myamya.other.solver.makaro.MakaroSolver;
@@ -987,6 +986,9 @@ public class SolverWeb extends HttpServlet {
 			return new AkariSolver(height, width, param);
 		}
 
+		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
+		private static final String FULL_NUMS = "０１２３４５６７８９";
+
 		@Override
 		public String makeCambus() {
 			StringBuilder sb = new StringBuilder();
@@ -998,8 +1000,7 @@ public class SolverWeb extends HttpServlet {
 							+ (field.getXLength() * baseSize + baseSize) + "\" >");
 			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
-					AkariSolver.Masu oneMasu = field.getMasu()[yIndex][xIndex];
-					if (oneMasu.isWall()) {
+					if (field.getNumbers()[yIndex][xIndex] != null) {
 						sb.append("<rect y=\"" + (yIndex * baseSize)
 								+ "\" x=\""
 								+ (xIndex * baseSize + baseSize)
@@ -1009,7 +1010,15 @@ public class SolverWeb extends HttpServlet {
 								+ (baseSize)
 								+ "\">"
 								+ "</rect>");
-						if (oneMasu.getCnt() != -1) {
+						if (field.getNumbers()[yIndex][xIndex] != 1) {
+							String numberStr = String.valueOf(field.getNumbers()[yIndex][xIndex]);
+							int index = HALF_NUMS.indexOf(numberStr);
+							String masuStr = null;
+							if (index >= 0) {
+								masuStr = FULL_NUMS.substring(index / 2, index / 2 + 1);
+							} else {
+								masuStr = numberStr;
+							}
 							sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 5)
 									+ "\" x=\""
 									+ (xIndex * baseSize + baseSize + 2)
@@ -1020,10 +1029,10 @@ public class SolverWeb extends HttpServlet {
 									+ "\" textLength=\""
 									+ (baseSize - 5)
 									+ "\" lengthAdjust=\"spacingAndGlyphs\">"
-									+ oneMasu.toString()
+									+ masuStr
 									+ "</text>");
 						}
-					} else if (oneMasu == AkariSolver.Masu.AKARI) {
+					} else if (field.getMasu()[yIndex][xIndex] == Masu.BLACK) {
 						sb.append("<circle cy=\"" + (yIndex * baseSize + (baseSize / 2))
 								+ "\" cx=\""
 								+ (xIndex * baseSize + baseSize + (baseSize / 2))
@@ -1040,7 +1049,7 @@ public class SolverWeb extends HttpServlet {
 								+ "\" textLength=\""
 								+ (baseSize - 2)
 								+ "\" lengthAdjust=\"spacingAndGlyphs\">"
-								+ oneMasu.toString()
+								+ field.getMasu()[yIndex][xIndex].toString()
 								+ "</text>");
 					}
 				}
@@ -1243,7 +1252,7 @@ public class SolverWeb extends HttpServlet {
 							+ (field.getXLength() * baseSize + baseSize) + "\" >");
 			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
-					KurodokoSolver.Masu oneMasu = field.getMasu()[yIndex][xIndex];
+					Masu oneMasu = field.getMasu()[yIndex][xIndex];
 					if (oneMasu.toString().equals("■")) {
 						sb.append("<rect y=\"" + (yIndex * baseSize)
 								+ "\" x=\""
@@ -1254,7 +1263,7 @@ public class SolverWeb extends HttpServlet {
 								+ (baseSize)
 								+ "\">"
 								+ "</rect>");
-					} else if (oneMasu instanceof NumberMasu) {
+					} else if (field.getNumbers()[yIndex][xIndex] != null) {
 						sb.append("<circle cy=\"" + (yIndex * baseSize + (baseSize / 2))
 								+ "\" cx=\""
 								+ (xIndex * baseSize + baseSize + (baseSize / 2))
@@ -1262,8 +1271,8 @@ public class SolverWeb extends HttpServlet {
 								+ (baseSize / 2 - 2)
 								+ "\" fill=\"white\", stroke=\"black\">"
 								+ "</circle>");
-						if (((NumberMasu) oneMasu).getCnt() != -1) {
-							String numberStr = String.valueOf(((NumberMasu) oneMasu).getCnt());
+						if (field.getNumbers()[yIndex][xIndex] != -1) {
+							String numberStr = String.valueOf(field.getNumbers()[yIndex][xIndex]);
 							int index = HALF_NUMS.indexOf(numberStr);
 							String masuStr = null;
 							if (index >= 0) {

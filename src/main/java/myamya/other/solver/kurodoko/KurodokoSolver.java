@@ -1,75 +1,286 @@
 package myamya.other.solver.kurodoko;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import myamya.other.solver.Common.Difficulty;
+import myamya.other.solver.Common.Direction;
+import myamya.other.solver.Common.GeneratorResult;
+import myamya.other.solver.Common.Masu;
 import myamya.other.solver.Common.Position;
+import myamya.other.solver.Generator;
 import myamya.other.solver.Solver;
 
 public class KurodokoSolver implements Solver {
 
-	public interface Masu {
-		boolean isNotBlack();
-	}
+	public static class KurodokoGenerator implements Generator {
 
-	public enum MasuImpl implements Masu {
-		SPACE("　", false), BLACK("■", false), NOT_BLACK("・", true);
+		static class KurodokoSolverForGenerator extends KurodokoSolver {
 
-		String str;
-		boolean isNotBlack;
+			private final int limit;
 
-		MasuImpl(String str, boolean isNotBlack) {
-			this.str = str;
-			this.isNotBlack = isNotBlack;
-		}
-
-		@Override
-		public String toString() {
-			return str;
-		}
-
-		@Override
-		public boolean isNotBlack() {
-			return isNotBlack;
-		}
-	}
-
-	public static class NumberMasu implements Masu {
-
-		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
-		private static final String FULL_NUMS = "○①②③④⑤⑥⑦⑧⑨";
-
-		private int cnt;
-
-		NumberMasu(int cnt) {
-			this.cnt = cnt;
-		}
-
-		@Override
-		public String toString() {
-			if (cnt == -1) {
-				return "○";
+			public KurodokoSolverForGenerator(Field field, int limit) {
+				super(field);
+				this.limit = limit;
 			}
-			if (cnt > 99) {
-				return "99";
+
+			public int solve2() {
+				while (!field.isSolved()) {
+					String befStr = field.getStateDump();
+					if (!field.solveAndCheck()) {
+						return -1;
+					}
+					int recursiveCnt = 0;
+					while (field.getStateDump().equals(befStr) && recursiveCnt < 3) {
+						if (!candSolve(field, recursiveCnt)) {
+							return -1;
+						}
+						recursiveCnt++;
+					}
+					if (recursiveCnt == 3 && field.getStateDump().equals(befStr)) {
+						return -1;
+					}
+				}
+				return count;
 			}
-			String capacityStr = String.valueOf(cnt);
-			int index = HALF_NUMS.indexOf(capacityStr);
-			if (index >= 0) {
-				return FULL_NUMS.substring(index / 2, index / 2 + 1);
-			} else {
-				return capacityStr;
+
+			@Override
+			protected boolean candSolve(Field field, int recursive) {
+				if (this.count >= limit) {
+					return false;
+				} else {
+					return super.candSolve(field, recursive);
+				}
 			}
 		}
 
-		@Override
-		public boolean isNotBlack() {
-			return true;
+		private final int height;
+		private final int width;
+
+		public KurodokoGenerator(int height, int width) {
+			this.height = height;
+			this.width = width;
 		}
 
-		public int getCnt() {
-			return cnt;
+		public static void main(String[] args) {
+			new KurodokoGenerator(10, 10).generate();
+		}
+
+		@Override
+		public GeneratorResult generate() {
+			KurodokoSolver.Field wkField = new KurodokoSolver.Field(height, width);
+			List<Integer> indexList = new ArrayList<>();
+			for (int i = 0; i < height * width; i++) {
+				indexList.add(i);
+			}
+			Collections.shuffle(indexList);
+			int index = 0;
+			int level = 0;
+			long start = System.nanoTime();
+			while (true) {
+				// 問題生成部
+				while (!wkField.isSolved()) {
+					int yIndex = indexList.get(index) / width;
+					int xIndex = indexList.get(index) % width;
+					if (wkField.masu[yIndex][xIndex] == Masu.SPACE) {
+						boolean isOk = false;
+						List<Integer> numIdxList = new ArrayList<>();
+						for (int i = 0; i < 2; i++) {
+							numIdxList.add(i);
+						}
+						Collections.shuffle(numIdxList);
+						for (int masuNum : numIdxList) {
+							KurodokoSolver.Field virtual = new KurodokoSolver.Field(wkField);
+							if (masuNum < 1) {
+								virtual.masu[yIndex][xIndex] = Masu.NOT_BLACK;
+							} else if (masuNum < 2) {
+								virtual.masu[yIndex][xIndex] = Masu.BLACK;
+							}
+							if (virtual.solveAndCheck()) {
+								isOk = true;
+								wkField.masu = virtual.masu;
+								break;
+							}
+						}
+						if (!isOk) {
+							// 破綻したら0から作り直す。
+							wkField = new KurodokoSolver.Field(height, width);
+							index = 0;
+							continue;
+						}
+					}
+					index++;
+				}
+				// 数字埋め
+				List<Position> numberPosList = new ArrayList<>();
+				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+						if (wkField.masu[yIndex][xIndex] == Masu.NOT_BLACK) {
+							int upWhiteCnt = 0;
+							for (int targetY = yIndex - 1; targetY >= 0; targetY--) {
+								if (wkField.masu[targetY][xIndex] != Masu.NOT_BLACK) {
+									break;
+								}
+								upWhiteCnt++;
+							}
+							int rightWhiteCnt = 0;
+							for (int targetX = xIndex + 1; targetX < wkField.getXLength(); targetX++) {
+								if (wkField.masu[yIndex][targetX] != Masu.NOT_BLACK) {
+									break;
+								}
+								rightWhiteCnt++;
+							}
+							int downWhiteCnt = 0;
+							for (int targetY = yIndex + 1; targetY < wkField.getYLength(); targetY++) {
+								if (wkField.masu[targetY][xIndex] != Masu.NOT_BLACK) {
+									break;
+								}
+								downWhiteCnt++;
+							}
+							int leftWhiteCnt = 0;
+							for (int targetX = xIndex - 1; targetX >= 0; targetX--) {
+								if (wkField.masu[yIndex][targetX] != Masu.NOT_BLACK) {
+									break;
+								}
+								leftWhiteCnt++;
+							}
+							int aroundWhiteCnt = 1 + upWhiteCnt + rightWhiteCnt + downWhiteCnt + leftWhiteCnt;
+							wkField.numbers[yIndex][xIndex] = aroundWhiteCnt;
+							numberPosList.add(new Position(yIndex, xIndex));
+						}
+					}
+				}
+				System.out.println(wkField);
+				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+						if (wkField.numbers[yIndex][xIndex] == null) {
+							wkField.masu[yIndex][xIndex] = Masu.SPACE;
+						}
+					}
+				}
+				// 解けるかな？
+				level = new KurodokoSolverForGenerator(new KurodokoSolver.Field(wkField), 500).solve2();
+				if (level == -1) {
+					// 解けなければやり直し
+					wkField = new KurodokoSolver.Field(height, width);
+					index = 0;
+				} else {
+					// ヒントを限界まで減らす
+					Collections.shuffle(numberPosList);
+					for (Position numberPos : numberPosList) {
+						KurodokoSolver.Field virtual = new KurodokoSolver.Field(wkField, true);
+						virtual.masu[numberPos.getyIndex()][numberPos.getxIndex()] = Masu.SPACE;
+						virtual.numbers[numberPos.getyIndex()][numberPos.getxIndex()] = null;
+						int solveResult = new KurodokoSolverForGenerator(virtual, 12000).solve2();
+						if (solveResult != -1) {
+							wkField.masu[numberPos.getyIndex()][numberPos.getxIndex()] = Masu.SPACE;
+							wkField.numbers[numberPos.getyIndex()][numberPos.getxIndex()] = null;
+							level = solveResult;
+						}
+					}
+					break;
+				}
+			}
+			level = (int) Math.sqrt(level) + 1;
+			String status = "Lv" + level + "の問題を獲得！(数字/岬：" + wkField.getHintCount().split("/")[0] + "/"
+					+ wkField.getHintCount().split("/")[1] + ")";
+			String url = wkField.getPuzPreURL();
+			String link = "<a href=\"" + url + "\" target=\"_blank\">ぱずぷれv3で解く</a>";
+			StringBuilder sb = new StringBuilder();
+			//			int baseSize = 20;
+			//			int margin = 5;
+			//			sb.append(
+			//					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
+			//							+ "height=\"" + (wkField.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
+			//							+ (wkField.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			//			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+			//				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+			//					if (wkField.getMisaki()[yIndex][xIndex] || wkField.getNumbers()[yIndex][xIndex] != null) {
+			//						if (wkField.getMisaki()[yIndex][xIndex]) {
+			//							sb.append("<circle cy=\"" + (yIndex * baseSize + (baseSize / 2) + margin)
+			//									+ "\" cx=\""
+			//									+ (xIndex * baseSize + baseSize + (baseSize / 2))
+			//									+ "\" r=\""
+			//									+ (baseSize / 2 - 2)
+			//									+ "\" fill=\"white\", stroke=\"black\">"
+			//									+ "</circle>");
+			//						}
+			//						if (wkField.getNumbers()[yIndex][xIndex] != null) {
+			//							String numberStr = String.valueOf(wkField.getNumbers()[yIndex][xIndex]);
+			//							int numIdx = HALF_NUMS.indexOf(numberStr);
+			//							String masuStr = null;
+			//							if (numIdx >= 0) {
+			//								masuStr = FULL_NUMS.substring(numIdx / 2, numIdx / 2 + 1);
+			//							} else {
+			//								masuStr = numberStr;
+			//							}
+			//							sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 4 + margin)
+			//									+ "\" x=\""
+			//									+ (xIndex * baseSize + baseSize + 2)
+			//									+ "\" font-size=\""
+			//									+ (baseSize - 5)
+			//									+ "\" textLength=\""
+			//									+ (baseSize - 5)
+			//									+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+			//									+ masuStr
+			//									+ "</text>");
+			//						}
+			//					}
+			//				}
+			//			}
+			//			// 横壁描画
+			//			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+			//				for (int xIndex = -1; xIndex < wkField.getXLength(); xIndex++) {
+			//					boolean oneYokoWall = xIndex == -1 || xIndex == wkField.getXLength() - 1;
+			//					sb.append("<line y1=\""
+			//							+ (yIndex * baseSize + margin)
+			//							+ "\" x1=\""
+			//							+ (xIndex * baseSize + 2 * baseSize)
+			//							+ "\" y2=\""
+			//							+ (yIndex * baseSize + baseSize + margin)
+			//							+ "\" x2=\""
+			//							+ (xIndex * baseSize + 2 * baseSize)
+			//							+ "\" stroke-width=\"1\" fill=\"none\"");
+			//					if (oneYokoWall) {
+			//						sb.append("stroke=\"#000\" ");
+			//					} else {
+			//						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+			//					}
+			//					sb.append(">"
+			//							+ "</line>");
+			//				}
+			//			}
+			//			// 縦壁描画
+			//			for (int yIndex = -1; yIndex < wkField.getYLength(); yIndex++) {
+			//				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+			//					boolean oneTateWall = yIndex == -1 || yIndex == wkField.getYLength() - 1;
+			//					sb.append("<line y1=\""
+			//							+ (yIndex * baseSize + baseSize + margin)
+			//							+ "\" x1=\""
+			//							+ (xIndex * baseSize + baseSize)
+			//							+ "\" y2=\""
+			//							+ (yIndex * baseSize + baseSize + margin)
+			//							+ "\" x2=\""
+			//							+ (xIndex * baseSize + baseSize + baseSize)
+			//							+ "\" stroke-width=\"1\" fill=\"none\"");
+			//					if (oneTateWall) {
+			//						sb.append("stroke=\"#000\" ");
+			//					} else {
+			//						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+			//					}
+			//					sb.append(">"
+			//							+ "</line>");
+			//				}
+			//			}
+			//			sb.append("</svg>");
+			System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
+			System.out.println(level);
+			System.out.println(wkField.getHintCount());
+			System.out.println(wkField);
+			return new GeneratorResult(status, sb.toString(), link, url, level, "");
 		}
 	}
 
@@ -78,9 +289,25 @@ public class KurodokoSolver implements Solver {
 
 		// マスの情報
 		private Masu[][] masu;
+		// 数字の情報
+		protected final Integer[][] numbers;
 
 		public Masu[][] getMasu() {
 			return masu;
+		}
+
+		public Integer[][] getNumbers() {
+			return numbers;
+		}
+
+		public String getPuzPreURL() {
+			// TODO 自動生成されたメソッド・スタブ
+			return null;
+		}
+
+		public String getHintCount() {
+			// TODO 自動生成されたメソッド・スタブ
+			return "1/1";
 		}
 
 		public int getYLength() {
@@ -91,11 +318,22 @@ public class KurodokoSolver implements Solver {
 			return masu[0].length;
 		}
 
-		public Field(int height, int width, String param) {
+		public Field(int height, int width) {
 			masu = new Masu[height][width];
+			numbers = new Integer[height][width];
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					masu[yIndex][xIndex] = MasuImpl.SPACE;
+					masu[yIndex][xIndex] = Masu.SPACE;
+				}
+			}
+		}
+
+		public Field(int height, int width, String param) {
+			masu = new Masu[height][width];
+			numbers = new Integer[height][width];
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					masu[yIndex][xIndex] = Masu.SPACE;
 				}
 			}
 			int index = 0;
@@ -103,7 +341,8 @@ public class KurodokoSolver implements Solver {
 				char ch = param.charAt(i);
 				Position pos = new Position(index / getXLength(), index % getXLength());
 				if (ch == '.') {
-					masu[pos.getyIndex()][pos.getxIndex()] = new NumberMasu(-1);
+					numbers[pos.getyIndex()][pos.getxIndex()] = -1;
+					masu[pos.getyIndex()][pos.getxIndex()] = Masu.NOT_BLACK;
 					index++;
 				} else {
 					int interval = ALPHABET_FROM_G.indexOf(ch);
@@ -127,7 +366,8 @@ public class KurodokoSolver implements Solver {
 						} else {
 							cnt = Integer.parseInt(String.valueOf(ch), 16);
 						}
-						masu[pos.getyIndex()][pos.getxIndex()] = new NumberMasu(cnt);
+						numbers[pos.getyIndex()][pos.getxIndex()] = cnt;
+						masu[pos.getyIndex()][pos.getxIndex()] = Masu.NOT_BLACK;
 						index++;
 					}
 				}
@@ -141,14 +381,46 @@ public class KurodokoSolver implements Solver {
 					masu[yIndex][xIndex] = other.masu[yIndex][xIndex];
 				}
 			}
+			numbers = other.numbers;
 		}
+
+		/**
+		 * numbersをイミュータブルにするためのコンストラクタ。flagはダミー
+		 */
+		public Field(Field other, boolean flag) {
+			masu = new Masu[other.getYLength()][other.getXLength()];
+			numbers = new Integer[other.getYLength()][other.getXLength()];
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					masu[yIndex][xIndex] = other.masu[yIndex][xIndex];
+					numbers[yIndex][xIndex] = other.numbers[yIndex][xIndex];
+				}
+			}
+		}
+
+		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
+		private static final String FULL_NUMS = "０１２３４５６７８９";
 
 		@Override
 		public String toString() {
 			StringBuilder sb = new StringBuilder();
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					sb.append(masu[yIndex][xIndex]);
+					if (numbers[yIndex][xIndex] != null) {
+						if (numbers[yIndex][xIndex] == -1) {
+							sb.append("○");
+						} else {
+							String capacityStr = String.valueOf(numbers[yIndex][xIndex]);
+							int index = HALF_NUMS.indexOf(capacityStr);
+							if (index >= 0) {
+								sb.append(FULL_NUMS.substring(index / 2, index / 2 + 1));
+							} else {
+								sb.append(capacityStr);
+							}
+						}
+					} else {
+						sb.append(masu[yIndex][xIndex]);
+					}
 				}
 				sb.append(System.lineSeparator());
 			}
@@ -166,80 +438,77 @@ public class KurodokoSolver implements Solver {
 		}
 
 		/**
-		 * 数字マスから自身+上下左右にそれぞれ何マス白マスを伸ばせる可能性があるか調べ、
-		 * ある3方向を足しても満たない場合、残る1方向の不足分を白マスにする。
-		 * 4方向を足しても数字が届かない場合falseを返す。
-		 *
+		 * 数字のマスから何マス伸ばせるか調べ、方向を確定する。
 		 */
-		public boolean limitSolve() {
+		public boolean numberSolve() {
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					if (masu[yIndex][xIndex] instanceof NumberMasu) {
-						NumberMasu oneMasu = (NumberMasu) masu[yIndex][xIndex];
-						if (oneMasu.getCnt() == -1) {
-							continue;
-						}
+					if (numbers[yIndex][xIndex] != null && numbers[yIndex][xIndex] != -1) {
 						int upSpaceCnt = 0;
 						for (int targetY = yIndex - 1; targetY >= 0; targetY--) {
-							if (masu[targetY][xIndex] == MasuImpl.BLACK) {
+							if (masu[targetY][xIndex] == Masu.BLACK) {
 								break;
 							}
 							upSpaceCnt++;
 						}
 						int rightSpaceCnt = 0;
 						for (int targetX = xIndex + 1; targetX < getXLength(); targetX++) {
-							if (masu[yIndex][targetX] == MasuImpl.BLACK) {
+							if (masu[yIndex][targetX] == Masu.BLACK) {
 								break;
 							}
 							rightSpaceCnt++;
 						}
 						int downSpaceCnt = 0;
 						for (int targetY = yIndex + 1; targetY < getYLength(); targetY++) {
-							if (masu[targetY][xIndex] == MasuImpl.BLACK) {
+							if (masu[targetY][xIndex] == Masu.BLACK) {
 								break;
 							}
 							downSpaceCnt++;
 						}
 						int leftSpaceCnt = 0;
 						for (int targetX = xIndex - 1; targetX >= 0; targetX--) {
-							if (masu[yIndex][targetX] == MasuImpl.BLACK) {
+							if (masu[yIndex][targetX] == Masu.BLACK) {
 								break;
 							}
 							leftSpaceCnt++;
 						}
 						int aroundSpaceCnt = 1 + upSpaceCnt + rightSpaceCnt + downSpaceCnt + leftSpaceCnt;
-						if (aroundSpaceCnt < oneMasu.getCnt()) {
+						if (aroundSpaceCnt < numbers[yIndex][xIndex]) {
 							return false;
 						} else {
-							int fixedWhiteUp = oneMasu.getCnt() - (1 + rightSpaceCnt + downSpaceCnt + leftSpaceCnt);
-							int fixedWhiteRight = oneMasu.getCnt() - (1 + upSpaceCnt + downSpaceCnt + leftSpaceCnt);
-							int fixedWhiteDown = oneMasu.getCnt() - (1 + upSpaceCnt + rightSpaceCnt + leftSpaceCnt);
-							int fixedWhitetLeft = oneMasu.getCnt() - (1 + upSpaceCnt + rightSpaceCnt + downSpaceCnt);
+							int fixedWhiteUp = numbers[yIndex][xIndex]
+									- (1 + rightSpaceCnt + downSpaceCnt + leftSpaceCnt);
+							int fixedWhiteRight = numbers[yIndex][xIndex]
+									- (1 + upSpaceCnt + downSpaceCnt + leftSpaceCnt);
+							int fixedWhiteDown = numbers[yIndex][xIndex]
+									- (1 + upSpaceCnt + rightSpaceCnt + leftSpaceCnt);
+							int fixedWhitetLeft = numbers[yIndex][xIndex]
+									- (1 + upSpaceCnt + rightSpaceCnt + downSpaceCnt);
 							if (fixedWhiteUp > 0) {
 								for (int i = 1; i <= fixedWhiteUp; i++) {
-									if (masu[yIndex - i][xIndex] == MasuImpl.SPACE) {
-										masu[yIndex - i][xIndex] = MasuImpl.NOT_BLACK;
+									if (masu[yIndex - i][xIndex] == Masu.SPACE) {
+										masu[yIndex - i][xIndex] = Masu.NOT_BLACK;
 									}
 								}
 							}
 							if (fixedWhiteRight > 0) {
 								for (int i = 1; i <= fixedWhiteRight; i++) {
-									if (masu[yIndex][xIndex + i] == MasuImpl.SPACE) {
-										masu[yIndex][xIndex + i] = MasuImpl.NOT_BLACK;
+									if (masu[yIndex][xIndex + i] == Masu.SPACE) {
+										masu[yIndex][xIndex + i] = Masu.NOT_BLACK;
 									}
 								}
 							}
 							if (fixedWhiteDown > 0) {
 								for (int i = 1; i <= fixedWhiteDown; i++) {
-									if (masu[yIndex + i][xIndex] == MasuImpl.SPACE) {
-										masu[yIndex + i][xIndex] = MasuImpl.NOT_BLACK;
+									if (masu[yIndex + i][xIndex] == Masu.SPACE) {
+										masu[yIndex + i][xIndex] = Masu.NOT_BLACK;
 									}
 								}
 							}
 							if (fixedWhitetLeft > 0) {
 								for (int i = 1; i <= fixedWhitetLeft; i++) {
-									if (masu[yIndex][xIndex - i] == MasuImpl.SPACE) {
-										masu[yIndex][xIndex - i] = MasuImpl.NOT_BLACK;
+									if (masu[yIndex][xIndex - i] == Masu.SPACE) {
+										masu[yIndex][xIndex - i] = Masu.NOT_BLACK;
 									}
 								}
 							}
@@ -247,65 +516,52 @@ public class KurodokoSolver implements Solver {
 					}
 				}
 			}
-			return true;
-		}
-
-		/**
-		 * 数字マスから自身+上下左右に存在する白確定マスが数字に等しければ、
-		 * 伸ばした先のマスを黒に確定する。
-		 * 白確定マスが数字をオーバーしている場合falseを返す。
-		 */
-		public boolean numberSolve() {
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					if (masu[yIndex][xIndex] instanceof NumberMasu) {
-						NumberMasu oneMasu = (NumberMasu) masu[yIndex][xIndex];
-						if (oneMasu.getCnt() == -1) {
-							continue;
-						}
+					if (numbers[yIndex][xIndex] != null && numbers[yIndex][xIndex] != -1) {
 						int upWhiteCnt = 0;
 						for (int targetY = yIndex - 1; targetY >= 0; targetY--) {
-							if (!masu[targetY][xIndex].isNotBlack()) {
+							if (masu[targetY][xIndex] != Masu.NOT_BLACK) {
 								break;
 							}
 							upWhiteCnt++;
 						}
 						int rightWhiteCnt = 0;
 						for (int targetX = xIndex + 1; targetX < getXLength(); targetX++) {
-							if (!masu[yIndex][targetX].isNotBlack()) {
+							if (masu[yIndex][targetX] != Masu.NOT_BLACK) {
 								break;
 							}
 							rightWhiteCnt++;
 						}
 						int downWhiteCnt = 0;
 						for (int targetY = yIndex + 1; targetY < getYLength(); targetY++) {
-							if (!masu[targetY][xIndex].isNotBlack()) {
+							if (masu[targetY][xIndex] != Masu.NOT_BLACK) {
 								break;
 							}
 							downWhiteCnt++;
 						}
 						int leftWhiteCnt = 0;
 						for (int targetX = xIndex - 1; targetX >= 0; targetX--) {
-							if (!masu[yIndex][targetX].isNotBlack()) {
+							if (masu[yIndex][targetX] != Masu.NOT_BLACK) {
 								break;
 							}
 							leftWhiteCnt++;
 						}
 						int aroundWhiteCnt = 1 + upWhiteCnt + rightWhiteCnt + downWhiteCnt + leftWhiteCnt;
-						if (aroundWhiteCnt > oneMasu.getCnt()) {
+						if (aroundWhiteCnt > numbers[yIndex][xIndex]) {
 							return false;
-						} else if (aroundWhiteCnt == oneMasu.getCnt()) {
+						} else if (aroundWhiteCnt == numbers[yIndex][xIndex]) {
 							if (yIndex - upWhiteCnt - 1 >= 0) {
-								masu[yIndex - upWhiteCnt - 1][xIndex] = MasuImpl.BLACK;
+								masu[yIndex - upWhiteCnt - 1][xIndex] = Masu.BLACK;
 							}
 							if (xIndex + rightWhiteCnt + 1 < getXLength()) {
-								masu[yIndex][xIndex + rightWhiteCnt + 1] = MasuImpl.BLACK;
+								masu[yIndex][xIndex + rightWhiteCnt + 1] = Masu.BLACK;
 							}
 							if (yIndex + downWhiteCnt + 1 < getYLength()) {
-								masu[yIndex + downWhiteCnt + 1][xIndex] = MasuImpl.BLACK;
+								masu[yIndex + downWhiteCnt + 1][xIndex] = Masu.BLACK;
 							}
 							if (xIndex - leftWhiteCnt - 1 >= 0) {
-								masu[yIndex][xIndex - leftWhiteCnt - 1] = MasuImpl.BLACK;
+								masu[yIndex][xIndex - leftWhiteCnt - 1] = Masu.BLACK;
 							}
 						}
 					}
@@ -321,26 +577,32 @@ public class KurodokoSolver implements Solver {
 		public boolean nextSolve() {
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					if (masu[yIndex][xIndex] == MasuImpl.BLACK) {
-						Masu masuUp = yIndex == 0 ? MasuImpl.NOT_BLACK : masu[yIndex - 1][xIndex];
-						Masu masuRight = xIndex == getXLength() - 1 ? MasuImpl.NOT_BLACK : masu[yIndex][xIndex + 1];
-						Masu masuDown = yIndex == getYLength() - 1 ? MasuImpl.NOT_BLACK : masu[yIndex + 1][xIndex];
-						Masu masuLeft = xIndex == 0 ? MasuImpl.NOT_BLACK : masu[yIndex][xIndex - 1];
-						if (masuUp == MasuImpl.BLACK || masuRight == MasuImpl.BLACK || masuDown == MasuImpl.BLACK
-								|| masuLeft == MasuImpl.BLACK) {
+					Masu masuUp = yIndex == 0 ? Masu.NOT_BLACK : masu[yIndex - 1][xIndex];
+					Masu masuRight = xIndex == getXLength() - 1 ? Masu.NOT_BLACK : masu[yIndex][xIndex + 1];
+					Masu masuDown = yIndex == getYLength() - 1 ? Masu.NOT_BLACK : masu[yIndex + 1][xIndex];
+					Masu masuLeft = xIndex == 0 ? Masu.NOT_BLACK : masu[yIndex][xIndex - 1];
+					if (masu[yIndex][xIndex] == Masu.SPACE) {
+						if (masuUp == Masu.BLACK || masuRight == Masu.BLACK || masuDown == Masu.BLACK
+								|| masuLeft == Masu.BLACK) {
+							masu[yIndex][xIndex] = Masu.NOT_BLACK;
+						}
+					}
+					if (masu[yIndex][xIndex] == Masu.BLACK) {
+						if (masuUp == Masu.BLACK || masuRight == Masu.BLACK || masuDown == Masu.BLACK
+								|| masuLeft == Masu.BLACK) {
 							return false;
 						}
-						if (masuUp == MasuImpl.SPACE) {
-							masu[yIndex - 1][xIndex] = MasuImpl.NOT_BLACK;
+						if (masuUp == Masu.SPACE) {
+							masu[yIndex - 1][xIndex] = Masu.NOT_BLACK;
 						}
-						if (masuRight == MasuImpl.SPACE) {
-							masu[yIndex][xIndex + 1] = MasuImpl.NOT_BLACK;
+						if (masuRight == Masu.SPACE) {
+							masu[yIndex][xIndex + 1] = Masu.NOT_BLACK;
 						}
-						if (masuDown == MasuImpl.SPACE) {
-							masu[yIndex + 1][xIndex] = MasuImpl.NOT_BLACK;
+						if (masuDown == Masu.SPACE) {
+							masu[yIndex + 1][xIndex] = Masu.NOT_BLACK;
 						}
-						if (masuLeft == MasuImpl.SPACE) {
-							masu[yIndex][xIndex - 1] = MasuImpl.NOT_BLACK;
+						if (masuLeft == Masu.SPACE) {
+							masu[yIndex][xIndex - 1] = Masu.NOT_BLACK;
 						}
 					}
 				}
@@ -349,66 +611,63 @@ public class KurodokoSolver implements Solver {
 		}
 
 		/**
-		 * 白マスが1つながりになっていない場合falseを返す。
+		 * 白マスがひとつながりにならない場合Falseを返す。
+		 * 今までのロジックより高速に動きます。
 		 */
 		public boolean connectSolve() {
 			Set<Position> whitePosSet = new HashSet<>();
-			Position typicalWhitePos = null;
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					if (masu[yIndex][xIndex] == MasuImpl.NOT_BLACK) {
+					if (masu[yIndex][xIndex] == Masu.NOT_BLACK) {
 						Position whitePos = new Position(yIndex, xIndex);
-						whitePosSet.add(whitePos);
-						if (typicalWhitePos == null) {
-							typicalWhitePos = whitePos;
+						if (whitePosSet.size() == 0) {
+							whitePosSet.add(whitePos);
+							setContinuePosSet(whitePos, whitePosSet, null);
+						} else {
+							if (!whitePosSet.contains(whitePos)) {
+								return false;
+							}
 						}
 					}
 				}
 			}
-			if (typicalWhitePos == null) {
-				return true;
-			} else {
-				Set<Position> continuePosSet = new HashSet<>();
-				setContinueWhitePosSet(typicalWhitePos, continuePosSet);
-				whitePosSet.removeAll(continuePosSet);
-				return whitePosSet.isEmpty();
-			}
+			return true;
 		}
 
 		/**
-		 * posを起点に上下左右に黒確定でないマスをつなげていく。壁は無視する。
+		 * posを起点に上下左右に黒確定でないマスを無制限につなげていく。
 		 */
-		private void setContinueWhitePosSet(Position pos, Set<Position> continuePosSet) {
-			if (pos.getyIndex() != 0) {
+		private void setContinuePosSet(Position pos, Set<Position> continuePosSet, Direction from) {
+			if (pos.getyIndex() != 0 && from != Direction.UP) {
 				Position nextPos = new Position(pos.getyIndex() - 1, pos.getxIndex());
 				if (!continuePosSet.contains(nextPos)
-						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != MasuImpl.BLACK) {
+						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.BLACK) {
 					continuePosSet.add(nextPos);
-					setContinueWhitePosSet(nextPos, continuePosSet);
+					setContinuePosSet(nextPos, continuePosSet, Direction.DOWN);
 				}
 			}
-			if (pos.getxIndex() != getXLength() - 1) {
+			if (pos.getxIndex() != getXLength() - 1 && from != Direction.RIGHT) {
 				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() + 1);
 				if (!continuePosSet.contains(nextPos)
-						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != MasuImpl.BLACK) {
+						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.BLACK) {
 					continuePosSet.add(nextPos);
-					setContinueWhitePosSet(nextPos, continuePosSet);
+					setContinuePosSet(nextPos, continuePosSet, Direction.LEFT);
 				}
 			}
-			if (pos.getyIndex() != getYLength() - 1) {
+			if (pos.getyIndex() != getYLength() - 1 && from != Direction.DOWN) {
 				Position nextPos = new Position(pos.getyIndex() + 1, pos.getxIndex());
 				if (!continuePosSet.contains(nextPos)
-						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != MasuImpl.BLACK) {
+						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.BLACK) {
 					continuePosSet.add(nextPos);
-					setContinueWhitePosSet(nextPos, continuePosSet);
+					setContinuePosSet(nextPos, continuePosSet, Direction.UP);
 				}
 			}
-			if (pos.getxIndex() != 0) {
+			if (pos.getxIndex() != 0 && from != Direction.LEFT) {
 				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() - 1);
 				if (!continuePosSet.contains(nextPos)
-						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != MasuImpl.BLACK) {
+						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.BLACK) {
 					continuePosSet.add(nextPos);
-					setContinueWhitePosSet(nextPos, continuePosSet);
+					setContinuePosSet(nextPos, continuePosSet, Direction.RIGHT);
 				}
 			}
 		}
@@ -418,17 +677,20 @@ public class KurodokoSolver implements Solver {
 		 * @param recursive
 		 */
 		private boolean solveAndCheck() {
-			if (!limitSolve()) {
-				return false;
-			}
+			String str = getStateDump();
 			if (!numberSolve()) {
 				return false;
 			}
 			if (!nextSolve()) {
 				return false;
 			}
-			if (!connectSolve()) {
-				return false;
+			if (!getStateDump().equals(str)) {
+				return solveAndCheck();
+			} else {
+				if (!connectSolve()) {
+					return false;
+				}
+
 			}
 			return true;
 		}
@@ -436,7 +698,7 @@ public class KurodokoSolver implements Solver {
 		public boolean isSolved() {
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					if (masu[yIndex][xIndex] == MasuImpl.SPACE) {
+					if (masu[yIndex][xIndex] == Masu.SPACE) {
 						return false;
 					}
 				}
@@ -446,10 +708,15 @@ public class KurodokoSolver implements Solver {
 
 	}
 
-	private final Field field;
+	protected final Field field;
+	protected int count = 0;
 
 	public KurodokoSolver(int height, int width, String param) {
 		field = new Field(height, width, param);
+	}
+
+	public KurodokoSolver(Field field) {
+		this.field = new Field(field);
 	}
 
 	public Field getField() {
@@ -467,18 +734,15 @@ public class KurodokoSolver implements Solver {
 
 	@Override
 	public String solve() {
-		int difficulty = 0;
 		long start = System.nanoTime();
 		while (!field.isSolved()) {
 			System.out.println(field);
 			String befStr = field.getStateDump();
-			if (!field.solveAndCheck()
-					|| (!befStr.equals(field.getStateDump()) && !field.solveAndCheck())) {
+			if (!field.solveAndCheck()) {
 				return "問題に矛盾がある可能性があります。途中経過を返します。";
 			}
 			int recursiveCnt = 0;
 			while (field.getStateDump().equals(befStr) && recursiveCnt < 3) {
-				difficulty = difficulty <= recursiveCnt ? recursiveCnt + 1 : difficulty;
 				if (!candSolve(field, recursiveCnt)) {
 					return "問題に矛盾がある可能性があります。途中経過を返します。";
 				}
@@ -488,24 +752,30 @@ public class KurodokoSolver implements Solver {
 				return "解けませんでした。途中経過を返します。";
 			}
 		}
-		System.out.println(((System.nanoTime() - start) / 1000000) +
-				"ms.");
-		System.out.println("難易度:" + difficulty);
+		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
+		System.out.println("難易度:" + (count * 5));
 		System.out.println(field);
 		return "解けました。推定難易度:"
-				+ Difficulty.getByVal(difficulty).toString();
+				+ Difficulty.getByCount(count * 5).toString();
 	}
 
 	/**
 	 * 仮置きして調べる
 	 */
-	private static boolean candSolve(Field field, int recursive) {
+	protected boolean candSolve(Field field, int recursive) {
+		String str = field.getStateDump();
 		for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 			for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
-				if (!oneCandSolve(field, yIndex, xIndex, recursive)) {
-					return false;
+				if (field.masu[yIndex][xIndex] == Masu.SPACE) {
+					count++;
+					if (!oneCandSolve(field, yIndex, xIndex, recursive)) {
+						return false;
+					}
 				}
 			}
+		}
+		if (!field.getStateDump().equals(str)) {
+			return candSolve(field, recursive);
 		}
 		return true;
 	}
@@ -513,34 +783,37 @@ public class KurodokoSolver implements Solver {
 	/**
 	 * 1つのマスに対する仮置き調査
 	 */
-	private static boolean oneCandSolve(Field field, int yIndex, int xIndex, int recursive) {
-		if (field.masu[yIndex][xIndex] == MasuImpl.SPACE) {
-			Field virtual = new Field(field);
-			virtual.masu[yIndex][xIndex] = MasuImpl.BLACK;
-			String befStr = virtual.getStateDump();
-			boolean allowBlack = virtual.solveAndCheck()
-					&& (befStr.equals(virtual.getStateDump()) || virtual.solveAndCheck());
-			if (allowBlack && recursive > 0) {
-				if (!candSolve(virtual, recursive - 1)) {
-					allowBlack = false;
-				}
+	private boolean oneCandSolve(Field field, int yIndex, int xIndex, int recursive) {
+		Field virtual = new Field(field);
+		virtual.masu[yIndex][xIndex] = Masu.BLACK;
+		boolean allowBlack = virtual.solveAndCheck();
+		if (allowBlack && recursive > 0) {
+			if (!candSolve(virtual, recursive - 1)) {
+				allowBlack = false;
 			}
-			Field virtual2 = new Field(field);
-			virtual2.masu[yIndex][xIndex] = MasuImpl.NOT_BLACK;
-			befStr = virtual2.getStateDump();
-			boolean allowNotBlack = virtual2.solveAndCheck()
-					&& (befStr.equals(virtual2.getStateDump()) || virtual2.solveAndCheck());
-			if (allowNotBlack && recursive > 0) {
-				if (!candSolve(virtual2, recursive - 1)) {
-					allowNotBlack = false;
-				}
+		}
+		Field virtual2 = new Field(field);
+		virtual2.masu[yIndex][xIndex] = Masu.NOT_BLACK;
+		boolean allowNotBlack = virtual2.solveAndCheck();
+		if (allowNotBlack && recursive > 0) {
+			if (!candSolve(virtual2, recursive - 1)) {
+				allowNotBlack = false;
 			}
-			if (!allowBlack && !allowNotBlack) {
-				return false;
-			} else if (!allowBlack) {
-				field.masu = virtual2.masu;
-			} else if (!allowNotBlack) {
-				field.masu = virtual.masu;
+		}
+		if (!allowBlack && !allowNotBlack) {
+			return false;
+		} else if (!allowBlack) {
+			field.masu = virtual2.masu;
+		} else if (!allowNotBlack) {
+			field.masu = virtual.masu;
+		} else {
+			// どちらにしても理論
+			for (int y = 0; y < field.getYLength(); y++) {
+				for (int x = 0; x < field.getXLength(); x++) {
+					if (virtual2.masu[y][x] == virtual.masu[y][x]) {
+						field.masu[y][x] = virtual.masu[y][x];
+					}
+				}
 			}
 		}
 		return true;
