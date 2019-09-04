@@ -1243,16 +1243,16 @@ public class NurimisakiSolver implements Solver {
 							misakiCnt++;
 						} else if (masu[yIndex][xIndex] == Masu.NOT_BLACK) {
 							int notBlackCnt = 0;
-							if (yIndex == 0 || masu[yIndex - 1][xIndex] == Masu.NOT_BLACK) {
+							if (yIndex != 0 && masu[yIndex - 1][xIndex] == Masu.NOT_BLACK) {
 								notBlackCnt++;
 							}
-							if (xIndex == getXLength() - 1 || masu[yIndex][xIndex + 1] == Masu.NOT_BLACK) {
+							if (xIndex != getXLength() - 1 && masu[yIndex][xIndex + 1] == Masu.NOT_BLACK) {
 								notBlackCnt++;
 							}
-							if (yIndex == getYLength() - 1 || masu[yIndex + 1][xIndex] == Masu.NOT_BLACK) {
+							if (yIndex != getYLength() - 1 && masu[yIndex + 1][xIndex] == Masu.NOT_BLACK) {
 								notBlackCnt++;
 							}
-							if (xIndex == 0 || masu[yIndex][xIndex - 1] == Masu.NOT_BLACK) {
+							if (xIndex != 0 && masu[yIndex][xIndex - 1] == Masu.NOT_BLACK) {
 								notBlackCnt++;
 							}
 							if (notBlackCnt > 2) {
@@ -1440,8 +1440,9 @@ public class NurimisakiSolver implements Solver {
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
 		System.out.println("難易度:" + (count * 3));
 		System.out.println(field);
+		int level = (int) Math.sqrt(count) + 1;
 		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count * 3).toString();
+				+ Difficulty.getByCount(count * 3).toString() + "(Lv:" + level + ")";
 	}
 
 	/**

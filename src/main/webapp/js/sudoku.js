@@ -12,8 +12,12 @@ $(function() {
         var param = {};
         param.type = $('#sel_type').val();
         param.pattern = $('#sel_pattern').val();
+        param.size = $('#sel_size').val();
         param.height = $('#sel_size').val();
         param.width = $('#sel_size').val();
+        // 条件をローカルストレージ保存
+        var cond = JSON.stringify(param);
+        localStorage.setItem('condsudoku', cond);
         $.ajax({
             url: 'SudokuGacha',
             type: 'POST',
@@ -58,10 +62,18 @@ $(function() {
         $('#tweetbtn').hide();
         $('#edt_if').hide();
     }
-    $('#sel_type').val('sudoku');
-    $('#sel_pattern').val(1);
-    $('#lbl_size').hide();
-    $('#sel_size').hide();
-    $('#tweetbtn').hide();
-    $('#edt_if').hide();
+    // 保存された条件があれば読みだす
+    var cond = localStorage.getItem('condsudoku');
+    var condObj = JSON.parse(cond);
+    if (condObj != null){
+        $('#sel_type').val(condObj.type);
+        $('#sel_pattern').val(condObj.pattern);
+        $('#sel_size').val(condObj.size);
+    } else {
+        // 初期条件。
+        $('#sel_type').val('sudoku');
+        $('#sel_pattern').val(1);
+        $('#sel_size').val(4);
+    }
+    showhide();
 });

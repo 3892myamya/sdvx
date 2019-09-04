@@ -12,6 +12,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import myamya.other.solver.Common.GeneratorResult;
+import myamya.other.solver.creek.CreekSolver.CreekGenerator;
+import myamya.other.solver.gokigen.GokigenSolver.GokigenGenerator;
 import myamya.other.solver.nurimisaki.NurimisakiSolver.NurimisakiGenerator;
 import myamya.other.solver.shakashaka.ShakashakaSolver.ShakashakaGenerator;
 import myamya.other.solver.sudoku.SudokuSolver.SudokuGenerator;
@@ -78,6 +80,38 @@ public class SudokuGachaWeb extends HttpServlet {
 
 	}
 
+	static class GokigenGeneratorThlead extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+
+		GokigenGeneratorThlead(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new GokigenGenerator(height, width);
+		}
+
+	}
+
+	static class CreekGeneratorThlead extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+
+		CreekGeneratorThlead(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new CreekGenerator(height, width);
+		}
+
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -89,16 +123,23 @@ public class SudokuGachaWeb extends HttpServlet {
 			if (type.equals("sudoku")) {
 				int pattern = Integer.parseInt(request.getParameter("pattern"));
 				t = new SudokuGeneratorThlead(pattern);
-			} else if (type.equals("nurimisaki")) {
-				int height = Integer.parseInt(request.getParameter("height"));
-				int width = Integer.parseInt(request.getParameter("width"));
-				t = new NurimisakiGeneratorThlead(height, width);
-			} else if (type.equals("shakashaka")) {
-				int height = Integer.parseInt(request.getParameter("height"));
-				int width = Integer.parseInt(request.getParameter("width"));
-				t = new ShakashakaGeneratorThlead(height, width);
 			} else {
-				throw new IllegalArgumentException();
+				int height = Integer.parseInt(request.getParameter("height"));
+				int width = Integer.parseInt(request.getParameter("width"));
+				if (height > 10 || width > 10) {
+					throw new IllegalArgumentException();
+				}
+				if (type.equals("nurimisaki")) {
+					t = new NurimisakiGeneratorThlead(height, width);
+				} else if (type.equals("shakashaka")) {
+					t = new ShakashakaGeneratorThlead(height, width);
+				} else if (type.equals("gokigen")) {
+					t = new GokigenGeneratorThlead(height, width);
+				} else if (type.equals("creek")) {
+					t = new CreekGeneratorThlead(height, width);
+				} else {
+					throw new IllegalArgumentException();
+				}
 			}
 			t.start();
 			t.join(28000);

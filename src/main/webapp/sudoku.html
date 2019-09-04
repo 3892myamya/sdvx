@@ -11,19 +11,21 @@
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>数独ガチャ</title>
-    <meta name="description" content="自動生成された数独の問題がゲットできるガチャです。あなたは高レベルのレア数独をゲットできるか？引いた問題はそのままぱずぷれv3さんで解くことが可能です。"/>
+    <meta name="description" content="ペンシルパズルガチャ(ペンパガチャ)は自動生成されたペンシルパズル(数独、他)の問題がゲットできるガチャです。引いた問題はぱずぷれv3さんで解くことが可能です。あなたは高レベルのレア問をゲットできるか？"/>
     <link rel="stylesheet" href="css/sudoku.css?ver=20190712"/>
     <script src="js/jquery-3.3.1.min.js"></script>
-    <script src="js/sudoku.js?ver=20190902"></script>
+    <script src="js/sudoku.js?ver=20190907"></script>
 </head>
 <body>
-<div id="div_title">数独ガチャ</div>
+<div id="div_title">ペンシルパズルガチャ<span style="font-size: xx-small;">(旧：数独ガチャ)</span></div>
 <div>
 <label id="lbl_type" for="sel_type">ガチャの種類</label>
 <select id="sel_type" name="sel_type">
 	<option value="sudoku">数独ガチャ</option>
 	<option value="shakashaka">シャカシャカガチャ</option>
 	<option value="nurimisaki">ぬりみさきガチャ</option>
+	<option value="gokigen">ごきげんななめガチャ</option>
+	<option value="creek">クリークガチャ</option>
 </select>
 </div>
 <div>
@@ -40,6 +42,7 @@
 </select>
 <label id="lbl_size" for="sel_size">サイズ</label>
 <select id="sel_size" name="sel_size">
+	<option value="3">3 x 3</option>
 	<option value="4">4 x 4</option>
 	<option value="5">5 x 5</option>
 	<option value="6">6 x 6</option>
@@ -60,7 +63,7 @@
 <div id="div_link">
 </div>
 <div id="div_tweet">
-<a id="tweetbtn" href="https://twitter.com/intent/tweet?hashtags=数独ガチャ&text=数独の問題がゲットできるガチャです。&tw_p=tweetbutton&url=https%3a%2f%2ft%2eco%2fGg5hFCjLwP" target="_blank" rel="nofollow">
+<a id="tweetbtn" href="https://twitter.com/intent/tweet?hashtags=ペンパガチャ&text=ペンシルパズルの問題がゲットできるガチャです。&tw_p=tweetbutton&url=https%3a%2f%2ft%2eco%2fGg5hFCjLwP" target="_blank" rel="nofollow">
 <img id="tweetpng" src="tweetbtn.png" width="80" height="20">
 </a>
 </div>

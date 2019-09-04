@@ -102,8 +102,6 @@ public class ShakashakaSolver implements Solver {
 							if (masuNum < 4 && !isNotBlackTry) {
 								virtual.masu[yIndex][xIndex] = Masu.NOT_BLACK;
 								isNotBlackTry = true;
-//							} else if (masuNum < 4) {
-//								virtual.masu[yIndex][xIndex] = Masu.BLACK;
 							} else if (masuNum < 5) {
 								virtual.numbers[yIndex][xIndex] = -1;
 								if (yIndex != 0) {
@@ -1119,8 +1117,9 @@ public class ShakashakaSolver implements Solver {
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
 		System.out.println("難易度:" + (count * 20));
 		System.out.println(field);
+		int level = (int) Math.sqrt(count * 20 / 3) + 1;
 		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count * 20).toString();
+				+ Difficulty.getByCount(count * 20).toString() + "(Lv:" + level + ")";
 	}
 
 	/**
