@@ -92,19 +92,19 @@ public class ShakashakaSolver implements Solver {
 					if (wkField.masu[yIndex][xIndex] == Masu.SPACE) {
 						boolean isOk = false;
 						List<Integer> numIdxList = new ArrayList<>();
-						for (int i = 0; i < 4; i++) {
+						for (int i = 0; i < 5; i++) {
 							numIdxList.add(i);
 						}
 						Collections.shuffle(numIdxList);
 						boolean isNotBlackTry = false;
 						for (int masuNum : numIdxList) {
 							ShakashakaSolver.Field virtual = new ShakashakaSolver.Field(wkField, true);
-							if (masuNum < 2 && !isNotBlackTry) {
+							if (masuNum < 4 && !isNotBlackTry) {
 								virtual.masu[yIndex][xIndex] = Masu.NOT_BLACK;
 								isNotBlackTry = true;
-							} else if (masuNum < 3) {
-								virtual.masu[yIndex][xIndex] = Masu.BLACK;
-							} else if (masuNum < 4) {
+//							} else if (masuNum < 4) {
+//								virtual.masu[yIndex][xIndex] = Masu.BLACK;
+							} else if (masuNum < 5) {
 								virtual.numbers[yIndex][xIndex] = -1;
 								if (yIndex != 0) {
 									if (virtual.tateWall[yIndex - 1][xIndex] == Wall.NOT_EXISTS) {
