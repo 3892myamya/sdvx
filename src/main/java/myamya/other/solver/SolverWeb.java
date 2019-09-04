@@ -1010,7 +1010,7 @@ public class SolverWeb extends HttpServlet {
 								+ (baseSize)
 								+ "\">"
 								+ "</rect>");
-						if (field.getNumbers()[yIndex][xIndex] != 1) {
+						if (field.getNumbers()[yIndex][xIndex] != -1) {
 							String numberStr = String.valueOf(field.getNumbers()[yIndex][xIndex]);
 							int index = HALF_NUMS.indexOf(numberStr);
 							String masuStr = null;

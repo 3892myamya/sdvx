@@ -166,17 +166,15 @@ public class NurimisakiSolver implements Solver {
 					if (wkField.masu[yIndex][xIndex] == Masu.SPACE) {
 						boolean isOk = false;
 						List<Integer> numIdxList = new ArrayList<>();
-						for (int i = 0; i < 3; i++) {
+						for (int i = 0; i < 2; i++) {
 							numIdxList.add(i);
 						}
 						Collections.shuffle(numIdxList);
-						boolean isNotBlackTry = false;
 						for (int masuNum : numIdxList) {
 							ExtendedField virtual = new ExtendedField(wkField);
-							if (masuNum < 2 && !isNotBlackTry) {
+							if (masuNum < 1) {
 								virtual.masu[yIndex][xIndex] = Masu.NOT_BLACK;
-								isNotBlackTry = true;
-							} else if (masuNum < 3) {
+							} else if (masuNum < 2) {
 								virtual.masu[yIndex][xIndex] = Masu.BLACK;
 							}
 							if (virtual.solveAndCheck()) {
