@@ -201,6 +201,13 @@ public class Common {
 		}
 
 		/**
+		 * 面積を返す
+		 */
+		public int getAreaSize() {
+			return (rightDown.getyIndex() - leftUp.getyIndex() + 1) * (rightDown.getxIndex() - leftUp.getxIndex() + 1);
+		}
+
+		/**
 		 * 自分とotherの領域がかぶっている場合trueを返す。
 		 */
 		public boolean isDuplicate(Sikaku other) {

@@ -2,12 +2,15 @@ package myamya.other.solver.tasquare;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 import myamya.other.solver.Common.Difficulty;
 import myamya.other.solver.Common.Direction;
 import myamya.other.solver.Common.Masu;
 import myamya.other.solver.Common.Position;
+import myamya.other.solver.Common.Sikaku;
 import myamya.other.solver.Solver;
 
 public class TasquareSolver implements Solver {
@@ -15,35 +18,27 @@ public class TasquareSolver implements Solver {
 	public static class Field {
 		static final String ALPHABET_FROM_G = "ghijklmnopqrstuvwxyz";
 
-		// マスの情報
-		private Masu[][] masu;
 		// 数字の情報
 		private final Integer[][] numbers;
-
-		public Masu[][] getMasu() {
-			return masu;
-		}
+		// 四角の配置の候補
+		private List<Sikaku> squareCand;
+		// 確定した四角候補
+		private List<Sikaku> squareFixed;
 
 		public Integer[][] getNumbers() {
 			return numbers;
 		}
 
 		public int getYLength() {
-			return masu.length;
+			return numbers.length;
 		}
 
 		public int getXLength() {
-			return masu[0].length;
+			return numbers[0].length;
 		}
 
 		public Field(int height, int width, String param) {
-			masu = new Masu[height][width];
 			numbers = new Integer[height][width];
-			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
-				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					masu[yIndex][xIndex] = Masu.SPACE;
-				}
-			}
 			int index = 0;
 			for (int i = 0; i < param.length(); i++) {
 				char ch = param.charAt(i);
@@ -56,7 +51,6 @@ public class TasquareSolver implements Solver {
 					int capacity;
 					if (ch == '.') {
 						Position pos = new Position(index / getXLength(), index % getXLength());
-						masu[pos.getyIndex()][pos.getxIndex()] = Masu.NOT_BLACK;
 						numbers[pos.getyIndex()][pos.getxIndex()] = -1;
 					} else {
 						if (ch == '-') {
@@ -74,22 +68,55 @@ public class TasquareSolver implements Solver {
 							capacity = Integer.parseInt(String.valueOf(ch), 16);
 						}
 						Position pos = new Position(index / getXLength(), index % getXLength());
-						masu[pos.getyIndex()][pos.getxIndex()] = Masu.NOT_BLACK;
 						numbers[pos.getyIndex()][pos.getxIndex()] = capacity;
 					}
 					index++;
+				}
+			}
+			squareCand = new ArrayList<>();
+			squareFixed = new ArrayList<>();
+			// 部屋の切り方の候補をあらかじめ決めておき、その候補を順次減らす方法を取る。
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					for (int ySize = 1; ySize <= getYLength(); ySize++) {
+						for (int xSize = 1; xSize <= getXLength(); xSize++) {
+							if (ySize != xSize) {
+								continue;
+							}
+							int maxY = yIndex + ySize > getYLength() ? getYLength() - ySize : yIndex;
+							int maxX = xIndex + xSize > getXLength() ? getXLength() - xSize : xIndex;
+							for (int y = yIndex; y <= maxY; y++) {
+								for (int x = xIndex; x <= maxX; x++) {
+									Sikaku sikaku = new Sikaku(new Position(y, x),
+											new Position(y + ySize - 1, x + xSize - 1));
+									boolean addSikaku = true;
+									// 他の部屋のpivotが含まれる候補をあらかじめ除外する。
+									outer: for (int otherY = 0; otherY < getYLength(); otherY++) {
+										for (int otherX = 0; otherX < getXLength(); otherX++) {
+											if (numbers[otherY][otherX] != null) {
+												Position otherPos = new Position(otherY, otherX);
+												if (sikaku.isDuplicate(otherPos)) {
+													addSikaku = false;
+													break outer;
+												}
+											}
+										}
+									}
+									if (addSikaku) {
+										squareCand.add(sikaku);
+									}
+								}
+							}
+						}
+					}
 				}
 			}
 		}
 
 		public Field(Field other) {
 			numbers = other.numbers;
-			masu = new Masu[other.getYLength()][other.getXLength()];
-			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
-				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					masu[yIndex][xIndex] = other.masu[yIndex][xIndex];
-				}
-			}
+			squareCand = new ArrayList<>(other.squareCand);
+			squareFixed = new ArrayList<>(other.squareFixed);
 		}
 
 		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
@@ -104,7 +131,7 @@ public class TasquareSolver implements Solver {
 						if (numbers[yIndex][xIndex] > 99) {
 							sb.append("99");
 						} else if (numbers[yIndex][xIndex] == -1) {
-							sb.append("？");
+							sb.append("□");
 						} else {
 							String capacityStr = String.valueOf(numbers[yIndex][xIndex]);
 							int index = HALF_NUMS.indexOf(capacityStr);
@@ -115,7 +142,24 @@ public class TasquareSolver implements Solver {
 							}
 						}
 					} else {
-						sb.append(masu[yIndex][xIndex]);
+						boolean found = false;
+						for (Sikaku square : squareFixed) {
+							if (square.isDuplicate(new Position(yIndex, xIndex))) {
+								found = true;
+								break;
+							}
+						}
+						if (found) {
+							sb.append("■");
+						} else {
+							for (Sikaku square : squareCand) {
+								if (square.isDuplicate(new Position(yIndex, xIndex))) {
+									found = true;
+									break;
+								}
+							}
+							sb.append(found ? "　" : "・");
+						}
 					}
 				}
 				sb.append(System.lineSeparator());
@@ -125,11 +169,7 @@ public class TasquareSolver implements Solver {
 
 		public String getStateDump() {
 			StringBuilder sb = new StringBuilder();
-			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
-				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					sb.append(masu[yIndex][xIndex]);
-				}
-			}
+			sb.append(squareFixed.size() + ":" + squareCand.size());
 			return sb.toString();
 		}
 
@@ -138,10 +178,10 @@ public class TasquareSolver implements Solver {
 		 */
 		private boolean solveAndCheck() {
 			String str = getStateDump();
-			if (!countSolve()) {
+			if (!sikakuSolve()) {
 				return false;
 			}
-			if (!squareSolve()) {
+			if (!countSolve()) {
 				return false;
 			}
 			if (!connectSolve()) {
@@ -154,23 +194,93 @@ public class TasquareSolver implements Solver {
 		}
 
 		/**
-		 * 白マスの前後左右にある連結黒マスおよび黒マス候補の数をカウントする。
-		 * 超過や不足が確定したらfalseを返す。
+		 * 確定した四角がある場合、それとかぶる・接する候補を消す。
+		 */
+		private boolean sikakuSolve() {
+			for (Sikaku fixed : squareFixed) {
+				Sikaku removeSikaku1 = new Sikaku(
+						new Position(fixed.getLeftUp().getyIndex() - 1, fixed.getLeftUp().getxIndex()),
+						new Position(fixed.getRightDown().getyIndex() + 1, fixed.getRightDown().getxIndex()));
+				Sikaku removeSikaku2 = new Sikaku(
+						new Position(fixed.getLeftUp().getyIndex(), fixed.getLeftUp().getxIndex() - 1),
+						new Position(fixed.getRightDown().getyIndex(), fixed.getRightDown().getxIndex() + 1));
+				for (Iterator<Sikaku> iterator = squareCand.iterator(); iterator.hasNext();) {
+					Sikaku sikaku = iterator.next();
+					if (sikaku.isDuplicate(removeSikaku1) || sikaku.isDuplicate(removeSikaku2)) {
+						iterator.remove();
+					}
+				}
+			}
+			return true;
+		}
+
+		/**
+		 * 四角を配置して数字の条件を満たせるかを調査する。
+		 * 満たせない場合falseを返す。
 		 */
 		private boolean countSolve() {
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
 					if (numbers[yIndex][xIndex] != null) {
-						Position pivot = new Position(yIndex, xIndex);
-						if (!setContinueNotWhitePosSet(pivot,
-								numbers[yIndex][xIndex] == -1 ? 1 : numbers[yIndex][xIndex])) {
-							// サイズ不足
+						int num = numbers[yIndex][xIndex];
+						int fixCnt = 0;
+						for (Sikaku fixed : squareFixed) {
+							if (fixed.isDuplicate(new Position(yIndex - 1, xIndex)) ||
+									fixed.isDuplicate(new Position(yIndex + 1, xIndex)) ||
+									fixed.isDuplicate(new Position(yIndex, xIndex - 1)) ||
+									fixed.isDuplicate(new Position(yIndex, xIndex + 1))) {
+								fixCnt = fixCnt + fixed.getAreaSize();
+							}
+						}
+						if (num != -1 && num < fixCnt) {
 							return false;
 						}
-						if (numbers[yIndex][xIndex] != -1) {
-							Set<Position> continueBlackPosSet = new HashSet<>();
-							if (!setContinueBlackPosSet(pivot, continueBlackPosSet, numbers[yIndex][xIndex], null)) {
-								// サイズ超過
+						if (num == -1 && 0 < fixCnt) {
+							continue;
+						}
+						Set<Integer> upCand = new HashSet<>();
+						upCand.add(0);
+						Set<Integer> rightCand = new HashSet<>();
+						rightCand.add(0);
+						Set<Integer> downCand = new HashSet<>();
+						downCand.add(0);
+						Set<Integer> leftCand = new HashSet<>();
+						leftCand.add(0);
+						for (Sikaku cand : squareCand) {
+							if (cand.isDuplicate(new Position(yIndex - 1, xIndex))) {
+								upCand.add(cand.getAreaSize());
+							}
+							if (cand.isDuplicate(new Position(yIndex, xIndex + 1))) {
+								rightCand.add(cand.getAreaSize());
+							}
+							if (cand.isDuplicate(new Position(yIndex + 1, xIndex))) {
+								downCand.add(cand.getAreaSize());
+							}
+							if (cand.isDuplicate(new Position(yIndex, xIndex - 1))) {
+								leftCand.add(cand.getAreaSize());
+							}
+						}
+						if (num != -1) {
+							boolean isOk = false;
+							// TODO 4重for文(笑)
+							outer: for (Integer up : upCand) {
+								for (Integer right : rightCand) {
+									for (Integer down : downCand) {
+										for (Integer left : leftCand) {
+											if (fixCnt + up + right + down + left == num) {
+												isOk = true;
+												break outer;
+											}
+										}
+									}
+								}
+							}
+							if (!isOk) {
+								return false;
+							}
+						} else {
+							if (upCand.size() == 1 && rightCand.size() == 1 && downCand.size() == 1
+									&& leftCand.size() == 1) {
 								return false;
 							}
 						}
@@ -181,310 +291,39 @@ public class TasquareSolver implements Solver {
 		}
 
 		/**
-		 * 黒マスは正方形になるように配置する。
-		 * 正方形にできなかった場合はfalseを返す。
+		 * 候補情報からマスを復元する
 		 */
-		public boolean squareSolve() {
-			Set<Position> whitePosSet = new HashSet<>();
+		public Masu[][] getMasu() {
+			Masu[][] masu = new Masu[getYLength()][getXLength()];
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					if (masu[yIndex][xIndex] == Masu.BLACK) {
-						whitePosSet.add(new Position(yIndex, xIndex));
-					}
+					masu[yIndex][xIndex] = Masu.NOT_BLACK;
 				}
 			}
-			while (!whitePosSet.isEmpty()) {
-				Position typicalWhitePos = new ArrayList<>(whitePosSet).get(0);
-				Set<Position> continuePosSet = new HashSet<>();
-				continuePosSet.add(typicalWhitePos);
-				setContinueBlackPosSet(typicalWhitePos, continuePosSet, 999, null);
-				int minY = getYLength() - 1;
-				int maxY = 0;
-				int minX = getXLength() - 1;
-				int maxX = 0;
-				for (Position pos : continuePosSet) {
-					if (pos.getyIndex() < minY) {
-						minY = pos.getyIndex();
-					}
-					if (pos.getyIndex() > maxY) {
-						maxY = pos.getyIndex();
-					}
-					if (pos.getxIndex() < minX) {
-						minX = pos.getxIndex();
-					}
-					if (pos.getxIndex() > maxX) {
-						maxX = pos.getxIndex();
-					}
-				}
-				for (int yIndex = minY; yIndex <= maxY; yIndex++) {
-					for (int xIndex = minX; xIndex <= maxX; xIndex++) {
-						if (masu[yIndex][xIndex] == Masu.NOT_BLACK) {
-							return false;
-						}
+			for (Sikaku fixed : squareFixed) {
+				for (int yIndex = fixed.getLeftUp().getyIndex(); yIndex <= fixed.getRightDown().getyIndex(); yIndex++) {
+					for (int xIndex = fixed.getLeftUp().getxIndex(); xIndex <= fixed.getRightDown()
+							.getxIndex(); xIndex++) {
 						masu[yIndex][xIndex] = Masu.BLACK;
 					}
 				}
-				int ySize = maxY - minY + 1;
-				int xSize = maxX - minX + 1;
-				if (ySize > xSize) {
-					int minCandX = 0;
-					int maxCandX = getXLength() - 1;
-					for (int candY = minY; candY <= maxY; candY++) {
-						int targetX = minX;
-						while (targetX - 1 >= 0 && masu[candY][targetX - 1] != Masu.NOT_BLACK) {
-							targetX--;
-						}
-						if (minCandX < targetX) {
-							minCandX = targetX;
-						}
-						targetX = maxX;
-						while (targetX + 1 < getXLength() && masu[candY][targetX + 1] != Masu.NOT_BLACK) {
-							targetX++;
-						}
-						if (maxCandX > targetX) {
-							maxCandX = targetX;
-						}
-						if (ySize > maxCandX - minCandX + 1) {
-							// 正方形にできない
-							return false;
-						}
-					}
-				} else if (ySize < xSize) {
-					int minCandY = 0;
-					int maxCandY = getXLength() - 1;
-					for (int candX = minX; candX <= maxX; candX++) {
-						int targetY = minY;
-						while (targetY - 1 >= 0 && masu[targetY - 1][candX] != Masu.NOT_BLACK) {
-							targetY--;
-						}
-						if (minCandY < targetY) {
-							minCandY = targetY;
-						}
-						targetY = maxY;
-						while (targetY + 1 < getYLength() && masu[targetY + 1][candX] != Masu.NOT_BLACK) {
-							targetY++;
-						}
-						if (maxCandY > targetY) {
-							maxCandY = targetY;
-						}
-						if (xSize > maxCandY - minCandY + 1) {
-							// 正方形にできない
-							return false;
-						}
-					}
-				}
-				whitePosSet.removeAll(continuePosSet);
 			}
-			return true;
-		}
-
-		/**
-		 * posを起点に上下左右に白確定でないマスをつなげていく。
-		 * sizeが不足しないと分かった時点でtrueを返す。
-		 */
-		private boolean setContinueNotWhitePosSet(Position pos, int size) {
-			int maxSize = 0;
-			int upCnt = 0;
-			int adjust = 1;
-			while (pos.getyIndex() - adjust >= 0) {
-				if (masu[pos.getyIndex() - adjust][pos.getxIndex()] == Masu.NOT_BLACK) {
-					break;
-				}
-				// 膨らませ調査
-				int minX = 0;
-				int maxX = getXLength() - 1;
-				for (int candY = pos.getyIndex() - adjust; candY <= pos.getyIndex() - 1; candY++) {
-					int candX = pos.getxIndex();
-					while (candX - 1 >= 0 && masu[candY][candX - 1] != Masu.NOT_BLACK) {
-						candX--;
-					}
-					if (minX < candX) {
-						minX = candX;
-					}
-					candX = pos.getxIndex();
-					while (candX + 1 < getXLength() && masu[candY][candX + 1] != Masu.NOT_BLACK) {
-						candX++;
-					}
-					if (maxX > candX) {
-						maxX = candX;
-					}
-				}
-				if (maxX - minX + 1 < adjust) {
-					break;
-				}
-				upCnt++;
-				adjust++;
-			}
-			maxSize = maxSize + upCnt * upCnt;
-			if (maxSize >= size) {
-				return true;
-			}
-
-			int rightCnt = 0;
-			adjust = 1;
-			while (pos.getxIndex() + adjust < getXLength()) {
-				if (masu[pos.getyIndex()][pos.getxIndex() + adjust] == Masu.NOT_BLACK) {
-					break;
-				}
-				// 膨らませ調査
-				int minY = 0;
-				int maxY = getYLength() - 1;
-				for (int candX = pos.getxIndex() + adjust; candX <= pos.getxIndex() + 1; candX++) {
-					int candY = pos.getyIndex();
-					while (candY - 1 >= 0 && masu[candY - 1][candX] != Masu.NOT_BLACK) {
-						candY--;
-					}
-					if (minY < candY) {
-						minY = candY;
-					}
-					candY = pos.getyIndex();
-					while (candY + 1 < getYLength() && masu[candY + 1][candX] != Masu.NOT_BLACK) {
-						candY++;
-					}
-					if (maxY > candY) {
-						maxY = candY;
-					}
-				}
-				if (maxY - minY + 1 < adjust) {
-					break;
-				}
-				rightCnt++;
-				adjust++;
-			}
-			maxSize = maxSize + rightCnt * rightCnt;
-			if (maxSize >= size) {
-				return true;
-			}
-
-			int downCnt = 0;
-			adjust = 1;
-			while (pos.getyIndex() + adjust < getYLength()) {
-				if (masu[pos.getyIndex() + adjust][pos.getxIndex()] == Masu.NOT_BLACK) {
-					break;
-				}
-				// 膨らませ調査
-				int minX = 0;
-				int maxX = getXLength() - 1;
-				for (int candY = pos.getyIndex() + adjust; candY <= pos.getyIndex() + 1; candY++) {
-					int candX = pos.getxIndex();
-					while (candX - 1 >= 0 && masu[candY][candX - 1] != Masu.NOT_BLACK) {
-						candX--;
-					}
-					if (minX < candX) {
-						minX = candX;
-					}
-					candX = pos.getxIndex();
-					while (candX + 1 < getXLength() && masu[candY][candX + 1] != Masu.NOT_BLACK) {
-						candX++;
-					}
-					if (maxX > candX) {
-						maxX = candX;
-					}
-				}
-				if (maxX - minX + 1 < adjust) {
-					break;
-				}
-				downCnt++;
-				adjust++;
-			}
-			maxSize = maxSize + downCnt * downCnt;
-			if (maxSize >= size) {
-				return true;
-			}
-
-			int leftCnt = 0;
-			adjust = 1;
-			while (pos.getxIndex() - adjust >= 0) {
-				if (masu[pos.getyIndex()][pos.getxIndex() - adjust] == Masu.NOT_BLACK) {
-					break;
-				}
-				// 膨らませ調査
-				int minY = 0;
-				int maxY = getYLength() - 1;
-				for (int candX = pos.getxIndex() + adjust; candX <= pos.getxIndex() - 1; candX++) {
-					int candY = pos.getyIndex();
-					while (candY - 1 >= 0 && masu[candY - 1][candX] != Masu.NOT_BLACK) {
-						candY--;
-					}
-					if (minY < candY) {
-						minY = candY;
-					}
-					candY = pos.getyIndex();
-					while (candY + 1 < getYLength() && masu[candY + 1][candX] != Masu.NOT_BLACK) {
-						candY++;
-					}
-					if (maxY > candY) {
-						maxY = candY;
-					}
-				}
-				if (maxY - minY + 1 < adjust) {
-					break;
-				}
-				leftCnt++;
-				adjust++;
-			}
-			maxSize = maxSize + leftCnt * leftCnt;
-			if (maxSize >= size) {
-				return true;
-			}
-			return false;
-		}
-
-		/**
-		 * posを起点に上下左右に黒確定マスをつなげていく。
-		 * sizeが超過すると分かった時点でfalseを返す。
-		 */
-		private boolean setContinueBlackPosSet(Position pos, Set<Position> continuePosSet, int size, Direction from) {
-			if (continuePosSet.size() > size) {
-				return false;
-			}
-			if (pos.getyIndex() != 0 && from != Direction.UP) {
-				Position nextPos = new Position(pos.getyIndex() - 1, pos.getxIndex());
-				if (masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.BLACK
-						&& !continuePosSet.contains(nextPos)) {
-					continuePosSet.add(nextPos);
-					if (!setContinueBlackPosSet(nextPos, continuePosSet, size, Direction.DOWN)) {
-						return false;
+			for (Sikaku cand : squareCand) {
+				for (int yIndex = cand.getLeftUp().getyIndex(); yIndex <= cand.getRightDown().getyIndex(); yIndex++) {
+					for (int xIndex = cand.getLeftUp().getxIndex(); xIndex <= cand.getRightDown()
+							.getxIndex(); xIndex++) {
+						masu[yIndex][xIndex] = Masu.SPACE;
 					}
 				}
 			}
-			if (pos.getxIndex() != getXLength() - 1 && from != Direction.RIGHT) {
-				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() + 1);
-				if (masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.BLACK
-						&& !continuePosSet.contains(nextPos)) {
-					continuePosSet.add(nextPos);
-					if (!setContinueBlackPosSet(nextPos, continuePosSet, size, Direction.LEFT)) {
-						return false;
-					}
-				}
-			}
-			if (pos.getyIndex() != getYLength() - 1 && from != Direction.DOWN) {
-				Position nextPos = new Position(pos.getyIndex() + 1, pos.getxIndex());
-				if (masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.BLACK
-						&& !continuePosSet.contains(nextPos)) {
-					continuePosSet.add(nextPos);
-					if (!setContinueBlackPosSet(nextPos, continuePosSet, size, Direction.UP)) {
-						return false;
-					}
-				}
-			}
-			if (pos.getxIndex() != 0 && from != Direction.LEFT) {
-				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() - 1);
-				if (masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.BLACK
-						&& !continuePosSet.contains(nextPos)) {
-					continuePosSet.add(nextPos);
-					if (!setContinueBlackPosSet(nextPos, continuePosSet, size, Direction.RIGHT)) {
-						return false;
-					}
-				}
-			}
-			return true;
+			return masu;
 		}
 
 		/**
 		 * 白マスがひとつながりにならない場合Falseを返す。
 		 */
 		public boolean connectSolve() {
+			Masu[][] masu = getMasu();
 			Set<Position> whitePosSet = new HashSet<>();
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
@@ -492,7 +331,7 @@ public class TasquareSolver implements Solver {
 						Position whitePos = new Position(yIndex, xIndex);
 						if (whitePosSet.size() == 0) {
 							whitePosSet.add(whitePos);
-							setContinuePosSet(whitePos, whitePosSet, null);
+							setContinuePosSet(masu, whitePos, whitePosSet, null);
 						} else {
 							if (!whitePosSet.contains(whitePos)) {
 								return false;
@@ -507,13 +346,13 @@ public class TasquareSolver implements Solver {
 		/**
 		 * posを起点に上下左右に黒確定でないマスを無制限につなげていく。
 		 */
-		private void setContinuePosSet(Position pos, Set<Position> continuePosSet, Direction from) {
+		private void setContinuePosSet(Masu[][] masu, Position pos, Set<Position> continuePosSet, Direction from) {
 			if (pos.getyIndex() != 0 && from != Direction.UP) {
 				Position nextPos = new Position(pos.getyIndex() - 1, pos.getxIndex());
 				if (!continuePosSet.contains(nextPos)
 						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.BLACK) {
 					continuePosSet.add(nextPos);
-					setContinuePosSet(nextPos, continuePosSet, Direction.DOWN);
+					setContinuePosSet(masu, nextPos, continuePosSet, Direction.DOWN);
 				}
 			}
 			if (pos.getxIndex() != getXLength() - 1 && from != Direction.RIGHT) {
@@ -521,7 +360,7 @@ public class TasquareSolver implements Solver {
 				if (!continuePosSet.contains(nextPos)
 						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.BLACK) {
 					continuePosSet.add(nextPos);
-					setContinuePosSet(nextPos, continuePosSet, Direction.LEFT);
+					setContinuePosSet(masu, nextPos, continuePosSet, Direction.LEFT);
 				}
 			}
 			if (pos.getyIndex() != getYLength() - 1 && from != Direction.DOWN) {
@@ -529,7 +368,7 @@ public class TasquareSolver implements Solver {
 				if (!continuePosSet.contains(nextPos)
 						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.BLACK) {
 					continuePosSet.add(nextPos);
-					setContinuePosSet(nextPos, continuePosSet, Direction.UP);
+					setContinuePosSet(masu, nextPos, continuePosSet, Direction.UP);
 				}
 			}
 			if (pos.getxIndex() != 0 && from != Direction.LEFT) {
@@ -537,46 +376,13 @@ public class TasquareSolver implements Solver {
 				if (!continuePosSet.contains(nextPos)
 						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.BLACK) {
 					continuePosSet.add(nextPos);
-					setContinuePosSet(nextPos, continuePosSet, Direction.RIGHT);
+					setContinuePosSet(masu, nextPos, continuePosSet, Direction.RIGHT);
 				}
 			}
 		}
 
 		public boolean isSolved() {
-			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
-				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					if (masu[yIndex][xIndex] == Masu.SPACE) {
-						return false;
-					}
-				}
-			}
-			return solveAndCheck();
-		}
-
-	}
-
-	public static class Room {
-		@Override
-		public String toString() {
-			return "Room [capacity=" + capacity + ", pivot=" + pivot + "]";
-		}
-
-		// 白マスが何マスあるか。
-		private final int capacity;
-		// 部屋に属するマスの集合
-		private final Position pivot;
-
-		public Room(int capacity, Position pivot) {
-			this.capacity = capacity;
-			this.pivot = pivot;
-		}
-
-		public int getCapacity() {
-			return capacity;
-		}
-
-		public Position getPivot() {
-			return pivot;
+			return squareCand.size() == 0 && solveAndCheck();
 		}
 
 	}
@@ -630,53 +436,41 @@ public class TasquareSolver implements Solver {
 
 	/**
 	 * 仮置きして調べる
+	 * @param posSet
 	 */
 	private boolean candSolve(Field field, int recursive) {
-		System.out.println(field);
-		String str = field.getStateDump();
-		for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
-			for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
-				if (field.masu[yIndex][xIndex] == Masu.SPACE) {
-					count++;
-					if (!oneCandSolve(field, yIndex, xIndex, recursive)) {
-						return false;
-					}
+		for (Iterator<Sikaku> iterator = field.squareCand.iterator(); iterator
+				.hasNext();) {
+			count++;
+			Sikaku oneCand = iterator.next();
+			Field virtual = new Field(field);
+			virtual.squareCand.remove(oneCand);
+			virtual.squareFixed.add(oneCand);
+			boolean allowBlack = virtual.solveAndCheck();
+			if (allowBlack && recursive > 0) {
+				if (!candSolve(virtual, recursive - 1)) {
+					allowBlack = false;
 				}
 			}
-		}
-		if (!field.getStateDump().equals(str)) {
-			return candSolve(field, recursive);
+			Field virtual2 = new Field(field);
+			virtual2.squareCand.remove(oneCand);
+			boolean allowNotBlack = virtual2.solveAndCheck();
+			if (allowNotBlack && recursive > 0) {
+				if (!candSolve(virtual2, recursive - 1)) {
+					allowNotBlack = false;
+				}
+			}
+			if (!allowBlack && !allowNotBlack) {
+				return false;
+			} else if (!allowBlack) {
+				field.squareCand = virtual2.squareCand;
+				field.squareFixed = virtual2.squareFixed;
+			} else if (!allowNotBlack) {
+				field.squareCand = virtual.squareCand;
+				field.squareFixed = virtual.squareFixed;
+			}
 		}
 		return true;
 	}
 
-	/**
-	 * 1つのマスに対する仮置き調査
-	 */
-	private boolean oneCandSolve(Field field, int yIndex, int xIndex, int recursive) {
-		Field virtual = new Field(field);
-		virtual.masu[yIndex][xIndex] = Masu.BLACK;
-		boolean allowBlack = virtual.solveAndCheck();
-		if (allowBlack && recursive > 0) {
-			if (!candSolve(virtual, recursive - 1)) {
-				allowBlack = false;
-			}
-		}
-		Field virtual2 = new Field(field);
-		virtual2.masu[yIndex][xIndex] = Masu.NOT_BLACK;
-		boolean allowNotBlack = virtual2.solveAndCheck();
-		if (allowNotBlack && recursive > 0) {
-			if (!candSolve(virtual2, recursive - 1)) {
-				allowNotBlack = false;
-			}
-		}
-		if (!allowBlack && !allowNotBlack) {
-			return false;
-		} else if (!allowBlack) {
-			field.masu = virtual2.masu;
-		} else if (!allowNotBlack) {
-			field.masu = virtual.masu;
-		}
-		return true;
-	}
 }
