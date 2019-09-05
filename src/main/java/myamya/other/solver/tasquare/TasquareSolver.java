@@ -1,6 +1,7 @@
 package myamya.other.solver.tasquare;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -8,12 +9,269 @@ import java.util.Set;
 
 import myamya.other.solver.Common.Difficulty;
 import myamya.other.solver.Common.Direction;
+import myamya.other.solver.Common.GeneratorResult;
 import myamya.other.solver.Common.Masu;
 import myamya.other.solver.Common.Position;
 import myamya.other.solver.Common.Sikaku;
+import myamya.other.solver.Generator;
 import myamya.other.solver.Solver;
 
 public class TasquareSolver implements Solver {
+
+	public static class TasquareGenerator implements Generator {
+
+		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
+		private static final String FULL_NUMS = "０１２３４５６７８９";
+
+		static class TasquareSolverForGenerator extends TasquareSolver {
+			private final int limit;
+
+			public TasquareSolverForGenerator(Field field, int limit) {
+				super(field);
+				this.limit = limit;
+			}
+
+			public int solve2() {
+				while (!field.isSolved()) {
+					String befStr = field.getStateDump();
+					if (!field.solveAndCheck()) {
+						return -1;
+					}
+					int recursiveCnt = 0;
+					while (field.getStateDump().equals(befStr) && recursiveCnt < 3) {
+						if (!candSolve(field, recursiveCnt)) {
+							return -1;
+						}
+						recursiveCnt++;
+					}
+					if (recursiveCnt == 3 && field.getStateDump().equals(befStr)) {
+						return -1;
+					}
+				}
+				return count;
+			}
+
+			@Override
+			protected boolean candSolve(Field field, int recursive) {
+				if (this.count >= limit) {
+					return false;
+				} else {
+					return super.candSolve(field, recursive);
+				}
+			}
+		}
+
+		private final int height;
+		private final int width;
+
+		public TasquareGenerator(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		public static void main(String[] args) {
+			new TasquareGenerator(10, 10).generate();
+		}
+
+		@Override
+		public GeneratorResult generate() {
+			TasquareSolver.Field wkField = new TasquareSolver.Field(height, width);
+			List<Integer> indexList = new ArrayList<>();
+			List<Sikaku> useCand = new ArrayList<>(wkField.squareCand);
+			for (int i = 0; i < useCand.size(); i++) {
+				indexList.add(i);
+			}
+			Collections.shuffle(indexList);
+			int index = 0;
+			int level = 0;
+			long start = System.nanoTime();
+			while (true) {
+				// 問題生成部
+				while (!wkField.isSolved()) {
+					Sikaku oneCand = useCand.get(index);
+					if (wkField.squareCand.contains(oneCand)) {
+						boolean isOk = false;
+						List<Integer> numIdxList = new ArrayList<>();
+						for (int i = 0; i < 2; i++) {
+							numIdxList.add(i);
+						}
+						Collections.shuffle(numIdxList);
+						for (int masuNum : numIdxList) {
+							TasquareSolver.Field virtual = new TasquareSolver.Field(wkField, true);
+							if (masuNum < 1) {
+								virtual.squareCand.remove(oneCand);
+							} else if (masuNum < 2) {
+								virtual.squareCand.remove(oneCand);
+								virtual.squareFixed.add(oneCand);
+							}
+							if (virtual.solveAndCheck()) {
+								isOk = true;
+								wkField.squareCand = virtual.squareCand;
+								wkField.squareFixed = virtual.squareFixed;
+								break;
+							}
+						}
+						if (!isOk) {
+							// 破綻したら0から作り直す。
+							wkField = new TasquareSolver.Field(height, width);
+							index = 0;
+							continue;
+						}
+					}
+					index++;
+				}
+				// 数字埋め＆マス初期化
+				// まず数字を埋める
+				List<Position> numberPosList = new ArrayList<>();
+				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+						Position pos = new Position(yIndex, xIndex);
+						int cnt = 0;
+						for (Sikaku fixed : wkField.squareFixed) {
+							if (fixed.isDuplicate(pos)) {
+								cnt = 0;
+								break;
+							} else if (fixed.isDuplicate(new Position(yIndex - 1, xIndex)) ||
+									fixed.isDuplicate(new Position(yIndex + 1, xIndex)) ||
+									fixed.isDuplicate(new Position(yIndex, xIndex - 1)) ||
+									fixed.isDuplicate(new Position(yIndex, xIndex + 1))) {
+								cnt = cnt + fixed.getAreaSize();
+							}
+						}
+						if (cnt == 0) {
+							continue;
+						} else {
+							wkField.numbers[yIndex][xIndex] = cnt;
+							// 2段階減らし(□表出→表出なし)に対応するため二重にする
+							numberPosList.add(pos);
+							numberPosList.add(pos);
+						}
+					}
+				}
+				System.out.println(wkField);
+				// マスを戻す
+				wkField.initCand();
+				// 解けるかな？
+				level = new TasquareSolverForGenerator(wkField, 100).solve2();
+				if (level == -1) {
+					// 解けなければやり直し
+					wkField = new TasquareSolver.Field(height, width);
+					index = 0;
+				} else {
+					// ヒントを限界まで減らす
+					wkField.initCand();
+					Collections.shuffle(numberPosList);
+					for (Position numberPos : numberPosList) {
+						TasquareSolver.Field virtual = new TasquareSolver.Field(wkField, true);
+						if (virtual.numbers[numberPos.getyIndex()][numberPos.getxIndex()] != -1) {
+							virtual.numbers[numberPos.getyIndex()][numberPos.getxIndex()] = -1;
+						} else {
+							virtual.numbers[numberPos.getyIndex()][numberPos.getxIndex()] = null;
+							virtual.initCand();
+						}
+						int solveResult = new TasquareSolverForGenerator(virtual, 5000).solve2();
+						if (solveResult != -1) {
+							wkField.numbers[numberPos.getyIndex()][numberPos
+									.getxIndex()] = virtual.numbers[numberPos.getyIndex()][numberPos.getxIndex()];
+							level = solveResult;
+							if (wkField.numbers[numberPos.getyIndex()][numberPos
+									.getxIndex()] == null) {
+								wkField.initCand();
+							}
+						}
+					}
+					break;
+				}
+			}
+			level = (int) Math.sqrt(level / 3);
+			String status = "Lv:" + level + "の問題を獲得！(ヒント数：" + wkField.getHintCount() + ")";
+			String url = wkField.getPuzPreURL();
+			String link = "<a href=\"" + url + "\" target=\"_blank\">ぱずぷれv3で解く</a>";
+			StringBuilder sb = new StringBuilder();
+			//			int baseSize = 20;
+			//			int margin = 5;
+			//			sb.append(
+			//					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
+			//							+ "height=\"" + (wkField.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
+			//							+ (wkField.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			//			// 横壁描画
+			//			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+			//				for (int xIndex = -1; xIndex < wkField.getXLength(); xIndex++) {
+			//					sb.append("<line y1=\""
+			//							+ (yIndex * baseSize + baseSize / 2 + margin)
+			//							+ "\" x1=\""
+			//							+ (xIndex * baseSize + baseSize / 2 + 2 * baseSize)
+			//							+ "\" y2=\""
+			//							+ (yIndex * baseSize + baseSize / 2 + baseSize + margin)
+			//							+ "\" x2=\""
+			//							+ (xIndex * baseSize + baseSize / 2 + 2 * baseSize)
+			//							+ "\" stroke-width=\"1\" fill=\"none\"");
+			//					sb.append("stroke=\"#000\" ");
+			//					sb.append(">"
+			//							+ "</line>");
+			//				}
+			//			}
+			//			// 縦壁描画
+			//			for (int yIndex = -1; yIndex < wkField.getYLength(); yIndex++) {
+			//				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+			//					sb.append("<line y1=\""
+			//							+ (yIndex * baseSize + baseSize + baseSize / 2 + margin)
+			//							+ "\" x1=\""
+			//							+ (xIndex * baseSize + baseSize + baseSize / 2)
+			//							+ "\" y2=\""
+			//							+ (yIndex * baseSize + baseSize + baseSize / 2 + margin)
+			//							+ "\" x2=\""
+			//							+ (xIndex * baseSize + baseSize + baseSize + baseSize / 2)
+			//							+ "\" stroke-width=\"1\" fill=\"none\"");
+			//					sb.append("stroke=\"#000\" ");
+			//					sb.append(">"
+			//							+ "</line>");
+			//				}
+			//			}
+			//			// 数字描画
+			//			for (int yIndex = 0; yIndex < wkField.getYLength() + 1; yIndex++) {
+			//				for (int xIndex = 0; xIndex < wkField.getXLength() + 1; xIndex++) {
+			//					Integer number = wkField.getExtraNumbers()[yIndex][xIndex];
+			//					if (number != null) {
+			//						String numberStr = String.valueOf(number);
+			//						int numIdx = HALF_NUMS.indexOf(numberStr);
+			//						String masuStr = null;
+			//						if (numIdx >= 0) {
+			//							masuStr = FULL_NUMS.substring(numIdx / 2, numIdx / 2 + 1);
+			//						} else {
+			//							masuStr = numberStr;
+			//						}
+			//						sb.append("<circle cy=\"" + (yIndex * baseSize + (baseSize / 2) + margin)
+			//								+ "\" cx=\""
+			//								+ (xIndex * baseSize + baseSize + (baseSize / 2))
+			//								+ "\" r=\""
+			//								+ (baseSize / 2 - 3)
+			//								+ "\" fill=\"white\", stroke=\"black\">"
+			//								+ "</circle>");
+			//						sb.append("<text y=\"" + (yIndex * baseSize + baseSize + margin - 5)
+			//								+ "\" x=\""
+			//								+ (xIndex * baseSize + baseSize + 3)
+			//								+ "\" font-size=\""
+			//								+ (baseSize - 6)
+			//								+ "\" textLength=\""
+			//								+ (baseSize - 6)
+			//								+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+			//								+ masuStr
+			//								+ "</text>");
+			//					}
+			//				}
+			//			}
+			//
+			//			sb.append("</svg>");
+			System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
+			System.out.println(level);
+			System.out.println(wkField.getHintCount());
+			System.out.println(wkField);
+			return new GeneratorResult(status, sb.toString(), link, url, level, "");
+
+		}
+
+	}
 
 	public static class Field {
 		static final String ALPHABET_FROM_G = "ghijklmnopqrstuvwxyz";
@@ -21,12 +279,22 @@ public class TasquareSolver implements Solver {
 		// 数字の情報
 		private final Integer[][] numbers;
 		// 四角の配置の候補
-		private List<Sikaku> squareCand;
+		protected List<Sikaku> squareCand;
 		// 確定した四角候補
-		private List<Sikaku> squareFixed;
+		protected List<Sikaku> squareFixed;
 
 		public Integer[][] getNumbers() {
 			return numbers;
+		}
+
+		public String getPuzPreURL() {
+			// TODO 自動生成されたメソッド・スタブ
+			return null;
+		}
+
+		public String getHintCount() {
+			// TODO 自動生成されたメソッド・スタブ
+			return null;
 		}
 
 		public int getYLength() {
@@ -35,6 +303,49 @@ public class TasquareSolver implements Solver {
 
 		public int getXLength() {
 			return numbers[0].length;
+		}
+
+		public Field(int height, int width) {
+			numbers = new Integer[height][width];
+			initCand();
+		}
+
+		/**
+		 * 部屋のきりかたの候補を初期化する。
+		 */
+		protected void initCand() {
+			squareCand = new ArrayList<>();
+			squareFixed = new ArrayList<>();
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					for (int size = 1; size <= (getXLength() < getYLength() ? getXLength() : getYLength()); size++) {
+						int maxY = yIndex + size > getYLength() ? getYLength() - size : yIndex;
+						int maxX = xIndex + size > getXLength() ? getXLength() - size : xIndex;
+						for (int y = yIndex; y <= maxY; y++) {
+							for (int x = xIndex; x <= maxX; x++) {
+								Sikaku sikaku = new Sikaku(new Position(y, x),
+										new Position(y + size - 1, x + size - 1));
+								boolean addSikaku = true;
+								// 他の部屋のpivotが含まれる候補をあらかじめ除外する。
+								outer: for (int otherY = 0; otherY < getYLength(); otherY++) {
+									for (int otherX = 0; otherX < getXLength(); otherX++) {
+										if (numbers[otherY][otherX] != null) {
+											Position otherPos = new Position(otherY, otherX);
+											if (sikaku.isDuplicate(otherPos)) {
+												addSikaku = false;
+												break outer;
+											}
+										}
+									}
+								}
+								if (addSikaku) {
+									squareCand.add(sikaku);
+								}
+							}
+						}
+					}
+				}
+			}
 		}
 
 		public Field(int height, int width, String param) {
@@ -73,44 +384,7 @@ public class TasquareSolver implements Solver {
 					index++;
 				}
 			}
-			squareCand = new ArrayList<>();
-			squareFixed = new ArrayList<>();
-			// 部屋の切り方の候補をあらかじめ決めておき、その候補を順次減らす方法を取る。
-			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
-				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					for (int ySize = 1; ySize <= getYLength(); ySize++) {
-						for (int xSize = 1; xSize <= getXLength(); xSize++) {
-							if (ySize != xSize) {
-								continue;
-							}
-							int maxY = yIndex + ySize > getYLength() ? getYLength() - ySize : yIndex;
-							int maxX = xIndex + xSize > getXLength() ? getXLength() - xSize : xIndex;
-							for (int y = yIndex; y <= maxY; y++) {
-								for (int x = xIndex; x <= maxX; x++) {
-									Sikaku sikaku = new Sikaku(new Position(y, x),
-											new Position(y + ySize - 1, x + xSize - 1));
-									boolean addSikaku = true;
-									// 他の部屋のpivotが含まれる候補をあらかじめ除外する。
-									outer: for (int otherY = 0; otherY < getYLength(); otherY++) {
-										for (int otherX = 0; otherX < getXLength(); otherX++) {
-											if (numbers[otherY][otherX] != null) {
-												Position otherPos = new Position(otherY, otherX);
-												if (sikaku.isDuplicate(otherPos)) {
-													addSikaku = false;
-													break outer;
-												}
-											}
-										}
-									}
-									if (addSikaku) {
-										squareCand.add(sikaku);
-									}
-								}
-							}
-						}
-					}
-				}
-			}
+			initCand();
 		}
 
 		public Field(Field other) {
@@ -119,11 +393,52 @@ public class TasquareSolver implements Solver {
 			squareFixed = new ArrayList<>(other.squareFixed);
 		}
 
+		public Field(Field other, boolean flag) {
+			numbers = new Integer[other.getYLength()][other.getXLength()];
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					numbers[yIndex][xIndex] = other.numbers[yIndex][xIndex];
+				}
+			}
+			squareCand = new ArrayList<>(other.squareCand);
+			squareFixed = new ArrayList<>(other.squareFixed);
+		}
+
+		/**
+		 * 候補情報からマスを復元する
+		 */
+		public Masu[][] getMasu() {
+			Masu[][] masu = new Masu[getYLength()][getXLength()];
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					masu[yIndex][xIndex] = Masu.NOT_BLACK;
+				}
+			}
+			for (Sikaku fixed : squareFixed) {
+				for (int yIndex = fixed.getLeftUp().getyIndex(); yIndex <= fixed.getRightDown().getyIndex(); yIndex++) {
+					for (int xIndex = fixed.getLeftUp().getxIndex(); xIndex <= fixed.getRightDown()
+							.getxIndex(); xIndex++) {
+						masu[yIndex][xIndex] = Masu.BLACK;
+					}
+				}
+			}
+			for (Sikaku cand : squareCand) {
+				for (int yIndex = cand.getLeftUp().getyIndex(); yIndex <= cand.getRightDown().getyIndex(); yIndex++) {
+					for (int xIndex = cand.getLeftUp().getxIndex(); xIndex <= cand.getRightDown()
+							.getxIndex(); xIndex++) {
+						masu[yIndex][xIndex] = Masu.SPACE;
+					}
+				}
+			}
+			return masu;
+		}
+
 		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
 		private static final String FULL_NUMS = "０１２３４５６７８９";
 
 		@Override
 		public String toString() {
+			Masu[][] masu = getMasu();
 			StringBuilder sb = new StringBuilder();
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
@@ -142,24 +457,7 @@ public class TasquareSolver implements Solver {
 							}
 						}
 					} else {
-						boolean found = false;
-						for (Sikaku square : squareFixed) {
-							if (square.isDuplicate(new Position(yIndex, xIndex))) {
-								found = true;
-								break;
-							}
-						}
-						if (found) {
-							sb.append("■");
-						} else {
-							for (Sikaku square : squareCand) {
-								if (square.isDuplicate(new Position(yIndex, xIndex))) {
-									found = true;
-									break;
-								}
-							}
-							sb.append(found ? "　" : "・");
-						}
+						sb.append(masu[yIndex][xIndex]);
 					}
 				}
 				sb.append(System.lineSeparator());
@@ -177,7 +475,6 @@ public class TasquareSolver implements Solver {
 		 * 各種チェックを1セット実行
 		 */
 		private boolean solveAndCheck() {
-			String str = getStateDump();
 			if (!sikakuSolve()) {
 				return false;
 			}
@@ -186,9 +483,6 @@ public class TasquareSolver implements Solver {
 			}
 			if (!connectSolve()) {
 				return false;
-			}
-			if (!getStateDump().equals(str)) {
-				return solveAndCheck();
 			}
 			return true;
 		}
@@ -238,29 +532,29 @@ public class TasquareSolver implements Solver {
 						if (num == -1 && 0 < fixCnt) {
 							continue;
 						}
-						Set<Integer> upCand = new HashSet<>();
-						upCand.add(0);
-						Set<Integer> rightCand = new HashSet<>();
-						rightCand.add(0);
-						Set<Integer> downCand = new HashSet<>();
-						downCand.add(0);
-						Set<Integer> leftCand = new HashSet<>();
-						leftCand.add(0);
-						for (Sikaku cand : squareCand) {
-							if (cand.isDuplicate(new Position(yIndex - 1, xIndex))) {
-								upCand.add(cand.getAreaSize());
-							}
-							if (cand.isDuplicate(new Position(yIndex, xIndex + 1))) {
-								rightCand.add(cand.getAreaSize());
-							}
-							if (cand.isDuplicate(new Position(yIndex + 1, xIndex))) {
-								downCand.add(cand.getAreaSize());
-							}
-							if (cand.isDuplicate(new Position(yIndex, xIndex - 1))) {
-								leftCand.add(cand.getAreaSize());
-							}
-						}
 						if (num != -1) {
+							Set<Integer> upCand = new HashSet<>();
+							Set<Integer> rightCand = new HashSet<>();
+							Set<Integer> downCand = new HashSet<>();
+							Set<Integer> leftCand = new HashSet<>();
+							upCand.add(0);
+							rightCand.add(0);
+							downCand.add(0);
+							leftCand.add(0);
+							for (Sikaku cand : squareCand) {
+								int areaSize = cand.getAreaSize();
+								if (areaSize + fixCnt <= num) {
+									if (cand.isDuplicate(new Position(yIndex - 1, xIndex))) {
+										upCand.add(areaSize);
+									} else if (cand.isDuplicate(new Position(yIndex, xIndex + 1))) {
+										rightCand.add(areaSize);
+									} else if (cand.isDuplicate(new Position(yIndex + 1, xIndex))) {
+										downCand.add(areaSize);
+									} else if (cand.isDuplicate(new Position(yIndex, xIndex - 1))) {
+										leftCand.add(areaSize);
+									}
+								}
+							}
 							boolean isOk = false;
 							// TODO 4重for文(笑)
 							outer: for (Integer up : upCand) {
@@ -279,8 +573,17 @@ public class TasquareSolver implements Solver {
 								return false;
 							}
 						} else {
-							if (upCand.size() == 1 && rightCand.size() == 1 && downCand.size() == 1
-									&& leftCand.size() == 1) {
+							boolean isOk = false;
+							for (Sikaku cand : squareCand) {
+								if (cand.isDuplicate(new Position(yIndex - 1, xIndex)) ||
+										cand.isDuplicate(new Position(yIndex + 1, xIndex)) ||
+										cand.isDuplicate(new Position(yIndex, xIndex - 1)) ||
+										cand.isDuplicate(new Position(yIndex, xIndex + 1))) {
+									isOk = true;
+									break;
+								}
+							}
+							if (!isOk) {
 								return false;
 							}
 						}
@@ -288,35 +591,6 @@ public class TasquareSolver implements Solver {
 				}
 			}
 			return true;
-		}
-
-		/**
-		 * 候補情報からマスを復元する
-		 */
-		public Masu[][] getMasu() {
-			Masu[][] masu = new Masu[getYLength()][getXLength()];
-			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
-				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					masu[yIndex][xIndex] = Masu.NOT_BLACK;
-				}
-			}
-			for (Sikaku fixed : squareFixed) {
-				for (int yIndex = fixed.getLeftUp().getyIndex(); yIndex <= fixed.getRightDown().getyIndex(); yIndex++) {
-					for (int xIndex = fixed.getLeftUp().getxIndex(); xIndex <= fixed.getRightDown()
-							.getxIndex(); xIndex++) {
-						masu[yIndex][xIndex] = Masu.BLACK;
-					}
-				}
-			}
-			for (Sikaku cand : squareCand) {
-				for (int yIndex = cand.getLeftUp().getyIndex(); yIndex <= cand.getRightDown().getyIndex(); yIndex++) {
-					for (int xIndex = cand.getLeftUp().getxIndex(); xIndex <= cand.getRightDown()
-							.getxIndex(); xIndex++) {
-						masu[yIndex][xIndex] = Masu.SPACE;
-					}
-				}
-			}
-			return masu;
 		}
 
 		/**
@@ -387,11 +661,15 @@ public class TasquareSolver implements Solver {
 
 	}
 
-	private final Field field;
-	private int count;
+	protected final Field field;
+	protected int count;
 
 	public TasquareSolver(int height, int width, String param) {
 		field = new Field(height, width, param);
+	}
+
+	public TasquareSolver(Field field) {
+		this.field = new Field(field);
 	}
 
 	public Field getField() {
@@ -438,7 +716,8 @@ public class TasquareSolver implements Solver {
 	 * 仮置きして調べる
 	 * @param posSet
 	 */
-	private boolean candSolve(Field field, int recursive) {
+	protected boolean candSolve(Field field, int recursive) {
+		String str = field.getStateDump();
 		for (Iterator<Sikaku> iterator = field.squareCand.iterator(); iterator
 				.hasNext();) {
 			count++;
@@ -469,6 +748,9 @@ public class TasquareSolver implements Solver {
 				field.squareCand = virtual.squareCand;
 				field.squareFixed = virtual.squareFixed;
 			}
+		}
+		if (!field.getStateDump().equals(str)) {
+			return candSolve(field, recursive);
 		}
 		return true;
 	}

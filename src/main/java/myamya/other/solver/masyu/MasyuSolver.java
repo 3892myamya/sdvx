@@ -1,22 +1,342 @@
 package myamya.other.solver.masyu;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import myamya.other.solver.Common.Difficulty;
 import myamya.other.solver.Common.Direction;
+import myamya.other.solver.Common.GeneratorResult;
 import myamya.other.solver.Common.Masu;
 import myamya.other.solver.Common.Position;
 import myamya.other.solver.Common.Wall;
+import myamya.other.solver.Generator;
 import myamya.other.solver.Solver;
 
 public class MasyuSolver implements Solver {
+
+	public static class MasyuGenerator implements Generator {
+
+		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
+		private static final String FULL_NUMS = "０１２３４５６７８９";
+
+		static class MasyuSolverForGenerator extends MasyuSolver {
+			private final int limit;
+
+			public MasyuSolverForGenerator(Field field, int limit) {
+				super(field);
+				this.limit = limit;
+			}
+
+			public int solve2() {
+				while (!field.isSolved()) {
+					String befStr = field.getStateDump();
+					if (!field.solveAndCheck()) {
+						return -1;
+					}
+					int recursiveCnt = 0;
+					while (field.getStateDump().equals(befStr) && recursiveCnt < 3) {
+						if (!candSolve(field, recursiveCnt)) {
+							return -1;
+						}
+						recursiveCnt++;
+					}
+					if (recursiveCnt == 3 && field.getStateDump().equals(befStr)) {
+						return -1;
+					}
+				}
+				return count;
+			}
+
+			@Override
+			protected boolean candSolve(Field field, int recursive) {
+				if (this.count >= limit) {
+					return false;
+				} else {
+					return super.candSolve(field, recursive);
+				}
+			}
+		}
+
+		private final int height;
+		private final int width;
+
+		public MasyuGenerator(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		public static void main(String[] args) {
+			new MasyuGenerator(10, 10).generate();
+		}
+
+		@Override
+		public GeneratorResult generate() {
+			MasyuSolver.Field wkField = new MasyuSolver.Field(height, width);
+			List<Integer> indexList = new ArrayList<>();
+			for (int i = 0; i < (height * (width - 1)) + ((height - 1) * width); i++) {
+				indexList.add(i);
+			}
+			Collections.shuffle(indexList);
+			int index = 0;
+			int level = 0;
+			long start = System.nanoTime();
+			while (true) {
+				// 問題生成部
+				while (!wkField.isSolved()) {
+					int posBase = indexList.get(index);
+					boolean toYokoWall;
+					int yIndex, xIndex;
+					if (posBase < height * (width - 1)) {
+						toYokoWall = true;
+						yIndex = posBase / (width - 1);
+						xIndex = posBase % (width - 1);
+					} else {
+						toYokoWall = false;
+						posBase = posBase - (height * (width - 1));
+						yIndex = posBase / width;
+						xIndex = posBase % width;
+					}
+					if ((toYokoWall && wkField.yokoWall[yIndex][xIndex] == Wall.SPACE)
+							|| (!toYokoWall && wkField.tateWall[yIndex][xIndex] == Wall.SPACE)) {
+						boolean isOk = false;
+						MasyuSolver.Field virtual = new MasyuSolver.Field(wkField, true);
+						if (toYokoWall) {
+							virtual.yokoWall[yIndex][xIndex] = Wall.NOT_EXISTS;
+						} else {
+							virtual.tateWall[yIndex][xIndex] = Wall.NOT_EXISTS;
+						}
+						if (virtual.solveAndCheck()) {
+							isOk = true;
+							wkField.masu = virtual.masu;
+							wkField.yokoWall = virtual.yokoWall;
+							wkField.tateWall = virtual.tateWall;
+						} else {
+							virtual = new MasyuSolver.Field(wkField, true);
+							if (toYokoWall) {
+								virtual.yokoWall[yIndex][xIndex] = Wall.EXISTS;
+							} else {
+								virtual.tateWall[yIndex][xIndex] = Wall.EXISTS;
+							}
+							if (virtual.solveAndCheck()) {
+								isOk = true;
+								wkField.masu = virtual.masu;
+								wkField.yokoWall = virtual.yokoWall;
+								wkField.tateWall = virtual.tateWall;
+							}
+						}
+						if (!isOk) {
+							// 破綻したら0から作り直す。
+							wkField = new MasyuSolver.Field(height, width);
+							Collections.shuffle(indexList);
+							index = 0;
+							continue;
+						}
+					}
+					index++;
+				}
+				// 数字埋め＆マス初期化
+				// できるだけ真珠を埋める。
+				List<Position> numberPosList = new ArrayList<>();
+				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+						if (wkField.toStraightCheck(yIndex, xIndex)) {
+							//白になれるかチェック
+							Wall wallUp = yIndex == 0 ? Wall.EXISTS : wkField.tateWall[yIndex - 1][xIndex];
+							Wall wallRight = xIndex == wkField.getXLength() - 1 ? Wall.EXISTS
+									: wkField.yokoWall[yIndex][xIndex];
+							Wall wallDown = yIndex == wkField.getYLength() - 1 ? Wall.EXISTS
+									: wkField.tateWall[yIndex][xIndex];
+							Wall wallLeft = xIndex == 0 ? Wall.EXISTS : wkField.yokoWall[yIndex][xIndex - 1];
+							if (wallUp == Wall.NOT_EXISTS || wallDown == Wall.NOT_EXISTS) {
+								if (wkField.toCurveCheck(yIndex - 1, xIndex)) {
+									wkField.pearl[yIndex][xIndex] = Pearl.SIRO;
+									numberPosList.add(new Position(yIndex, xIndex));
+								} else if (wkField.toCurveCheck(yIndex + 1, xIndex)) {
+									wkField.pearl[yIndex][xIndex] = Pearl.SIRO;
+									numberPosList.add(new Position(yIndex, xIndex));
+								}
+							} else if (wallRight == Wall.NOT_EXISTS || wallLeft == Wall.NOT_EXISTS) {
+								if (wkField.toCurveCheck(yIndex, xIndex + 1)) {
+									wkField.pearl[yIndex][xIndex] = Pearl.SIRO;
+									numberPosList.add(new Position(yIndex, xIndex));
+								} else if (wkField.toCurveCheck(yIndex, xIndex - 1)) {
+									wkField.pearl[yIndex][xIndex] = Pearl.SIRO;
+									numberPosList.add(new Position(yIndex, xIndex));
+								}
+							}
+						} else if (wkField.toCurveCheck(yIndex, xIndex)) {
+							// 黒になれるかチェック
+							Wall wallUp = yIndex == 0 ? Wall.EXISTS : wkField.tateWall[yIndex - 1][xIndex];
+							Wall wallRight = xIndex == wkField.getXLength() - 1 ? Wall.EXISTS
+									: wkField.yokoWall[yIndex][xIndex];
+							Wall wallDown = yIndex == wkField.getYLength() - 1 ? Wall.EXISTS
+									: wkField.tateWall[yIndex][xIndex];
+							Wall wallLeft = xIndex == 0 ? Wall.EXISTS : wkField.yokoWall[yIndex][xIndex - 1];
+							boolean isOk = true;
+							if (wallUp == Wall.NOT_EXISTS) {
+								if (!wkField.toStraightCheck(yIndex - 1, xIndex)) {
+									isOk = false;
+								}
+							}
+							if (wallRight == Wall.NOT_EXISTS) {
+								if (!wkField.toStraightCheck(yIndex, xIndex + 1)) {
+									isOk = false;
+								}
+							}
+							if (wallDown == Wall.NOT_EXISTS) {
+								if (!wkField.toStraightCheck(yIndex + 1, xIndex)) {
+									isOk = false;
+								}
+							}
+							if (wallLeft == Wall.NOT_EXISTS) {
+								if (!wkField.toStraightCheck(yIndex, xIndex - 1)) {
+									isOk = false;
+								}
+							}
+							if (isOk) {
+								wkField.pearl[yIndex][xIndex] = Pearl.KURO;
+								numberPosList.add(new Position(yIndex, xIndex));
+							}
+						}
+					}
+				}
+				// マスを戻す
+				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+						wkField.masu[yIndex][xIndex] = Masu.SPACE;
+					}
+				}
+				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+					for (int xIndex = 0; xIndex < wkField.getXLength() - 1; xIndex++) {
+						wkField.yokoWall[yIndex][xIndex] = Wall.SPACE;
+					}
+				}
+				for (int yIndex = 0; yIndex < wkField.getYLength() - 1; yIndex++) {
+					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+						wkField.tateWall[yIndex][xIndex] = Wall.SPACE;
+					}
+				}
+				// 解けるかな？
+				level = new MasyuSolverForGenerator(wkField, 50).solve2();
+				if (level == -1) {
+					// 解けなければやり直し
+					wkField = new MasyuSolver.Field(height, width);
+					Collections.shuffle(indexList);
+					index = 0;
+				} else {
+					// ヒントを限界まで減らす
+					Collections.shuffle(numberPosList);
+					for (Position numberPos : numberPosList) {
+						MasyuSolver.Field virtual = new MasyuSolver.Field(wkField, true);
+						virtual.pearl[numberPos.getyIndex()][numberPos.getxIndex()] = null;
+						int solveResult = new MasyuSolverForGenerator(virtual, 5000).solve2();
+						if (solveResult != -1) {
+							wkField.pearl[numberPos.getyIndex()][numberPos.getxIndex()] = null;
+							level = solveResult;
+						}
+					}
+					break;
+				}
+			}
+			level = (int) Math.sqrt(level / 3) + 1;
+
+			String status = "Lv:" + level + "の問題を獲得！(ヒント数：" + wkField.getHintCount() + ")";
+			String url = wkField.getPuzPreURL();
+			String link = "<a href=\"" + url + "\" target=\"_blank\">ぱずぷれv3で解く</a>";
+			StringBuilder sb = new StringBuilder();
+			//			int baseSize = 20;
+			//			int margin = 5;
+			//			sb.append(
+			//					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
+			//							+ "height=\"" + (wkField.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
+			//							+ (wkField.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			//			// 横壁描画
+			//			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+			//				for (int xIndex = -1; xIndex < wkField.getXLength(); xIndex++) {
+			//					sb.append("<line y1=\""
+			//							+ (yIndex * baseSize + baseSize / 2 + margin)
+			//							+ "\" x1=\""
+			//							+ (xIndex * baseSize + baseSize / 2 + 2 * baseSize)
+			//							+ "\" y2=\""
+			//							+ (yIndex * baseSize + baseSize / 2 + baseSize + margin)
+			//							+ "\" x2=\""
+			//							+ (xIndex * baseSize + baseSize / 2 + 2 * baseSize)
+			//							+ "\" stroke-width=\"1\" fill=\"none\"");
+			//					sb.append("stroke=\"#000\" ");
+			//					sb.append(">"
+			//							+ "</line>");
+			//				}
+			//			}
+			//			// 縦壁描画
+			//			for (int yIndex = -1; yIndex < wkField.getYLength(); yIndex++) {
+			//				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+			//					sb.append("<line y1=\""
+			//							+ (yIndex * baseSize + baseSize + baseSize / 2 + margin)
+			//							+ "\" x1=\""
+			//							+ (xIndex * baseSize + baseSize + baseSize / 2)
+			//							+ "\" y2=\""
+			//							+ (yIndex * baseSize + baseSize + baseSize / 2 + margin)
+			//							+ "\" x2=\""
+			//							+ (xIndex * baseSize + baseSize + baseSize + baseSize / 2)
+			//							+ "\" stroke-width=\"1\" fill=\"none\"");
+			//					sb.append("stroke=\"#000\" ");
+			//					sb.append(">"
+			//							+ "</line>");
+			//				}
+			//			}
+			//			// 数字描画
+			//			for (int yIndex = 0; yIndex < wkField.getYLength() + 1; yIndex++) {
+			//				for (int xIndex = 0; xIndex < wkField.getXLength() + 1; xIndex++) {
+			//					Integer number = wkField.getExtraNumbers()[yIndex][xIndex];
+			//					if (number != null) {
+			//						String numberStr = String.valueOf(number);
+			//						int numIdx = HALF_NUMS.indexOf(numberStr);
+			//						String masuStr = null;
+			//						if (numIdx >= 0) {
+			//							masuStr = FULL_NUMS.substring(numIdx / 2, numIdx / 2 + 1);
+			//						} else {
+			//							masuStr = numberStr;
+			//						}
+			//						sb.append("<circle cy=\"" + (yIndex * baseSize + (baseSize / 2) + margin)
+			//								+ "\" cx=\""
+			//								+ (xIndex * baseSize + baseSize + (baseSize / 2))
+			//								+ "\" r=\""
+			//								+ (baseSize / 2 - 3)
+			//								+ "\" fill=\"white\", stroke=\"black\">"
+			//								+ "</circle>");
+			//						sb.append("<text y=\"" + (yIndex * baseSize + baseSize + margin - 5)
+			//								+ "\" x=\""
+			//								+ (xIndex * baseSize + baseSize + 3)
+			//								+ "\" font-size=\""
+			//								+ (baseSize - 6)
+			//								+ "\" textLength=\""
+			//								+ (baseSize - 6)
+			//								+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+			//								+ masuStr
+			//								+ "</text>");
+			//					}
+			//				}
+			//			}
+
+			sb.append("</svg>");
+			System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
+			System.out.println(level);
+			System.out.println(wkField.getHintCount());
+			System.out.println(wkField);
+			return new GeneratorResult(status, sb.toString(), link, url, level, "");
+
+		}
+
+	}
 
 	/**
 	 * 真珠
 	 */
 	public enum Pearl {
-	SIRO("○", 1), KURO("●", 2);
+		SIRO("○", 1), KURO("●", 2);
 
 		String str;
 		int val;
@@ -59,6 +379,16 @@ public class MasyuSolver implements Solver {
 			return masu;
 		}
 
+		public String getPuzPreURL() {
+			// TODO 自動生成されたメソッド・スタブ
+			return null;
+		}
+
+		public String getHintCount() {
+			// TODO 自動生成されたメソッド・スタブ
+			return null;
+		}
+
 		public Pearl[][] getPearl() {
 			return pearl;
 		}
@@ -77,6 +407,28 @@ public class MasyuSolver implements Solver {
 
 		public int getXLength() {
 			return masu[0].length;
+		}
+
+		public Field(int height, int width) {
+			masu = new Masu[height][width];
+			pearl = new Pearl[height][width];
+			yokoWall = new Wall[height][width - 1];
+			tateWall = new Wall[height - 1][width];
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					masu[yIndex][xIndex] = Masu.SPACE;
+				}
+			}
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength() - 1; xIndex++) {
+					yokoWall[yIndex][xIndex] = Wall.SPACE;
+				}
+			}
+			for (int yIndex = 0; yIndex < getYLength() - 1; yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					tateWall[yIndex][xIndex] = Wall.SPACE;
+				}
+			}
 		}
 
 		public Field(int height, int width, String param, boolean ura) {
@@ -109,21 +461,24 @@ public class MasyuSolver implements Solver {
 				if (index / getXLength() < getYLength()) {
 					if (pos1 > 0) {
 						masu[index / getXLength()][index % getXLength()] = Masu.NOT_BLACK;
-						pearl[index / getXLength()][index % getXLength()] = Pearl.getByVal(ura ? pos1 % 2 + 1 : pos1);
+						pearl[index / getXLength()][index % getXLength()] = Pearl
+								.getByVal(ura ? pos1 % 2 + 1 : pos1);
 					}
 				}
 				index++;
 				if (index / getXLength() < getYLength()) {
 					if (pos2 > 0) {
 						masu[index / getXLength()][index % getXLength()] = Masu.NOT_BLACK;
-						pearl[index / getXLength()][index % getXLength()] = Pearl.getByVal(ura ? pos2 % 2 + 1 : pos2);
+						pearl[index / getXLength()][index % getXLength()] = Pearl
+								.getByVal(ura ? pos2 % 2 + 1 : pos2);
 					}
 				}
 				index++;
 				if (index / getXLength() < getYLength()) {
 					if (pos3 > 0) {
 						masu[index / getXLength()][index % getXLength()] = Masu.NOT_BLACK;
-						pearl[index / getXLength()][index % getXLength()] = Pearl.getByVal(ura ? pos3 % 2 + 1 : pos3);
+						pearl[index / getXLength()][index % getXLength()] = Pearl
+								.getByVal(ura ? pos3 % 2 + 1 : pos3);
 					}
 				}
 				index++;
@@ -138,6 +493,29 @@ public class MasyuSolver implements Solver {
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
 					masu[yIndex][xIndex] = other.masu[yIndex][xIndex];
+				}
+			}
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength() - 1; xIndex++) {
+					yokoWall[yIndex][xIndex] = other.yokoWall[yIndex][xIndex];
+				}
+			}
+			for (int yIndex = 0; yIndex < getYLength() - 1; yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					tateWall[yIndex][xIndex] = other.tateWall[yIndex][xIndex];
+				}
+			}
+		}
+
+		public Field(Field other, boolean flag) {
+			masu = new Masu[other.getYLength()][other.getXLength()];
+			pearl = new Pearl[other.getYLength()][other.getXLength()];
+			yokoWall = new Wall[other.getYLength()][other.getXLength() - 1];
+			tateWall = new Wall[other.getYLength() - 1][other.getXLength()];
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					masu[yIndex][xIndex] = other.masu[yIndex][xIndex];
+					pearl[yIndex][xIndex] = other.pearl[yIndex][xIndex];
 				}
 			}
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
@@ -593,14 +971,16 @@ public class MasyuSolver implements Solver {
 			}
 			if (pos.getxIndex() != getXLength() - 1 && from != Direction.RIGHT) {
 				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() + 1);
-				if (yokoWall[pos.getyIndex()][pos.getxIndex()] != Wall.EXISTS && !continuePosSet.contains(nextPos)) {
+				if (yokoWall[pos.getyIndex()][pos.getxIndex()] != Wall.EXISTS
+						&& !continuePosSet.contains(nextPos)) {
 					continuePosSet.add(nextPos);
 					setContinuePosSet(nextPos, continuePosSet, Direction.LEFT);
 				}
 			}
 			if (pos.getyIndex() != getYLength() - 1 && from != Direction.DOWN) {
 				Position nextPos = new Position(pos.getyIndex() + 1, pos.getxIndex());
-				if (tateWall[pos.getyIndex()][pos.getxIndex()] != Wall.EXISTS && !continuePosSet.contains(nextPos)) {
+				if (tateWall[pos.getyIndex()][pos.getxIndex()] != Wall.EXISTS
+						&& !continuePosSet.contains(nextPos)) {
 					continuePosSet.add(nextPos);
 					setContinuePosSet(nextPos, continuePosSet, Direction.UP);
 				}
@@ -637,9 +1017,12 @@ public class MasyuSolver implements Solver {
 				if (!connectSolve()) {
 					return false;
 				}
-//				if (!paritySolve()) {
-//					return false;
-//				}
+				if (!finalSolve()) {
+					return false;
+				}
+				//				if (!paritySolve()) {
+				//					return false;
+				//				}
 			}
 			return true;
 		}
@@ -679,6 +1062,7 @@ public class MasyuSolver implements Solver {
 			}
 			return true;
 		}
+
 		/**
 		 * 盤面を市松模様とみなした場合、奇属性と偶属性の白マスの数は同じになる。
 		 */
@@ -757,6 +1141,20 @@ public class MasyuSolver implements Solver {
 			return true;
 		}
 
+		/**
+		 * フィールドに1つは白マスが必要。
+		 */
+		private boolean finalSolve() {
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					if (masu[yIndex][xIndex] != Masu.BLACK) {
+						return true;
+					}
+				}
+			}
+			return false;
+		}
+
 		public boolean isSolved() {
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
@@ -784,11 +1182,15 @@ public class MasyuSolver implements Solver {
 
 	}
 
-	private final Field field;
-	private int count = 0;
+	protected final Field field;
+	protected int count = 0;
 
 	public MasyuSolver(int height, int width, String param, boolean ura) {
 		field = new Field(height, width, param, ura);
+	}
+
+	public MasyuSolver(Field field) {
+		this.field = new Field(field);
 	}
 
 	public Field getField() {
@@ -835,7 +1237,7 @@ public class MasyuSolver implements Solver {
 	 * 仮置きして調べる
 	 * @param posSet
 	 */
-	private boolean candSolve(Field field, int recursive) {
+	protected boolean candSolve(Field field, int recursive) {
 		String str = field.getStateDump();
 		for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 			for (int xIndex = 0; xIndex < field.getXLength() - 1; xIndex++) {
