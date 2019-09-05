@@ -38,7 +38,7 @@ public class MasyuSolver implements Solver {
 					}
 					int recursiveCnt = 0;
 					while (field.getStateDump().equals(befStr) && recursiveCnt < 3) {
-						if (!candSolve(field, recursiveCnt)) {
+						if (!candSolve(field, recursiveCnt == 2 ? 999 : recursiveCnt)) {
 							return -1;
 						}
 						recursiveCnt++;

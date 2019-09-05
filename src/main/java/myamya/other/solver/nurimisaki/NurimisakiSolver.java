@@ -276,7 +276,7 @@ public class NurimisakiSolver implements Solver {
 					}
 				}
 				// 解けるかな？
-				level = new NurimisakiSolverForGenerator(new NurimisakiSolver.Field(wkField), 300).solve2();
+				level = new NurimisakiSolverForGenerator(new NurimisakiSolver.Field(wkField), 200).solve2();
 				if (level == -1) {
 					// 解けなければやり直し
 					wkField = new ExtendedField(height, width);

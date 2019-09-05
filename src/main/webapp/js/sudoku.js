@@ -1,3 +1,11 @@
+var ruleMap = {
+	sudoku : {name: "数独", url:"https://www.nikoli.co.jp/ja/puzzles/sudoku/"},
+	shakashaka : {name: "シャカシャカ", url:"https://www.nikoli.co.jp/ja/puzzles/shakashaka/"},
+	nurimisaki : {name: "ぬりみさき", url:"https://www.nikoli.co.jp/ja/puzzles/nurimisaki/"},
+	gokigen : {name: "ごきげんななめ", url:"https://www.nikoli.co.jp/ja/puzzles/gokigen_naname/"},
+	creek : {name: "クリーク", url:"https://www.nikoli.co.jp/ja/puzzles/creek/"}
+}
+
 $(function() {
     $('#btn_submit').on('click', function(event){
         if ($('#caption').text() == '抽選中です。少々お待ちください……'){
@@ -59,8 +67,14 @@ $(function() {
             $('#lbl_size').show();
             $('#sel_size').show();
         }
-        $('#tweetbtn').hide();
-        $('#edt_if').hide();
+        var oneRule = ruleMap[type];
+        if (oneRule !== undefined){
+            $('#a_rule').attr('href', oneRule.url)
+            $('#a_rule').text(oneRule.name + 'のルールを表示(ニコリ公式)')
+            $('#div_rule').show();
+        } else {
+            $('#div_rule').hide();
+        }
     }
     // 保存された条件があれば読みだす
     var cond = localStorage.getItem('condsudoku');
@@ -75,5 +89,7 @@ $(function() {
         $('#sel_pattern').val(1);
         $('#sel_size').val(4);
     }
+    $('#tweetbtn').hide();
+    $('#edt_if').hide();
     showhide();
 });

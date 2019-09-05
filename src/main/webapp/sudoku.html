@@ -10,8 +10,8 @@
     </script>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>数独ガチャ</title>
-    <meta name="description" content="ペンシルパズルガチャ(ペンパガチャ)は自動生成されたペンシルパズル(数独、他)の問題がゲットできるガチャです。引いた問題はぱずぷれv3さんで解くことが可能です。あなたは高レベルのレア問をゲットできるか？"/>
+    <title>ペンシルパズルガチャ</title>
+    <meta name="description" content="ペンシルパズルガチャ(ペンパガチャ)は自動生成されたペンシルパズルの問題がゲットできるガチャです。引いた問題はぱずぷれv3さんで解くことが可能です。あなたは高レベルのレア問をゲットできるか？"/>
     <link rel="stylesheet" href="css/sudoku.css?ver=20190712"/>
     <script src="js/jquery-3.3.1.min.js"></script>
     <script src="js/sudoku.js?ver=20190907"></script>
@@ -21,11 +21,11 @@
 <div>
 <label id="lbl_type" for="sel_type">ガチャの種類</label>
 <select id="sel_type" name="sel_type">
-	<option value="sudoku">数独ガチャ</option>
-	<option value="shakashaka">シャカシャカガチャ</option>
-	<option value="nurimisaki">ぬりみさきガチャ</option>
-	<option value="gokigen">ごきげんななめガチャ</option>
 	<option value="creek">クリークガチャ</option>
+	<option value="gokigen">ごきげんななめガチャ</option>
+	<option value="shakashaka">シャカシャカガチャ</option>
+	<option value="sudoku">数独ガチャ</option>
+	<option value="nurimisaki">ぬりみさきガチャ</option>
 </select>
 </div>
 <div>
@@ -66,6 +66,9 @@
 <a id="tweetbtn" href="https://twitter.com/intent/tweet?hashtags=ペンパガチャ&text=ペンシルパズルの問題がゲットできるガチャです。&tw_p=tweetbutton&url=https%3a%2f%2ft%2eco%2fGg5hFCjLwP" target="_blank" rel="nofollow">
 <img id="tweetpng" src="tweetbtn.png" width="80" height="20">
 </a>
+</div>
+<div id="div_rule">
+<a id="a_rule" href="" target="_blank"></a>
 </div>
 <div>
 <input type="text" id="edt_if" name="edt_if" disabled/>

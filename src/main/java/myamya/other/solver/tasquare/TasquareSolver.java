@@ -148,7 +148,6 @@ public class TasquareSolver implements Solver {
 						}
 					}
 				}
-				System.out.println(wkField);
 				// マスを戻す
 				wkField.initCand();
 				// 解けるかな？

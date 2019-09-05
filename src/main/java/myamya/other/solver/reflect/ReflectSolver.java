@@ -1,33 +1,490 @@
 package myamya.other.solver.reflect;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import myamya.other.solver.Common.Difficulty;
 import myamya.other.solver.Common.Direction;
+import myamya.other.solver.Common.GeneratorResult;
 import myamya.other.solver.Common.Masu;
 import myamya.other.solver.Common.Position;
 import myamya.other.solver.Common.Wall;
+import myamya.other.solver.Generator;
 import myamya.other.solver.Solver;
 
 public class ReflectSolver implements Solver {
+	public static class ReflectGenerator implements Generator {
+
+		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
+		private static final String FULL_NUMS = "０１２３４５６７８９";
+
+		static class ExtendedField extends ReflectSolver.Field {
+			public ExtendedField(Field other) {
+				super(other);
+			}
+
+			public ExtendedField(int height, int width) {
+				super(height, width);
+			}
+
+			/**
+			 * 作問中は白マスの壁の数が0になってもよいので。
+			 */
+			@Override
+			public boolean nextSolve() {
+				for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+					for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+						if (!crossPosSet.contains(new Position(yIndex, xIndex))) {
+							int existsCount = 0;
+							int notExistsCount = 0;
+							Wall wallUp = yIndex == 0 ? Wall.EXISTS : tateWall[yIndex - 1][xIndex];
+							if (wallUp == Wall.EXISTS) {
+								existsCount++;
+							} else if (wallUp == Wall.NOT_EXISTS) {
+								notExistsCount++;
+							}
+							Wall wallRight = xIndex == getXLength() - 1 ? Wall.EXISTS : yokoWall[yIndex][xIndex];
+							if (wallRight == Wall.EXISTS) {
+								existsCount++;
+							} else if (wallRight == Wall.NOT_EXISTS) {
+								notExistsCount++;
+							}
+							Wall wallDown = yIndex == getYLength() - 1 ? Wall.EXISTS : tateWall[yIndex][xIndex];
+							if (wallDown == Wall.EXISTS) {
+								existsCount++;
+							} else if (wallDown == Wall.NOT_EXISTS) {
+								notExistsCount++;
+							}
+							Wall wallLeft = xIndex == 0 ? Wall.EXISTS : yokoWall[yIndex][xIndex - 1];
+							if (wallLeft == Wall.EXISTS) {
+								existsCount++;
+							} else if (wallLeft == Wall.NOT_EXISTS) {
+								notExistsCount++;
+							}
+							if (masu[yIndex][xIndex] == Masu.SPACE) {
+								// 自分が不確定マスなら壁は0マスか2マスか4マス
+								if ((existsCount == 3 && notExistsCount == 1)
+										|| (existsCount == 1 && notExistsCount == 3)) {
+									return false;
+								}
+								if (existsCount > 2) {
+									masu[yIndex][xIndex] = Masu.BLACK;
+								} else if (notExistsCount != 0) {
+									masu[yIndex][xIndex] = Masu.NOT_BLACK;
+								}
+							}
+							if (masu[yIndex][xIndex] == Masu.BLACK) {
+								// 自分が黒マスなら壁は4マス
+								if (notExistsCount > 0) {
+									return false;
+								}
+								// 周囲の壁を閉鎖
+								if (yIndex != 0) {
+									tateWall[yIndex - 1][xIndex] = Wall.EXISTS;
+								}
+								if (xIndex != getXLength() - 1) {
+									yokoWall[yIndex][xIndex] = Wall.EXISTS;
+								}
+								if (yIndex != getYLength() - 1) {
+									tateWall[yIndex][xIndex] = Wall.EXISTS;
+								}
+								if (xIndex != 0) {
+									yokoWall[yIndex][xIndex - 1] = Wall.EXISTS;
+								}
+							} else if (masu[yIndex][xIndex] == Masu.NOT_BLACK) {
+								// 自分が白マスなら壁は0マスか2マス
+								if (existsCount > 2) {
+									return false;
+								}
+								if (notExistsCount > 2) {
+									if (wallUp == Wall.SPACE) {
+										tateWall[yIndex - 1][xIndex] = Wall.NOT_EXISTS;
+									}
+									if (wallRight == Wall.SPACE) {
+										yokoWall[yIndex][xIndex] = Wall.NOT_EXISTS;
+									}
+									if (wallDown == Wall.SPACE) {
+										tateWall[yIndex][xIndex] = Wall.NOT_EXISTS;
+									}
+									if (wallLeft == Wall.SPACE) {
+										yokoWall[yIndex][xIndex - 1] = Wall.NOT_EXISTS;
+									}
+								} else if (existsCount == 2) {
+									if (wallUp == Wall.SPACE) {
+										tateWall[yIndex - 1][xIndex] = Wall.NOT_EXISTS;
+									}
+									if (wallRight == Wall.SPACE) {
+										yokoWall[yIndex][xIndex] = Wall.NOT_EXISTS;
+									}
+									if (wallDown == Wall.SPACE) {
+										tateWall[yIndex][xIndex] = Wall.NOT_EXISTS;
+									}
+									if (wallLeft == Wall.SPACE) {
+										yokoWall[yIndex][xIndex - 1] = Wall.NOT_EXISTS;
+									}
+								} else if (existsCount == 1 && notExistsCount == 2) {
+									if (wallUp == Wall.SPACE) {
+										tateWall[yIndex - 1][xIndex] = Wall.EXISTS;
+									}
+									if (wallRight == Wall.SPACE) {
+										yokoWall[yIndex][xIndex] = Wall.EXISTS;
+									}
+									if (wallDown == Wall.SPACE) {
+										tateWall[yIndex][xIndex] = Wall.EXISTS;
+									}
+									if (wallLeft == Wall.SPACE) {
+										yokoWall[yIndex][xIndex - 1] = Wall.EXISTS;
+									}
+								}
+							}
+						}
+					}
+				}
+				return true;
+			}
+		}
+
+		static class ReflectSolverForGenerator extends ReflectSolver {
+			private final int limit;
+
+			public ReflectSolverForGenerator(Field field, int limit) {
+				super(field);
+				this.limit = limit;
+			}
+
+			public int solve2() {
+				while (!field.isSolved()) {
+					String befStr = field.getStateDump();
+					if (!field.solveAndCheck()) {
+						return -1;
+					}
+					int recursiveCnt = 0;
+					while (field.getStateDump().equals(befStr) && recursiveCnt < 3) {
+						if (!candSolve(field, recursiveCnt == 2 ? 999 : recursiveCnt)) {
+							return -1;
+						}
+						recursiveCnt++;
+					}
+					if (recursiveCnt == 3 && field.getStateDump().equals(befStr)) {
+						return -1;
+					}
+				}
+				return count;
+			}
+
+			@Override
+			protected boolean candSolve(Field field, int recursive) {
+				if (this.count >= limit) {
+					return false;
+				} else {
+					return super.candSolve(field, recursive);
+				}
+			}
+		}
+
+		private final int height;
+		private final int width;
+
+		public ReflectGenerator(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		public static void main(String[] args) {
+			new ReflectGenerator(10, 10).generate();
+		}
+
+		@Override
+		public GeneratorResult generate() {
+			ExtendedField wkField = new ExtendedField(height, width);
+			List<Integer> indexList = new ArrayList<>();
+			for (int i = 0; i < (height * (width - 1)) + ((height - 1) * width); i++) {
+				indexList.add(i);
+			}
+			Collections.shuffle(indexList);
+			int index = 0;
+			int level = 0;
+			long start = System.nanoTime();
+			while (true) {
+				// 問題生成部
+				while (!wkField.isSolved()) {
+					int posBase = indexList.get(index);
+					boolean toYokoWall;
+					int yIndex, xIndex;
+					if (posBase < height * (width - 1)) {
+						toYokoWall = true;
+						yIndex = posBase / (width - 1);
+						xIndex = posBase % (width - 1);
+					} else {
+						toYokoWall = false;
+						posBase = posBase - (height * (width - 1));
+						yIndex = posBase / width;
+						xIndex = posBase % width;
+					}
+					if ((toYokoWall && wkField.yokoWall[yIndex][xIndex] == Wall.SPACE)
+							|| (!toYokoWall && wkField.tateWall[yIndex][xIndex] == Wall.SPACE)) {
+						boolean isOk = false;
+						List<Integer> numIdxList = new ArrayList<>();
+						for (int i = 0; i < 2; i++) {
+							numIdxList.add(i);
+						}
+						Collections.shuffle(numIdxList);
+						for (int masuNum : numIdxList) {
+							ExtendedField virtual = new ExtendedField(wkField);
+							if (masuNum < 1) {
+								if (toYokoWall) {
+									virtual.yokoWall[yIndex][xIndex] = Wall.EXISTS;
+								} else {
+									virtual.tateWall[yIndex][xIndex] = Wall.EXISTS;
+								}
+							} else if (masuNum < 2) {
+								if (toYokoWall) {
+									virtual.yokoWall[yIndex][xIndex] = Wall.NOT_EXISTS;
+								} else {
+									virtual.tateWall[yIndex][xIndex] = Wall.NOT_EXISTS;
+								}
+							}
+							if (virtual.solveAndCheck()) {
+								isOk = true;
+								wkField.yokoWall = virtual.yokoWall;
+								wkField.tateWall = virtual.tateWall;
+							}
+						}
+						if (!isOk) {
+							// 破綻したら0から作り直す。
+							wkField = new ExtendedField(height, width);
+							Collections.shuffle(indexList);
+							index = 0;
+							continue;
+						}
+					}
+					index++;
+				}
+				// 数字埋め＆マス初期化
+				// できるだけ埋める
+				List<Position> numberPosList = new ArrayList<>();
+				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+						Position pos = new Position(yIndex, xIndex);
+						int notExistsCount = 0;
+						Wall wallUp = yIndex == 0 ? Wall.EXISTS : wkField.tateWall[yIndex - 1][xIndex];
+						if (wallUp == Wall.NOT_EXISTS) {
+							notExistsCount++;
+						}
+						Wall wallRight = xIndex == wkField.getXLength() - 1 ? Wall.EXISTS
+								: wkField.yokoWall[yIndex][xIndex];
+						if (wallRight == Wall.NOT_EXISTS) {
+							notExistsCount++;
+						}
+						Wall wallDown = yIndex == wkField.getYLength() - 1 ? Wall.EXISTS
+								: wkField.tateWall[yIndex][xIndex];
+						if (wallDown == Wall.NOT_EXISTS) {
+							notExistsCount++;
+						}
+						Wall wallLeft = xIndex == 0 ? Wall.EXISTS : wkField.yokoWall[yIndex][xIndex - 1];
+						if (wallLeft == Wall.NOT_EXISTS) {
+							notExistsCount++;
+						}
+						if (notExistsCount == 4) {
+							wkField.crossPosSet.add(pos);
+						} else if ((wallUp == Wall.NOT_EXISTS && wallRight == Wall.NOT_EXISTS)
+								|| (wallRight == Wall.NOT_EXISTS && wallDown == Wall.NOT_EXISTS)
+								|| (wallDown == Wall.NOT_EXISTS && wallLeft == Wall.NOT_EXISTS)
+								|| (wallLeft == Wall.NOT_EXISTS && wallUp == Wall.NOT_EXISTS)) {
+							int upSpaceCnt = 0;
+							for (int targetY = yIndex - 1; targetY >= 0; targetY--) {
+								if (wkField.tateWall[targetY][xIndex] == Wall.EXISTS) {
+									break;
+								}
+								upSpaceCnt++;
+							}
+							int rightSpaceCnt = 0;
+							for (int targetX = xIndex + 1; targetX < wkField.getXLength(); targetX++) {
+								if (wkField.yokoWall[yIndex][targetX - 1] == Wall.EXISTS) {
+									break;
+								}
+								rightSpaceCnt++;
+							}
+							int downSpaceCnt = 0;
+							for (int targetY = yIndex + 1; targetY < wkField.getYLength(); targetY++) {
+								if (wkField.tateWall[targetY - 1][xIndex] == Wall.EXISTS) {
+									break;
+								}
+								downSpaceCnt++;
+							}
+							int leftSpaceCnt = 0;
+							for (int targetX = xIndex - 1; targetX >= 0; targetX--) {
+								if (wkField.yokoWall[yIndex][targetX] == Wall.EXISTS) {
+									break;
+								}
+								leftSpaceCnt++;
+							}
+							int aroundSpaceCnt = 1 + upSpaceCnt + rightSpaceCnt + downSpaceCnt + leftSpaceCnt;
+							wkField.numbers[yIndex][xIndex] = aroundSpaceCnt;
+							numberPosList.add(pos);
+						}
+					}
+				}
+				System.out.println(wkField);
+				// マスを戻す
+				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+						wkField.masu[yIndex][xIndex] = Masu.SPACE;
+					}
+				}
+				// TODO これじゃ角記号まで戻っちゃう…
+				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+					for (int xIndex = 0; xIndex < wkField.getXLength() - 1; xIndex++) {
+						wkField.yokoWall[yIndex][xIndex] = Wall.SPACE;
+					}
+				}
+				for (int yIndex = 0; yIndex < wkField.getYLength() - 1; yIndex++) {
+					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+						wkField.tateWall[yIndex][xIndex] = Wall.SPACE;
+					}
+				}
+				// 解けるかな？
+				level = new ReflectSolverForGenerator(new ReflectSolver.Field(wkField), 500).solve2();
+				if (level == -1) {
+					// 解けなければやり直し
+					wkField = new ExtendedField(height, width);
+					Collections.shuffle(indexList);
+					index = 0;
+				} else {
+					// ヒントを限界まで減らす
+					Collections.shuffle(numberPosList);
+					for (Position numberPos : numberPosList) {
+						ReflectSolver.Field virtual = new ReflectSolver.Field(wkField, true);
+						virtual.numbers[numberPos.getyIndex()][numberPos.getyIndex()] = null;
+						int solveResult = new ReflectSolverForGenerator(virtual, 2000).solve2();
+						if (solveResult != -1) {
+							wkField.numbers[numberPos.getyIndex()][numberPos.getyIndex()] = null;
+							level = solveResult;
+						}
+					}
+					break;
+				}
+			}
+			level = (int) Math.sqrt(level * 10 / 3) + 1;
+			String status = "Lv:" + level + "の問題を獲得！(ヒント数：" + wkField.getHintCount() + ")";
+			String url = wkField.getPuzPreURL();
+			String link = "<a href=\"" + url + "\" target=\"_blank\">ぱずぷれv3で解く</a>";
+			StringBuilder sb = new StringBuilder();
+			//			int baseSize = 20;
+			//			int margin = 5;
+			//			sb.append(
+			//					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
+			//							+ "height=\"" + (wkField.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
+			//							+ (wkField.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			//			// 横壁描画
+			//			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+			//				for (int xIndex = -1; xIndex < wkField.getXLength(); xIndex++) {
+			//					sb.append("<line y1=\""
+			//							+ (yIndex * baseSize + baseSize / 2 + margin)
+			//							+ "\" x1=\""
+			//							+ (xIndex * baseSize + baseSize / 2 + 2 * baseSize)
+			//							+ "\" y2=\""
+			//							+ (yIndex * baseSize + baseSize / 2 + baseSize + margin)
+			//							+ "\" x2=\""
+			//							+ (xIndex * baseSize + baseSize / 2 + 2 * baseSize)
+			//							+ "\" stroke-width=\"1\" fill=\"none\"");
+			//					sb.append("stroke=\"#000\" ");
+			//					sb.append(">"
+			//							+ "</line>");
+			//				}
+			//			}
+			//			// 縦壁描画
+			//			for (int yIndex = -1; yIndex < wkField.getYLength(); yIndex++) {
+			//				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+			//					sb.append("<line y1=\""
+			//							+ (yIndex * baseSize + baseSize + baseSize / 2 + margin)
+			//							+ "\" x1=\""
+			//							+ (xIndex * baseSize + baseSize + baseSize / 2)
+			//							+ "\" y2=\""
+			//							+ (yIndex * baseSize + baseSize + baseSize / 2 + margin)
+			//							+ "\" x2=\""
+			//							+ (xIndex * baseSize + baseSize + baseSize + baseSize / 2)
+			//							+ "\" stroke-width=\"1\" fill=\"none\"");
+			//					sb.append("stroke=\"#000\" ");
+			//					sb.append(">"
+			//							+ "</line>");
+			//				}
+			//			}
+			//			// 数字描画
+			//			for (int yIndex = 0; yIndex < wkField.getYLength() + 1; yIndex++) {
+			//				for (int xIndex = 0; xIndex < wkField.getXLength() + 1; xIndex++) {
+			//					Integer number = wkField.getExtraNumbers()[yIndex][xIndex];
+			//					if (number != null) {
+			//						String numberStr = String.valueOf(number);
+			//						int numIdx = HALF_NUMS.indexOf(numberStr);
+			//						String masuStr = null;
+			//						if (numIdx >= 0) {
+			//							masuStr = FULL_NUMS.substring(numIdx / 2, numIdx / 2 + 1);
+			//						} else {
+			//							masuStr = numberStr;
+			//						}
+			//						sb.append("<circle cy=\"" + (yIndex * baseSize + (baseSize / 2) + margin)
+			//								+ "\" cx=\""
+			//								+ (xIndex * baseSize + baseSize + (baseSize / 2))
+			//								+ "\" r=\""
+			//								+ (baseSize / 2 - 3)
+			//								+ "\" fill=\"white\", stroke=\"black\">"
+			//								+ "</circle>");
+			//						sb.append("<text y=\"" + (yIndex * baseSize + baseSize + margin - 5)
+			//								+ "\" x=\""
+			//								+ (xIndex * baseSize + baseSize + 3)
+			//								+ "\" font-size=\""
+			//								+ (baseSize - 6)
+			//								+ "\" textLength=\""
+			//								+ (baseSize - 6)
+			//								+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+			//								+ masuStr
+			//								+ "</text>");
+			//					}
+			//				}
+			//			}
+
+			sb.append("</svg>");
+			System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
+			System.out.println(level);
+			System.out.println(wkField.getHintCount());
+			System.out.println(wkField);
+			return new GeneratorResult(status, sb.toString(), link, url, level, "");
+
+		}
+
+	}
+
 	public static class Field {
 		static final String ALPHABET = "abcdefghijklmnopqrstuvwxyz";
 		// マスの情報
-		private Masu[][] masu;
+		protected Masu[][] masu;
 		// 数字の情報
-		private final Integer[][] numbers;
+		protected final Integer[][] numbers;
 		// 十字マス
-		private final Set<Position> crossPosSet;
+		protected final Set<Position> crossPosSet;
 		// 横をふさぐ壁が存在するか
 		// 0,0 = trueなら、0,0と0,1の間に壁があるという意味
-		private Wall[][] yokoWall;
+		protected Wall[][] yokoWall;
 		// 縦をふさぐ壁が存在するか
 		// 0,0 = trueなら、0,0と1,0の間に壁があるという意味
-		private Wall[][] tateWall;
+		protected Wall[][] tateWall;
 
 		public Integer[][] getNumbers() {
 			return numbers;
+		}
+
+		public String getPuzPreURL() {
+			// TODO 自動生成されたメソッド・スタブ
+			return null;
+		}
+
+		public String getHintCount() {
+			// TODO 自動生成されたメソッド・スタブ
+			return null;
 		}
 
 		public Set<Position> getCrossPosSet() {
@@ -170,6 +627,53 @@ public class ReflectSolver implements Solver {
 			}
 		}
 
+		public Field(int height, int width) {
+			masu = new Masu[height][width];
+			numbers = new Integer[height][width];
+			yokoWall = new Wall[height][width - 1];
+			tateWall = new Wall[height - 1][width];
+			crossPosSet = new HashSet<>();
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					masu[yIndex][xIndex] = Masu.SPACE;
+				}
+			}
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength() - 1; xIndex++) {
+					yokoWall[yIndex][xIndex] = Wall.SPACE;
+				}
+			}
+			for (int yIndex = 0; yIndex < getYLength() - 1; yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					tateWall[yIndex][xIndex] = Wall.SPACE;
+				}
+			}
+		}
+
+		public Field(Field other, boolean flag) {
+			masu = new Masu[other.getYLength()][other.getXLength()];
+			numbers = new Integer[other.getYLength()][other.getXLength()];
+			crossPosSet = new HashSet<>(other.crossPosSet);
+			yokoWall = new Wall[other.getYLength()][other.getXLength() - 1];
+			tateWall = new Wall[other.getYLength() - 1][other.getXLength()];
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					masu[yIndex][xIndex] = other.masu[yIndex][xIndex];
+					numbers[yIndex][xIndex] = other.numbers[yIndex][xIndex];
+				}
+			}
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength() - 1; xIndex++) {
+					yokoWall[yIndex][xIndex] = other.yokoWall[yIndex][xIndex];
+				}
+			}
+			for (int yIndex = 0; yIndex < getYLength() - 1; yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					tateWall[yIndex][xIndex] = other.tateWall[yIndex][xIndex];
+				}
+			}
+		}
+
 		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
 		private static final String FULL_NUMS = "０１２３４５６７８９";
 
@@ -247,174 +751,92 @@ public class ReflectSolver implements Solver {
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
 					if (!crossPosSet.contains(new Position(yIndex, xIndex))) {
+						int existsCount = 0;
+						int notExistsCount = 0;
+						Wall wallUp = yIndex == 0 ? Wall.EXISTS : tateWall[yIndex - 1][xIndex];
+						if (wallUp == Wall.EXISTS) {
+							existsCount++;
+						} else if (wallUp == Wall.NOT_EXISTS) {
+							notExistsCount++;
+						}
+						Wall wallRight = xIndex == getXLength() - 1 ? Wall.EXISTS : yokoWall[yIndex][xIndex];
+						if (wallRight == Wall.EXISTS) {
+							existsCount++;
+						} else if (wallRight == Wall.NOT_EXISTS) {
+							notExistsCount++;
+						}
+						Wall wallDown = yIndex == getYLength() - 1 ? Wall.EXISTS : tateWall[yIndex][xIndex];
+						if (wallDown == Wall.EXISTS) {
+							existsCount++;
+						} else if (wallDown == Wall.NOT_EXISTS) {
+							notExistsCount++;
+						}
+						Wall wallLeft = xIndex == 0 ? Wall.EXISTS : yokoWall[yIndex][xIndex - 1];
+						if (wallLeft == Wall.EXISTS) {
+							existsCount++;
+						} else if (wallLeft == Wall.NOT_EXISTS) {
+							notExistsCount++;
+						}
+						if (masu[yIndex][xIndex] == Masu.SPACE) {
+							// 自分が不確定マスなら壁は2マスか4マス
+							if ((existsCount == 3 && notExistsCount == 1)
+									|| notExistsCount > 2) {
+								return false;
+							}
+							if (existsCount > 2) {
+								masu[yIndex][xIndex] = Masu.BLACK;
+							} else if (notExistsCount != 0) {
+								masu[yIndex][xIndex] = Masu.NOT_BLACK;
+							}
+						}
 						if (masu[yIndex][xIndex] == Masu.BLACK) {
+							// 自分が黒マスなら壁は4マス
+							if (notExistsCount > 0) {
+								return false;
+							}
 							// 周囲の壁を閉鎖
 							if (yIndex != 0) {
-								if (tateWall[yIndex - 1][xIndex] == Wall.NOT_EXISTS) {
-									return false;
-								}
 								tateWall[yIndex - 1][xIndex] = Wall.EXISTS;
 							}
 							if (xIndex != getXLength() - 1) {
-								if (yokoWall[yIndex][xIndex] == Wall.NOT_EXISTS) {
-									return false;
-								}
 								yokoWall[yIndex][xIndex] = Wall.EXISTS;
 							}
 							if (yIndex != getYLength() - 1) {
-								if (tateWall[yIndex][xIndex] == Wall.NOT_EXISTS) {
-									return false;
-								}
 								tateWall[yIndex][xIndex] = Wall.EXISTS;
 							}
 							if (xIndex != 0) {
-								if (yokoWall[yIndex][xIndex - 1] == Wall.NOT_EXISTS) {
-									return false;
-								}
 								yokoWall[yIndex][xIndex - 1] = Wall.EXISTS;
 							}
-						} else {
-							int existsCount = 0;
-							int notExistsCount = 0;
-							Wall wallUp = yIndex == 0 ? Wall.EXISTS : tateWall[yIndex - 1][xIndex];
-							if (wallUp == Wall.EXISTS) {
-								existsCount++;
-							} else if (wallUp == Wall.NOT_EXISTS) {
-								notExistsCount++;
+						} else if (masu[yIndex][xIndex] == Masu.NOT_BLACK) {
+							// 自分が白マスなら壁は2マス
+							if (existsCount > 2 || notExistsCount > 2) {
+								return false;
 							}
-							Wall wallRight = xIndex == getXLength() - 1 ? Wall.EXISTS : yokoWall[yIndex][xIndex];
-							if (wallRight == Wall.EXISTS) {
-								existsCount++;
-							} else if (wallRight == Wall.NOT_EXISTS) {
-								notExistsCount++;
-							}
-							Wall wallDown = yIndex == getYLength() - 1 ? Wall.EXISTS : tateWall[yIndex][xIndex];
-							if (wallDown == Wall.EXISTS) {
-								existsCount++;
-							} else if (wallDown == Wall.NOT_EXISTS) {
-								notExistsCount++;
-							}
-							Wall wallLeft = xIndex == 0 ? Wall.EXISTS : yokoWall[yIndex][xIndex - 1];
-							if (wallLeft == Wall.EXISTS) {
-								existsCount++;
-							} else if (wallLeft == Wall.NOT_EXISTS) {
-								notExistsCount++;
-							}
-							// 自分が白マスなら壁は必ず2マス
-							if (masu[yIndex][xIndex] == Masu.NOT_BLACK) {
-								if (existsCount > 2 || notExistsCount > 2) {
-									return false;
+							if (notExistsCount == 2) {
+								if (wallUp == Wall.SPACE) {
+									tateWall[yIndex - 1][xIndex] = Wall.EXISTS;
 								}
-								if (notExistsCount == 2) {
-									if (wallUp == Wall.SPACE) {
-										tateWall[yIndex - 1][xIndex] = Wall.EXISTS;
-									}
-									if (wallRight == Wall.SPACE) {
-										yokoWall[yIndex][xIndex] = Wall.EXISTS;
-									}
-									if (wallDown == Wall.SPACE) {
-										tateWall[yIndex][xIndex] = Wall.EXISTS;
-									}
-									if (wallLeft == Wall.SPACE) {
-										yokoWall[yIndex][xIndex - 1] = Wall.EXISTS;
-									}
-								} else if (existsCount == 2) {
-									if (wallUp == Wall.SPACE) {
-										if (masu[yIndex - 1][xIndex] == Masu.BLACK) {
-											return false;
-										}
-										tateWall[yIndex - 1][xIndex] = Wall.NOT_EXISTS;
-										masu[yIndex - 1][xIndex] = Masu.NOT_BLACK;
-									}
-									if (wallRight == Wall.SPACE) {
-										if (masu[yIndex][xIndex + 1] == Masu.BLACK) {
-											return false;
-										}
-										yokoWall[yIndex][xIndex] = Wall.NOT_EXISTS;
-										masu[yIndex][xIndex + 1] = Masu.NOT_BLACK;
-									}
-									if (wallDown == Wall.SPACE) {
-										if (masu[yIndex + 1][xIndex] == Masu.BLACK) {
-											return false;
-										}
-										tateWall[yIndex][xIndex] = Wall.NOT_EXISTS;
-										masu[yIndex + 1][xIndex] = Masu.NOT_BLACK;
-									}
-									if (wallLeft == Wall.SPACE) {
-										if (masu[yIndex][xIndex - 1] == Masu.BLACK) {
-											return false;
-										}
-										yokoWall[yIndex][xIndex - 1] = Wall.NOT_EXISTS;
-										masu[yIndex][xIndex - 1] = Masu.NOT_BLACK;
-									}
+								if (wallRight == Wall.SPACE) {
+									yokoWall[yIndex][xIndex] = Wall.EXISTS;
 								}
-							} else if (masu[yIndex][xIndex] == Masu.SPACE) {
-								// 自分が不確定マスなら壁は2マスか4マス
-								if ((existsCount == 3 && notExistsCount == 1)
-										|| notExistsCount > 2) {
-									return false;
+								if (wallDown == Wall.SPACE) {
+									tateWall[yIndex][xIndex] = Wall.EXISTS;
 								}
-								if (existsCount > 2) {
-									masu[yIndex][xIndex] = Masu.BLACK;
-									if (existsCount == 3) {
-										if (wallUp == Wall.SPACE) {
-											tateWall[yIndex - 1][xIndex] = Wall.EXISTS;
-										}
-										if (wallRight == Wall.SPACE) {
-											yokoWall[yIndex][xIndex] = Wall.EXISTS;
-										}
-										if (wallDown == Wall.SPACE) {
-											tateWall[yIndex][xIndex] = Wall.EXISTS;
-										}
-										if (wallLeft == Wall.SPACE) {
-											yokoWall[yIndex][xIndex - 1] = Wall.EXISTS;
-										}
-									}
-								} else if (notExistsCount != 0) {
-									masu[yIndex][xIndex] = Masu.NOT_BLACK;
-									if (notExistsCount == 2) {
-										if (wallUp == Wall.SPACE) {
-											tateWall[yIndex - 1][xIndex] = Wall.EXISTS;
-										}
-										if (wallRight == Wall.SPACE) {
-											yokoWall[yIndex][xIndex] = Wall.EXISTS;
-										}
-										if (wallDown == Wall.SPACE) {
-											tateWall[yIndex][xIndex] = Wall.EXISTS;
-										}
-										if (wallLeft == Wall.SPACE) {
-											yokoWall[yIndex][xIndex - 1] = Wall.EXISTS;
-										}
-									} else if (existsCount == 2) {
-										if (wallUp == Wall.SPACE) {
-											if (masu[yIndex - 1][xIndex] == Masu.BLACK) {
-												return false;
-											}
-											tateWall[yIndex - 1][xIndex] = Wall.NOT_EXISTS;
-											masu[yIndex - 1][xIndex] = Masu.NOT_BLACK;
-										}
-										if (wallRight == Wall.SPACE) {
-											if (masu[yIndex][xIndex + 1] == Masu.BLACK) {
-												return false;
-											}
-											yokoWall[yIndex][xIndex] = Wall.NOT_EXISTS;
-											masu[yIndex][xIndex + 1] = Masu.NOT_BLACK;
-										}
-										if (wallDown == Wall.SPACE) {
-											if (masu[yIndex + 1][xIndex] == Masu.BLACK) {
-												return false;
-											}
-											tateWall[yIndex][xIndex] = Wall.NOT_EXISTS;
-											masu[yIndex + 1][xIndex] = Masu.NOT_BLACK;
-										}
-										if (wallLeft == Wall.SPACE) {
-											if (masu[yIndex][xIndex - 1] == Masu.BLACK) {
-												return false;
-											}
-											yokoWall[yIndex][xIndex - 1] = Wall.NOT_EXISTS;
-											masu[yIndex][xIndex - 1] = Masu.NOT_BLACK;
-										}
-									}
+								if (wallLeft == Wall.SPACE) {
+									yokoWall[yIndex][xIndex - 1] = Wall.EXISTS;
+								}
+							} else if (existsCount == 2) {
+								if (wallUp == Wall.SPACE) {
+									tateWall[yIndex - 1][xIndex] = Wall.NOT_EXISTS;
+								}
+								if (wallRight == Wall.SPACE) {
+									yokoWall[yIndex][xIndex] = Wall.NOT_EXISTS;
+								}
+								if (wallDown == Wall.SPACE) {
+									tateWall[yIndex][xIndex] = Wall.NOT_EXISTS;
+								}
+								if (wallLeft == Wall.SPACE) {
+									yokoWall[yIndex][xIndex - 1] = Wall.NOT_EXISTS;
 								}
 							}
 						}
@@ -708,7 +1130,7 @@ public class ReflectSolver implements Solver {
 		/**
 		 * 各種チェックを1セット実行
 		 */
-		private boolean solveAndCheck() {
+		protected boolean solveAndCheck() {
 			String str = getStateDump();
 			if (!nextSolve()) {
 				return false;
@@ -748,11 +1170,15 @@ public class ReflectSolver implements Solver {
 
 	}
 
-	private final Field field;
-	private int count = 0;
+	protected final Field field;
+	protected int count = 0;
 
 	public ReflectSolver(int height, int width, String param) {
 		field = new Field(height, width, param);
+	}
+
+	public ReflectSolver(Field field) {
+		this.field = new Field(field);
 	}
 
 	public Field getField() {
@@ -799,7 +1225,7 @@ public class ReflectSolver implements Solver {
 	 * 仮置きして調べる
 	 * @param posSet
 	 */
-	private boolean candSolve(Field field, int recursive) {
+	protected boolean candSolve(Field field, int recursive) {
 		String str = field.getStateDump();
 		for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 			for (int xIndex = 0; xIndex < field.getXLength() - 1; xIndex++) {
