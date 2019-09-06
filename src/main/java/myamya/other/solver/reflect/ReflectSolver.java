@@ -324,30 +324,39 @@ public class ReflectSolver implements Solver {
 							}
 							int aroundSpaceCnt = 1 + upSpaceCnt + rightSpaceCnt + downSpaceCnt + leftSpaceCnt;
 							wkField.numbers[yIndex][xIndex] = aroundSpaceCnt;
+							// 数字減らし・壁減らしの2段構え
+							numberPosList.add(pos);
 							numberPosList.add(pos);
 						}
 					}
 				}
-				System.out.println(wkField);
 				// マスを戻す
 				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
 					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
-						wkField.masu[yIndex][xIndex] = Masu.SPACE;
-					}
-				}
-				// TODO これじゃ角記号まで戻っちゃう…
-				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
-					for (int xIndex = 0; xIndex < wkField.getXLength() - 1; xIndex++) {
-						wkField.yokoWall[yIndex][xIndex] = Wall.SPACE;
-					}
-				}
-				for (int yIndex = 0; yIndex < wkField.getYLength() - 1; yIndex++) {
-					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
-						wkField.tateWall[yIndex][xIndex] = Wall.SPACE;
+						if (wkField.numbers[yIndex][xIndex] == null
+								&& !wkField.getCrossPosSet().contains(new Position(yIndex, xIndex))) {
+							wkField.masu[yIndex][xIndex] = Masu.SPACE;
+							if (yIndex != 0 && wkField.numbers[yIndex - 1][xIndex] == null
+									&& !wkField.getCrossPosSet().contains(new Position(yIndex - 1, xIndex))) {
+								wkField.tateWall[yIndex - 1][xIndex] = Wall.SPACE;
+							}
+							if (xIndex != wkField.getXLength() - 1 && wkField.numbers[yIndex][xIndex + 1] == null
+									&& !wkField.getCrossPosSet().contains(new Position(yIndex, xIndex + 1))) {
+								wkField.yokoWall[yIndex][xIndex] = Wall.SPACE;
+							}
+							if (yIndex != wkField.getYLength() - 1 && wkField.numbers[yIndex + 1][xIndex] == null
+									&& !wkField.getCrossPosSet().contains(new Position(yIndex + 1, xIndex))) {
+								wkField.tateWall[yIndex][xIndex] = Wall.SPACE;
+							}
+							if (xIndex != 0 && wkField.numbers[yIndex][xIndex - 1] == null
+									&& !wkField.getCrossPosSet().contains(new Position(yIndex, xIndex - 1))) {
+								wkField.yokoWall[yIndex][xIndex - 1] = Wall.SPACE;
+							}
+						}
 					}
 				}
 				// 解けるかな？
-				level = new ReflectSolverForGenerator(new ReflectSolver.Field(wkField), 500).solve2();
+				level = new ReflectSolverForGenerator(new ReflectSolver.Field(wkField), 50).solve2();
 				if (level == -1) {
 					// 解けなければやり直し
 					wkField = new ExtendedField(height, width);
@@ -358,10 +367,54 @@ public class ReflectSolver implements Solver {
 					Collections.shuffle(numberPosList);
 					for (Position numberPos : numberPosList) {
 						ReflectSolver.Field virtual = new ReflectSolver.Field(wkField, true);
-						virtual.numbers[numberPos.getyIndex()][numberPos.getyIndex()] = null;
-						int solveResult = new ReflectSolverForGenerator(virtual, 2000).solve2();
+						int yIndex = numberPos.getyIndex();
+						int xIndex = numberPos.getxIndex();
+						if (virtual.numbers[yIndex][xIndex] != 0) {
+							virtual.numbers[yIndex][xIndex] = 0;
+						} else {
+							virtual.numbers[yIndex][xIndex] = null;
+							virtual.masu[yIndex][xIndex] = Masu.SPACE;
+							if (yIndex != 0 && virtual.numbers[yIndex - 1][xIndex] == null
+									&& !virtual.getCrossPosSet().contains(new Position(yIndex - 1, xIndex))) {
+								virtual.tateWall[yIndex - 1][xIndex] = Wall.SPACE;
+							}
+							if (xIndex != virtual.getXLength() - 1 && virtual.numbers[yIndex][xIndex + 1] == null
+									&& !virtual.getCrossPosSet().contains(new Position(yIndex, xIndex + 1))) {
+								virtual.yokoWall[yIndex][xIndex] = Wall.SPACE;
+							}
+							if (yIndex != virtual.getYLength() - 1 && virtual.numbers[yIndex + 1][xIndex] == null
+									&& !virtual.getCrossPosSet().contains(new Position(yIndex + 1, xIndex))) {
+								virtual.tateWall[yIndex][xIndex] = Wall.SPACE;
+							}
+							if (xIndex != 0 && virtual.numbers[yIndex][xIndex - 1] == null
+									&& !virtual.getCrossPosSet().contains(new Position(yIndex, xIndex - 1))) {
+								virtual.yokoWall[yIndex][xIndex - 1] = Wall.SPACE;
+							}
+						}
+						int solveResult = new ReflectSolverForGenerator(virtual, 1500).solve2();
 						if (solveResult != -1) {
-							wkField.numbers[numberPos.getyIndex()][numberPos.getyIndex()] = null;
+							if (wkField.numbers[yIndex][xIndex] != 0) {
+								wkField.numbers[yIndex][xIndex] = 0;
+							} else {
+								wkField.numbers[yIndex][xIndex] = null;
+								wkField.masu[yIndex][xIndex] = Masu.SPACE;
+								if (yIndex != 0 && wkField.numbers[yIndex - 1][xIndex] == null
+										&& !wkField.getCrossPosSet().contains(new Position(yIndex - 1, xIndex))) {
+									wkField.tateWall[yIndex - 1][xIndex] = Wall.SPACE;
+								}
+								if (xIndex != wkField.getXLength() - 1 && wkField.numbers[yIndex][xIndex + 1] == null
+										&& !wkField.getCrossPosSet().contains(new Position(yIndex, xIndex + 1))) {
+									wkField.yokoWall[yIndex][xIndex] = Wall.SPACE;
+								}
+								if (yIndex != wkField.getYLength() - 1 && wkField.numbers[yIndex + 1][xIndex] == null
+										&& !wkField.getCrossPosSet().contains(new Position(yIndex + 1, xIndex))) {
+									wkField.tateWall[yIndex][xIndex] = Wall.SPACE;
+								}
+								if (xIndex != 0 && wkField.numbers[yIndex][xIndex - 1] == null
+										&& !wkField.getCrossPosSet().contains(new Position(yIndex, xIndex - 1))) {
+									wkField.yokoWall[yIndex][xIndex - 1] = Wall.SPACE;
+								}
+							}
 							level = solveResult;
 						}
 					}
@@ -1138,14 +1191,15 @@ public class ReflectSolver implements Solver {
 			if (!limitSolve()) {
 				return false;
 			}
-			if (!oddSolve()) {
-				return false;
-			}
-			if (!connectSolve()) {
-				return false;
-			}
 			if (!getStateDump().equals(str)) {
 				return solveAndCheck();
+			} else {
+				if (!oddSolve()) {
+					return false;
+				}
+				if (!connectSolve()) {
+					return false;
+				}
 			}
 			return true;
 		}

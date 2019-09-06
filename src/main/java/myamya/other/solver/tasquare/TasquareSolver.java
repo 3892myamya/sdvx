@@ -151,7 +151,7 @@ public class TasquareSolver implements Solver {
 				// マスを戻す
 				wkField.initCand();
 				// 解けるかな？
-				level = new TasquareSolverForGenerator(wkField, 100).solve2();
+				level = new TasquareSolverForGenerator(wkField, 200).solve2();
 				if (level == -1) {
 					// 解けなければやり直し
 					wkField = new TasquareSolver.Field(height, width);
@@ -168,7 +168,7 @@ public class TasquareSolver implements Solver {
 							virtual.numbers[numberPos.getyIndex()][numberPos.getxIndex()] = null;
 							virtual.initCand();
 						}
-						int solveResult = new TasquareSolverForGenerator(virtual, 5000).solve2();
+						int solveResult = new TasquareSolverForGenerator(virtual, 2500).solve2();
 						if (solveResult != -1) {
 							wkField.numbers[numberPos.getyIndex()][numberPos
 									.getxIndex()] = virtual.numbers[numberPos.getyIndex()][numberPos.getxIndex()];
@@ -182,7 +182,7 @@ public class TasquareSolver implements Solver {
 					break;
 				}
 			}
-			level = (int) Math.sqrt(level / 3);
+			level = (int) Math.sqrt(level * 2 / 3);
 			String status = "Lv:" + level + "の問題を獲得！(ヒント数：" + wkField.getHintCount() + ")";
 			String url = wkField.getPuzPreURL();
 			String link = "<a href=\"" + url + "\" target=\"_blank\">ぱずぷれv3で解く</a>";
@@ -338,7 +338,34 @@ public class TasquareSolver implements Solver {
 									}
 								}
 								if (addSikaku) {
-									squareCand.add(sikaku);
+									// 数字に隣接しており、明らかに候補にならない数字は消す
+									Sikaku removeSikaku1 = new Sikaku(
+											new Position(sikaku.getLeftUp().getyIndex() - 1,
+													sikaku.getLeftUp().getxIndex()),
+											new Position(sikaku.getRightDown().getyIndex() + 1,
+													sikaku.getRightDown().getxIndex()));
+									Sikaku removeSikaku2 = new Sikaku(
+											new Position(sikaku.getLeftUp().getyIndex(),
+													sikaku.getLeftUp().getxIndex() - 1),
+											new Position(sikaku.getRightDown().getyIndex(),
+													sikaku.getRightDown().getxIndex() + 1));
+									outer: for (int otherY = 0; otherY < getYLength(); otherY++) {
+										for (int otherX = 0; otherX < getXLength(); otherX++) {
+											if (numbers[otherY][otherX] != null && numbers[otherY][otherX] != -1) {
+												Position otherPos = new Position(otherY, otherX);
+												if (removeSikaku1.isDuplicate(otherPos)
+														|| removeSikaku2.isDuplicate(otherPos)) {
+													if (sikaku.getAreaSize() > numbers[otherY][otherX]) {
+														addSikaku = false;
+														break outer;
+													}
+												}
+											}
+										}
+									}
+									if (addSikaku) {
+										squareCand.add(sikaku);
+									}
 								}
 							}
 						}
@@ -528,6 +555,9 @@ public class TasquareSolver implements Solver {
 						if (num != -1 && num < fixCnt) {
 							return false;
 						}
+						if (num != -1 && num == fixCnt) {
+							continue;
+						}
 						if (num == -1 && 0 < fixCnt) {
 							continue;
 						}
@@ -540,29 +570,55 @@ public class TasquareSolver implements Solver {
 							rightCand.add(0);
 							downCand.add(0);
 							leftCand.add(0);
-							for (Sikaku cand : squareCand) {
+							boolean isOk = false;
+							outer: for (Sikaku cand : squareCand) {
 								int areaSize = cand.getAreaSize();
 								if (areaSize + fixCnt <= num) {
+									boolean upDated = false;
 									if (cand.isDuplicate(new Position(yIndex - 1, xIndex))) {
-										upCand.add(areaSize);
+										upDated = upCand.add(areaSize);
 									} else if (cand.isDuplicate(new Position(yIndex, xIndex + 1))) {
-										rightCand.add(areaSize);
+										upDated = rightCand.add(areaSize);
 									} else if (cand.isDuplicate(new Position(yIndex + 1, xIndex))) {
-										downCand.add(areaSize);
+										upDated = downCand.add(areaSize);
 									} else if (cand.isDuplicate(new Position(yIndex, xIndex - 1))) {
-										leftCand.add(areaSize);
+										upDated = leftCand.add(areaSize);
 									}
-								}
-							}
-							boolean isOk = false;
-							// TODO 4重for文(笑)
-							outer: for (Integer up : upCand) {
-								for (Integer right : rightCand) {
-									for (Integer down : downCand) {
-										for (Integer left : leftCand) {
-											if (fixCnt + up + right + down + left == num) {
-												isOk = true;
-												break outer;
+									if (upDated) {
+										if (!isOk) {
+											for (Integer up : upCand) {
+												for (Integer right : rightCand) {
+													for (Integer down : downCand) {
+														if (fixCnt + up + right + down == num) {
+															isOk = true;
+															break outer;
+														}
+													}
+													for (Integer left : leftCand) {
+														if (fixCnt + up + right + left == num) {
+															isOk = true;
+															break outer;
+														}
+													}
+												}
+											}
+										}
+										if (!isOk) {
+											for (Integer down : downCand) {
+												for (Integer left : leftCand) {
+													for (Integer up : upCand) {
+														if (fixCnt + up + left + down == num) {
+															isOk = true;
+															break outer;
+														}
+													}
+													for (Integer right : rightCand) {
+														if (fixCnt + down + right + left == num) {
+															isOk = true;
+															break outer;
+														}
+													}
+												}
 											}
 										}
 									}
@@ -613,6 +669,7 @@ public class TasquareSolver implements Solver {
 					}
 				}
 			}
+
 			return true;
 		}
 
@@ -664,7 +721,9 @@ public class TasquareSolver implements Solver {
 	protected int count;
 
 	public TasquareSolver(int height, int width, String param) {
+		long start = System.nanoTime();
 		field = new Field(height, width, param);
+		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
 	}
 
 	public TasquareSolver(Field field) {
@@ -705,10 +764,10 @@ public class TasquareSolver implements Solver {
 			}
 		}
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
-		System.out.println("難易度:" + (count));
+		System.out.println("難易度:" + (count * 2));
 		System.out.println(field);
 		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count).toString();
+				+ Difficulty.getByCount(count * 2).toString();
 	}
 
 	/**
