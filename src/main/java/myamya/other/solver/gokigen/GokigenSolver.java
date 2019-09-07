@@ -146,7 +146,6 @@ public class GokigenSolver implements Solver {
 						numberPosList.add(new Position(yIndex, xIndex));
 					}
 				}
-				System.out.println(wkField);
 				// マスを戻す
 				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
 					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {

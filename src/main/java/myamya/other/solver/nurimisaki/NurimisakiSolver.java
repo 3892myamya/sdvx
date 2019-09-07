@@ -759,24 +759,31 @@ public class NurimisakiSolver implements Solver {
 					} else {
 						if (masu[yIndex][xIndex] == Masu.SPACE) {
 							if (2 < blackCnt) {
-								masu[yIndex][xIndex] = Masu.BLACK;
+								// 極小サイズの問題は4マス黒が例外的に許容される
+								if (whiteCnt == 0 || getXLength() > 3 || getYLength() > 3) {
+									masu[yIndex][xIndex] = Masu.BLACK;
+								}
 							}
 						} else if (masu[yIndex][xIndex] == Masu.NOT_BLACK) {
 							if (2 < blackCnt) {
-								return false;
+								if (whiteCnt == 0 || getXLength() > 3 || getYLength() > 3) {
+									return false;
+								}
 							}
 							if (2 == blackCnt) {
-								if (masuUp == Masu.SPACE) {
-									masu[yIndex - 1][xIndex] = Masu.NOT_BLACK;
-								}
-								if (masuRight == Masu.SPACE) {
-									masu[yIndex][xIndex + 1] = Masu.NOT_BLACK;
-								}
-								if (masuDown == Masu.SPACE) {
-									masu[yIndex + 1][xIndex] = Masu.NOT_BLACK;
-								}
-								if (masuLeft == Masu.SPACE) {
-									masu[yIndex][xIndex - 1] = Masu.NOT_BLACK;
+								if (whiteCnt == 0 || getXLength() > 3 || getYLength() > 3) {
+									if (masuUp == Masu.SPACE) {
+										masu[yIndex - 1][xIndex] = Masu.NOT_BLACK;
+									}
+									if (masuRight == Masu.SPACE) {
+										masu[yIndex][xIndex + 1] = Masu.NOT_BLACK;
+									}
+									if (masuDown == Masu.SPACE) {
+										masu[yIndex + 1][xIndex] = Masu.NOT_BLACK;
+									}
+									if (masuLeft == Masu.SPACE) {
+										masu[yIndex][xIndex - 1] = Masu.NOT_BLACK;
+									}
 								}
 							}
 						}
