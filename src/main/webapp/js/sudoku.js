@@ -3,7 +3,8 @@ var ruleMap = {
 	shakashaka : {name: "シャカシャカ", url:"https://www.nikoli.co.jp/ja/puzzles/shakashaka/"},
 	nurimisaki : {name: "ぬりみさき", url:"https://www.nikoli.co.jp/ja/puzzles/nurimisaki/"},
 	gokigen : {name: "ごきげんななめ", url:"https://www.nikoli.co.jp/ja/puzzles/gokigen_naname/"},
-	creek : {name: "クリーク", url:"https://www.nikoli.co.jp/ja/puzzles/creek/"}
+	creek : {name: "クリーク", url:"https://www.nikoli.co.jp/ja/puzzles/creek/"},
+	tasquare : {name: "たすくえあ", url:"https://www.nikoli.co.jp/ja/puzzles/tasukuea/"}
 }
 
 $(function() {

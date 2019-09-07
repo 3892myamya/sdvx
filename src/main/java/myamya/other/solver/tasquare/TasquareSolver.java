@@ -70,22 +70,34 @@ public class TasquareSolver implements Solver {
 		}
 
 		public static void main(String[] args) {
-			new TasquareGenerator(10, 10).generate();
+			new TasquareGenerator(5, 5).generate();
 		}
 
 		@Override
 		public GeneratorResult generate() {
 			TasquareSolver.Field wkField = new TasquareSolver.Field(height, width);
-			List<Integer> indexList = new ArrayList<>();
-			List<Sikaku> useCand = new ArrayList<>(wkField.squareCand);
-			for (int i = 0; i < useCand.size(); i++) {
-				indexList.add(i);
-			}
-			Collections.shuffle(indexList);
 			int index = 0;
 			int level = 0;
 			long start = System.nanoTime();
 			while (true) {
+				for (Iterator<Sikaku> iterator = wkField.squareCand.iterator(); iterator.hasNext();) {
+					// 1x1の正方形＆巨大な正方形を発生しにくくする処理
+					Sikaku sikaku = iterator.next();
+					int sikakuLength = (int) Math.sqrt(sikaku.getAreaSize());
+					int fieldLength = height < width ? height : width;
+					sikakuLength = sikakuLength == 1 ? fieldLength / 3 : sikakuLength;
+					int fieldSize = (int) Math.pow(fieldLength - 1, 4);
+					int isOkRange = (int) Math.pow(fieldLength - sikakuLength, 4);
+					if (isOkRange < Math.random() * fieldSize) {
+						iterator.remove();
+					}
+				}
+				List<Integer> indexList = new ArrayList<>();
+				List<Sikaku> useCand = new ArrayList<>(wkField.squareCand);
+				for (int i = 0; i < useCand.size(); i++) {
+					indexList.add(i);
+				}
+				Collections.shuffle(indexList);
 				// 問題生成部
 				while (!wkField.isSolved()) {
 					Sikaku oneCand = useCand.get(index);
@@ -148,6 +160,7 @@ public class TasquareSolver implements Solver {
 						}
 					}
 				}
+				System.out.println(wkField);
 				// マスを戻す
 				wkField.initCand();
 				// 解けるかな？
@@ -182,86 +195,101 @@ public class TasquareSolver implements Solver {
 					break;
 				}
 			}
+//			レベル表記がだめすぎる！作りなおし！
 			level = (int) Math.sqrt(level * 2 / 3);
-			String status = "Lv:" + level + "の問題を獲得！(ヒント数：" + wkField.getHintCount() + ")";
+			String status = "Lv:" + level + "の問題を獲得！(数字/四角：" + wkField.getHintCount().split("/")[0] + "/"
+					+ wkField.getHintCount().split("/")[1] + ")";
 			String url = wkField.getPuzPreURL();
 			String link = "<a href=\"" + url + "\" target=\"_blank\">ぱずぷれv3で解く</a>";
 			StringBuilder sb = new StringBuilder();
-			//			int baseSize = 20;
-			//			int margin = 5;
-			//			sb.append(
-			//					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
-			//							+ "height=\"" + (wkField.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
-			//							+ (wkField.getXLength() * baseSize + 2 * baseSize) + "\" >");
-			//			// 横壁描画
-			//			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
-			//				for (int xIndex = -1; xIndex < wkField.getXLength(); xIndex++) {
-			//					sb.append("<line y1=\""
-			//							+ (yIndex * baseSize + baseSize / 2 + margin)
-			//							+ "\" x1=\""
-			//							+ (xIndex * baseSize + baseSize / 2 + 2 * baseSize)
-			//							+ "\" y2=\""
-			//							+ (yIndex * baseSize + baseSize / 2 + baseSize + margin)
-			//							+ "\" x2=\""
-			//							+ (xIndex * baseSize + baseSize / 2 + 2 * baseSize)
-			//							+ "\" stroke-width=\"1\" fill=\"none\"");
-			//					sb.append("stroke=\"#000\" ");
-			//					sb.append(">"
-			//							+ "</line>");
-			//				}
-			//			}
-			//			// 縦壁描画
-			//			for (int yIndex = -1; yIndex < wkField.getYLength(); yIndex++) {
-			//				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
-			//					sb.append("<line y1=\""
-			//							+ (yIndex * baseSize + baseSize + baseSize / 2 + margin)
-			//							+ "\" x1=\""
-			//							+ (xIndex * baseSize + baseSize + baseSize / 2)
-			//							+ "\" y2=\""
-			//							+ (yIndex * baseSize + baseSize + baseSize / 2 + margin)
-			//							+ "\" x2=\""
-			//							+ (xIndex * baseSize + baseSize + baseSize + baseSize / 2)
-			//							+ "\" stroke-width=\"1\" fill=\"none\"");
-			//					sb.append("stroke=\"#000\" ");
-			//					sb.append(">"
-			//							+ "</line>");
-			//				}
-			//			}
-			//			// 数字描画
-			//			for (int yIndex = 0; yIndex < wkField.getYLength() + 1; yIndex++) {
-			//				for (int xIndex = 0; xIndex < wkField.getXLength() + 1; xIndex++) {
-			//					Integer number = wkField.getExtraNumbers()[yIndex][xIndex];
-			//					if (number != null) {
-			//						String numberStr = String.valueOf(number);
-			//						int numIdx = HALF_NUMS.indexOf(numberStr);
-			//						String masuStr = null;
-			//						if (numIdx >= 0) {
-			//							masuStr = FULL_NUMS.substring(numIdx / 2, numIdx / 2 + 1);
-			//						} else {
-			//							masuStr = numberStr;
-			//						}
-			//						sb.append("<circle cy=\"" + (yIndex * baseSize + (baseSize / 2) + margin)
-			//								+ "\" cx=\""
-			//								+ (xIndex * baseSize + baseSize + (baseSize / 2))
-			//								+ "\" r=\""
-			//								+ (baseSize / 2 - 3)
-			//								+ "\" fill=\"white\", stroke=\"black\">"
-			//								+ "</circle>");
-			//						sb.append("<text y=\"" + (yIndex * baseSize + baseSize + margin - 5)
-			//								+ "\" x=\""
-			//								+ (xIndex * baseSize + baseSize + 3)
-			//								+ "\" font-size=\""
-			//								+ (baseSize - 6)
-			//								+ "\" textLength=\""
-			//								+ (baseSize - 6)
-			//								+ "\" lengthAdjust=\"spacingAndGlyphs\">"
-			//								+ masuStr
-			//								+ "</text>");
-			//					}
-			//				}
-			//			}
-			//
-			//			sb.append("</svg>");
+			int baseSize = 20;
+			int margin = 5;
+			sb.append(
+					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
+							+ "height=\"" + (wkField.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
+							+ (wkField.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			// 数字描画
+			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+					if (wkField.getNumbers()[yIndex][xIndex] != null) {
+						sb.append("<rect y=\"" + (yIndex * baseSize + 2 + margin)
+								+ "\" x=\""
+								+ (xIndex * baseSize + baseSize + 2)
+								+ "\" width=\""
+								+ (baseSize - 4)
+								+ "\" height=\""
+								+ (baseSize - 4)
+								+ "\" fill=\"white\" stroke-width=\"1\" stroke=\"black\">"
+								+ "\">"
+								+ "</rect>");
+						if (wkField.getNumbers()[yIndex][xIndex] != -1) {
+							String numberStr = String.valueOf(wkField.getNumbers()[yIndex][xIndex]);
+							int numIdx = HALF_NUMS.indexOf(numberStr);
+							String masuStr = null;
+							if (numIdx >= 0) {
+								masuStr = FULL_NUMS.substring(numIdx / 2, numIdx / 2 + 1);
+							} else {
+								masuStr = numberStr;
+							}
+							sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 4 + margin)
+									+ "\" x=\""
+									+ (xIndex * baseSize + baseSize + 2)
+									+ "\" font-size=\""
+									+ (baseSize - 5)
+									+ "\" textLength=\""
+									+ (baseSize - 5)
+									+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+									+ masuStr
+									+ "</text>");
+						}
+					}
+				}
+			}
+			// 横壁描画
+			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = -1; xIndex < wkField.getXLength(); xIndex++) {
+					boolean oneYokoWall = xIndex == -1 || xIndex == wkField.getXLength() - 1;
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + margin)
+							+ "\" x1=\""
+							+ (xIndex * baseSize + 2 * baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ (xIndex * baseSize + 2 * baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneYokoWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">"
+							+ "</line>");
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = -1; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+					boolean oneTateWall = yIndex == -1 || yIndex == wkField.getYLength() - 1;
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x1=\""
+							+ (xIndex * baseSize + baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ (xIndex * baseSize + baseSize + baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneTateWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">"
+							+ "</line>");
+				}
+			}
+			sb.append("</svg>");
 			System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
 			System.out.println(level);
 			System.out.println(wkField.getHintCount());
@@ -287,13 +315,63 @@ public class TasquareSolver implements Solver {
 		}
 
 		public String getPuzPreURL() {
-			// TODO 自動生成されたメソッド・スタブ
-			return null;
+			StringBuilder sb = new StringBuilder();
+			sb.append("http://pzv.jp/p.html?tasquare/" + getXLength() + "/" + getYLength() + "/");
+			int interval = 0;
+			for (int i = 0; i < getYLength() * getXLength(); i++) {
+				int yIndex = i / getXLength();
+				int xIndex = i % getXLength();
+				if (numbers[yIndex][xIndex] == null) {
+					interval++;
+					if (interval == 20) {
+						sb.append("z");
+						interval = 0;
+					}
+				} else {
+					Integer num = numbers[yIndex][xIndex];
+					String numStr = null;
+					if (num == -1) {
+						numStr = ".";
+					} else {
+						numStr = Integer.toHexString(num);
+						if (numStr.length() == 2) {
+							numStr = "-" + numStr;
+						} else if (numStr.length() == 3) {
+							numStr = "+" + numStr;
+						}
+					}
+					if (interval == 0) {
+						sb.append(numStr);
+					} else {
+						sb.append(ALPHABET_FROM_G.substring(interval - 1, interval));
+						sb.append(numStr);
+						interval = 0;
+					}
+				}
+			}
+			if (interval != 0) {
+				sb.append(ALPHABET_FROM_G.substring(interval - 1, interval));
+			}
+			if (sb.charAt(sb.length() - 1) == '.') {
+				sb.append("/");
+			}
+			return sb.toString();
 		}
 
 		public String getHintCount() {
-			// TODO 自動生成されたメソッド・スタブ
-			return null;
+			int kuroCnt = 0;
+			int numberCnt = 0;
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					if (numbers[yIndex][xIndex] != null) {
+						kuroCnt++;
+						if (numbers[yIndex][xIndex] != -1) {
+							numberCnt++;
+						}
+					}
+				}
+			}
+			return String.valueOf(numberCnt + "/" + kuroCnt);
 		}
 
 		public int getYLength() {
@@ -766,8 +844,9 @@ public class TasquareSolver implements Solver {
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
 		System.out.println("難易度:" + (count * 2));
 		System.out.println(field);
+		int level = (int) Math.sqrt(count * 2 / 3);
 		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count * 2).toString();
+				+ Difficulty.getByCount(count * 2).toString() + "(Lv:" + level + ")";
 	}
 
 	/**

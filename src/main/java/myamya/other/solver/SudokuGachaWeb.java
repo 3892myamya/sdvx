@@ -17,6 +17,7 @@ import myamya.other.solver.gokigen.GokigenSolver.GokigenGenerator;
 import myamya.other.solver.nurimisaki.NurimisakiSolver.NurimisakiGenerator;
 import myamya.other.solver.shakashaka.ShakashakaSolver.ShakashakaGenerator;
 import myamya.other.solver.sudoku.SudokuSolver.SudokuGenerator;
+import myamya.other.solver.tasquare.TasquareSolver.TasquareGenerator;
 import net.arnx.jsonic.JSON;
 
 @WebServlet("/SudokuGacha")
@@ -112,6 +113,22 @@ public class SudokuGachaWeb extends HttpServlet {
 
 	}
 
+	static class TasquareGeneratorThlead extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+
+		TasquareGeneratorThlead(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new TasquareGenerator(height, width);
+		}
+
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -137,6 +154,8 @@ public class SudokuGachaWeb extends HttpServlet {
 					t = new GokigenGeneratorThlead(height, width);
 				} else if (type.equals("creek")) {
 					t = new CreekGeneratorThlead(height, width);
+				} else if (type.equals("tasquare")) {
+					t = new TasquareGeneratorThlead(height, width);
 				} else {
 					throw new IllegalArgumentException();
 				}
