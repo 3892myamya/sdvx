@@ -1444,6 +1444,7 @@ public class NurimisakiSolver implements Solver {
 	public String solve() {
 		long start = System.nanoTime();
 		if (!field.firstSolve()) {
+			System.out.println(field);
 			return "解けませんでした。途中経過を返します。";
 		}
 		while (!field.isSolved()) {
