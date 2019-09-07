@@ -28,6 +28,9 @@ public class NurimisakiSolver implements Solver {
 			}
 
 			public int solve2() {
+				if (!field.firstSolve()) {
+					return -1;
+				}
 				while (!field.isSolved()) {
 					String befStr = field.getStateDump();
 					if (!field.solveAndCheck()) {
@@ -555,6 +558,26 @@ public class NurimisakiSolver implements Solver {
 		}
 
 		/**
+		 * 3x3以下で岬なし問題禁止。
+		 * 最初に1回だけ呼ぶ。
+		 */
+		public boolean firstSolve() {
+			if (getYLength() <= 3 && getXLength() <= 3) {
+				boolean isOk = false;
+				for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+					for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+						if (misaki[yIndex][xIndex]) {
+							isOk = true;
+							break;
+						}
+					}
+				}
+				return isOk;
+			}
+			return true;
+		}
+
+		/**
 		 * 数字のマスから何マス伸ばせるか調べ、方向を確定する。
 		 */
 		public boolean numberSolve() {
@@ -759,31 +782,24 @@ public class NurimisakiSolver implements Solver {
 					} else {
 						if (masu[yIndex][xIndex] == Masu.SPACE) {
 							if (2 < blackCnt) {
-								// 極小サイズの問題は4マス黒が例外的に許容される
-								if (whiteCnt == 0 || getXLength() > 3 || getYLength() > 3) {
-									masu[yIndex][xIndex] = Masu.BLACK;
-								}
+								masu[yIndex][xIndex] = Masu.BLACK;
 							}
 						} else if (masu[yIndex][xIndex] == Masu.NOT_BLACK) {
 							if (2 < blackCnt) {
-								if (whiteCnt == 0 || getXLength() > 3 || getYLength() > 3) {
-									return false;
-								}
+								return false;
 							}
 							if (2 == blackCnt) {
-								if (whiteCnt == 0 || getXLength() > 3 || getYLength() > 3) {
-									if (masuUp == Masu.SPACE) {
-										masu[yIndex - 1][xIndex] = Masu.NOT_BLACK;
-									}
-									if (masuRight == Masu.SPACE) {
-										masu[yIndex][xIndex + 1] = Masu.NOT_BLACK;
-									}
-									if (masuDown == Masu.SPACE) {
-										masu[yIndex + 1][xIndex] = Masu.NOT_BLACK;
-									}
-									if (masuLeft == Masu.SPACE) {
-										masu[yIndex][xIndex - 1] = Masu.NOT_BLACK;
-									}
+								if (masuUp == Masu.SPACE) {
+									masu[yIndex - 1][xIndex] = Masu.NOT_BLACK;
+								}
+								if (masuRight == Masu.SPACE) {
+									masu[yIndex][xIndex + 1] = Masu.NOT_BLACK;
+								}
+								if (masuDown == Masu.SPACE) {
+									masu[yIndex + 1][xIndex] = Masu.NOT_BLACK;
+								}
+								if (masuLeft == Masu.SPACE) {
+									masu[yIndex][xIndex - 1] = Masu.NOT_BLACK;
 								}
 							}
 						}
@@ -1427,6 +1443,9 @@ public class NurimisakiSolver implements Solver {
 	@Override
 	public String solve() {
 		long start = System.nanoTime();
+		if (!field.firstSolve()) {
+			return "解けませんでした。途中経過を返します。";
+		}
 		while (!field.isSolved()) {
 			System.out.println(field);
 			String befStr = field.getStateDump();
