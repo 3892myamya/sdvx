@@ -48,6 +48,24 @@ public class TasquareSolver implements Solver {
 						return -1;
 					}
 				}
+				field.initCand(false);
+				count = 0;
+				while (!field.isSolved()) {
+					String befStr = field.getStateDump();
+					if (!field.solveAndCheck()) {
+						return -1;
+					}
+					int recursiveCnt = 0;
+					while (field.getStateDump().equals(befStr) && recursiveCnt < 3) {
+						if (!candSolve(field, recursiveCnt)) {
+							return -1;
+						}
+						recursiveCnt++;
+					}
+					if (recursiveCnt == 3 && field.getStateDump().equals(befStr)) {
+						return -1;
+					}
+				}
 				return count;
 			}
 
@@ -160,9 +178,8 @@ public class TasquareSolver implements Solver {
 						}
 					}
 				}
-				System.out.println(wkField);
 				// マスを戻す
-				wkField.initCand();
+				wkField.initCand(true);
 				// 解けるかな？
 				level = new TasquareSolverForGenerator(wkField, 200).solve2();
 				if (level == -1) {
@@ -171,7 +188,7 @@ public class TasquareSolver implements Solver {
 					index = 0;
 				} else {
 					// ヒントを限界まで減らす
-					wkField.initCand();
+					wkField.initCand(true);
 					Collections.shuffle(numberPosList);
 					for (Position numberPos : numberPosList) {
 						TasquareSolver.Field virtual = new TasquareSolver.Field(wkField, true);
@@ -179,7 +196,7 @@ public class TasquareSolver implements Solver {
 							virtual.numbers[numberPos.getyIndex()][numberPos.getxIndex()] = -1;
 						} else {
 							virtual.numbers[numberPos.getyIndex()][numberPos.getxIndex()] = null;
-							virtual.initCand();
+							virtual.initCand(true);
 						}
 						int solveResult = new TasquareSolverForGenerator(virtual, 2500).solve2();
 						if (solveResult != -1) {
@@ -188,14 +205,13 @@ public class TasquareSolver implements Solver {
 							level = solveResult;
 							if (wkField.numbers[numberPos.getyIndex()][numberPos
 									.getxIndex()] == null) {
-								wkField.initCand();
+								wkField.initCand(true);
 							}
 						}
 					}
 					break;
 				}
 			}
-//			レベル表記がだめすぎる！作りなおし！
 			level = (int) Math.sqrt(level * 2 / 3);
 			String status = "Lv:" + level + "の問題を獲得！(数字/四角：" + wkField.getHintCount().split("/")[0] + "/"
 					+ wkField.getHintCount().split("/")[1] + ")";
@@ -384,13 +400,13 @@ public class TasquareSolver implements Solver {
 
 		public Field(int height, int width) {
 			numbers = new Integer[height][width];
-			initCand();
+			initCand(true);
 		}
 
 		/**
 		 * 部屋のきりかたの候補を初期化する。
 		 */
-		protected void initCand() {
+		protected void initCand(boolean uniqueCheck) {
 			squareCand = new ArrayList<>();
 			squareFixed = new ArrayList<>();
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
@@ -416,6 +432,7 @@ public class TasquareSolver implements Solver {
 									}
 								}
 								if (addSikaku) {
+									boolean isTotch = false;
 									// 数字に隣接しており、明らかに候補にならない数字は消す
 									Sikaku removeSikaku1 = new Sikaku(
 											new Position(sikaku.getLeftUp().getyIndex() - 1,
@@ -429,11 +446,13 @@ public class TasquareSolver implements Solver {
 													sikaku.getRightDown().getxIndex() + 1));
 									outer: for (int otherY = 0; otherY < getYLength(); otherY++) {
 										for (int otherX = 0; otherX < getXLength(); otherX++) {
-											if (numbers[otherY][otherX] != null && numbers[otherY][otherX] != -1) {
+											if (numbers[otherY][otherX] != null) {
 												Position otherPos = new Position(otherY, otherX);
 												if (removeSikaku1.isDuplicate(otherPos)
 														|| removeSikaku2.isDuplicate(otherPos)) {
-													if (sikaku.getAreaSize() > numbers[otherY][otherX]) {
+													isTotch = true;
+													if (numbers[otherY][otherX] != -1
+															&& sikaku.getAreaSize() > numbers[otherY][otherX]) {
 														addSikaku = false;
 														break outer;
 													}
@@ -442,7 +461,10 @@ public class TasquareSolver implements Solver {
 										}
 									}
 									if (addSikaku) {
-										squareCand.add(sikaku);
+										// ユニークチェックをしないときは四角に隣接するマスのみを候補にする
+										if (uniqueCheck || isTotch) {
+											squareCand.add(sikaku);
+										}
 									}
 								}
 							}
@@ -488,7 +510,7 @@ public class TasquareSolver implements Solver {
 					index++;
 				}
 			}
-			initCand();
+			initCand(true);
 		}
 
 		public Field(Field other) {
@@ -824,6 +846,26 @@ public class TasquareSolver implements Solver {
 	@Override
 	public String solve() {
 		long start = System.nanoTime();
+		while (!field.isSolved()) {
+			System.out.println(field);
+			String befStr = field.getStateDump();
+			if (!field.solveAndCheck()) {
+				return "問題に矛盾がある可能性があります。途中経過を返します。";
+			}
+			int recursiveCnt = 0;
+			while (field.getStateDump().equals(befStr) && recursiveCnt < 3) {
+				if (!candSolve(field, recursiveCnt)) {
+					return "問題に矛盾がある可能性があります。途中経過を返します。";
+				}
+				recursiveCnt++;
+			}
+			if (recursiveCnt == 3 && field.getStateDump().equals(befStr)) {
+				return "解けませんでした。途中経過を返します。";
+			}
+		}
+		// ここまでくれば解けているが、難易度判定のためにユニークネスを外してもう一度
+		field.initCand(false);
+		count = 0;
 		while (!field.isSolved()) {
 			System.out.println(field);
 			String befStr = field.getStateDump();
