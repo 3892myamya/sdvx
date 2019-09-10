@@ -684,7 +684,7 @@ public class SolverWeb extends HttpServlet {
 			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 				for (int xIndex = -1; xIndex < field.getXLength(); xIndex++) {
 					boolean oneYokoWall = xIndex == -1 || xIndex == field.getXLength() - 1
-							|| field.getYokoWall()[yIndex][xIndex];
+							|| field.isExistYokoWall(yIndex, xIndex);
 					if (oneYokoWall) {
 						sb.append("<rect y=\"" + (yIndex * baseSize)
 								+ "\" x=\""
@@ -702,7 +702,7 @@ public class SolverWeb extends HttpServlet {
 			for (int yIndex = -1; yIndex < field.getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
 					boolean oneTateWall = yIndex == -1 || yIndex == field.getYLength() - 1
-							|| field.getTateWall()[yIndex][xIndex];
+							|| field.isExistTateWall(yIndex, xIndex);
 					if (oneTateWall) {
 						sb.append("<rect y=\"" + (yIndex * baseSize + baseSize)
 								+ "\" x=\""

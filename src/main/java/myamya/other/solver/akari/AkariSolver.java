@@ -3,17 +3,20 @@ package myamya.other.solver.akari;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import myamya.other.solver.Common.Difficulty;
 import myamya.other.solver.Common.GeneratorResult;
 import myamya.other.solver.Common.Masu;
 import myamya.other.solver.Common.Position;
 import myamya.other.solver.Generator;
+import myamya.other.solver.HintPattern;
 import myamya.other.solver.Solver;
 
 public class AkariSolver implements Solver {
 	public static class AkariGenerator implements Generator {
 		static class AkariSolverForGenerator extends AkariSolver {
+
 			private final int limit;
 
 			public AkariSolverForGenerator(Field field, int limit) {
@@ -53,21 +56,23 @@ public class AkariSolver implements Solver {
 
 		private final int height;
 		private final int width;
+		private final HintPattern hintPattern;
 
-		public AkariGenerator(int height, int width) {
+		public AkariGenerator(int height, int width, HintPattern hintPattern) {
 			this.height = height;
 			this.width = width;
+			this.hintPattern = hintPattern;
 		}
 
 		public static void main(String[] args) {
-			new AkariGenerator(10, 10).generate();
+			new AkariGenerator(5, 5, HintPattern.getByVal(7, 5, 5)).generate();
 		}
 
 		private static final String FULL_NUMS = "０１２３４５６７８９";
 
 		@Override
 		public GeneratorResult generate() {
-			AkariSolver.Field wkField = new AkariSolver.Field(height, width);
+			AkariSolver.Field wkField = new AkariSolver.Field(height, width, hintPattern, 6);
 			List<Integer> indexList = new ArrayList<>();
 			for (int i = 0; i < height * width; i++) {
 				indexList.add(i);
@@ -77,17 +82,6 @@ public class AkariSolver implements Solver {
 			int level = 0;
 			long start = System.nanoTime();
 			while (true) {
-				// 問題生成部
-				// 問題に影響するので先に壁を埋める
-				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
-					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
-						// TODO とりあえず確率は1/5。後で調整
-						if (Math.random() * 5 < 1) {
-							wkField.masu[yIndex][xIndex] = Masu.NOT_BLACK;
-							wkField.numbers[yIndex][xIndex] = -1;
-						}
-					}
-				}
 				while (!wkField.isSolved()) {
 					int yIndex = indexList.get(index) / width;
 					int xIndex = indexList.get(index) % width;
@@ -114,7 +108,7 @@ public class AkariSolver implements Solver {
 						}
 						if (!isOk) {
 							// 破綻したら0から作り直す。
-							wkField = new AkariSolver.Field(height, width);
+							wkField = new AkariSolver.Field(height, width, hintPattern, 6);
 							index = 0;
 							continue;
 						}
@@ -155,20 +149,21 @@ public class AkariSolver implements Solver {
 						}
 					}
 				}
-				System.out.println(wkField);
 				// マスを戻す
+				boolean isOk = false;
 				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
 					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
 						if (wkField.numbers[yIndex][xIndex] == null) {
+							isOk = true;
 							wkField.masu[yIndex][xIndex] = Masu.SPACE;
 						}
 					}
 				}
 				// 解けるかな？
-				level = new AkariSolverForGenerator(wkField, 150).solve2();
-				if (level == -1) {
+				level = new AkariSolverForGenerator(wkField, 200).solve2();
+				if (!isOk || level == -1) {
 					// 解けなければやり直し
-					wkField = new AkariSolver.Field(height, width);
+					wkField = new AkariSolver.Field(height, width, hintPattern, 6);
 					index = 0;
 				} else {
 					// ヒントを限界まで減らす
@@ -176,7 +171,7 @@ public class AkariSolver implements Solver {
 					for (Position numberPos : numberPosList) {
 						AkariSolver.Field virtual = new AkariSolver.Field(wkField, true);
 						virtual.numbers[numberPos.getyIndex()][numberPos.getxIndex()] = -1;
-						int solveResult = new AkariSolverForGenerator(virtual, 200).solve2();
+						int solveResult = new AkariSolverForGenerator(virtual, 1200).solve2();
 						if (solveResult != -1) {
 							wkField.numbers[numberPos.getyIndex()][numberPos.getxIndex()] = -1;
 							level = solveResult;
@@ -317,12 +312,24 @@ public class AkariSolver implements Solver {
 			return masu[0].length;
 		}
 
-		public Field(int height, int width) {
+		/**
+		 * プレーン盤面生成。seedは壁の発生率の逆数。(5だと1/5で壁発生)
+		 */
+		public Field(int height, int width, HintPattern hintPattern, int seed) {
 			masu = new Masu[height][width];
 			numbers = new Integer[height][width];
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
 					masu[yIndex][xIndex] = Masu.SPACE;
+				}
+			}
+			List<Set<Position>> posSetList = hintPattern.getPosSetList();
+			for (Set<Position> posSet : posSetList) {
+				if (Math.random() * seed < 1) {
+					for (Position pos : posSet) {
+						masu[pos.getyIndex()][pos.getxIndex()] = Masu.NOT_BLACK;
+						numbers[pos.getyIndex()][pos.getxIndex()] = -1;
+					}
 				}
 			}
 		}
@@ -626,7 +633,6 @@ public class AkariSolver implements Solver {
 
 		/**
 		 * 各種チェックを1セット実行
-		 * @param recursive
 		 * @param recursive
 		 */
 		public boolean solveAndCheck() {

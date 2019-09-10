@@ -290,7 +290,7 @@ public class NurimisakiSolver implements Solver {
 					for (Position numberPos : numberPosList) {
 						NurimisakiSolver.Field virtual = new NurimisakiSolver.Field(wkField, true);
 						virtual.numbers[numberPos.getyIndex()][numberPos.getxIndex()] = null;
-						int solveResult = new NurimisakiSolverForGenerator(virtual, 3000).solve2();
+						int solveResult = new NurimisakiSolverForGenerator(virtual, 3500).solve2();
 						if (solveResult != -1) {
 							wkField.numbers[numberPos.getyIndex()][numberPos.getxIndex()] = null;
 							level = solveResult;

@@ -194,7 +194,7 @@ public class ReflectSolver implements Solver {
 		}
 
 		public static void main(String[] args) {
-			new ReflectGenerator(10, 10).generate();
+			new ReflectGenerator(17, 17).generate();
 		}
 
 		@Override
@@ -289,11 +289,13 @@ public class ReflectSolver implements Solver {
 							notExistsCount++;
 						}
 						if (notExistsCount == 4) {
+							// 十字情報
 							wkField.crossPosSet.add(pos);
 						} else if ((wallUp == Wall.NOT_EXISTS && wallRight == Wall.NOT_EXISTS)
 								|| (wallRight == Wall.NOT_EXISTS && wallDown == Wall.NOT_EXISTS)
 								|| (wallDown == Wall.NOT_EXISTS && wallLeft == Wall.NOT_EXISTS)
 								|| (wallLeft == Wall.NOT_EXISTS && wallUp == Wall.NOT_EXISTS)) {
+							// カーブは数字全表出
 							int upSpaceCnt = 0;
 							for (int targetY = yIndex - 1; targetY >= 0; targetY--) {
 								if (wkField.tateWall[targetY][xIndex] == Wall.EXISTS) {
@@ -335,6 +337,7 @@ public class ReflectSolver implements Solver {
 					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
 						if (wkField.numbers[yIndex][xIndex] == null
 								&& !wkField.getCrossPosSet().contains(new Position(yIndex, xIndex))) {
+							// 十字マスや数字マスは白確定なので戻さない
 							wkField.masu[yIndex][xIndex] = Masu.SPACE;
 							if (yIndex != 0 && wkField.numbers[yIndex - 1][xIndex] == null
 									&& !wkField.getCrossPosSet().contains(new Position(yIndex - 1, xIndex))) {
@@ -421,85 +424,221 @@ public class ReflectSolver implements Solver {
 					break;
 				}
 			}
-			level = (int) Math.sqrt(level * 10 / 3) + 1;
-			String status = "Lv:" + level + "の問題を獲得！(ヒント数：" + wkField.getHintCount() + ")";
+			level = (int) Math.sqrt(level * 20 / 3) + 1;
+			String status = "Lv:" + level + "の問題を獲得！(十字:" + wkField.getHintCount().split("/")[0] + "、数字/三角："
+					+ wkField.getHintCount().split("/")[1] + "/"
+					+ wkField.getHintCount().split("/")[2] + ")";
 			String url = wkField.getPuzPreURL();
 			String link = "<a href=\"" + url + "\" target=\"_blank\">ぱずぷれv3で解く</a>";
 			StringBuilder sb = new StringBuilder();
-			//			int baseSize = 20;
-			//			int margin = 5;
-			//			sb.append(
-			//					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
-			//							+ "height=\"" + (wkField.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
-			//							+ (wkField.getXLength() * baseSize + 2 * baseSize) + "\" >");
-			//			// 横壁描画
-			//			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
-			//				for (int xIndex = -1; xIndex < wkField.getXLength(); xIndex++) {
-			//					sb.append("<line y1=\""
-			//							+ (yIndex * baseSize + baseSize / 2 + margin)
-			//							+ "\" x1=\""
-			//							+ (xIndex * baseSize + baseSize / 2 + 2 * baseSize)
-			//							+ "\" y2=\""
-			//							+ (yIndex * baseSize + baseSize / 2 + baseSize + margin)
-			//							+ "\" x2=\""
-			//							+ (xIndex * baseSize + baseSize / 2 + 2 * baseSize)
-			//							+ "\" stroke-width=\"1\" fill=\"none\"");
-			//					sb.append("stroke=\"#000\" ");
-			//					sb.append(">"
-			//							+ "</line>");
-			//				}
-			//			}
-			//			// 縦壁描画
-			//			for (int yIndex = -1; yIndex < wkField.getYLength(); yIndex++) {
-			//				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
-			//					sb.append("<line y1=\""
-			//							+ (yIndex * baseSize + baseSize + baseSize / 2 + margin)
-			//							+ "\" x1=\""
-			//							+ (xIndex * baseSize + baseSize + baseSize / 2)
-			//							+ "\" y2=\""
-			//							+ (yIndex * baseSize + baseSize + baseSize / 2 + margin)
-			//							+ "\" x2=\""
-			//							+ (xIndex * baseSize + baseSize + baseSize + baseSize / 2)
-			//							+ "\" stroke-width=\"1\" fill=\"none\"");
-			//					sb.append("stroke=\"#000\" ");
-			//					sb.append(">"
-			//							+ "</line>");
-			//				}
-			//			}
-			//			// 数字描画
-			//			for (int yIndex = 0; yIndex < wkField.getYLength() + 1; yIndex++) {
-			//				for (int xIndex = 0; xIndex < wkField.getXLength() + 1; xIndex++) {
-			//					Integer number = wkField.getExtraNumbers()[yIndex][xIndex];
-			//					if (number != null) {
-			//						String numberStr = String.valueOf(number);
-			//						int numIdx = HALF_NUMS.indexOf(numberStr);
-			//						String masuStr = null;
-			//						if (numIdx >= 0) {
-			//							masuStr = FULL_NUMS.substring(numIdx / 2, numIdx / 2 + 1);
-			//						} else {
-			//							masuStr = numberStr;
-			//						}
-			//						sb.append("<circle cy=\"" + (yIndex * baseSize + (baseSize / 2) + margin)
-			//								+ "\" cx=\""
-			//								+ (xIndex * baseSize + baseSize + (baseSize / 2))
-			//								+ "\" r=\""
-			//								+ (baseSize / 2 - 3)
-			//								+ "\" fill=\"white\", stroke=\"black\">"
-			//								+ "</circle>");
-			//						sb.append("<text y=\"" + (yIndex * baseSize + baseSize + margin - 5)
-			//								+ "\" x=\""
-			//								+ (xIndex * baseSize + baseSize + 3)
-			//								+ "\" font-size=\""
-			//								+ (baseSize - 6)
-			//								+ "\" textLength=\""
-			//								+ (baseSize - 6)
-			//								+ "\" lengthAdjust=\"spacingAndGlyphs\">"
-			//								+ masuStr
-			//								+ "</text>");
-			//					}
-			//				}
-			//			}
-
+			int baseSize = 20;
+			int margin = 5;
+			sb.append(
+					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
+							+ "height=\"" + (wkField.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
+							+ (wkField.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			// 横壁描画
+			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = -1; xIndex < wkField.getXLength(); xIndex++) {
+					boolean oneYokoWall = xIndex == -1 || xIndex == wkField.getXLength() - 1;
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + margin)
+							+ "\" x1=\""
+							+ (xIndex * baseSize + 2 * baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ (xIndex * baseSize + 2 * baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneYokoWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">"
+							+ "</line>");
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = -1; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+					boolean oneTateWall = yIndex == -1 || yIndex == wkField.getYLength() - 1;
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x1=\""
+							+ (xIndex * baseSize + baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ (xIndex * baseSize + baseSize + baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneTateWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">"
+							+ "</line>");
+				}
+			}
+			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+					if (wkField.getNumbers()[yIndex][xIndex] != null) {
+						String masuStr = null;
+						if (wkField.getNumbers()[yIndex][xIndex] > 0) {
+							String numberStr = String.valueOf(wkField.getNumbers()[yIndex][xIndex]);
+							int numIdx = HALF_NUMS.indexOf(numberStr);
+							if (numIdx >= 0) {
+								masuStr = FULL_NUMS.substring(numIdx / 2, numIdx / 2 + 1);
+							} else {
+								masuStr = numberStr;
+							}
+						}
+						Wall up = yIndex == 0 ? Wall.EXISTS : wkField.getTateWall()[yIndex - 1][xIndex];
+						Wall right = xIndex == wkField.getXLength() - 1 ? Wall.EXISTS
+								: wkField.getYokoWall()[yIndex][xIndex];
+						Wall down = yIndex == wkField.getYLength() - 1 ? Wall.EXISTS
+								: wkField.getTateWall()[yIndex][xIndex];
+						Wall left = xIndex == 0 ? Wall.EXISTS : wkField.getYokoWall()[yIndex][xIndex - 1];
+						if (up == Wall.NOT_EXISTS && right == Wall.NOT_EXISTS
+								&& down == Wall.EXISTS && left == Wall.EXISTS) {
+							sb.append("<path d=\"M "
+									+ (xIndex * baseSize + baseSize)
+									+ " "
+									+ (yIndex * baseSize + margin)
+									+ " L"
+									+ (xIndex * baseSize + baseSize)
+									+ " "
+									+ (yIndex * baseSize + baseSize + margin)
+									+ " L"
+									+ (xIndex * baseSize + baseSize + baseSize)
+									+ " "
+									+ (yIndex * baseSize + baseSize + margin)
+									+ " Z\" >"
+									+ "</path>");
+							if (masuStr != null) {
+								sb.append("<text y=\"" + (yIndex * baseSize + baseSize + margin - 1)
+										+ "\" x=\""
+										+ (xIndex * baseSize + baseSize)
+										+ "\" fill=\""
+										+ "white"
+										+ "\" font-size=\""
+										+ (baseSize + 2) / 2
+										+ "\" textLength=\""
+										+ (baseSize + 2) / 2
+										+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+										+ masuStr
+										+ "</text>");
+							}
+						} else if (up == Wall.NOT_EXISTS && right == Wall.EXISTS
+								&& down == Wall.EXISTS && left == Wall.NOT_EXISTS) {
+							sb.append("<path d=\"M "
+									+ (xIndex * baseSize + baseSize + baseSize)
+									+ " "
+									+ (yIndex * baseSize + margin)
+									+ " L"
+									+ (xIndex * baseSize + baseSize)
+									+ " "
+									+ (yIndex * baseSize + baseSize + margin)
+									+ " L"
+									+ (xIndex * baseSize + baseSize + baseSize)
+									+ " "
+									+ (yIndex * baseSize + baseSize + margin)
+									+ " Z\" >"
+									+ "</path>");
+							if (masuStr != null) {
+								sb.append("<text y=\"" + (yIndex * baseSize + baseSize + margin - 1)
+										+ "\" x=\""
+										+ (xIndex * baseSize + baseSize + (baseSize / 2))
+										+ "\" fill=\""
+										+ "white"
+										+ "\" font-size=\""
+										+ (baseSize + 2) / 2
+										+ "\" textLength=\""
+										+ (baseSize + 2) / 2
+										+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+										+ masuStr
+										+ "</text>");
+							}
+						} else if (up == Wall.EXISTS && right == Wall.NOT_EXISTS
+								&& down == Wall.NOT_EXISTS && left == Wall.EXISTS) {
+							sb.append("<path d=\"M "
+									+ (xIndex * baseSize + baseSize)
+									+ " "
+									+ (yIndex * baseSize + margin)
+									+ " L"
+									+ (xIndex * baseSize + baseSize + baseSize)
+									+ " "
+									+ (yIndex * baseSize + margin)
+									+ " L"
+									+ (xIndex * baseSize + baseSize)
+									+ " "
+									+ (yIndex * baseSize + baseSize + margin)
+									+ " Z\" >"
+									+ "</path>");
+							if (masuStr != null) {
+								sb.append("<text y=\"" + (yIndex * baseSize + (baseSize / 2) + margin - 1)
+										+ "\" x=\""
+										+ (xIndex * baseSize + baseSize)
+										+ "\" fill=\""
+										+ "white"
+										+ "\" font-size=\""
+										+ (baseSize + 2) / 2
+										+ "\" textLength=\""
+										+ (baseSize + 2) / 2
+										+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+										+ masuStr
+										+ "</text>");
+							}
+						} else if (up == Wall.EXISTS && right == Wall.EXISTS
+								&& down == Wall.NOT_EXISTS && left == Wall.NOT_EXISTS) {
+							sb.append("<path d=\"M "
+									+ (xIndex * baseSize + baseSize)
+									+ " "
+									+ (yIndex * baseSize + margin)
+									+ " L"
+									+ (xIndex * baseSize + baseSize + baseSize)
+									+ " "
+									+ (yIndex * baseSize + margin)
+									+ " L"
+									+ (xIndex * baseSize + baseSize + baseSize)
+									+ " "
+									+ (yIndex * baseSize + baseSize + margin)
+									+ " Z\" >"
+									+ "</path>");
+							if (masuStr != null) {
+								sb.append("<text y=\"" + (yIndex * baseSize + (baseSize / 2) + margin - 1)
+										+ "\" x=\""
+										+ (xIndex * baseSize + baseSize + (baseSize / 2))
+										+ "\" fill=\""
+										+ "white"
+										+ "\" font-size=\""
+										+ (baseSize + 2) / 2
+										+ "\" textLength=\""
+										+ (baseSize + 2) / 2
+										+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+										+ masuStr
+										+ "</text>");
+							}
+						}
+					}
+					if (wkField.getCrossPosSet().contains(new Position(yIndex, xIndex))) {
+						sb.append("<text y=\"" + (yIndex * baseSize + baseSize + margin - 2)
+								+ "\" x=\""
+								+ (xIndex * baseSize + baseSize)
+								+ "\" font-size=\""
+								+ (baseSize)
+								+ "\" textLength=\""
+								+ (baseSize)
+								+ "\" fill=\""
+								+ "black"
+								+ "\" stroke=\"" + "black" + "\" stroke-width=\"1"
+								+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+								+ "┼"
+								+ "</text>");
+					}
+				}
+			}
 			sb.append("</svg>");
 			System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
 			System.out.println(level);
@@ -531,13 +670,81 @@ public class ReflectSolver implements Solver {
 		}
 
 		public String getPuzPreURL() {
-			// TODO 自動生成されたメソッド・スタブ
-			return null;
+			StringBuilder sb = new StringBuilder();
+			sb.append("http://pzv.jp/p.html?reflect/" + getXLength() + "/" + getYLength() + "/");
+			int interval = 0;
+			for (int i = 0; i < getYLength() * getXLength(); i++) {
+				int yIndex = i / getXLength();
+				int xIndex = i % getXLength();
+				if (numbers[yIndex][xIndex] == null && !crossPosSet.contains(new Position(yIndex, xIndex))) {
+					interval++;
+					if (interval == 26) {
+						sb.append("z");
+						interval = 0;
+					}
+				} else {
+					String numStr = null;
+					int numTop;
+					Integer num = numbers[yIndex][xIndex];
+					if (num != null) {
+						Wall up = yIndex == 0 ? Wall.EXISTS : tateWall[yIndex - 1][xIndex];
+						Wall right = xIndex == getXLength() - 1 ? Wall.EXISTS : yokoWall[yIndex][xIndex];
+						Wall down = yIndex == getYLength() - 1 ? Wall.EXISTS : tateWall[yIndex][xIndex];
+						Wall left = xIndex == 0 ? Wall.EXISTS : yokoWall[yIndex][xIndex - 1];
+						if (up == Wall.NOT_EXISTS && right == Wall.NOT_EXISTS
+								&& down == Wall.EXISTS && left == Wall.EXISTS) {
+							numTop = 1;
+						} else if (up == Wall.NOT_EXISTS && right == Wall.EXISTS
+								&& down == Wall.EXISTS && left == Wall.NOT_EXISTS) {
+							numTop = 2;
+						} else if (up == Wall.EXISTS && right == Wall.EXISTS
+								&& down == Wall.NOT_EXISTS && left == Wall.NOT_EXISTS) {
+							numTop = 3;
+						} else if (up == Wall.EXISTS && right == Wall.NOT_EXISTS
+								&& down == Wall.NOT_EXISTS && left == Wall.EXISTS) {
+							numTop = 4;
+						} else {
+							throw new IllegalStateException();
+						}
+						if (num >= 16) {
+							numTop = numTop + 5;
+						}
+						numStr = numTop + Integer.toHexString(num);
+					} else if (crossPosSet.contains(new Position(yIndex, xIndex))) {
+						numStr = "5";
+					}
+					if (interval == 0) {
+						sb.append(numStr);
+					} else {
+						sb.append(ALPHABET.substring(interval - 1, interval));
+						sb.append(numStr);
+						interval = 0;
+					}
+				}
+			}
+			if (interval != 0) {
+				sb.append(ALPHABET.substring(interval - 1, interval));
+			}
+			if (sb.charAt(sb.length() - 1) == '.') {
+				sb.append("/");
+			}
+			return sb.toString();
 		}
 
 		public String getHintCount() {
-			// TODO 自動生成されたメソッド・スタブ
-			return null;
+			int kuroCnt = 0;
+			int numberCnt = 0;
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					if (numbers[yIndex][xIndex] != null) {
+						kuroCnt++;
+						if (numbers[yIndex][xIndex] != 0) {
+							numberCnt++;
+						}
+					}
+				}
+			}
+			return String.valueOf(crossPosSet.size() + "/" + numberCnt + "/" + kuroCnt);
 		}
 
 		public Set<Position> getCrossPosSet() {
@@ -1269,10 +1476,11 @@ public class ReflectSolver implements Solver {
 			}
 		}
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
-		System.out.println("難易度:" + (count * 10));
+		System.out.println("難易度:" + (count * 20));
 		System.out.println(field);
+		int level = (int) Math.sqrt(count * 20 / 3);
 		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count * 10).toString();
+				+ Difficulty.getByCount(count * 20).toString() + "(Lv:" + level + ")";
 	}
 
 	/**

@@ -8,31 +8,14 @@ import java.util.Set;
 
 import myamya.other.solver.Common.Position;
 
-/**
- * ジェネレータ向けに部屋割りをランダム生成するモジュール
- * 実験中
- */
 public class RoomMaker {
 
 	public static void main(String[] args) {
-		RoomMaker roomMaker = new RoomMaker(10, 10);
-		roomMaker.roomMake();
-		System.out.println(roomMaker);
+		List<Set<Position>> rooms = RoomMaker.roomMake(10, 10);
+		System.out.println(getString(10, 10, rooms));
 	}
 
-	private final List<Set<Position>> rooms;
-
-	private final int height;
-	private final int width;
-
-	public RoomMaker(int height, int width) {
-		rooms = new ArrayList<>();
-		this.height = height;
-		this.width = width;
-	}
-
-	@Override
-	public String toString() {
+	public static String getString(int height, int width, List<Set<Position>> rooms) {
 		StringBuilder sb = new StringBuilder();
 		for (int xIndex = 0; xIndex < width * 2 + 1; xIndex++) {
 			sb.append("□");
@@ -43,7 +26,7 @@ public class RoomMaker {
 			for (int xIndex = 0; xIndex < width; xIndex++) {
 				sb.append("　");
 				if (xIndex != width - 1) {
-					sb.append(isExistYokoWall(yIndex, xIndex) ? "□" : "　");
+					sb.append(isExistYokoWall(yIndex, xIndex, rooms) ? "□" : "　");
 				}
 			}
 			sb.append("□");
@@ -51,7 +34,7 @@ public class RoomMaker {
 			if (yIndex != height - 1) {
 				sb.append("□");
 				for (int xIndex = 0; xIndex < width; xIndex++) {
-					sb.append(isExistTateWall(yIndex, xIndex) ? "□" : "　");
+					sb.append(isExistTateWall(yIndex, xIndex, rooms) ? "□" : "　");
 					if (xIndex != width - 1) {
 						sb.append("□");
 					}
@@ -67,7 +50,7 @@ public class RoomMaker {
 		return sb.toString();
 	}
 
-	private boolean isExistYokoWall(int yIndex, int xIndex) {
+	private static boolean isExistYokoWall(int yIndex, int xIndex, List<Set<Position>> rooms) {
 		Position pos = new Position(yIndex, xIndex);
 		for (Set<Position> room : rooms) {
 			if (room.contains(pos)) {
@@ -80,7 +63,7 @@ public class RoomMaker {
 		return true;
 	}
 
-	private boolean isExistTateWall(int yIndex, int xIndex) {
+	private static boolean isExistTateWall(int yIndex, int xIndex, List<Set<Position>> rooms) {
 		Position pos = new Position(yIndex, xIndex);
 		for (Set<Position> room : rooms) {
 			if (room.contains(pos)) {
@@ -93,7 +76,8 @@ public class RoomMaker {
 		return true;
 	}
 
-	public void roomMake() {
+	public static List<Set<Position>> roomMake(int height, int width) {
+		List<Set<Position>> rooms = new ArrayList<>();
 		while (true) {
 			List<Integer> indexList = new ArrayList<>();
 			for (int i = 0; i < height * width; i++) {
@@ -126,6 +110,7 @@ public class RoomMaker {
 			}
 			boolean isOk = true;
 			for (Set<Position> room : rooms) {
+				// ここを変えれば部屋のサイズを調整できる
 				if (room.size() < 2) {
 					isOk = false;
 					break;
@@ -137,5 +122,6 @@ public class RoomMaker {
 				break;
 			}
 		}
+		return rooms;
 	}
 }

@@ -15,6 +15,7 @@ import myamya.other.solver.Common.GeneratorResult;
 import myamya.other.solver.creek.CreekSolver.CreekGenerator;
 import myamya.other.solver.gokigen.GokigenSolver.GokigenGenerator;
 import myamya.other.solver.nurimisaki.NurimisakiSolver.NurimisakiGenerator;
+import myamya.other.solver.reflect.ReflectSolver.ReflectGenerator;
 import myamya.other.solver.shakashaka.ShakashakaSolver.ShakashakaGenerator;
 import myamya.other.solver.sudoku.SudokuSolver.SudokuGenerator;
 import myamya.other.solver.tasquare.TasquareSolver.TasquareGenerator;
@@ -129,6 +130,22 @@ public class SudokuGachaWeb extends HttpServlet {
 
 	}
 
+	static class ReflectGeneratorThlead extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+
+		ReflectGeneratorThlead(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new ReflectGenerator(height, width);
+		}
+
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -156,6 +173,8 @@ public class SudokuGachaWeb extends HttpServlet {
 					t = new CreekGeneratorThlead(height, width);
 				} else if (type.equals("tasquare")) {
 					t = new TasquareGeneratorThlead(height, width);
+				} else if (type.equals("reflect")) {
+					t = new ReflectGeneratorThlead(height, width);
 				} else {
 					throw new IllegalArgumentException();
 				}

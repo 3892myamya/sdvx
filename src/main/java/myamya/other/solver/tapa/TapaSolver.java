@@ -9,11 +9,346 @@ import java.util.Set;
 
 import myamya.other.solver.Common.Difficulty;
 import myamya.other.solver.Common.Direction;
+import myamya.other.solver.Common.GeneratorResult;
 import myamya.other.solver.Common.Masu;
 import myamya.other.solver.Common.Position;
+import myamya.other.solver.Generator;
 import myamya.other.solver.Solver;
 
 public class TapaSolver implements Solver {
+	public static class TapaGenerator implements Generator {
+
+		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
+		private static final String FULL_NUMS = "０１２３４５６７８９";
+
+		static class TapaSolverForGenerator extends TapaSolver {
+			private final int limit;
+
+			public TapaSolverForGenerator(Field field, int limit) {
+				super(field);
+				this.limit = limit;
+			}
+
+			public int solve2() {
+				while (!field.isSolved()) {
+					String befStr = field.getStateDump();
+					if (!field.solveAndCheck()) {
+						return -1;
+					}
+					int recursiveCnt = 0;
+					while (field.getStateDump().equals(befStr) && recursiveCnt < 3) {
+						if (!candSolve(field, recursiveCnt)) {
+							return -1;
+						}
+						recursiveCnt++;
+					}
+					if (recursiveCnt == 3 && field.getStateDump().equals(befStr)) {
+						return -1;
+					}
+				}
+				return count;
+			}
+
+			@Override
+			protected boolean candSolve(Field field, int recursive) {
+				if (this.count >= limit) {
+					return false;
+				} else {
+					return super.candSolve(field, recursive);
+				}
+			}
+		}
+
+		static class ExtendedField extends TapaSolver.Field {
+			public ExtendedField(Field other) {
+				super(other);
+			}
+
+			public ExtendedField(int height, int width) {
+				super(height, width);
+			}
+
+			@Override
+			protected boolean numberSolve() {
+				// 数字があとから決まるので、ここではじいてしまうとダメ。
+				// 全通過させる
+				return true;
+			}
+
+		}
+
+		private final int height;
+		private final int width;
+
+		public TapaGenerator(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		public static void main(String[] args) {
+			new TapaGenerator(10, 10).generate();
+		}
+
+		@Override
+		public GeneratorResult generate() {
+			ExtendedField wkField = new ExtendedField(height, width);
+			List<Integer> indexList = new ArrayList<>();
+			for (int i = 0; i < height * width; i++) {
+				indexList.add(i);
+			}
+			Collections.shuffle(indexList);
+			int index = 0;
+			int level = 0;
+			long start = System.nanoTime();
+			while (true) {
+				// 問題生成部
+				while (!wkField.isSolved()) {
+					int yIndex = indexList.get(index) / width;
+					int xIndex = indexList.get(index) % width;
+					if (wkField.masu[yIndex][xIndex] == Masu.SPACE) {
+						boolean isOk = false;
+						List<Integer> numIdxList = new ArrayList<>();
+						for (int i = 0; i < 2; i++) {
+							numIdxList.add(i);
+						}
+						Collections.shuffle(numIdxList);
+						for (int masuNum : numIdxList) {
+							ExtendedField virtual = new ExtendedField(wkField);
+							if (masuNum < 1) {
+								virtual.masu[yIndex][xIndex] = Masu.NOT_BLACK;
+							} else if (masuNum < 2) {
+								virtual.masu[yIndex][xIndex] = Masu.BLACK;
+							}
+							if (virtual.solveAndCheck()) {
+								isOk = true;
+								wkField.masu = virtual.masu;
+								break;
+							}
+						}
+						if (!isOk) {
+							// 破綻したら0から作り直す。
+							wkField = new ExtendedField(height, width);
+							index = 0;
+							continue;
+						}
+					}
+					index++;
+				}
+				// 数字埋め＆マス初期化
+				// まず数字を埋める
+				List<Position> numberPosList = new ArrayList<>();
+				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+						if (wkField.masu[yIndex][xIndex] == Masu.NOT_BLACK) {
+							List<Integer> oneNumbers = new ArrayList<>();
+							Position pos = new Position(yIndex, xIndex);
+							int wkCnt = 0;
+							if (yIndex != 0 && xIndex != 0 && wkField.masu[yIndex - 1][xIndex - 1] == Masu.BLACK) {
+								wkCnt++;
+							}
+							if (yIndex != 0 && wkField.masu[yIndex - 1][xIndex] == Masu.BLACK) {
+								wkCnt++;
+							} else if (wkCnt > 0) {
+								oneNumbers.add(wkCnt);
+								wkCnt = 0;
+							}
+							if (yIndex != 0 && xIndex != wkField.getXLength() - 1
+									&& wkField.masu[yIndex - 1][xIndex + 1] == Masu.BLACK) {
+								wkCnt++;
+							} else if (wkCnt > 0) {
+								oneNumbers.add(wkCnt);
+								wkCnt = 0;
+							}
+							if (xIndex != wkField.getXLength() - 1
+									&& wkField.masu[yIndex][xIndex + 1] == Masu.BLACK) {
+								wkCnt++;
+							} else if (wkCnt > 0) {
+								oneNumbers.add(wkCnt);
+								wkCnt = 0;
+							}
+							if (yIndex != wkField.getYLength() - 1 && xIndex != wkField.getXLength() - 1
+									&& wkField.masu[yIndex + 1][xIndex + 1] == Masu.BLACK) {
+								wkCnt++;
+							} else if (wkCnt > 0) {
+								oneNumbers.add(wkCnt);
+								wkCnt = 0;
+							}
+							if (yIndex != wkField.getYLength() - 1 && wkField.masu[yIndex + 1][xIndex] == Masu.BLACK) {
+								wkCnt++;
+							} else if (wkCnt > 0) {
+								oneNumbers.add(wkCnt);
+								wkCnt = 0;
+							}
+							if (yIndex != wkField.getYLength() - 1 && xIndex != 0
+									&& wkField.masu[yIndex + 1][xIndex - 1] == Masu.BLACK) {
+								wkCnt++;
+							} else if (wkCnt > 0) {
+								oneNumbers.add(wkCnt);
+								wkCnt = 0;
+							}
+							if (xIndex != 0
+									&& wkField.masu[yIndex][xIndex - 1] == Masu.BLACK) {
+								wkCnt++;
+								if (yIndex != 0 && xIndex != 0 && wkField.masu[yIndex - 1][xIndex - 1] == Masu.BLACK
+										&& !oneNumbers.isEmpty()) {
+									// 1マス目が黒なら1マス目と繋げる
+									oneNumbers.add(oneNumbers.get(0) + wkCnt);
+									oneNumbers.remove(0);
+								} else {
+									oneNumbers.add(wkCnt);
+								}
+							} else if (wkCnt > 0) {
+								oneNumbers.add(wkCnt);
+								wkCnt = 0;
+							}
+							if (oneNumbers.isEmpty()) {
+								oneNumbers.add(0);
+							}
+							Collections.shuffle(oneNumbers);
+							wkField.numbers[yIndex][xIndex] = oneNumbers;
+							numberPosList.add(pos);
+						}
+					}
+				}
+				System.out.println(wkField);
+				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+						if (wkField.numbers[yIndex][xIndex] == null) {
+							wkField.masu[yIndex][xIndex] = Masu.SPACE;
+						} else {
+							wkField.numbersCand[yIndex][xIndex] = wkField
+									.solveNumbersCand(wkField.numbers[yIndex][xIndex]);
+						}
+					}
+				}
+				// 解けるかな？
+				level = new TapaSolverForGenerator(new TapaSolver.Field(wkField), 200).solve2();
+				if (level == -1) {
+					// 解けなければやり直し
+					wkField = new ExtendedField(height, width);
+					index = 0;
+				} else {
+					// ヒントを限界まで減らす
+					Collections.shuffle(numberPosList);
+					for (Position numberPos : numberPosList) {
+						TapaSolver.Field virtual = new TapaSolver.Field(wkField, true);
+						virtual.masu[numberPos.getyIndex()][numberPos.getxIndex()] = Masu.SPACE;
+						virtual.numbers[numberPos.getyIndex()][numberPos.getxIndex()] = null;
+						virtual.numbersCand[numberPos.getyIndex()][numberPos.getxIndex()] = null;
+						int solveResult = new TapaSolverForGenerator(virtual, 5000).solve2();
+						if (solveResult != -1) {
+							wkField.masu[numberPos.getyIndex()][numberPos.getxIndex()] = Masu.SPACE;
+							wkField.numbers[numberPos.getyIndex()][numberPos.getxIndex()] = null;
+							wkField.numbersCand[numberPos.getyIndex()][numberPos.getxIndex()] = null;
+							level = solveResult;
+						}
+					}
+					break;
+				}
+			}
+			level = (int) Math.sqrt(level);
+			String status = "Lv:" + level + "の問題を獲得！(数字/四角：" + wkField.getHintCount().split("/")[0] + "/"
+					+ wkField.getHintCount().split("/")[1] + ")";
+			String url = wkField.getPuzPreURL();
+			String link = "<a href=\"" + url + "\" target=\"_blank\">ぱずぷれv3で解く</a>";
+			StringBuilder sb = new StringBuilder();
+			//			int baseSize = 20;
+			//			int margin = 5;
+			//			sb.append(
+			//					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
+			//							+ "height=\"" + (wkField.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
+			//							+ (wkField.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			//			// 数字描画
+			//			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+			//				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+			//					if (wkField.getNumbers()[yIndex][xIndex] != null) {
+			//						sb.append("<rect y=\"" + (yIndex * baseSize + 2 + margin)
+			//								+ "\" x=\""
+			//								+ (xIndex * baseSize + baseSize + 2)
+			//								+ "\" width=\""
+			//								+ (baseSize - 4)
+			//								+ "\" height=\""
+			//								+ (baseSize - 4)
+			//								+ "\" fill=\"white\" stroke-width=\"1\" stroke=\"black\">"
+			//								+ "\">"
+			//								+ "</rect>");
+			//						if (wkField.getNumbers()[yIndex][xIndex] != -1) {
+			//							String numberStr = String.valueOf(wkField.getNumbers()[yIndex][xIndex]);
+			//							int numIdx = HALF_NUMS.indexOf(numberStr);
+			//							String masuStr = null;
+			//							if (numIdx >= 0) {
+			//								masuStr = FULL_NUMS.substring(numIdx / 2, numIdx / 2 + 1);
+			//							} else {
+			//								masuStr = numberStr;
+			//							}
+			//							sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 4 + margin)
+			//									+ "\" x=\""
+			//									+ (xIndex * baseSize + baseSize + 2)
+			//									+ "\" font-size=\""
+			//									+ (baseSize - 5)
+			//									+ "\" textLength=\""
+			//									+ (baseSize - 5)
+			//									+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+			//									+ masuStr
+			//									+ "</text>");
+			//						}
+			//					}
+			//				}
+			//			}
+			//			// 横壁描画
+			//			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+			//				for (int xIndex = -1; xIndex < wkField.getXLength(); xIndex++) {
+			//					boolean oneYokoWall = xIndex == -1 || xIndex == wkField.getXLength() - 1;
+			//					sb.append("<line y1=\""
+			//							+ (yIndex * baseSize + margin)
+			//							+ "\" x1=\""
+			//							+ (xIndex * baseSize + 2 * baseSize)
+			//							+ "\" y2=\""
+			//							+ (yIndex * baseSize + baseSize + margin)
+			//							+ "\" x2=\""
+			//							+ (xIndex * baseSize + 2 * baseSize)
+			//							+ "\" stroke-width=\"1\" fill=\"none\"");
+			//					if (oneYokoWall) {
+			//						sb.append("stroke=\"#000\" ");
+			//					} else {
+			//						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+			//					}
+			//					sb.append(">"
+			//							+ "</line>");
+			//				}
+			//			}
+			//			// 縦壁描画
+			//			for (int yIndex = -1; yIndex < wkField.getYLength(); yIndex++) {
+			//				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+			//					boolean oneTateWall = yIndex == -1 || yIndex == wkField.getYLength() - 1;
+			//					sb.append("<line y1=\""
+			//							+ (yIndex * baseSize + baseSize + margin)
+			//							+ "\" x1=\""
+			//							+ (xIndex * baseSize + baseSize)
+			//							+ "\" y2=\""
+			//							+ (yIndex * baseSize + baseSize + margin)
+			//							+ "\" x2=\""
+			//							+ (xIndex * baseSize + baseSize + baseSize)
+			//							+ "\" stroke-width=\"1\" fill=\"none\"");
+			//					if (oneTateWall) {
+			//						sb.append("stroke=\"#000\" ");
+			//					} else {
+			//						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+			//					}
+			//					sb.append(">"
+			//							+ "</line>");
+			//				}
+			//			}
+			//			sb.append("</svg>");
+			System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
+			System.out.println(level);
+			System.out.println(wkField.getHintCount());
+			System.out.println(wkField);
+			return new GeneratorResult(status, sb.toString(), link, url, level, "");
+
+		}
+
+	}
 
 	public static class Field {
 		static final String NUMBERS_TO_8 = "012345678";
@@ -21,14 +356,24 @@ public class TapaSolver implements Solver {
 		static final String ALPHABET_FROM_G = "ghijklmnopqrstuvwxyz";
 
 		// マスの情報
-		private Masu[][] masu;
+		protected Masu[][] masu;
 		// 数字の情報
-		private final List<Integer>[][] numbers;
+		protected List<Integer>[][] numbers;
 		// 数字のマスに対する、置き方候補
-		private final Set<String>[][] numbersCand;
+		protected final Set<String>[][] numbersCand;
 
 		public Masu[][] getMasu() {
 			return masu;
+		}
+
+		public String getHintCount() {
+			// TODO 自動生成されたメソッド・スタブ
+			return "0/0";
+		}
+
+		public String getPuzPreURL() {
+			// TODO 自動生成されたメソッド・スタブ
+			return null;
 		}
 
 		public List<Integer>[][] getNumbers() {
@@ -123,7 +468,7 @@ public class TapaSolver implements Solver {
 		 * ７＊３
 		 * ６５４
 		 */
-		private Set<String> solveNumbersCand(List<Integer> numberList) {
+		protected Set<String> solveNumbersCand(List<Integer> numberList) {
 			// TODO ソースが少し汚いけど大丈夫？
 			List<List<Integer>> compareList = new ArrayList<>();
 			if (numberList.contains(-1)) {
@@ -248,6 +593,40 @@ public class TapaSolver implements Solver {
 			}
 		}
 
+		@SuppressWarnings("unchecked")
+		public Field(int height, int width) {
+			masu = new Masu[height][width];
+			numbers = new ArrayList[height][width];
+			numbersCand = new HashSet[height][width];
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					masu[yIndex][xIndex] = Masu.SPACE;
+				}
+			}
+		}
+
+		@SuppressWarnings("unchecked")
+		public Field(Field other, boolean flag) {
+			masu = new Masu[other.getYLength()][other.getXLength()];
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					masu[yIndex][xIndex] = other.masu[yIndex][xIndex];
+				}
+			}
+			numbers = new ArrayList[other.getYLength()][other.getXLength()];
+			numbersCand = new HashSet[other.getYLength()][other.getXLength()];
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					if (other.numbers[yIndex][xIndex] != null) {
+						numbers[yIndex][xIndex] = new ArrayList<>(other.numbers[yIndex][xIndex]);
+					}
+					if (other.numbersCand[yIndex][xIndex] != null) {
+						numbersCand[yIndex][xIndex] = new HashSet<>(other.numbersCand[yIndex][xIndex]);
+					}
+				}
+			}
+		}
+
 		private static final String FULL_NUMS = "０１２３４５６７８９";
 
 		@Override
@@ -292,7 +671,7 @@ public class TapaSolver implements Solver {
 		 * 数字に対し、候補によって決まるマスを埋める。
 		 * 指定した黒マスを満たせなくなる場合falseを返す。
 		 */
-		private boolean numberSolve() {
+		protected boolean numberSolve() {
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
 					if (numbersCand[yIndex][xIndex] != null) {
@@ -434,31 +813,26 @@ public class TapaSolver implements Solver {
 		}
 
 		/**
-		 * 黒マスが1つながりになっていない場合falseを返す。
+		 * 黒マスがひとつながりにならない場合Falseを返す。
 		 */
 		public boolean connectSolve() {
-			Set<Position> whitePosSet = new HashSet<>();
-			Position typicalWhitePos = null;
+			Set<Position> blackPosSet = new HashSet<>();
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
 					if (masu[yIndex][xIndex] == Masu.BLACK) {
 						Position whitePos = new Position(yIndex, xIndex);
-						whitePosSet.add(whitePos);
-						if (typicalWhitePos == null) {
-							typicalWhitePos = whitePos;
+						if (blackPosSet.size() == 0) {
+							blackPosSet.add(whitePos);
+							setContinueBlackPosSet(whitePos, blackPosSet, null);
+						} else {
+							if (!blackPosSet.contains(whitePos)) {
+								return false;
+							}
 						}
 					}
 				}
 			}
-			if (typicalWhitePos == null) {
-				return true;
-			} else {
-				Set<Position> continuePosSet = new HashSet<>();
-				continuePosSet.add(typicalWhitePos);
-				setContinueBlackPosSet(typicalWhitePos, continuePosSet, null);
-				whitePosSet.removeAll(continuePosSet);
-				return whitePosSet.isEmpty();
-			}
+			return true;
 		}
 
 		/**
@@ -551,11 +925,15 @@ public class TapaSolver implements Solver {
 
 	}
 
-	private final Field field;
-	private int count = 0;
+	protected final Field field;
+	protected int count = 0;
 
 	public TapaSolver(int height, int width, String param) {
 		field = new Field(height, width, param);
+	}
+
+	public TapaSolver(Field field) {
+		this.field = new Field(field);
 	}
 
 	public Field getField() {
@@ -592,45 +970,20 @@ public class TapaSolver implements Solver {
 			}
 		}
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
-		System.out.println("難易度:" + (count * 2));
+		System.out.println("難易度:" + (count * 3));
 		System.out.println(field);
 		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count * 2).toString();
+				+ Difficulty.getByCount(count * 3).toString();
 	}
 
 	/**
 	 * 仮置きして調べる
 	 */
-	private boolean candSolve(Field field, int recursive) {
+	protected boolean candSolve(Field field, int recursive) {
 		String str = field.getStateDump();
 		for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 			for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
 				if (field.masu[yIndex][xIndex] == Masu.SPACE) {
-					// 周囲に空白が少ない個所を優先して調査
-					Masu masuUp = yIndex == 0 ? Masu.BLACK
-							: field.masu[yIndex - 1][xIndex];
-					Masu masuRight = xIndex == field.getXLength() - 1 ? Masu.BLACK
-							: field.masu[yIndex][xIndex + 1];
-					Masu masuDown = yIndex == field.getYLength() - 1 ? Masu.BLACK
-							: field.masu[yIndex + 1][xIndex];
-					Masu masuLeft = xIndex == 0 ? Masu.BLACK
-							: field.masu[yIndex][xIndex - 1];
-					int whiteCnt = 0;
-					if (masuUp == Masu.SPACE) {
-						whiteCnt++;
-					}
-					if (masuRight == Masu.SPACE) {
-						whiteCnt++;
-					}
-					if (masuDown == Masu.SPACE) {
-						whiteCnt++;
-					}
-					if (masuLeft == Masu.SPACE) {
-						whiteCnt++;
-					}
-					if (whiteCnt > 3) {
-						continue;
-					}
 					count++;
 					if (!oneCandSolve(field, yIndex, xIndex, recursive)) {
 						return false;
