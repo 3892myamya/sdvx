@@ -1,10 +1,11 @@
 var ruleMap = {
-	sudoku : {name: "数独", url:"https://www.nikoli.co.jp/ja/puzzles/sudoku/"},
-	shakashaka : {name: "シャカシャカ", url:"https://www.nikoli.co.jp/ja/puzzles/shakashaka/"},
-	nurimisaki : {name: "ぬりみさき", url:"https://www.nikoli.co.jp/ja/puzzles/nurimisaki/"},
-	gokigen : {name: "ごきげんななめ", url:"https://www.nikoli.co.jp/ja/puzzles/gokigen_naname/"},
-	creek : {name: "クリーク", url:"https://www.nikoli.co.jp/ja/puzzles/creek/"},
-	tasquare : {name: "たすくえあ", url:"https://www.nikoli.co.jp/ja/puzzles/tasukuea/"}
+	sudoku : {name: "数独", url:"https://www.nikoli.co.jp/ja/puzzles/sudoku/",source:"ニコリ公式"},
+	shakashaka : {name: "シャカシャカ", url:"https://www.nikoli.co.jp/ja/puzzles/shakashaka/",source:"ニコリ公式"},
+	nurimisaki : {name: "ぬりみさき", url:"https://www.nikoli.co.jp/ja/puzzles/nurimisaki/",source:"ニコリ公式"},
+	gokigen : {name: "ごきげんななめ", url:"https://www.nikoli.co.jp/ja/puzzles/gokigen_naname/",source:"ニコリ公式"},
+	creek : {name: "クリーク", url:"https://www.nikoli.co.jp/ja/puzzles/creek/",source:"ニコリ公式"},
+	tasquare : {name: "たすくえあ", url:"https://www.nikoli.co.jp/ja/puzzles/tasukuea/",source:"ニコリ公式"},
+	reflect : {name: "リフレクトリンク", url:"http://indi.s58.xrea.com/reflect/",source:"連続発破保管庫さん"}
 }
 
 $(function() {
@@ -71,7 +72,7 @@ $(function() {
         var oneRule = ruleMap[type];
         if (oneRule !== undefined){
             $('#a_rule').attr('href', oneRule.url)
-            $('#a_rule').text(oneRule.name + 'のルールを表示(ニコリ公式)')
+            $('#a_rule').text(oneRule.name + 'のルールを表示(' + oneRule.source + ')')
             $('#div_rule').show();
         } else {
             $('#div_rule').hide();

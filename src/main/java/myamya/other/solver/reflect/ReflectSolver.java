@@ -1478,7 +1478,7 @@ public class ReflectSolver implements Solver {
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
 		System.out.println("難易度:" + (count * 20));
 		System.out.println(field);
-		int level = (int) Math.sqrt(count * 20 / 3);
+		int level = (int) Math.sqrt(count * 20 / 3) + 1;
 		return "解けました。推定難易度:"
 				+ Difficulty.getByCount(count * 20).toString() + "(Lv:" + level + ")";
 	}

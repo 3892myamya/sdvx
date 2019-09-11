@@ -4527,6 +4527,51 @@ public class SolverWeb extends HttpServlet {
 					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
 							+ "height=\"" + (field.getYLength() * baseSize + 2 * baseSize) + "\" width=\""
 							+ (field.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			int margin = 5;
+			// 横壁描画
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = -1; xIndex < field.getXLength(); xIndex++) {
+					boolean oneYokoWall = xIndex == -1 || xIndex == field.getXLength() - 1;
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + margin)
+							+ "\" x1=\""
+							+ (xIndex * baseSize + 2 * baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ (xIndex * baseSize + 2 * baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneYokoWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">"
+							+ "</line>");
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = -1; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					boolean oneTateWall = yIndex == -1 || yIndex == field.getYLength() - 1;
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x1=\""
+							+ (xIndex * baseSize + baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ (xIndex * baseSize + baseSize + baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneTateWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">"
+							+ "</line>");
+				}
+			}
 			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
 					if (field.getNumbers()[yIndex][xIndex] != null) {
@@ -4551,19 +4596,19 @@ public class SolverWeb extends HttpServlet {
 							sb.append("<path d=\"M "
 									+ (xIndex * baseSize + baseSize)
 									+ " "
-									+ (yIndex * baseSize)
+									+ (yIndex * baseSize + margin)
 									+ " L"
 									+ (xIndex * baseSize + baseSize)
 									+ " "
-									+ (yIndex * baseSize + baseSize)
+									+ (yIndex * baseSize + baseSize + margin)
 									+ " L"
 									+ (xIndex * baseSize + baseSize + baseSize)
 									+ " "
-									+ (yIndex * baseSize + baseSize)
+									+ (yIndex * baseSize + baseSize + margin)
 									+ " Z\" >"
 									+ "</path>");
 							if (masuStr != null) {
-								sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 1)
+								sb.append("<text y=\"" + (yIndex * baseSize + baseSize + margin - 1)
 										+ "\" x=\""
 										+ (xIndex * baseSize + baseSize)
 										+ "\" fill=\""
@@ -4581,19 +4626,19 @@ public class SolverWeb extends HttpServlet {
 							sb.append("<path d=\"M "
 									+ (xIndex * baseSize + baseSize + baseSize)
 									+ " "
-									+ (yIndex * baseSize)
+									+ (yIndex * baseSize + margin)
 									+ " L"
 									+ (xIndex * baseSize + baseSize)
 									+ " "
-									+ (yIndex * baseSize + baseSize)
+									+ (yIndex * baseSize + baseSize + margin)
 									+ " L"
 									+ (xIndex * baseSize + baseSize + baseSize)
 									+ " "
-									+ (yIndex * baseSize + baseSize)
+									+ (yIndex * baseSize + baseSize + margin)
 									+ " Z\" >"
 									+ "</path>");
 							if (masuStr != null) {
-								sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 1)
+								sb.append("<text y=\"" + (yIndex * baseSize + baseSize + margin - 1)
 										+ "\" x=\""
 										+ (xIndex * baseSize + baseSize + (baseSize / 2))
 										+ "\" fill=\""
@@ -4611,19 +4656,19 @@ public class SolverWeb extends HttpServlet {
 							sb.append("<path d=\"M "
 									+ (xIndex * baseSize + baseSize)
 									+ " "
-									+ (yIndex * baseSize)
+									+ (yIndex * baseSize + margin)
 									+ " L"
 									+ (xIndex * baseSize + baseSize + baseSize)
 									+ " "
-									+ (yIndex * baseSize)
+									+ (yIndex * baseSize + margin)
 									+ " L"
 									+ (xIndex * baseSize + baseSize)
 									+ " "
-									+ (yIndex * baseSize + baseSize)
+									+ (yIndex * baseSize + baseSize + margin)
 									+ " Z\" >"
 									+ "</path>");
 							if (masuStr != null) {
-								sb.append("<text y=\"" + (yIndex * baseSize + (baseSize / 2) - 1)
+								sb.append("<text y=\"" + (yIndex * baseSize + (baseSize / 2) + margin - 1)
 										+ "\" x=\""
 										+ (xIndex * baseSize + baseSize)
 										+ "\" fill=\""
@@ -4641,19 +4686,19 @@ public class SolverWeb extends HttpServlet {
 							sb.append("<path d=\"M "
 									+ (xIndex * baseSize + baseSize)
 									+ " "
-									+ (yIndex * baseSize)
+									+ (yIndex * baseSize + margin)
 									+ " L"
 									+ (xIndex * baseSize + baseSize + baseSize)
 									+ " "
-									+ (yIndex * baseSize)
+									+ (yIndex * baseSize + margin)
 									+ " L"
 									+ (xIndex * baseSize + baseSize + baseSize)
 									+ " "
-									+ (yIndex * baseSize + baseSize)
+									+ (yIndex * baseSize + baseSize + margin)
 									+ " Z\" >"
 									+ "</path>");
 							if (masuStr != null) {
-								sb.append("<text y=\"" + (yIndex * baseSize + (baseSize / 2) - 1)
+								sb.append("<text y=\"" + (yIndex * baseSize + (baseSize / 2) + margin - 1)
 										+ "\" x=\""
 										+ (xIndex * baseSize + baseSize + (baseSize / 2))
 										+ "\" fill=\""
@@ -4702,7 +4747,7 @@ public class SolverWeb extends HttpServlet {
 					} else {
 						fillColor = "green";
 					}
-					sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 2)
+					sb.append("<text y=\"" + (yIndex * baseSize + baseSize + margin - 2)
 							+ "\" x=\""
 							+ (xIndex * baseSize + baseSize)
 							+ "\" font-size=\""
