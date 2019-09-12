@@ -7,17 +7,197 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import myamya.other.solver.Common.Difficulty;
+import myamya.other.solver.Common.Direction;
+import myamya.other.solver.Common.GeneratorResult;
 import myamya.other.solver.Common.Masu;
 import myamya.other.solver.Common.Position;
+import myamya.other.solver.Generator;
+import myamya.other.solver.RoomMaker;
 import myamya.other.solver.Solver;
 
 public class LitsSolver implements Solver {
+	public static class LitsGenerator implements Generator {
+
+		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
+		private static final String FULL_NUMS = "０１２３４５６７８９";
+
+		static class LitsSolverForGenerator extends LitsSolver {
+			private final int limit;
+
+			public LitsSolverForGenerator(Field field, int limit) {
+				super(field);
+				this.limit = limit;
+			}
+
+			public int solve2() {
+				while (!field.isSolved()) {
+					String befStr = field.getStateDump();
+					if (!field.solveAndCheck()) {
+						return -1;
+					}
+					int recursiveCnt = 0;
+					while (field.getStateDump().equals(befStr) && recursiveCnt < 3) {
+						if (!candSolve(field, recursiveCnt == 2 ? 999 : recursiveCnt)) {
+							return -1;
+
+						}
+						recursiveCnt++;
+					}
+					if (recursiveCnt == 3 && field.getStateDump().equals(befStr)) {
+						return -1;
+
+					}
+				}
+				return count;
+			}
+
+			@Override
+			protected boolean candSolve(Field field, int recursive) {
+				if (this.count >= limit) {
+					return false;
+				} else {
+					return super.candSolve(field, recursive);
+				}
+			}
+		}
+
+		private final int height;
+		private final int width;
+
+		public LitsGenerator(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		public static void main(String[] args) {
+			new LitsGenerator(8, 8).generate();
+		}
+
+		@Override
+		public GeneratorResult generate() {
+			LitsSolver.Field wkField = new LitsSolver.Field(height, width, RoomMaker.roomMake(height, width));
+			int level = 0;
+			long start = System.nanoTime();
+			while (true) {
+				System.out.println(wkField);
+				// 解けるかな？
+				level = new LitsSolverForGenerator(wkField, 1000).solve2();
+				if (level == -1) {
+					// 解けなければやり直し
+					wkField = new LitsSolver.Field(height, width, RoomMaker.roomMake(height, width));
+				} else {
+					break;
+				}
+			}
+			level = (int) Math.sqrt(level * 5 / 3);
+			String status = "Lv:" + level + "の問題を獲得！(数字/四角：" + wkField.getHintCount().split("/")[0] + "/"
+					+ wkField.getHintCount().split("/")[1] + ")";
+			String url = wkField.getPuzPreURL();
+			String link = "<a href=\"" + url + "\" target=\"_blank\">ぱずぷれv3で解く</a>";
+			StringBuilder sb = new StringBuilder();
+			//			int baseSize = 20;
+			//			int margin = 5;
+			//			sb.append(
+			//					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
+			//							+ "height=\"" + (wkField.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
+			//							+ (wkField.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			//			// 数字描画
+			//			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+			//				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+			//					if (wkField.getNumbers()[yIndex][xIndex] != null) {
+			//						sb.append("<rect y=\"" + (yIndex * baseSize + 2 + margin)
+			//								+ "\" x=\""
+			//								+ (xIndex * baseSize + baseSize + 2)
+			//								+ "\" width=\""
+			//								+ (baseSize - 4)
+			//								+ "\" height=\""
+			//								+ (baseSize - 4)
+			//								+ "\" fill=\"white\" stroke-width=\"1\" stroke=\"black\">"
+			//								+ "\">"
+			//								+ "</rect>");
+			//						if (wkField.getNumbers()[yIndex][xIndex] != -1) {
+			//							String numberStr = String.valueOf(wkField.getNumbers()[yIndex][xIndex]);
+			//							int numIdx = HALF_NUMS.indexOf(numberStr);
+			//							String masuStr = null;
+			//							if (numIdx >= 0) {
+			//								masuStr = FULL_NUMS.substring(numIdx / 2, numIdx / 2 + 1);
+			//							} else {
+			//								masuStr = numberStr;
+			//							}
+			//							sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 4 + margin)
+			//									+ "\" x=\""
+			//									+ (xIndex * baseSize + baseSize + 2)
+			//									+ "\" font-size=\""
+			//									+ (baseSize - 5)
+			//									+ "\" textLength=\""
+			//									+ (baseSize - 5)
+			//									+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+			//									+ masuStr
+			//									+ "</text>");
+			//						}
+			//					}
+			//				}
+			//			}
+			//			// 横壁描画
+			//			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+			//				for (int xIndex = -1; xIndex < wkField.getXLength(); xIndex++) {
+			//					boolean oneYokoWall = xIndex == -1 || xIndex == wkField.getXLength() - 1;
+			//					sb.append("<line y1=\""
+			//							+ (yIndex * baseSize + margin)
+			//							+ "\" x1=\""
+			//							+ (xIndex * baseSize + 2 * baseSize)
+			//							+ "\" y2=\""
+			//							+ (yIndex * baseSize + baseSize + margin)
+			//							+ "\" x2=\""
+			//							+ (xIndex * baseSize + 2 * baseSize)
+			//							+ "\" stroke-width=\"1\" fill=\"none\"");
+			//					if (oneYokoWall) {
+			//						sb.append("stroke=\"#000\" ");
+			//					} else {
+			//						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+			//					}
+			//					sb.append(">"
+			//							+ "</line>");
+			//				}
+			//			}
+			//			// 縦壁描画
+			//			for (int yIndex = -1; yIndex < wkField.getYLength(); yIndex++) {
+			//				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+			//					boolean oneTateWall = yIndex == -1 || yIndex == wkField.getYLength() - 1;
+			//					sb.append("<line y1=\""
+			//							+ (yIndex * baseSize + baseSize + margin)
+			//							+ "\" x1=\""
+			//							+ (xIndex * baseSize + baseSize)
+			//							+ "\" y2=\""
+			//							+ (yIndex * baseSize + baseSize + margin)
+			//							+ "\" x2=\""
+			//							+ (xIndex * baseSize + baseSize + baseSize)
+			//							+ "\" stroke-width=\"1\" fill=\"none\"");
+			//					if (oneTateWall) {
+			//						sb.append("stroke=\"#000\" ");
+			//					} else {
+			//						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+			//					}
+			//					sb.append(">"
+			//							+ "</line>");
+			//				}
+			//			}
+			//			sb.append("</svg>");
+			System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
+			System.out.println(level);
+			System.out.println(wkField.getHintCount());
+			System.out.println(wkField);
+			return new GeneratorResult(status, sb.toString(), link, url, level, "");
+
+		}
+
+	}
 
 	/**
 	 * テトロミノを示す
 	 */
 	enum Tetro {
-	L, I, T, S;
+		L, I, T, S;
 
 		/**
 		 * テトロミノの形状を判定する。LITSのどれでもなかったらnullを返す。
@@ -96,6 +276,16 @@ public class LitsSolver implements Solver {
 			return masu;
 		}
 
+		public String getPuzPreURL() {
+			// TODO 自動生成されたメソッド・スタブ
+			return null;
+		}
+
+		public String getHintCount() {
+			// TODO 自動生成されたメソッド・スタブ
+			return "0/0";
+		}
+
 		public boolean[][] getYokoWall() {
 			return yokoWall;
 		}
@@ -110,6 +300,54 @@ public class LitsSolver implements Solver {
 
 		public int getXLength() {
 			return masu[0].length;
+		}
+
+		private boolean isExistYokoWall(int yIndex, int xIndex) {
+			Position pos = new Position(yIndex, xIndex);
+			for (Set<Position> room : rooms) {
+				if (room.contains(pos)) {
+					Position rightPos = new Position(yIndex, xIndex + 1);
+					if (room.contains(rightPos)) {
+						return false;
+					}
+				}
+			}
+			return true;
+		}
+
+		private boolean isExistTateWall(int yIndex, int xIndex) {
+			Position pos = new Position(yIndex, xIndex);
+			for (Set<Position> room : rooms) {
+				if (room.contains(pos)) {
+					Position downPos = new Position(yIndex + 1, xIndex);
+					if (room.contains(downPos)) {
+						return false;
+					}
+				}
+			}
+			return true;
+		}
+
+		public Field(int height, int width, List<Set<Position>> rooms) {
+			masu = new Masu[height][width];
+			this.rooms = rooms;
+			yokoWall = new boolean[height][width - 1];
+			tateWall = new boolean[height - 1][width];
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					masu[yIndex][xIndex] = Masu.SPACE;
+				}
+			}
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength() - 1; xIndex++) {
+					yokoWall[yIndex][xIndex] = isExistYokoWall(yIndex, xIndex);
+				}
+			}
+			for (int yIndex = 0; yIndex < getYLength() - 1; yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					tateWall[yIndex][xIndex] = isExistTateWall(yIndex, xIndex);
+				}
+			}
 		}
 
 		public Field(int height, int width, String param) {
@@ -249,40 +487,41 @@ public class LitsSolver implements Solver {
 		}
 
 		// posを起点に上下左右に壁または白確定でないマスをposからのdistanceだけつなげていく。
-		private void setContinuePosSetUseDistance(Position pos, Set<Position> continuePosSet, int distance) {
+		private void setContinuePosSetUseDistance(Position pos, Set<Position> continuePosSet, int distance,
+				Direction from) {
 			if (distance == 0) {
 				return;
 			}
-			if (pos.getyIndex() != 0) {
+			if (pos.getyIndex() != 0 && from != Direction.UP) {
 				Position nextPos = new Position(pos.getyIndex() - 1, pos.getxIndex());
 				if (!tateWall[pos.getyIndex() - 1][pos.getxIndex()]
 						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.NOT_BLACK) {
 					continuePosSet.add(nextPos);
-					setContinuePosSetUseDistance(nextPos, continuePosSet, distance - 1);
+					setContinuePosSetUseDistance(nextPos, continuePosSet, distance - 1, Direction.DOWN);
 				}
 			}
-			if (pos.getxIndex() != getXLength() - 1) {
+			if (pos.getxIndex() != getXLength() - 1 && from != Direction.RIGHT) {
 				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() + 1);
 				if (!yokoWall[pos.getyIndex()][pos.getxIndex()]
 						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.NOT_BLACK) {
 					continuePosSet.add(nextPos);
-					setContinuePosSetUseDistance(nextPos, continuePosSet, distance - 1);
+					setContinuePosSetUseDistance(nextPos, continuePosSet, distance - 1, Direction.LEFT);
 				}
 			}
-			if (pos.getyIndex() != getYLength() - 1) {
+			if (pos.getyIndex() != getYLength() - 1 && from != Direction.DOWN) {
 				Position nextPos = new Position(pos.getyIndex() + 1, pos.getxIndex());
 				if (!tateWall[pos.getyIndex()][pos.getxIndex()]
 						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.NOT_BLACK) {
 					continuePosSet.add(nextPos);
-					setContinuePosSetUseDistance(nextPos, continuePosSet, distance - 1);
+					setContinuePosSetUseDistance(nextPos, continuePosSet, distance - 1, Direction.UP);
 				}
 			}
-			if (pos.getxIndex() != 0) {
+			if (pos.getxIndex() != 0 && from != Direction.LEFT) {
 				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() - 1);
 				if (!yokoWall[pos.getyIndex()][pos.getxIndex() - 1]
 						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.NOT_BLACK) {
 					continuePosSet.add(nextPos);
-					setContinuePosSetUseDistance(nextPos, continuePosSet, distance - 1);
+					setContinuePosSetUseDistance(nextPos, continuePosSet, distance - 1, Direction.RIGHT);
 				}
 			}
 		}
@@ -299,7 +538,7 @@ public class LitsSolver implements Solver {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
 					sb.append(masu[yIndex][xIndex]);
 					if (xIndex != getXLength() - 1) {
-						sb.append(yokoWall[yIndex][xIndex] == true ? "□" : "＊");
+						sb.append(yokoWall[yIndex][xIndex] == true ? "□" : "　");
 					}
 				}
 				sb.append("□");
@@ -307,7 +546,7 @@ public class LitsSolver implements Solver {
 				if (yIndex != getYLength() - 1) {
 					sb.append("□");
 					for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-						sb.append(tateWall[yIndex][xIndex] == true ? "□" : "＊");
+						sb.append(tateWall[yIndex][xIndex] == true ? "□" : "　");
 						if (xIndex != getXLength() - 1) {
 							sb.append("□");
 						}
@@ -421,15 +660,13 @@ public class LitsSolver implements Solver {
 						}
 						Set<Position> continuePosSet = new HashSet<>();
 						continuePosSet.add(pos);
-						setContinuePosSetUseDistance(pos, continuePosSet, BLACK_CNT - 1);
+						setContinuePosSetUseDistance(pos, continuePosSet, BLACK_CNT - 1, null);
 						alreadySurvey.addAll(continuePosSet);
 					}
 				}
 				if (!alreadySurvey.isEmpty()) {
-					Set<Position> toWhitePosSet = new HashSet<>(room);
-					toWhitePosSet.removeAll(alreadySurvey);
-					for (Position pos : toWhitePosSet) {
-						if (masu[pos.getyIndex()][pos.getxIndex()] == Masu.SPACE) {
+					for (Position pos : room) {
+						if (!alreadySurvey.contains(pos)) {
 							masu[pos.getyIndex()][pos.getxIndex()] = Masu.NOT_BLACK;
 						}
 					}
@@ -440,28 +677,63 @@ public class LitsSolver implements Solver {
 
 		/**
 		 * 黒マスがひとつながりにならない場合Falseを返す。
+		 * 今までのロジックより高速に動きます。
 		 */
 		public boolean connectSolve() {
 			Set<Position> blackPosSet = new HashSet<>();
-			Position typicalBlackPos = null;
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
 					if (masu[yIndex][xIndex] == Masu.BLACK) {
 						Position blackPos = new Position(yIndex, xIndex);
-						blackPosSet.add(blackPos);
-						if (typicalBlackPos == null) {
-							typicalBlackPos = blackPos;
+						if (blackPosSet.size() == 0) {
+							blackPosSet.add(blackPos);
+							setContinuePosSet(blackPos, blackPosSet, null);
+						} else {
+							if (!blackPosSet.contains(blackPos)) {
+								return false;
+							}
 						}
 					}
 				}
 			}
-			if (typicalBlackPos == null) {
-				return true;
-			} else {
-				Set<Position> continuePosSet = new HashSet<>();
-				setContinuePosSetIgnoreWall(typicalBlackPos, continuePosSet);
-				blackPosSet.removeAll(continuePosSet);
-				return blackPosSet.isEmpty();
+			return true;
+		}
+
+		/**
+		 * posを起点に上下左右に白確定でないマスを無制限につなげていく。
+		 */
+		private void setContinuePosSet(Position pos, Set<Position> continuePosSet, Direction from) {
+			if (pos.getyIndex() != 0 && from != Direction.UP) {
+				Position nextPos = new Position(pos.getyIndex() - 1, pos.getxIndex());
+				if (!continuePosSet.contains(nextPos)
+						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.NOT_BLACK) {
+					continuePosSet.add(nextPos);
+					setContinuePosSet(nextPos, continuePosSet, Direction.DOWN);
+				}
+			}
+			if (pos.getxIndex() != getXLength() - 1 && from != Direction.RIGHT) {
+				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() + 1);
+				if (!continuePosSet.contains(nextPos)
+						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.NOT_BLACK) {
+					continuePosSet.add(nextPos);
+					setContinuePosSet(nextPos, continuePosSet, Direction.LEFT);
+				}
+			}
+			if (pos.getyIndex() != getYLength() - 1 && from != Direction.DOWN) {
+				Position nextPos = new Position(pos.getyIndex() + 1, pos.getxIndex());
+				if (!continuePosSet.contains(nextPos)
+						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.NOT_BLACK) {
+					continuePosSet.add(nextPos);
+					setContinuePosSet(nextPos, continuePosSet, Direction.UP);
+				}
+			}
+			if (pos.getxIndex() != 0 && from != Direction.LEFT) {
+				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() - 1);
+				if (!continuePosSet.contains(nextPos)
+						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.NOT_BLACK) {
+					continuePosSet.add(nextPos);
+					setContinuePosSet(nextPos, continuePosSet, Direction.RIGHT);
+				}
 			}
 		}
 
@@ -469,8 +741,7 @@ public class LitsSolver implements Solver {
 		 * 別部屋に同じ形のテトロミノが隣接する場合Falseを返す。
 		 */
 		public boolean nextSolve() {
-			for (int i = 0; i < rooms.size(); i++) {
-				Set<Position> room = rooms.get(i);
+			for (Set<Position> room : rooms) {
 				Set<Position> myRoomBlackSet = new HashSet<>();
 				Set<Position> nextRoomPosSet = new HashSet<>();
 				for (Position pos : room) {
@@ -478,25 +749,30 @@ public class LitsSolver implements Solver {
 						myRoomBlackSet.add(pos);
 						if (pos.getyIndex() != 0) {
 							Position blackPos = new Position(pos.getyIndex() - 1, pos.getxIndex());
-							if (!room.contains(blackPos)) {
+							if (!room.contains(blackPos)
+									&& masu[blackPos.getyIndex()][blackPos.getxIndex()] == Masu.BLACK) {
+								// 隣接マスが黒マスの場合のみ調査
 								nextRoomPosSet.add(blackPos);
 							}
 						}
 						if (pos.getxIndex() != getXLength() - 1) {
 							Position blackPos = new Position(pos.getyIndex(), pos.getxIndex() + 1);
-							if (!room.contains(blackPos)) {
+							if (!room.contains(blackPos)
+									&& masu[blackPos.getyIndex()][blackPos.getxIndex()] == Masu.BLACK) {
 								nextRoomPosSet.add(blackPos);
 							}
 						}
 						if (pos.getyIndex() != getYLength() - 1) {
 							Position blackPos = new Position(pos.getyIndex() + 1, pos.getxIndex());
-							if (!room.contains(blackPos)) {
+							if (!room.contains(blackPos)
+									&& masu[blackPos.getyIndex()][blackPos.getxIndex()] == Masu.BLACK) {
 								nextRoomPosSet.add(blackPos);
 							}
 						}
 						if (pos.getxIndex() != 0) {
 							Position blackPos = new Position(pos.getyIndex(), pos.getxIndex() - 1);
-							if (!room.contains(blackPos)) {
+							if (!room.contains(blackPos)
+									&& masu[blackPos.getyIndex()][blackPos.getxIndex()] == Masu.BLACK) {
 								nextRoomPosSet.add(blackPos);
 							}
 						}
@@ -504,25 +780,20 @@ public class LitsSolver implements Solver {
 				}
 				// 自分の部屋の黒が4マスの場合のみ調査
 				if (myRoomBlackSet.size() == BLACK_CNT) {
-					Set<Integer> checkedRoom = new HashSet<>();
 					for (Position nextRoomPos : nextRoomPosSet) {
-						// 隣接マスが黒マスの場合のみ調査
-						if (masu[nextRoomPos.getyIndex()][nextRoomPos.getxIndex()] == Masu.BLACK) {
-							for (int j = i; j < rooms.size(); j++) {
-								if (checkedRoom.contains(j)) {
-									continue;
-								}
-								if (rooms.get(j).contains(nextRoomPos)) {
-									checkedRoom.add(j);
-									Set<Position> otherRoomBlackSet = new HashSet<>();
-									otherRoomBlackSet.add(nextRoomPos);
-									setContinuePosSetUseDistance(nextRoomPos, otherRoomBlackSet, BLACK_CNT - 1);
-									// 4マスで同じ形ならfalse
-									if (otherRoomBlackSet.size() == BLACK_CNT
-											&& Tetro.getByPositionSet(myRoomBlackSet) == Tetro
-													.getByPositionSet(otherRoomBlackSet)) {
-										return false;
+						for (Set<Position> otherRoom : rooms) {
+							if (otherRoom.contains(nextRoomPos)) {
+								Set<Position> otherRoomBlackSet = new HashSet<>();
+								for (Position pos : otherRoom) {
+									if (masu[pos.getyIndex()][pos.getxIndex()] == Masu.BLACK) {
+										otherRoomBlackSet.add(pos);
 									}
+								}
+								// 4マスで同じ形ならfalse
+								if (otherRoomBlackSet.size() == BLACK_CNT
+										&& Tetro.getByPositionSet(myRoomBlackSet) == Tetro
+												.getByPositionSet(otherRoomBlackSet)) {
+									return false;
 								}
 							}
 						}
@@ -533,47 +804,10 @@ public class LitsSolver implements Solver {
 		}
 
 		/**
-		 * posを起点に上下左右に白確定でないマスをつなげていく。壁は無視する。
-		 */
-		private void setContinuePosSetIgnoreWall(Position pos, Set<Position> continuePosSet) {
-			if (pos.getyIndex() != 0) {
-				Position nextPos = new Position(pos.getyIndex() - 1, pos.getxIndex());
-				if (!continuePosSet.contains(nextPos)
-						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.NOT_BLACK) {
-					continuePosSet.add(nextPos);
-					setContinuePosSetIgnoreWall(nextPos, continuePosSet);
-				}
-			}
-			if (pos.getxIndex() != getXLength() - 1) {
-				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() + 1);
-				if (!continuePosSet.contains(nextPos)
-						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.NOT_BLACK) {
-					continuePosSet.add(nextPos);
-					setContinuePosSetIgnoreWall(nextPos, continuePosSet);
-				}
-			}
-			if (pos.getyIndex() != getYLength() - 1) {
-				Position nextPos = new Position(pos.getyIndex() + 1, pos.getxIndex());
-				if (!continuePosSet.contains(nextPos)
-						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.NOT_BLACK) {
-					continuePosSet.add(nextPos);
-					setContinuePosSetIgnoreWall(nextPos, continuePosSet);
-				}
-			}
-			if (pos.getxIndex() != 0) {
-				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() - 1);
-				if (!continuePosSet.contains(nextPos)
-						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.NOT_BLACK) {
-					continuePosSet.add(nextPos);
-					setContinuePosSetIgnoreWall(nextPos, continuePosSet);
-				}
-			}
-		}
-
-		/**
 		 * 各種チェックを1セット実行
 		 */
 		private boolean solveAndCheck() {
+			String str = getStateDump();
 			if (!roomSolve()) {
 				return false;
 			}
@@ -583,11 +817,15 @@ public class LitsSolver implements Solver {
 			if (!capacitySolve()) {
 				return false;
 			}
-			if (!connectSolve()) {
-				return false;
-			}
-			if (!nextSolve()) {
-				return false;
+			if (!getStateDump().equals(str)) {
+				return solveAndCheck();
+			} else {
+				if (!connectSolve()) {
+					return false;
+				}
+				if (!nextSolve()) {
+					return false;
+				}
 			}
 			return true;
 		}
@@ -605,10 +843,15 @@ public class LitsSolver implements Solver {
 
 	}
 
-	private final Field field;
+	protected final Field field;
+	protected int count = 0;
 
 	public LitsSolver(int height, int width, String param) {
 		field = new Field(height, width, param);
+	}
+
+	public LitsSolver(Field field) {
+		this.field = new Field(field);
 	}
 
 	public Field getField() {
@@ -626,19 +869,16 @@ public class LitsSolver implements Solver {
 
 	@Override
 	public String solve() {
-		int difficulty = 0;
 		long start = System.nanoTime();
 		while (!field.isSolved()) {
 			System.out.println(field);
 			String befStr = field.getStateDump();
-			if (!field.solveAndCheck()
-					|| (!befStr.equals(field.getStateDump()) && !field.solveAndCheck())) {
+			if (!field.solveAndCheck()) {
 				return "問題に矛盾がある可能性があります。途中経過を返します。";
 			}
 			int recursiveCnt = 0;
 			while (field.getStateDump().equals(befStr) && recursiveCnt < 3) {
-				difficulty = difficulty <= recursiveCnt ? recursiveCnt + 1 : difficulty;
-				if (!candSolve(field, recursiveCnt)) {
+				if (!candSolve(field, recursiveCnt == 2 ? 999 : recursiveCnt)) {
 					return "問題に矛盾がある可能性があります。途中経過を返します。";
 				}
 				recursiveCnt++;
@@ -647,24 +887,30 @@ public class LitsSolver implements Solver {
 				return "解けませんでした。途中経過を返します。";
 			}
 		}
-		System.out.println(((System.nanoTime() - start) / 1000000) +
-				"ms.");
-		System.out.println("難易度:" + difficulty);
+		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
+		System.out.println("難易度:" + (count * 2));
 		System.out.println(field);
 		return "解けました。推定難易度:"
-				+ Difficulty.getByVal(difficulty).toString();
+				+ Difficulty.getByCount(count * 2).toString();
 	}
 
 	/**
 	 * 仮置きして調べる
 	 */
-	private static boolean candSolve(Field field, int recursive) {
+	protected boolean candSolve(Field field, int recursive) {
+		String str = field.getStateDump();
 		for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 			for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
-				if (!oneCandSolve(field, yIndex, xIndex, recursive)) {
-					return false;
+				if (field.masu[yIndex][xIndex] == Masu.SPACE) {
+					count++;
+					if (!oneCandSolve(field, yIndex, xIndex, recursive)) {
+						return false;
+					}
 				}
 			}
+		}
+		if (!field.getStateDump().equals(str)) {
+			return candSolve(field, recursive);
 		}
 		return true;
 	}
@@ -672,35 +918,33 @@ public class LitsSolver implements Solver {
 	/**
 	 * 1つのマスに対する仮置き調査
 	 */
-	private static boolean oneCandSolve(Field field, int yIndex, int xIndex, int recursive) {
-		if (field.masu[yIndex][xIndex] == Masu.SPACE) {
-			Field virtual = new Field(field);
-			virtual.masu[yIndex][xIndex] = Masu.BLACK;
-			String befStr = virtual.getStateDump();
-			boolean allowBlack = virtual.solveAndCheck()
-					&& (befStr.equals(virtual.getStateDump()) || virtual.solveAndCheck());
-			if (allowBlack && recursive > 0) {
-				if (!candSolve(virtual, recursive - 1)) {
-					allowBlack = false;
-				}
+	private boolean oneCandSolve(Field field, int yIndex, int xIndex, int recursive) {
+		Field virtual = new Field(field);
+		virtual.masu[yIndex][xIndex] = Masu.BLACK;
+		String befStr = virtual.getStateDump();
+		boolean allowBlack = virtual.solveAndCheck()
+				&& (befStr.equals(virtual.getStateDump()) || virtual.solveAndCheck());
+		if (allowBlack && recursive > 0) {
+			if (!candSolve(virtual, recursive - 1)) {
+				allowBlack = false;
 			}
-			Field virtual2 = new Field(field);
-			virtual2.masu[yIndex][xIndex] = Masu.NOT_BLACK;
-			befStr = virtual2.getStateDump();
-			boolean allowNotBlack = virtual2.solveAndCheck()
-					&& (befStr.equals(virtual2.getStateDump()) || virtual2.solveAndCheck());
-			if (allowNotBlack && recursive > 0) {
-				if (!candSolve(virtual2, recursive - 1)) {
-					allowNotBlack = false;
-				}
+		}
+		Field virtual2 = new Field(field);
+		virtual2.masu[yIndex][xIndex] = Masu.NOT_BLACK;
+		befStr = virtual2.getStateDump();
+		boolean allowNotBlack = virtual2.solveAndCheck()
+				&& (befStr.equals(virtual2.getStateDump()) || virtual2.solveAndCheck());
+		if (allowNotBlack && recursive > 0) {
+			if (!candSolve(virtual2, recursive - 1)) {
+				allowNotBlack = false;
 			}
-			if (!allowBlack && !allowNotBlack) {
-				return false;
-			} else if (!allowBlack) {
-				field.masu = virtual2.masu;
-			} else if (!allowNotBlack) {
-				field.masu = virtual.masu;
-			}
+		}
+		if (!allowBlack && !allowNotBlack) {
+			return false;
+		} else if (!allowBlack) {
+			field.masu = virtual2.masu;
+		} else if (!allowNotBlack) {
+			field.masu = virtual.masu;
 		}
 		return true;
 	}

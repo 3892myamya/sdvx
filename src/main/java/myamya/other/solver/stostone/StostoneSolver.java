@@ -9,6 +9,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import myamya.other.solver.Common.Difficulty;
+import myamya.other.solver.Common.Direction;
 import myamya.other.solver.Common.Masu;
 import myamya.other.solver.Common.Position;
 import myamya.other.solver.Solver;
@@ -185,8 +186,7 @@ public class StostoneSolver implements Solver {
 					if (!alreadyRoomed) {
 						Set<Position> continuePosSet = new HashSet<>();
 						continuePosSet.add(pos);
-						setContinuePosSet(pos,
-								continuePosSet);
+						setContinuePosSet(pos, continuePosSet, null);
 						rooms.add(new Room(blackCntList.get(blackCntListIndex), continuePosSet));
 						blackCntListIndex++;
 					}
@@ -209,88 +209,39 @@ public class StostoneSolver implements Solver {
 		}
 
 		// posを起点に上下左右に壁または白確定でないマスを無制限につなげていく。
-		private void setContinuePosSet(Position pos, Set<Position> continuePosSet) {
-			if (pos.getyIndex() != 0) {
+		private void setContinuePosSet(Position pos, Set<Position> continuePosSet, Direction from) {
+			if (pos.getyIndex() != 0 && from != Direction.UP) {
 				Position nextPos = new Position(pos.getyIndex() - 1, pos.getxIndex());
 				if (!continuePosSet.contains(nextPos) && !tateWall[pos.getyIndex() - 1][pos.getxIndex()]
 						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.NOT_BLACK) {
 					continuePosSet.add(nextPos);
-					setContinuePosSet(nextPos, continuePosSet);
+					setContinuePosSet(nextPos, continuePosSet, Direction.DOWN);
 				}
 			}
-			if (pos.getxIndex() != getXLength() - 1) {
+			if (pos.getxIndex() != getXLength() - 1 && from != Direction.RIGHT) {
 				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() + 1);
 				if (!continuePosSet.contains(nextPos) && !yokoWall[pos.getyIndex()][pos.getxIndex()]
 						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.NOT_BLACK) {
 					continuePosSet.add(nextPos);
-					setContinuePosSet(nextPos, continuePosSet);
+					setContinuePosSet(nextPos, continuePosSet, Direction.LEFT);
 				}
 			}
-			if (pos.getyIndex() != getYLength() - 1) {
+			if (pos.getyIndex() != getYLength() - 1 && from != Direction.DOWN) {
 				Position nextPos = new Position(pos.getyIndex() + 1, pos.getxIndex());
 				if (!continuePosSet.contains(nextPos) && !tateWall[pos.getyIndex()][pos.getxIndex()]
 						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.NOT_BLACK) {
 					continuePosSet.add(nextPos);
-					setContinuePosSet(nextPos, continuePosSet);
+					setContinuePosSet(nextPos, continuePosSet, Direction.UP);
 				}
 			}
-			if (pos.getxIndex() != 0) {
+			if (pos.getxIndex() != 0 && from != Direction.LEFT) {
 				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() - 1);
 				if (!continuePosSet.contains(nextPos) && !yokoWall[pos.getyIndex()][pos.getxIndex() - 1]
 						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.NOT_BLACK) {
 					continuePosSet.add(nextPos);
-					setContinuePosSet(nextPos, continuePosSet);
+					setContinuePosSet(nextPos, continuePosSet, Direction.RIGHT);
 				}
 			}
-		}
-
-		/**
-		 * pivotPosSetを起点に上下左右に壁または白確定でないマスをpivotPosSetからのdistanceだけつなげていく。
-		 */
-		private void setContinuePosSetUseDistance(Set<Position> pivotPosSet, Set<Position> continuePosSet,
-				int distance) {
-			if (distance == 0 || pivotPosSet.isEmpty()) {
-				return;
-			}
-			Set<Position> nextPivotPosSet = new HashSet<>();
-			for (Position pos : pivotPosSet) {
-				if (pos.getyIndex() != 0) {
-					Position nextPos = new Position(pos.getyIndex() - 1, pos.getxIndex());
-					if (!tateWall[pos.getyIndex() - 1][pos.getxIndex()] && !continuePosSet.contains(nextPos)
-							&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.NOT_BLACK) {
-						nextPivotPosSet.add(nextPos);
-						continuePosSet.add(nextPos);
-					}
-				}
-				if (pos.getxIndex() != getXLength() - 1) {
-					Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() + 1);
-					if (!yokoWall[pos.getyIndex()][pos.getxIndex()]
-							&& !continuePosSet.contains(nextPos)
-							&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.NOT_BLACK) {
-						nextPivotPosSet.add(nextPos);
-						continuePosSet.add(nextPos);
-					}
-				}
-				if (pos.getyIndex() != getYLength() - 1) {
-					Position nextPos = new Position(pos.getyIndex() + 1, pos.getxIndex());
-					if (!tateWall[pos.getyIndex()][pos.getxIndex()]
-							&& !continuePosSet.contains(nextPos)
-							&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.NOT_BLACK) {
-						nextPivotPosSet.add(nextPos);
-						continuePosSet.add(nextPos);
-					}
-				}
-				if (pos.getxIndex() != 0) {
-					Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() - 1);
-					if (!yokoWall[pos.getyIndex()][pos.getxIndex() - 1]
-							&& !continuePosSet.contains(nextPos)
-							&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.NOT_BLACK) {
-						nextPivotPosSet.add(nextPos);
-						continuePosSet.add(nextPos);
-					}
-				}
-			}
-			setContinuePosSetUseDistance(nextPivotPosSet, continuePosSet, distance - 1);
 		}
 
 		/**
@@ -320,15 +271,13 @@ public class StostoneSolver implements Solver {
 		 */
 		private boolean makePositionMap(Set<Position> droppedBlackPos, Map<Position, Integer> positionMap,
 				int dropDistance) {
-			if (positionMap.size() == getYLength() *
-					getXLength()) {
+			if (positionMap.size() == getYLength() * getXLength()) {
 				return true;
 			}
 			boolean distanceUp = true;
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					Position pos = new Position(yIndex,
-							xIndex);
+					Position pos = new Position(yIndex, xIndex);
 					if (positionMap.containsKey(pos)) {
 						// 既に確定済みのマスは除外
 						continue;
@@ -340,8 +289,7 @@ public class StostoneSolver implements Solver {
 							//その黒は接地している
 							isDropped = true;
 						} else if (droppedBlackPos
-								.contains(new Position(pos.getyIndex() + 1 + dropDistance,
-										pos.getxIndex()))) {
+								.contains(new Position(pos.getyIndex() + 1 + dropDistance, pos.getxIndex()))) {
 							// 別の部屋の黒マスと密着している
 							isDropped = true;
 						}
@@ -353,8 +301,7 @@ public class StostoneSolver implements Solver {
 							for (Position blackPos : blackSet) {
 								positionMap.put(blackPos, dropDistance);
 								droppedBlackPos
-										.add(new Position(blackPos.getyIndex() + dropDistance,
-												blackPos.getxIndex()));
+										.add(new Position(blackPos.getyIndex() + dropDistance, blackPos.getxIndex()));
 							}
 							distanceUp = false;
 						}
@@ -421,7 +368,7 @@ public class StostoneSolver implements Solver {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
 					sb.append(masu[yIndex][xIndex]);
 					if (xIndex != getXLength() - 1) {
-						sb.append(yokoWall[yIndex][xIndex] == true ? "□" : "＊");
+						sb.append(yokoWall[yIndex][xIndex] == true ? "□" : "　");
 					}
 				}
 				sb.append("□");
@@ -430,7 +377,7 @@ public class StostoneSolver implements Solver {
 					sb.append("□");
 					for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
 
-						sb.append(tateWall[yIndex][xIndex] == true ? "□" : "＊");
+						sb.append(tateWall[yIndex][xIndex] == true ? "□" : "　");
 						if (xIndex != getXLength() -
 								1) {
 							sb.append("□");
@@ -525,11 +472,29 @@ public class StostoneSolver implements Solver {
 				// 縦方向に対する調査
 				int blackCnt = 0;
 				int notBlackCnt = 0;
+				Set<Room> roomSet = new HashSet<>();
+				boolean checkRoomSet = false;
 				for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+					if (yIndex != 0 && tateWall[yIndex - 1][xIndex]) {
+						checkRoomSet = true;
+					}
 					if (masu[yIndex][xIndex] == Masu.BLACK) {
 						blackCnt++;
+						for (Room room : rooms) {
+							if (room.getMember().contains(new Position(yIndex, xIndex))) {
+								if (checkRoomSet) {
+									if (roomSet.contains(room)) {
+										return false;
+									}
+								}
+								roomSet.add(room);
+								checkRoomSet = false;
+								break;
+							}
+						}
 					} else if (masu[yIndex][xIndex] == Masu.NOT_BLACK) {
 						notBlackCnt++;
+						checkRoomSet = true;
 					}
 				}
 				if (blackCnt > getHalfYLength() ||
@@ -676,7 +641,7 @@ public class StostoneSolver implements Solver {
 						Set<Position> continuePosSet = new HashSet<>();
 						continuePosSet.add(pos);
 						if (room.getBlackCnt() == -1) {
-							setContinuePosSet(pos, continuePosSet);
+							setContinuePosSet(pos, continuePosSet, null);
 						} else {
 							setContinuePosSetUseDistance(new HashSet<>(continuePosSet), continuePosSet,
 									room.getBlackCnt() - 1);
@@ -695,6 +660,95 @@ public class StostoneSolver implements Solver {
 				}
 			}
 			return true;
+		}
+
+		/**
+		 * pivotPosSetを起点に上下左右に壁または白確定でないマスをpivotPosSetからのdistanceだけつなげていく。
+		 */
+		private void setContinuePosSetUseDistance(Set<Position> pivotPosSet, Set<Position> continuePosSet,
+				int distance) {
+			if (distance == 0 || pivotPosSet.isEmpty()) {
+				return;
+			}
+			Set<Position> nextPivotPosSet = new HashSet<>();
+			for (Position pos : pivotPosSet) {
+				if (pos.getyIndex() != 0) {
+					Position nextPos = new Position(pos.getyIndex() - 1, pos.getxIndex());
+					if (!tateWall[pos.getyIndex() - 1][pos.getxIndex()] && !continuePosSet.contains(nextPos)
+							&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.NOT_BLACK) {
+						nextPivotPosSet.add(nextPos);
+						continuePosSet.add(nextPos);
+					}
+				}
+				if (pos.getxIndex() != getXLength() - 1) {
+					Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() + 1);
+					if (!yokoWall[pos.getyIndex()][pos.getxIndex()]
+							&& !continuePosSet.contains(nextPos)
+							&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.NOT_BLACK) {
+						nextPivotPosSet.add(nextPos);
+						continuePosSet.add(nextPos);
+					}
+				}
+				if (pos.getyIndex() != getYLength() - 1) {
+					Position nextPos = new Position(pos.getyIndex() + 1, pos.getxIndex());
+					if (!tateWall[pos.getyIndex()][pos.getxIndex()]
+							&& !continuePosSet.contains(nextPos)
+							&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.NOT_BLACK) {
+						nextPivotPosSet.add(nextPos);
+						continuePosSet.add(nextPos);
+					}
+				}
+				if (pos.getxIndex() != 0) {
+					Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() - 1);
+					if (!yokoWall[pos.getyIndex()][pos.getxIndex() - 1]
+							&& !continuePosSet.contains(nextPos)
+							&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.NOT_BLACK) {
+						nextPivotPosSet.add(nextPos);
+						continuePosSet.add(nextPos);
+					}
+				}
+			}
+			setContinuePosSetUseDistance(nextPivotPosSet, continuePosSet, distance - 1);
+		}
+
+		/**
+		 * posを起点に上下左右に同部屋の白確定でないマスを無制限につなげていく。
+		 */
+		private void setContinuePosSetSameRoom(Position pos, Set<Position> continuePosSet, Direction from) {
+			if (pos.getyIndex() != 0 && from != Direction.UP && !tateWall[pos.getyIndex() - 1][pos.getxIndex()]) {
+				Position nextPos = new Position(pos.getyIndex() - 1, pos.getxIndex());
+				if (!continuePosSet.contains(nextPos)
+						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.NOT_BLACK) {
+					continuePosSet.add(nextPos);
+					setContinuePosSet(nextPos, continuePosSet, Direction.DOWN);
+				}
+			}
+			if (pos.getxIndex() != getXLength() - 1 && from != Direction.RIGHT
+					&& !yokoWall[pos.getyIndex()][pos.getxIndex()]) {
+				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() + 1);
+				if (!continuePosSet.contains(nextPos)
+						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.NOT_BLACK) {
+					continuePosSet.add(nextPos);
+					setContinuePosSet(nextPos, continuePosSet, Direction.LEFT);
+				}
+			}
+			if (pos.getyIndex() != getYLength() - 1 && from != Direction.DOWN
+					&& !tateWall[pos.getyIndex()][pos.getxIndex()]) {
+				Position nextPos = new Position(pos.getyIndex() + 1, pos.getxIndex());
+				if (!continuePosSet.contains(nextPos)
+						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.NOT_BLACK) {
+					continuePosSet.add(nextPos);
+					setContinuePosSet(nextPos, continuePosSet, Direction.UP);
+				}
+			}
+			if (pos.getxIndex() != 0 && from != Direction.LEFT && !yokoWall[pos.getyIndex()][pos.getxIndex() - 1]) {
+				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() - 1);
+				if (!continuePosSet.contains(nextPos)
+						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.NOT_BLACK) {
+					continuePosSet.add(nextPos);
+					setContinuePosSet(nextPos, continuePosSet, Direction.RIGHT);
+				}
+			}
 		}
 	}
 
@@ -739,10 +793,10 @@ public class StostoneSolver implements Solver {
 			}
 			return new Position(yIndex, xIndex);
 		}
-
 	}
 
 	private final Field field;
+	protected int count = 0;
 
 	public StostoneSolver(int height, int width, String param) {
 		field = new Field(height, width, param);
@@ -763,18 +817,15 @@ public class StostoneSolver implements Solver {
 
 	@Override
 	public String solve() {
-		int difficulty = 0;
 		long start = System.nanoTime();
 		while (!field.isSolved()) {
 			System.out.println(field);
 			String befStr = field.getStateDump();
-			if (!field.solveAndCheck()
-					|| (!befStr.equals(field.getStateDump()) && !field.solveAndCheck())) {
+			if (!field.solveAndCheck()) {
 				return "問題に矛盾がある可能性があります。途中経過を返します。";
 			}
 			int recursiveCnt = 0;
 			while (field.getStateDump().equals(befStr) && recursiveCnt < 3) {
-				difficulty = difficulty <= recursiveCnt ? recursiveCnt + 1 : difficulty;
 				if (!candSolve(field, recursiveCnt)) {
 					return "問題に矛盾がある可能性があります。途中経過を返します。";
 				}
@@ -784,22 +835,22 @@ public class StostoneSolver implements Solver {
 				return "解けませんでした。途中経過を返します。";
 			}
 		}
-		System.out.println(((System.nanoTime() - start) / 1000000) +
-				"ms.");
-		System.out.println("難易度:" + difficulty);
+		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
+		System.out.println("難易度:" + (count));
 		System.out.println(field);
 		return "解けました。推定難易度:"
-				+ Difficulty.getByVal(difficulty).toString();
+				+ Difficulty.getByCount(count).toString();
 	}
 
 	/**
 	 * 仮置きして調べる
 	 */
-	private static boolean candSolve(Field field, int recursive) {
+	protected boolean candSolve(Field field, int recursive) {
 		String str = field.getStateDump();
 		for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 			for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
 				if (field.masu[yIndex][xIndex] == Masu.SPACE) {
+					count++;
 					if (!oneCandSolve(field, yIndex, xIndex, recursive)) {
 						return false;
 					}
@@ -815,7 +866,7 @@ public class StostoneSolver implements Solver {
 	/**
 	 * 1つのマスに対する仮置き調査
 	 */
-	private static boolean oneCandSolve(Field field, int yIndex, int xIndex, int recursive) {
+	private boolean oneCandSolve(Field field, int yIndex, int xIndex, int recursive) {
 		Field virtual = new Field(field);
 		virtual.masu[yIndex][xIndex] = Masu.BLACK;
 		String befStr = virtual.getStateDump();
@@ -845,5 +896,4 @@ public class StostoneSolver implements Solver {
 		}
 		return true;
 	}
-
 }

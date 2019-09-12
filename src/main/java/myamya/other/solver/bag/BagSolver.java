@@ -1,14 +1,286 @@
 package myamya.other.solver.bag;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import myamya.other.solver.Common.Difficulty;
+import myamya.other.solver.Common.GeneratorResult;
 import myamya.other.solver.Common.Masu;
 import myamya.other.solver.Common.Position;
+import myamya.other.solver.Generator;
 import myamya.other.solver.Solver;
 
 public class BagSolver implements Solver {
+	public static class BagGenerator implements Generator {
+
+		static class BagSolverForGenerator extends BagSolver {
+
+			private final int limit;
+
+			public BagSolverForGenerator(Field field, int limit) {
+				super(field);
+				this.limit = limit;
+			}
+
+			public int solve2() {
+				while (!field.isSolved()) {
+					String befStr = field.getStateDump();
+					if (!field.solveAndCheck()) {
+						return -1;
+					}
+					int recursiveCnt = 0;
+					while (field.getStateDump().equals(befStr) && recursiveCnt < 3) {
+						if (!candSolve(field, recursiveCnt)) {
+							return -1;
+						}
+						recursiveCnt++;
+					}
+					if (recursiveCnt == 3 && field.getStateDump().equals(befStr)) {
+						return -1;
+					}
+				}
+				return count;
+			}
+
+			@Override
+			protected boolean candSolve(Field field, int recursive) {
+				if (this.count >= limit) {
+					return false;
+				} else {
+					return super.candSolve(field, recursive);
+				}
+			}
+		}
+
+		private final int height;
+		private final int width;
+
+		public BagGenerator(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		public static void main(String[] args) {
+			new BagGenerator(10, 10).generate();
+		}
+
+		@Override
+		public GeneratorResult generate() {
+			BagSolver.Field wkField = new BagSolver.Field(height, width);
+			List<Integer> indexList = new ArrayList<>();
+			for (int i = 0; i < height * width; i++) {
+				indexList.add(i);
+			}
+			Collections.shuffle(indexList);
+			int index = 0;
+			int level = 0;
+			long start = System.nanoTime();
+			while (true) {
+				// 問題生成部
+				while (!wkField.isSolved()) {
+					int yIndex = indexList.get(index) / width;
+					int xIndex = indexList.get(index) % width;
+					if (wkField.masu[yIndex][xIndex] == Masu.SPACE) {
+						boolean isOk = false;
+						List<Integer> numIdxList = new ArrayList<>();
+						for (int i = 0; i < 2; i++) {
+							numIdxList.add(i);
+						}
+						Collections.shuffle(numIdxList);
+						for (int masuNum : numIdxList) {
+							BagSolver.Field virtual = new BagSolver.Field(wkField);
+							if (masuNum < 1) {
+								virtual.masu[yIndex][xIndex] = Masu.NOT_BLACK;
+							} else if (masuNum < 2) {
+								virtual.masu[yIndex][xIndex] = Masu.BLACK;
+							}
+							if (virtual.solveAndCheck()) {
+								isOk = true;
+								wkField.masu = virtual.masu;
+								break;
+							}
+						}
+						if (!isOk) {
+							// 破綻したら0から作り直す。
+							wkField = new BagSolver.Field(height, width);
+							index = 0;
+							continue;
+						}
+					}
+					index++;
+				}
+				// 数字埋め
+				List<Position> numberPosList = new ArrayList<>();
+				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+						if (wkField.masu[yIndex][xIndex] == Masu.NOT_BLACK) {
+							int upWhiteCnt = 0;
+							for (int targetY = yIndex - 1; targetY >= 0; targetY--) {
+								if (wkField.masu[targetY][xIndex] != Masu.NOT_BLACK) {
+									break;
+								}
+								upWhiteCnt++;
+							}
+							int rightWhiteCnt = 0;
+							for (int targetX = xIndex + 1; targetX < wkField.getXLength(); targetX++) {
+								if (wkField.masu[yIndex][targetX] != Masu.NOT_BLACK) {
+									break;
+								}
+								rightWhiteCnt++;
+							}
+							int downWhiteCnt = 0;
+							for (int targetY = yIndex + 1; targetY < wkField.getYLength(); targetY++) {
+								if (wkField.masu[targetY][xIndex] != Masu.NOT_BLACK) {
+									break;
+								}
+								downWhiteCnt++;
+							}
+							int leftWhiteCnt = 0;
+							for (int targetX = xIndex - 1; targetX >= 0; targetX--) {
+								if (wkField.masu[yIndex][targetX] != Masu.NOT_BLACK) {
+									break;
+								}
+								leftWhiteCnt++;
+							}
+							int aroundWhiteCnt = 1 + upWhiteCnt + rightWhiteCnt + downWhiteCnt + leftWhiteCnt;
+							wkField.numbers[yIndex][xIndex] = aroundWhiteCnt;
+							numberPosList.add(new Position(yIndex, xIndex));
+						}
+					}
+				}
+				System.out.println(wkField);
+				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+						if (wkField.numbers[yIndex][xIndex] == null) {
+							wkField.masu[yIndex][xIndex] = Masu.SPACE;
+						}
+					}
+				}
+				// 解けるかな？
+				level = new BagSolverForGenerator(new BagSolver.Field(wkField), 100).solve2();
+				if (level == -1) {
+					// 解けなければやり直し
+					wkField = new BagSolver.Field(height, width);
+					index = 0;
+				} else {
+					// ヒントを限界まで減らす
+					Collections.shuffle(numberPosList);
+					for (Position numberPos : numberPosList) {
+						BagSolver.Field virtual = new BagSolver.Field(wkField, true);
+						virtual.masu[numberPos.getyIndex()][numberPos.getxIndex()] = Masu.SPACE;
+						virtual.numbers[numberPos.getyIndex()][numberPos.getxIndex()] = null;
+						int solveResult = new BagSolverForGenerator(virtual, 5000).solve2();
+						if (solveResult != -1) {
+							wkField.masu[numberPos.getyIndex()][numberPos.getxIndex()] = Masu.SPACE;
+							wkField.numbers[numberPos.getyIndex()][numberPos.getxIndex()] = null;
+							level = solveResult;
+						}
+					}
+					break;
+				}
+			}
+			level = (int) Math.sqrt(level * 5 / 3) + 1;
+			String status = "Lv" + level + "の問題を獲得！(数字/岬：" + wkField.getHintCount().split("/")[0] + "/"
+					+ wkField.getHintCount().split("/")[1] + ")";
+			String url = wkField.getPuzPreURL();
+			String link = "<a href=\"" + url + "\" target=\"_blank\">ぱずぷれv3で解く</a>";
+			StringBuilder sb = new StringBuilder();
+			//			int baseSize = 20;
+			//			int margin = 5;
+			//			sb.append(
+			//					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
+			//							+ "height=\"" + (wkField.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
+			//							+ (wkField.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			//			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+			//				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+			//					if (wkField.getMisaki()[yIndex][xIndex] || wkField.getNumbers()[yIndex][xIndex] != null) {
+			//						if (wkField.getMisaki()[yIndex][xIndex]) {
+			//							sb.append("<circle cy=\"" + (yIndex * baseSize + (baseSize / 2) + margin)
+			//									+ "\" cx=\""
+			//									+ (xIndex * baseSize + baseSize + (baseSize / 2))
+			//									+ "\" r=\""
+			//									+ (baseSize / 2 - 2)
+			//									+ "\" fill=\"white\", stroke=\"black\">"
+			//									+ "</circle>");
+			//						}
+			//						if (wkField.getNumbers()[yIndex][xIndex] != null) {
+			//							String numberStr = String.valueOf(wkField.getNumbers()[yIndex][xIndex]);
+			//							int numIdx = HALF_NUMS.indexOf(numberStr);
+			//							String masuStr = null;
+			//							if (numIdx >= 0) {
+			//								masuStr = FULL_NUMS.substring(numIdx / 2, numIdx / 2 + 1);
+			//							} else {
+			//								masuStr = numberStr;
+			//							}
+			//							sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 4 + margin)
+			//									+ "\" x=\""
+			//									+ (xIndex * baseSize + baseSize + 2)
+			//									+ "\" font-size=\""
+			//									+ (baseSize - 5)
+			//									+ "\" textLength=\""
+			//									+ (baseSize - 5)
+			//									+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+			//									+ masuStr
+			//									+ "</text>");
+			//						}
+			//					}
+			//				}
+			//			}
+			//			// 横壁描画
+			//			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+			//				for (int xIndex = -1; xIndex < wkField.getXLength(); xIndex++) {
+			//					boolean oneYokoWall = xIndex == -1 || xIndex == wkField.getXLength() - 1;
+			//					sb.append("<line y1=\""
+			//							+ (yIndex * baseSize + margin)
+			//							+ "\" x1=\""
+			//							+ (xIndex * baseSize + 2 * baseSize)
+			//							+ "\" y2=\""
+			//							+ (yIndex * baseSize + baseSize + margin)
+			//							+ "\" x2=\""
+			//							+ (xIndex * baseSize + 2 * baseSize)
+			//							+ "\" stroke-width=\"1\" fill=\"none\"");
+			//					if (oneYokoWall) {
+			//						sb.append("stroke=\"#000\" ");
+			//					} else {
+			//						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+			//					}
+			//					sb.append(">"
+			//							+ "</line>");
+			//				}
+			//			}
+			//			// 縦壁描画
+			//			for (int yIndex = -1; yIndex < wkField.getYLength(); yIndex++) {
+			//				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+			//					boolean oneTateWall = yIndex == -1 || yIndex == wkField.getYLength() - 1;
+			//					sb.append("<line y1=\""
+			//							+ (yIndex * baseSize + baseSize + margin)
+			//							+ "\" x1=\""
+			//							+ (xIndex * baseSize + baseSize)
+			//							+ "\" y2=\""
+			//							+ (yIndex * baseSize + baseSize + margin)
+			//							+ "\" x2=\""
+			//							+ (xIndex * baseSize + baseSize + baseSize)
+			//							+ "\" stroke-width=\"1\" fill=\"none\"");
+			//					if (oneTateWall) {
+			//						sb.append("stroke=\"#000\" ");
+			//					} else {
+			//						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+			//					}
+			//					sb.append(">"
+			//							+ "</line>");
+			//				}
+			//			}
+			//			sb.append("</svg>");
+			System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
+			System.out.println(level);
+			System.out.println(wkField.getHintCount());
+			System.out.println(wkField);
+			return new GeneratorResult(status, sb.toString(), link, url, level, "");
+		}
+	}
 
 	public static class Field {
 		static final String ALPHABET = "abcde";
@@ -25,6 +297,16 @@ public class BagSolver implements Solver {
 			return masu;
 		}
 
+		public String getPuzPreURL() {
+			// TODO 自動生成されたメソッド・スタブ
+			return null;
+		}
+
+		public String getHintCount() {
+			// TODO 自動生成されたメソッド・スタブ
+			return "0/0";
+		}
+
 		public Integer[][] getNumbers() {
 			return numbers;
 		}
@@ -35,6 +317,21 @@ public class BagSolver implements Solver {
 
 		public int getXLength() {
 			return masu[0].length;
+		}
+
+		public Field(int height, int width) {
+			masu = new Masu[height][width];
+			numbers = new Integer[height][width];
+			wallPosSet = new HashSet<>();
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					masu[yIndex][xIndex] = Masu.SPACE;
+					Position wallPosCand = new Position(yIndex, xIndex);
+					if (isWallPos(wallPosCand)) {
+						wallPosSet.add(new Position(yIndex, xIndex));
+					}
+				}
+			}
 		}
 
 		public Field(int height, int width, String param) {
@@ -99,6 +396,21 @@ public class BagSolver implements Solver {
 			}
 			numbers = other.numbers;
 			wallPosSet = other.wallPosSet;
+		}
+
+		/**
+		 * numbersをイミュータブルにするためのコンストラクタ。flagはダミー
+		 */
+		public Field(Field other, boolean flag) {
+			masu = new Masu[other.getYLength()][other.getXLength()];
+			numbers = new Integer[other.getYLength()][other.getXLength()];
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					masu[yIndex][xIndex] = other.masu[yIndex][xIndex];
+					numbers[yIndex][xIndex] = other.numbers[yIndex][xIndex];
+				}
+			}
+			wallPosSet = new HashSet<>(other.wallPosSet);
 		}
 
 		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
@@ -555,11 +867,15 @@ public class BagSolver implements Solver {
 
 	}
 
-	private final Field field;
-	private int count = 0;
+	protected final Field field;
+	protected int count = 0;
 
 	public BagSolver(int height, int width, String param) {
 		field = new Field(height, width, param);
+	}
+
+	public BagSolver(Field field) {
+		this.field = new Field(field);
 	}
 
 	public Field getField() {
@@ -596,16 +912,16 @@ public class BagSolver implements Solver {
 			}
 		}
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
-		System.out.println("難易度:" + (count * 4));
+		System.out.println("難易度:" + (count * 5));
 		System.out.println(field);
 		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count * 4).toString();
+				+ Difficulty.getByCount(count * 5).toString();
 	}
 
 	/**
 	 * 仮置きして調べる
 	 */
-	private boolean candSolve(Field field, int recursive) {
+	protected boolean candSolve(Field field, int recursive) {
 		String str = field.getStateDump();
 		for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 			for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
