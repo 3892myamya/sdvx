@@ -12,11 +12,13 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import myamya.other.solver.Common.GeneratorResult;
+import myamya.other.solver.akari.AkariSolver.AkariGenerator;
 import myamya.other.solver.creek.CreekSolver.CreekGenerator;
 import myamya.other.solver.gokigen.GokigenSolver.GokigenGenerator;
 import myamya.other.solver.nurimisaki.NurimisakiSolver.NurimisakiGenerator;
 import myamya.other.solver.reflect.ReflectSolver.ReflectGenerator;
 import myamya.other.solver.shakashaka.ShakashakaSolver.ShakashakaGenerator;
+import myamya.other.solver.slither.SlitherSolver.SlitherGenerator;
 import myamya.other.solver.sudoku.SudokuSolver.SudokuGenerator;
 import myamya.other.solver.tasquare.TasquareSolver.TasquareGenerator;
 import net.arnx.jsonic.JSON;
@@ -146,6 +148,42 @@ public class SudokuGachaWeb extends HttpServlet {
 
 	}
 
+	static class SlitherGeneratorThlead extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+		protected final int pattern;
+
+		SlitherGeneratorThlead(int height, int width, int pattern) {
+			this.height = height;
+			this.width = width;
+			this.pattern = pattern;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new SlitherGenerator(height, width, HintPattern.getByVal(pattern, height, width));
+		}
+
+	}
+
+	static class AkariGeneratorThlead extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+		protected final int pattern;
+
+		AkariGeneratorThlead(int height, int width, int pattern) {
+			this.height = height;
+			this.width = width;
+			this.pattern = pattern;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new AkariGenerator(height, width, HintPattern.getByVal(pattern, height, width));
+		}
+
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -175,6 +213,12 @@ public class SudokuGachaWeb extends HttpServlet {
 					t = new TasquareGeneratorThlead(height, width);
 				} else if (type.equals("reflect")) {
 					t = new ReflectGeneratorThlead(height, width);
+				} else if (type.equals("slither")) {
+					int pattern = Integer.parseInt(request.getParameter("pattern"));
+					t = new SlitherGeneratorThlead(height, width, pattern);
+				} else if (type.equals("akari")) {
+					int pattern = Integer.parseInt(request.getParameter("pattern"));
+					t = new AkariGeneratorThlead(height, width, pattern);
 				} else {
 					throw new IllegalArgumentException();
 				}

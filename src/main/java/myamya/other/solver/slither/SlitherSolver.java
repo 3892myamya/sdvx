@@ -12,6 +12,7 @@ import myamya.other.solver.Common.GeneratorResult;
 import myamya.other.solver.Common.Position;
 import myamya.other.solver.Common.Wall;
 import myamya.other.solver.Generator;
+import myamya.other.solver.HintPattern;
 import myamya.other.solver.Solver;
 
 public class SlitherSolver implements Solver {
@@ -35,13 +36,13 @@ public class SlitherSolver implements Solver {
 						return -1;
 					}
 					int recursiveCnt = 0;
-					while (field.getStateDump().equals(befStr) && recursiveCnt < 2) {
-						if (!candSolve(field, recursiveCnt * 3)) {
+					while (field.getStateDump().equals(befStr) && recursiveCnt < 3) {
+						if (!candSolve(field, recursiveCnt)) {
 							return -1;
 						}
 						recursiveCnt++;
 					}
-					if (recursiveCnt == 2 && field.getStateDump().equals(befStr)) {
+					if (recursiveCnt == 3 && field.getStateDump().equals(befStr)) {
 						return -1;
 					}
 				}
@@ -60,14 +61,16 @@ public class SlitherSolver implements Solver {
 
 		private final int height;
 		private final int width;
+		private final HintPattern hintPattern;
 
-		public SlitherGenerator(int height, int width) {
+		public SlitherGenerator(int height, int width, HintPattern hintPattern) {
 			this.height = height;
 			this.width = width;
+			this.hintPattern = hintPattern;
 		}
 
 		public static void main(String[] args) {
-			new SlitherGenerator(3, 3).generate();
+			new SlitherGenerator(10, 10, HintPattern.getByVal(7, 10, 10)).generate();
 		}
 
 		@Override
@@ -138,7 +141,6 @@ public class SlitherSolver implements Solver {
 				}
 				// 数字埋め＆マス初期化
 				// できるだけ埋める
-				List<Position> numberPosList = new ArrayList<>();
 				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
 					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
 						int existsCount = 0;
@@ -159,7 +161,6 @@ public class SlitherSolver implements Solver {
 							existsCount++;
 						}
 						wkField.numbers[yIndex][xIndex] = existsCount;
-						numberPosList.add(new Position(yIndex, xIndex));
 					}
 				}
 				// マスを戻す
@@ -174,7 +175,7 @@ public class SlitherSolver implements Solver {
 					}
 				}
 				// 解けるかな？
-				level = new SlitherSolverForGenerator(wkField, 50).solve2();
+				level = new SlitherSolverForGenerator(wkField, 60).solve2();
 				if (level == -1) {
 					// 解けなければやり直し
 					wkField = new SlitherSolver.Field(height, width);
@@ -182,99 +183,95 @@ public class SlitherSolver implements Solver {
 					index = 0;
 				} else {
 					// ヒントを限界まで減らす
-					// TODO …と難しくなりすぎる。配置パターンを取り入れるべきだ
-					Collections.shuffle(numberPosList);
-					for (Position numberPos : numberPosList) {
+					List<Set<Position>> numberPosSetList = hintPattern.getPosSetList();
+					Collections.shuffle(numberPosSetList);
+					for (Set<Position> numberPosSet : numberPosSetList) {
 						SlitherSolver.Field virtual = new SlitherSolver.Field(wkField, true);
-						virtual.numbers[numberPos.getyIndex()][numberPos.getxIndex()] = null;
+						for (Position numberPos : numberPosSet) {
+							virtual.numbers[numberPos.getyIndex()][numberPos.getxIndex()] = null;
+						}
 						// TODO 本当はもっとでかくできるが…
-						int solveResult = new SlitherSolverForGenerator(virtual, 5000).solve2();
+						int solveResult = new SlitherSolverForGenerator(virtual, 6000).solve2();
 						if (solveResult != -1) {
-							wkField.numbers[numberPos.getyIndex()][numberPos.getxIndex()] = null;
+							for (Position numberPos : numberPosSet) {
+								wkField.numbers[numberPos.getyIndex()][numberPos.getxIndex()] = null;
+							}
 							level = solveResult;
 						}
 					}
 					break;
 				}
 			}
-			level = (int) Math.sqrt(level * 2 / 3) + 1;
+			level = (int) Math.sqrt(level * 10 / 3) + 1;
 			String status = "Lv:" + level + "の問題を獲得！(ヒント数：" + wkField.getHintCount() + ")";
 			String url = wkField.getPuzPreURL();
 			String link = "<a href=\"" + url + "\" target=\"_blank\">ぱずぷれv3で解く</a>";
 			StringBuilder sb = new StringBuilder();
-			//			int baseSize = 20;
-			//			int margin = 5;
-			//			sb.append(
-			//					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
-			//							+ "height=\"" + (wkField.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
-			//							+ (wkField.getXLength() * baseSize + 2 * baseSize) + "\" >");
-			//			// 横壁描画
-			//			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
-			//				for (int xIndex = -1; xIndex < wkField.getXLength(); xIndex++) {
-			//					sb.append("<line y1=\""
-			//							+ (yIndex * baseSize + baseSize / 2 + margin)
-			//							+ "\" x1=\""
-			//							+ (xIndex * baseSize + baseSize / 2 + 2 * baseSize)
-			//							+ "\" y2=\""
-			//							+ (yIndex * baseSize + baseSize / 2 + baseSize + margin)
-			//							+ "\" x2=\""
-			//							+ (xIndex * baseSize + baseSize / 2 + 2 * baseSize)
-			//							+ "\" stroke-width=\"1\" fill=\"none\"");
-			//					sb.append("stroke=\"#000\" ");
-			//					sb.append(">"
-			//							+ "</line>");
-			//				}
-			//			}
-			//			// 縦壁描画
-			//			for (int yIndex = -1; yIndex < wkField.getYLength(); yIndex++) {
-			//				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
-			//					sb.append("<line y1=\""
-			//							+ (yIndex * baseSize + baseSize + baseSize / 2 + margin)
-			//							+ "\" x1=\""
-			//							+ (xIndex * baseSize + baseSize + baseSize / 2)
-			//							+ "\" y2=\""
-			//							+ (yIndex * baseSize + baseSize + baseSize / 2 + margin)
-			//							+ "\" x2=\""
-			//							+ (xIndex * baseSize + baseSize + baseSize + baseSize / 2)
-			//							+ "\" stroke-width=\"1\" fill=\"none\"");
-			//					sb.append("stroke=\"#000\" ");
-			//					sb.append(">"
-			//							+ "</line>");
-			//				}
-			//			}
-			//			// 数字描画
-			//			for (int yIndex = 0; yIndex < wkField.getYLength() + 1; yIndex++) {
-			//				for (int xIndex = 0; xIndex < wkField.getXLength() + 1; xIndex++) {
-			//					Integer number = wkField.getExtraNumbers()[yIndex][xIndex];
-			//					if (number != null) {
-			//						String numberStr = String.valueOf(number);
-			//						int numIdx = HALF_NUMS.indexOf(numberStr);
-			//						String masuStr = null;
-			//						if (numIdx >= 0) {
-			//							masuStr = FULL_NUMS.substring(numIdx / 2, numIdx / 2 + 1);
-			//						} else {
-			//							masuStr = numberStr;
-			//						}
-			//						sb.append("<circle cy=\"" + (yIndex * baseSize + (baseSize / 2) + margin)
-			//								+ "\" cx=\""
-			//								+ (xIndex * baseSize + baseSize + (baseSize / 2))
-			//								+ "\" r=\""
-			//								+ (baseSize / 2 - 3)
-			//								+ "\" fill=\"white\", stroke=\"black\">"
-			//								+ "</circle>");
-			//						sb.append("<text y=\"" + (yIndex * baseSize + baseSize + margin - 5)
-			//								+ "\" x=\""
-			//								+ (xIndex * baseSize + baseSize + 3)
-			//								+ "\" font-size=\""
-			//								+ (baseSize - 6)
-			//								+ "\" textLength=\""
-			//								+ (baseSize - 6)
-			//								+ "\" lengthAdjust=\"spacingAndGlyphs\">"
-			//								+ masuStr
-			//								+ "</text>");
-			//					}
-			//				}
-			//			}
+			int baseSize = 20;
+			int margin = 5;
+			sb.append(
+					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
+							+ "height=\"" + (wkField.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
+							+ (wkField.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+					Integer number = wkField.getNumbers()[yIndex][xIndex];
+					if (number != null) {
+						String numberStr = String.valueOf(number);
+						int numIdx = HALF_NUMS.indexOf(numberStr);
+						String masuStr = null;
+						if (numIdx >= 0) {
+							masuStr = FULL_NUMS.substring(numIdx / 2, numIdx / 2 + 1);
+						} else {
+							masuStr = numberStr;
+						}
+						sb.append("<text y=\"" + (yIndex * baseSize + baseSize + margin - 4)
+								+ "\" x=\""
+								+ (xIndex * baseSize + baseSize + 2)
+								+ "\" font-size=\""
+								+ (baseSize - 5)
+								+ "\" textLength=\""
+								+ (baseSize - 5)
+								+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+								+ masuStr
+								+ "</text>");
+					}
+				}
+			}
+			// 横壁描画
+			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < wkField.getXLength() + 1; xIndex++) {
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + margin)
+							+ "\" x1=\""
+							+ ((xIndex - 1) * baseSize + 2 * baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ ((xIndex - 1) * baseSize + 2 * baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					sb.append(">"
+							+ "</line>");
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = 0; yIndex < wkField.getYLength() + 1; yIndex++) {
+				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + margin)
+							+ "\" x1=\""
+							+ (xIndex * baseSize + baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + margin)
+							+ "\" x2=\""
+							+ (xIndex * baseSize + baseSize + baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					sb.append(">"
+							+ "</line>");
+				}
+			}
 
 			sb.append("</svg>");
 			System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
@@ -667,16 +664,18 @@ public class SlitherSolver implements Solver {
 		public boolean connectWhiteSolve() {
 			Set<Position> yokoBlackWallPosSet = new HashSet<>();
 			Set<Position> tateBlackWallPosSet = new HashSet<>();
-			Position typicalExistPos = null;
-			boolean isYokoWall = false;
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength() + 1; xIndex++) {
 					if (yokoExtraWall[yIndex][xIndex] == Wall.EXISTS) {
 						Position existPos = new Position(yIndex, xIndex);
-						yokoBlackWallPosSet.add(existPos);
-						if (typicalExistPos == null) {
-							typicalExistPos = existPos;
-							isYokoWall = true;
+						if (yokoBlackWallPosSet.isEmpty()) {
+							yokoBlackWallPosSet.add(existPos);
+							setContinueExistWallPosSet(existPos, yokoBlackWallPosSet, tateBlackWallPosSet,
+									true, null);
+						} else {
+							if (!yokoBlackWallPosSet.contains(existPos)) {
+								return false;
+							}
 						}
 					}
 				}
@@ -685,30 +684,19 @@ public class SlitherSolver implements Solver {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
 					if (tateExtraWall[yIndex][xIndex] == Wall.EXISTS) {
 						Position existPos = new Position(yIndex, xIndex);
-						tateBlackWallPosSet.add(existPos);
-						if (typicalExistPos == null) {
-							typicalExistPos = existPos;
+						if (tateBlackWallPosSet.isEmpty()) {
+							tateBlackWallPosSet.add(existPos);
+							setContinueExistWallPosSet(existPos, yokoBlackWallPosSet, tateBlackWallPosSet,
+									false, null);
+						} else {
+							if (!tateBlackWallPosSet.contains(existPos)) {
+								return false;
+							}
 						}
 					}
 				}
 			}
-			if (typicalExistPos == null) {
-				return true;
-			} else {
-				Set<Position> continueYokoWallPosSet = new HashSet<>();
-				Set<Position> continueTateWallPosSet = new HashSet<>();
-				if (isYokoWall) {
-					continueYokoWallPosSet.add(typicalExistPos);
-				} else {
-					continueTateWallPosSet.add(typicalExistPos);
-				}
-				setContinueExistWallPosSet(typicalExistPos, continueYokoWallPosSet, continueTateWallPosSet,
-						isYokoWall,
-						null);
-				yokoBlackWallPosSet.removeAll(continueYokoWallPosSet);
-				tateBlackWallPosSet.removeAll(continueTateWallPosSet);
-				return yokoBlackWallPosSet.isEmpty() && tateBlackWallPosSet.isEmpty();
-			}
+			return true;
 		}
 
 		private void setContinueExistWallPosSet(Position pos, Set<Position> continueYokoWallPosSet,
@@ -929,21 +917,21 @@ public class SlitherSolver implements Solver {
 				return "問題に矛盾がある可能性があります。途中経過を返します。";
 			}
 			int recursiveCnt = 0;
-			while (field.getStateDump().equals(befStr) && recursiveCnt < 2) {
-				if (!candSolve(field, recursiveCnt * 3)) {
+			while (field.getStateDump().equals(befStr) && recursiveCnt < 3) {
+				if (!candSolve(field, recursiveCnt)) {
 					return "問題に矛盾がある可能性があります。途中経過を返します。";
 				}
 				recursiveCnt++;
 			}
-			if (recursiveCnt == 2 && field.getStateDump().equals(befStr)) {
+			if (recursiveCnt == 3 && field.getStateDump().equals(befStr)) {
 				return "解けませんでした。途中経過を返します。";
 			}
 		}
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
-		System.out.println("難易度:" + count * 2);
+		System.out.println("難易度:" + count * 10);
 		System.out.println(field);
 		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count * 2).toString();
+				+ Difficulty.getByCount(count * 10).toString();
 	}
 
 	/**
@@ -1002,6 +990,22 @@ public class SlitherSolver implements Solver {
 		} else if (!allowNotBlack) {
 			field.tateExtraWall = virtual.tateExtraWall;
 			field.yokoExtraWall = virtual.yokoExtraWall;
+		} else {
+			// どちらにしても理論
+			for (int y = 0; y < field.getYLength(); y++) {
+				for (int x = 0; x < field.getXLength() + 1; x++) {
+					if (virtual2.yokoExtraWall[y][x] == virtual.yokoExtraWall[y][x]) {
+						field.yokoExtraWall[y][x] = virtual.yokoExtraWall[y][x];
+					}
+				}
+			}
+			for (int y = 0; y < field.getYLength() + 1; y++) {
+				for (int x = 0; x < field.getXLength(); x++) {
+					if (virtual2.tateExtraWall[y][x] == virtual.tateExtraWall[y][x]) {
+						field.tateExtraWall[y][x] = virtual.tateExtraWall[y][x];
+					}
+				}
+			}
 		}
 		return true;
 	}
@@ -1031,6 +1035,22 @@ public class SlitherSolver implements Solver {
 		} else if (!allowNotBlack) {
 			field.tateExtraWall = virtual.tateExtraWall;
 			field.yokoExtraWall = virtual.yokoExtraWall;
+		} else {
+			// どちらにしても理論
+			for (int y = 0; y < field.getYLength(); y++) {
+				for (int x = 0; x < field.getXLength() + 1; x++) {
+					if (virtual2.yokoExtraWall[y][x] == virtual.yokoExtraWall[y][x]) {
+						field.yokoExtraWall[y][x] = virtual.yokoExtraWall[y][x];
+					}
+				}
+			}
+			for (int y = 0; y < field.getYLength() + 1; y++) {
+				for (int x = 0; x < field.getXLength(); x++) {
+					if (virtual2.tateExtraWall[y][x] == virtual.tateExtraWall[y][x]) {
+						field.tateExtraWall[y][x] = virtual.tateExtraWall[y][x];
+					}
+				}
+			}
 		}
 		return true;
 	}

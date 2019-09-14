@@ -14,7 +14,7 @@
     <meta name="description" content="ペンシルパズルガチャ(ペンパガチャ)は自動生成されたペンシルパズルの問題がゲットできるガチャです。引いた問題はぱずぷれv3さんで解いたりTwitterでシェア可能です。あなたは高レベルのレア問をゲットできるか？"/>
     <link rel="stylesheet" href="css/sudoku.css?ver=20190712"/>
     <script src="js/jquery-3.3.1.min.js"></script>
-    <script src="js/sudoku.js?ver=20190909"></script>
+    <script src="js/sudoku.js?ver=20190914"></script>
 </head>
 <body>
 <div id="div_title">ペンシルパズルガチャ<span style="font-size: xx-small;">(旧：数独ガチャ)</span></div>
@@ -25,23 +25,14 @@
 	<option value="gokigen">ごきげんななめガチャ</option>
 	<option value="shakashaka">シャカシャカガチャ</option>
 	<option value="sudoku">数独ガチャ</option>
+	<!-- <option value="slither">スリザーリンクガチャ</option> -->
 	<option value="tasquare">たすくえあガチャ</option>
 	<option value="nurimisaki">ぬりみさきガチャ</option>
+	<option value="akari">美術館ガチャ</option>
 	<option value="reflect">リフレクトリンクガチャ</option>
 </select>
 </div>
 <div>
-<label id="lbl_pattern" for="sel_pattern">問題の形</label>
-<select id="sel_pattern" name="sel_pattern">
-	<option value="0">フリー</option>
-	<option value="1">点対称</option>
-	<option value="2">左右対称</option>
-	<option value="3">上下対称</option>
-	<option value="4">＼対称</option>
-	<option value="5">／対称</option>
-	<option value="6">上下左右対称</option>
-	<option value="7">卍型</option>
-</select>
 <label id="lbl_size" for="sel_size">サイズ</label>
 <select id="sel_size" name="sel_size">
 	<option value="3">3 x 3</option>
@@ -52,6 +43,17 @@
 	<option value="8">8 x 8</option>
 	<option value="9">9 x 9</option>
 	<option value="10">10 x 10</option>
+</select>
+<label id="lbl_pattern" for="sel_pattern">問題の形</label>
+<select id="sel_pattern" name="sel_pattern">
+	<option value="0">フリー</option>
+	<option value="1">点対称</option>
+	<option value="2">左右対称</option>
+	<option value="3">上下対称</option>
+	<option value="4">＼対称</option>
+	<option value="5">／対称</option>
+	<option value="6">上下左右対称</option>
+	<option value="7">卍型</option>
 </select>
 </div>
 

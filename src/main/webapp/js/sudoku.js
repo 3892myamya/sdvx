@@ -5,7 +5,9 @@ var ruleMap = {
 	gokigen : {name: "ごきげんななめ", url:"https://www.nikoli.co.jp/ja/puzzles/gokigen_naname/",source:"ニコリ公式"},
 	creek : {name: "クリーク", url:"https://www.nikoli.co.jp/ja/puzzles/creek/",source:"ニコリ公式"},
 	tasquare : {name: "たすくえあ", url:"https://www.nikoli.co.jp/ja/puzzles/tasukuea/",source:"ニコリ公式"},
-	reflect : {name: "リフレクトリンク", url:"http://indi.s58.xrea.com/reflect/",source:"連続発破保管庫さん"}
+	reflect : {name: "リフレクトリンク", url:"http://indi.s58.xrea.com/reflect/",source:"連続発破保管庫さん"},
+	akari : {name: "美術館", url:"https://www.nikoli.co.jp/ja/puzzles/akari/",source:"ニコリ公式"},
+	slither : {name: "スリザーリンク", url:"https://www.nikoli.co.jp/ja/puzzles/slitherlink/",source:"ニコリ公式"},
 }
 
 $(function() {
@@ -63,6 +65,11 @@ $(function() {
             $('#sel_pattern').show();
             $('#lbl_size').hide();
             $('#sel_size').hide();
+        } else if (type == 'akari' || type == 'slither') {
+            $('#lbl_pattern').show();
+            $('#sel_pattern').show();
+            $('#lbl_size').show();
+            $('#sel_size').show();
         } else {
             $('#lbl_pattern').hide();
             $('#sel_pattern').hide();

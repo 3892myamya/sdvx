@@ -54,6 +54,11 @@ public class AkariSolver implements Solver {
 			}
 		}
 
+		/**
+		 * 黒マス発生率。逆数なので多いほど少ない。いったん1/8で
+		 */
+		private static int BLACK_RATE = 8;
+
 		private final int height;
 		private final int width;
 		private final HintPattern hintPattern;
@@ -72,7 +77,7 @@ public class AkariSolver implements Solver {
 
 		@Override
 		public GeneratorResult generate() {
-			AkariSolver.Field wkField = new AkariSolver.Field(height, width, hintPattern, 6);
+			AkariSolver.Field wkField = new AkariSolver.Field(height, width, hintPattern, BLACK_RATE);
 			List<Integer> indexList = new ArrayList<>();
 			for (int i = 0; i < height * width; i++) {
 				indexList.add(i);
@@ -108,7 +113,7 @@ public class AkariSolver implements Solver {
 						}
 						if (!isOk) {
 							// 破綻したら0から作り直す。
-							wkField = new AkariSolver.Field(height, width, hintPattern, 6);
+							wkField = new AkariSolver.Field(height, width, hintPattern, BLACK_RATE);
 							index = 0;
 							continue;
 						}
@@ -163,7 +168,7 @@ public class AkariSolver implements Solver {
 				level = new AkariSolverForGenerator(wkField, 200).solve2();
 				if (!isOk || level == -1) {
 					// 解けなければやり直し
-					wkField = new AkariSolver.Field(height, width, hintPattern, 6);
+					wkField = new AkariSolver.Field(height, width, hintPattern, BLACK_RATE);
 					index = 0;
 				} else {
 					// ヒントを限界まで減らす
@@ -180,7 +185,7 @@ public class AkariSolver implements Solver {
 					break;
 				}
 			}
-			level = (int) Math.sqrt(level * 20 / 3) + 1;
+			level = (int) Math.sqrt(level * 15 / 3) + 1;
 			String status = "Lv:" + level + "の問題を獲得！(数字/黒：" + wkField.getHintCount().split("/")[0] + "/"
 					+ wkField.getHintCount().split("/")[1] + ")";
 			String url = wkField.getPuzPreURL();
@@ -295,13 +300,99 @@ public class AkariSolver implements Solver {
 		}
 
 		public String getPuzPreURL() {
-			// TODO 自動生成されたメソッド・スタブ
-			return null;
+			StringBuilder sb = new StringBuilder();
+			sb.append("http://pzv.jp/p.html?akari/" + getXLength() + "/" + getYLength() + "/");
+			int interval = 0;
+			for (int i = 0; i < getYLength() * getXLength(); i++) {
+				int yIndex = i / getXLength();
+				int xIndex = i % getXLength();
+				if (numbers[yIndex][xIndex] == null) {
+					interval++;
+					if (interval == 20) {
+						sb.append("z");
+						interval = 0;
+					}
+				} else {
+					Integer num = numbers[yIndex][xIndex];
+					String numStr = null;
+					if (num == -1) {
+						numStr = ".";
+					} else {
+						Integer numP1 = null;
+						if (i + 1 < getYLength() * getXLength()) {
+							int yIndexP1 = (i + 1) / getXLength();
+							int xIndexP1 = (i + 1) % getXLength();
+							numP1 = numbers[yIndexP1][xIndexP1];
+						}
+						Integer numP2 = null;
+						if (numP1 == null && i + 2 < getYLength() * getXLength()) {
+							int yIndexP2 = (i + 2) / getXLength();
+							int xIndexP2 = (i + 2) % getXLength();
+							numP2 = numbers[yIndexP2][xIndexP2];
+						}
+						if (numP1 == null && numP2 == null) {
+							if (num == 0) {
+								numStr = "a";
+							} else if (num == 1) {
+								numStr = "b";
+							} else if (num == 2) {
+								numStr = "c";
+							} else if (num == 3) {
+								numStr = "d";
+							} else if (num == 4) {
+								numStr = "e";
+							}
+							i++;
+							i++;
+						} else if (numP1 == null) {
+							if (num == 0) {
+								numStr = "5";
+							} else if (num == 1) {
+								numStr = "6";
+							} else if (num == 2) {
+								numStr = "7";
+							} else if (num == 3) {
+								numStr = "8";
+							} else if (num == 4) {
+								numStr = "9";
+							}
+							i++;
+						} else {
+							numStr = String.valueOf(num);
+						}
+					}
+					if (interval == 0) {
+						sb.append(numStr);
+					} else {
+						sb.append(ALPHABET_FROM_G.substring(interval - 1, interval));
+						sb.append(numStr);
+						interval = 0;
+					}
+				}
+			}
+			if (interval != 0) {
+				sb.append(ALPHABET_FROM_G.substring(interval - 1, interval));
+			}
+			if (sb.charAt(sb.length() - 1) == '.') {
+				sb.append("/");
+			}
+			return sb.toString();
 		}
 
 		public String getHintCount() {
-			// TODO 自動生成されたメソッド・スタブ
-			return "1/1";
+			int kuroCnt = 0;
+			int numberCnt = 0;
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					if (numbers[yIndex][xIndex] != null) {
+						kuroCnt++;
+						if (numbers[yIndex][xIndex] != -1) {
+							numberCnt++;
+						}
+					}
+				}
+			}
+			return String.valueOf(numberCnt + "/" + kuroCnt);
 		}
 
 		public int getYLength() {
@@ -712,8 +803,9 @@ public class AkariSolver implements Solver {
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
 		System.out.println("難易度:" + (count * 15));
 		System.out.println(field);
+		int level = (int) Math.sqrt(count * 15 / 3) + 1;
 		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count * 15).toString();
+				+ Difficulty.getByCount(count * 15).toString() + "(Lv:" + level + ")";
 	}
 
 	/**
