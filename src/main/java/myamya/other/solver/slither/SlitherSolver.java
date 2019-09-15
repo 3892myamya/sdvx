@@ -191,7 +191,7 @@ public class SlitherSolver implements Solver {
 							virtual.numbers[numberPos.getyIndex()][numberPos.getxIndex()] = null;
 						}
 						// TODO 本当はもっとでかくできるが…
-						int solveResult = new SlitherSolverForGenerator(virtual, 6000).solve2();
+						int solveResult = new SlitherSolverForGenerator(virtual, 4500).solve2();
 						if (solveResult != -1) {
 							for (Position numberPos : numberPosSet) {
 								wkField.numbers[numberPos.getyIndex()][numberPos.getxIndex()] = null;
