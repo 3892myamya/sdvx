@@ -175,7 +175,7 @@ public class SlitherSolver implements Solver {
 					}
 				}
 				// 解けるかな？
-				level = new SlitherSolverForGenerator(wkField, 60).solve2();
+				level = new SlitherSolverForGenerator(wkField, 100).solve2();
 				if (level == -1) {
 					// 解けなければやり直し
 					wkField = new SlitherSolver.Field(height, width);
@@ -202,7 +202,7 @@ public class SlitherSolver implements Solver {
 					break;
 				}
 			}
-			level = (int) Math.sqrt(level * 10 / 3) + 1;
+			level = (int) Math.sqrt(level * 8 / 3) + 1;
 			String status = "Lv:" + level + "の問題を獲得！(ヒント数：" + wkField.getHintCount() + ")";
 			String url = wkField.getPuzPreURL();
 			String link = "<a href=\"" + url + "\" target=\"_blank\">ぱずぷれv3で解く</a>";
@@ -238,38 +238,16 @@ public class SlitherSolver implements Solver {
 					}
 				}
 			}
-			// 横壁描画
-			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
-				for (int xIndex = 0; xIndex < wkField.getXLength() + 1; xIndex++) {
-					sb.append("<line y1=\""
-							+ (yIndex * baseSize + margin)
-							+ "\" x1=\""
-							+ ((xIndex - 1) * baseSize + 2 * baseSize)
-							+ "\" y2=\""
-							+ (yIndex * baseSize + baseSize + margin)
-							+ "\" x2=\""
-							+ ((xIndex - 1) * baseSize + 2 * baseSize)
-							+ "\" stroke-width=\"1\" fill=\"none\"");
-					sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
-					sb.append(">"
-							+ "</line>");
-				}
-			}
-			// 縦壁描画
+			// 点描画
 			for (int yIndex = 0; yIndex < wkField.getYLength() + 1; yIndex++) {
-				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
-					sb.append("<line y1=\""
-							+ (yIndex * baseSize + margin)
-							+ "\" x1=\""
+				for (int xIndex = 0; xIndex < wkField.getXLength() + 1; xIndex++) {
+					sb.append("<circle cy=\"" + (yIndex * baseSize + margin)
+							+ "\" cx=\""
 							+ (xIndex * baseSize + baseSize)
-							+ "\" y2=\""
-							+ (yIndex * baseSize + margin)
-							+ "\" x2=\""
-							+ (xIndex * baseSize + baseSize + baseSize)
-							+ "\" stroke-width=\"1\" fill=\"none\"");
-					sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
-					sb.append(">"
-							+ "</line>");
+							+ "\" r=\""
+							+ 1
+							+ "\" fill=\"black\", stroke=\"black\">"
+							+ "</circle>");
 				}
 			}
 
@@ -302,13 +280,95 @@ public class SlitherSolver implements Solver {
 		}
 
 		public String getPuzPreURL() {
-			// TODO 自動生成されたメソッド・スタブ
-			return null;
+			StringBuilder sb = new StringBuilder();
+			sb.append("http://pzv.jp/p.html?slither/" + getXLength() + "/" + getYLength() + "/");
+			int interval = 0;
+			for (int i = 0; i < getYLength() * getXLength(); i++) {
+				int yIndex = i / getXLength();
+				int xIndex = i % getXLength();
+				if (numbers[yIndex][xIndex] == null) {
+					interval++;
+					if (interval == 20) {
+						sb.append("z");
+						interval = 0;
+					}
+				} else {
+					Integer num = numbers[yIndex][xIndex];
+					String numStr = null;
+					if (num == -1) {
+						numStr = ".";
+					} else {
+						Integer numP1 = null;
+						if (i + 1 < getYLength() * getXLength()) {
+							int yIndexP1 = (i + 1) / getXLength();
+							int xIndexP1 = (i + 1) % getXLength();
+							numP1 = numbers[yIndexP1][xIndexP1];
+						}
+						Integer numP2 = null;
+						if (numP1 == null && i + 2 < getYLength() * getXLength()) {
+							int yIndexP2 = (i + 2) / getXLength();
+							int xIndexP2 = (i + 2) % getXLength();
+							numP2 = numbers[yIndexP2][xIndexP2];
+						}
+						if (numP1 == null && numP2 == null) {
+							if (num == 0) {
+								numStr = "a";
+							} else if (num == 1) {
+								numStr = "b";
+							} else if (num == 2) {
+								numStr = "c";
+							} else if (num == 3) {
+								numStr = "d";
+							} else if (num == 4) {
+								numStr = "e";
+							}
+							i++;
+							i++;
+						} else if (numP1 == null) {
+							if (num == 0) {
+								numStr = "5";
+							} else if (num == 1) {
+								numStr = "6";
+							} else if (num == 2) {
+								numStr = "7";
+							} else if (num == 3) {
+								numStr = "8";
+							} else if (num == 4) {
+								numStr = "9";
+							}
+							i++;
+						} else {
+							numStr = String.valueOf(num);
+						}
+					}
+					if (interval == 0) {
+						sb.append(numStr);
+					} else {
+						sb.append(ALPHABET_FROM_G.substring(interval - 1, interval));
+						sb.append(numStr);
+						interval = 0;
+					}
+				}
+			}
+			if (interval != 0) {
+				sb.append(ALPHABET_FROM_G.substring(interval - 1, interval));
+			}
+			if (sb.charAt(sb.length() - 1) == '.') {
+				sb.append("/");
+			}
+			return sb.toString();
 		}
 
 		public String getHintCount() {
-			// TODO 自動生成されたメソッド・スタブ
-			return null;
+			int kuroCnt = 0;
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					if (numbers[yIndex][xIndex] != null) {
+						kuroCnt++;
+					}
+				}
+			}
+			return String.valueOf(kuroCnt);
 		}
 
 		public int getYLength() {
@@ -928,10 +988,11 @@ public class SlitherSolver implements Solver {
 			}
 		}
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
-		System.out.println("難易度:" + count * 10);
+		System.out.println("難易度:" + count * 8);
 		System.out.println(field);
+		int level = (int) Math.sqrt(count * 8 / 3) + 1;
 		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count * 10).toString();
+				+ Difficulty.getByCount(count * 8).toString() + "(Lv:" + level + ")";
 	}
 
 	/**

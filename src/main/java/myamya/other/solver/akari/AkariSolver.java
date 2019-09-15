@@ -423,6 +423,22 @@ public class AkariSolver implements Solver {
 					}
 				}
 			}
+			// 1マスだけの閉空間ができないようにする。
+			// 1マスだけの閉空間は照明を置くしかなく、解き味が下がるので。
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					if (numbers[yIndex][xIndex] == null) {
+						boolean numUp = yIndex == 0 || numbers[yIndex - 1][xIndex] != null;
+						boolean numRight = xIndex == getXLength() - 1 || numbers[yIndex][xIndex + 1] != null;
+						boolean numDown = yIndex == getYLength() - 1 || numbers[yIndex + 1][xIndex] != null;
+						boolean numLeft = xIndex == 0 || numbers[yIndex][xIndex - 1] != null;
+						if (numUp && numRight && numDown && numLeft) {
+							masu[yIndex][xIndex] = Masu.NOT_BLACK;
+							numbers[yIndex][xIndex] = -1;
+						}
+					}
+				}
+			}
 		}
 
 		public Field(int height, int width, String param) {
