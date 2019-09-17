@@ -12,6 +12,7 @@ import myamya.other.solver.Common.GeneratorResult;
 import myamya.other.solver.Common.Masu;
 import myamya.other.solver.Common.Position;
 import myamya.other.solver.Generator;
+import myamya.other.solver.HintPattern;
 import myamya.other.solver.Solver;
 
 public class CreekSolver implements Solver {
@@ -61,14 +62,16 @@ public class CreekSolver implements Solver {
 
 		private final int height;
 		private final int width;
+		private final HintPattern hintPattern;
 
-		public CreekGenerator(int height, int width) {
+		public CreekGenerator(int height, int width, HintPattern hintPattern) {
 			this.height = height;
 			this.width = width;
+			this.hintPattern = hintPattern;
 		}
 
 		public static void main(String[] args) {
-			new CreekGenerator(4, 4).generate();
+			new CreekGenerator(4, 4, HintPattern.getByVal(7, 5, 5)).generate();
 		}
 
 		@Override
@@ -118,7 +121,6 @@ public class CreekSolver implements Solver {
 				}
 				// 数字埋め＆マス初期化
 				// まず数字を埋める
-				List<Position> numberPosList = new ArrayList<>();
 				for (int yIndex = 0; yIndex < wkField.getYLength() + 1; yIndex++) {
 					for (int xIndex = 0; xIndex < wkField.getXLength() + 1; xIndex++) {
 						int blackCnt = 0;
@@ -144,7 +146,6 @@ public class CreekSolver implements Solver {
 							blackCnt++;
 						}
 						wkField.extraNumbers[yIndex][xIndex] = blackCnt;
-						numberPosList.add(new Position(yIndex, xIndex));
 					}
 				}
 				// マスを戻す
@@ -161,13 +162,18 @@ public class CreekSolver implements Solver {
 					index = 0;
 				} else {
 					// ヒントを限界まで減らす
-					Collections.shuffle(numberPosList);
-					for (Position numberPos : numberPosList) {
+					List<Set<Position>> numberPosSetList = hintPattern.getPosSetList();
+					Collections.shuffle(numberPosSetList);
+					for (Set<Position> numberPosSet : numberPosSetList) {
 						CreekSolver.Field virtual = new CreekSolver.Field(wkField, true);
-						virtual.extraNumbers[numberPos.getyIndex()][numberPos.getxIndex()] = null;
+						for (Position numberPos : numberPosSet) {
+							virtual.extraNumbers[numberPos.getyIndex()][numberPos.getxIndex()] = null;
+						}
 						int solveResult = new CreekSolverForGenerator(virtual, 15000).solve2();
 						if (solveResult != -1) {
-							wkField.extraNumbers[numberPos.getyIndex()][numberPos.getxIndex()] = null;
+							for (Position numberPos : numberPosSet) {
+								wkField.extraNumbers[numberPos.getyIndex()][numberPos.getxIndex()] = null;
+							}
 							level = solveResult;
 						}
 					}
@@ -737,7 +743,7 @@ public class CreekSolver implements Solver {
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
 		System.out.println("難易度:" + (count * 2));
 		System.out.println(field);
-		int level = (int) Math.sqrt(count * 2/ 3) + 1;
+		int level = (int) Math.sqrt(count * 2 / 3) + 1;
 		return "解けました。推定難易度:"
 				+ Difficulty.getByCount(count * 2).toString() + "(Lv:" + level + ")";
 	}

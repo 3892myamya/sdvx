@@ -65,7 +65,7 @@ $(function() {
             $('#sel_pattern').show();
             $('#lbl_size').hide();
             $('#sel_size').hide();
-        } else if (type == 'akari' || type == 'slither') {
+        } else if (type == 'akari' || type == 'slither' || type == 'creek' || type == 'gokigen') {
             $('#lbl_pattern').show();
             $('#sel_pattern').show();
             $('#lbl_size').show();

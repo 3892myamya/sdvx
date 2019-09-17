@@ -12,6 +12,7 @@ import myamya.other.solver.Common.GeneratorResult;
 import myamya.other.solver.Common.Masu;
 import myamya.other.solver.Common.Position;
 import myamya.other.solver.Generator;
+import myamya.other.solver.HintPattern;
 import myamya.other.solver.Solver;
 
 public class GokigenSolver implements Solver {
@@ -60,14 +61,16 @@ public class GokigenSolver implements Solver {
 
 		private final int height;
 		private final int width;
+		private final HintPattern hintPattern;
 
-		public GokigenGenerator(int height, int width) {
+		public GokigenGenerator(int height, int width, HintPattern hintPattern) {
 			this.height = height;
 			this.width = width;
+			this.hintPattern = hintPattern;
 		}
 
 		public static void main(String[] args) {
-			new GokigenGenerator(4, 4).generate();
+			new GokigenGenerator(4, 4, HintPattern.getByVal(7, 5, 5)).generate();
 		}
 
 		@Override
@@ -117,7 +120,6 @@ public class GokigenSolver implements Solver {
 				}
 				// 数字埋め＆マス初期化
 				// まず数字を埋める
-				List<Position> numberPosList = new ArrayList<>();
 				for (int yIndex = 0; yIndex < wkField.getYLength() + 1; yIndex++) {
 					for (int xIndex = 0; xIndex < wkField.getXLength() + 1; xIndex++) {
 						int yesCnt = 0;
@@ -143,7 +145,6 @@ public class GokigenSolver implements Solver {
 							yesCnt++;
 						}
 						wkField.extraNumbers[yIndex][xIndex] = yesCnt;
-						numberPosList.add(new Position(yIndex, xIndex));
 					}
 				}
 				// マスを戻す
@@ -161,13 +162,18 @@ public class GokigenSolver implements Solver {
 					index = 0;
 				} else {
 					// ヒントを限界まで減らす
-					Collections.shuffle(numberPosList);
-					for (Position numberPos : numberPosList) {
+					List<Set<Position>> numberPosSetList = hintPattern.getPosSetList();
+					Collections.shuffle(numberPosSetList);
+					for (Set<Position> numberPosSet : numberPosSetList) {
 						GokigenSolver.Field virtual = new GokigenSolver.Field(wkField, true);
-						virtual.extraNumbers[numberPos.getyIndex()][numberPos.getxIndex()] = null;
+						for (Position numberPos : numberPosSet) {
+							virtual.extraNumbers[numberPos.getyIndex()][numberPos.getxIndex()] = null;
+						}
 						int solveResult = new GokigenSolverForGenerator(virtual, 5000).solve2();
 						if (solveResult != -1) {
-							wkField.extraNumbers[numberPos.getyIndex()][numberPos.getxIndex()] = null;
+							for (Position numberPos : numberPosSet) {
+								wkField.extraNumbers[numberPos.getyIndex()][numberPos.getxIndex()] = null;
+							}
 							level = solveResult;
 						}
 					}

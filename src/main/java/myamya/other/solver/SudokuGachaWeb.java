@@ -87,15 +87,17 @@ public class SudokuGachaWeb extends HttpServlet {
 	static class GokigenGeneratorThlead extends GeneratorThlead {
 		protected final int height;
 		protected final int width;
+		protected final int pattern;
 
-		GokigenGeneratorThlead(int height, int width) {
+		GokigenGeneratorThlead(int height, int width, int pattern) {
 			this.height = height;
 			this.width = width;
+			this.pattern = pattern;
 		}
 
 		@Override
 		Generator getGenerator() {
-			return new GokigenGenerator(height, width);
+			return new GokigenGenerator(height, width, HintPattern.getByVal(pattern, height + 1, width + 1));
 		}
 
 	}
@@ -103,15 +105,17 @@ public class SudokuGachaWeb extends HttpServlet {
 	static class CreekGeneratorThlead extends GeneratorThlead {
 		protected final int height;
 		protected final int width;
+		protected final int pattern;
 
-		CreekGeneratorThlead(int height, int width) {
+		CreekGeneratorThlead(int height, int width, int pattern) {
 			this.height = height;
 			this.width = width;
+			this.pattern = pattern;
 		}
 
 		@Override
 		Generator getGenerator() {
-			return new CreekGenerator(height, width);
+			return new CreekGenerator(height, width, HintPattern.getByVal(pattern, height + 1, width + 1));
 		}
 
 	}
@@ -206,9 +210,11 @@ public class SudokuGachaWeb extends HttpServlet {
 				} else if (type.equals("shakashaka")) {
 					t = new ShakashakaGeneratorThlead(height, width);
 				} else if (type.equals("gokigen")) {
-					t = new GokigenGeneratorThlead(height, width);
+					int pattern = Integer.parseInt(request.getParameter("pattern"));
+					t = new GokigenGeneratorThlead(height, width, pattern);
 				} else if (type.equals("creek")) {
-					t = new CreekGeneratorThlead(height, width);
+					int pattern = Integer.parseInt(request.getParameter("pattern"));
+					t = new CreekGeneratorThlead(height, width, pattern);
 				} else if (type.equals("tasquare")) {
 					t = new TasquareGeneratorThlead(height, width);
 				} else if (type.equals("reflect")) {
