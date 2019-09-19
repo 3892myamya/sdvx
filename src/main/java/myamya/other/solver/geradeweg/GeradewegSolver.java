@@ -1092,20 +1092,20 @@ public class GeradewegSolver implements Solver {
 						}
 						if (varticalWhiteCount == useNumber) {
 							// 縦が長さ限界に到達
-							if (yIndex - upSpaceCnt > 0) {
-								tateWall[yIndex - upSpaceCnt - 1][xIndex] = Wall.EXISTS;
+							if (yIndex - upWhiteCnt > 0) {
+								tateWall[yIndex - upWhiteCnt - 1][xIndex] = Wall.EXISTS;
 							}
-							if (yIndex + downSpaceCnt < getYLength() - 1) {
-								tateWall[yIndex + downSpaceCnt][xIndex] = Wall.EXISTS;
+							if (yIndex + downWhiteCnt < getYLength() - 1) {
+								tateWall[yIndex + downWhiteCnt][xIndex] = Wall.EXISTS;
 							}
 						}
 						if (horizonalWhiteCount == useNumber) {
 							// 横が長さ限界に到達
-							if (xIndex + rightSpaceCnt < getXLength() - 1) {
-								yokoWall[yIndex][xIndex + rightSpaceCnt] = Wall.EXISTS;
+							if (xIndex + rightWhiteCnt < getXLength() - 1) {
+								yokoWall[yIndex][xIndex + rightWhiteCnt] = Wall.EXISTS;
 							}
-							if (xIndex - leftSpaceCnt > 0) {
-								yokoWall[yIndex][xIndex - leftSpaceCnt - 1] = Wall.EXISTS;
+							if (xIndex - leftWhiteCnt > 0) {
+								yokoWall[yIndex][xIndex - leftWhiteCnt - 1] = Wall.EXISTS;
 							}
 						}
 					}
