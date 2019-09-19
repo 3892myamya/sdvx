@@ -574,6 +574,10 @@ public class GeradewegSolver implements Solver {
 			return String.valueOf(numberCnt + "/" + kuroCnt);
 		}
 
+		public Masu[][] getMasu() {
+			return masu;
+		}
+
 		public Wall[][] getYokoWall() {
 			return yokoWall;
 		}
@@ -952,9 +956,6 @@ public class GeradewegSolver implements Solver {
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
 					if (numbers[yIndex][xIndex] != null) {
-						if (numbers[yIndex][xIndex] == 0) {
-							continue;
-						}
 						int upSpaceCnt = 0;
 						int rightSpaceCnt = 0;
 						int downSpaceCnt = 0;
@@ -1022,20 +1023,33 @@ public class GeradewegSolver implements Solver {
 						int horizonalSpaceCount = rightSpaceCnt + leftSpaceCnt;
 						int varticalWhiteCount = upWhiteCnt + downWhiteCnt;
 						int horizonalWhiteCount = rightWhiteCnt + leftWhiteCnt;
-						if (varticalSpaceCount < numbers[yIndex][xIndex]
-								&& horizonalSpaceCount < numbers[yIndex][xIndex]) {
+						int useNumber;
+						if (numbers[yIndex][xIndex] == -1) {
+							if (varticalSpaceCount == varticalWhiteCount) {
+								useNumber = varticalWhiteCount;
+							} else if (horizonalSpaceCount == horizonalWhiteCount) {
+								useNumber = horizonalWhiteCount;
+							} else {
+								continue;
+							}
+						} else {
+							useNumber = numbers[yIndex][xIndex];
+						}
+
+						if (varticalSpaceCount < useNumber
+								&& horizonalSpaceCount < useNumber) {
 							// 縦にも横にも伸ばせない
 							return false;
 						}
-						if (varticalWhiteCount > numbers[yIndex][xIndex]
-								|| horizonalWhiteCount > numbers[yIndex][xIndex]) {
+						if (varticalWhiteCount > useNumber
+								|| horizonalWhiteCount > useNumber) {
 							// 横か縦に伸ばしすぎ
 							return false;
 						}
 						if (horizonalSpaceCount == 0 || varticalWhiteCount > 0) {
 							// 縦に伸ばすのが確定
-							int fixedWhiteUp = numbers[yIndex][xIndex] - downSpaceCnt;
-							int fixedWhiteDown = numbers[yIndex][xIndex] - upSpaceCnt;
+							int fixedWhiteUp = useNumber - downSpaceCnt;
+							int fixedWhiteDown = useNumber - upSpaceCnt;
 							if (fixedWhiteUp > 0) {
 								for (int i = 1; i <= fixedWhiteUp; i++) {
 									if (yIndex - i < 0 || tateWall[yIndex - i][xIndex] == Wall.EXISTS) {
@@ -1056,8 +1070,8 @@ public class GeradewegSolver implements Solver {
 						}
 						if (varticalSpaceCount == 0 || horizonalWhiteCount > 0) {
 							// 横に伸ばすのが確定
-							int fixedWhiteRight = numbers[yIndex][xIndex] - leftSpaceCnt;
-							int fixedWhiteLeft = numbers[yIndex][xIndex] - rightSpaceCnt;
+							int fixedWhiteRight = useNumber - leftSpaceCnt;
+							int fixedWhiteLeft = useNumber - rightSpaceCnt;
 							if (fixedWhiteRight > 0) {
 								for (int i = 1; i <= fixedWhiteRight; i++) {
 									if (xIndex + i >= getXLength()
@@ -1076,7 +1090,7 @@ public class GeradewegSolver implements Solver {
 								}
 							}
 						}
-						if (varticalWhiteCount == numbers[yIndex][xIndex]) {
+						if (varticalWhiteCount == useNumber) {
 							// 縦が長さ限界に到達
 							if (yIndex - upSpaceCnt > 0) {
 								tateWall[yIndex - upSpaceCnt - 1][xIndex] = Wall.EXISTS;
@@ -1085,7 +1099,7 @@ public class GeradewegSolver implements Solver {
 								tateWall[yIndex + downSpaceCnt][xIndex] = Wall.EXISTS;
 							}
 						}
-						if (horizonalWhiteCount == numbers[yIndex][xIndex]) {
+						if (horizonalWhiteCount == useNumber) {
 							// 横が長さ限界に到達
 							if (xIndex + rightSpaceCnt < getXLength() - 1) {
 								yokoWall[yIndex][xIndex + rightSpaceCnt] = Wall.EXISTS;
