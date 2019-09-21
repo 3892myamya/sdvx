@@ -9073,6 +9073,7 @@ public class SolverWeb extends HttpServlet {
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 		response.setContentType("text/javascript; charset=utf-8");
+		response.setHeader("Access-Control-Allow-Origin", "*");
 		Map<String, Object> resultMap = new HashMap<>();
 		try {
 			List<String> parts = getURLparts(request.getParameter("url"));

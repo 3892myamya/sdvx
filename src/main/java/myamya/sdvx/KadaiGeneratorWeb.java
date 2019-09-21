@@ -50,6 +50,7 @@ public class KadaiGeneratorWeb extends HttpServlet {
 	private void makeResponseInner(HttpServletRequest request, HttpServletResponse response)
 			throws IOException {
 		response.setContentType("text/javascript; charset=utf-8");
+		response.setHeader("Access-Control-Allow-Origin", "*");
 		Map<String, Object> resultMap = new HashMap<>();
 		List<Map<String, Object>> resultList = new ArrayList<>();
 		try {
