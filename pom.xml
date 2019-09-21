@@ -19,14 +19,15 @@
 				<activeByDefault>true</activeByDefault>
 			</activation>
 			<build>
-				<resources>
-					<resource>
-						<directory>src/main/webapp/</directory>
-						<excludes>
-							<exclude>**/*.html</exclude>
-						</excludes>
-					</resource>
-				</resources>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-war-plugin</artifactId>
+						<configuration>
+							<warSourceExcludes>*.html</warSourceExcludes>
+						</configuration>
+					</plugin>
+				</plugins>
 				<finalName>myamyaapi</finalName>
 			</build>
 		</profile>
