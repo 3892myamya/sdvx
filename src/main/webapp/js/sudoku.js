@@ -8,6 +8,7 @@ var ruleMap = {
 	reflect : {name: "リフレクトリンク", url:"http://indi.s58.xrea.com/reflect/",source:"連続発破保管庫さん"},
 	akari : {name: "美術館", url:"https://www.nikoli.co.jp/ja/puzzles/akari/",source:"ニコリ公式"},
 	slither : {name: "スリザーリンク", url:"https://www.nikoli.co.jp/ja/puzzles/slitherlink/",source:"ニコリ公式"},
+	tapa : {name: "Tapa", url:"http://indi.s58.xrea.com/tapa/",source:"連続発破保管庫さん"}
 }
 
 $(function() {
@@ -65,7 +66,7 @@ $(function() {
             $('#sel_pattern').show();
             $('#lbl_size').hide();
             $('#sel_size').hide();
-        } else if (type == 'akari' || type == 'slither' || type == 'creek' || type == 'gokigen') {
+        } else if (type == 'akari' || type == 'slither' || type == 'creek' || type == 'gokigen' || type == 'tapa') {
             $('#lbl_pattern').show();
             $('#sel_pattern').show();
             $('#lbl_size').show();
@@ -75,6 +76,18 @@ $(function() {
             $('#sel_pattern').hide();
             $('#lbl_size').show();
             $('#sel_size').show();
+        }
+        if (type == 'tapa'){
+            $('#sel_option_6').hide();
+            $('#sel_option_7').hide();
+            if ($('#sel_pattern').val() == 6){
+            	$('#sel_pattern').val(2);
+            } else if ($('#sel_pattern').val() == 7){
+            	$('#sel_pattern').val(1);
+            }
+        } else {
+            $('#sel_option_6').show();
+            $('#sel_option_7').show();
         }
         var oneRule = ruleMap[type];
         if (oneRule !== undefined){

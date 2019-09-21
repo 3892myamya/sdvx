@@ -330,10 +330,37 @@ public class DbchokoSolver implements Solver {
 					Set<Position> continueWhitePosSet = new HashSet<>();
 					continueWhitePosSet.add(pivot);
 					checkAndSetContinueWhitePosSet(masu[yIndex][xIndex], pivot, continueWhitePosSet, null, 999);
-
 					// 隣接する別の色のマスを調査する
-
+					Set<Position> otherColorPos = new HashSet<>();
+					for (Position myColorPos : continueWhitePosSet) {
+						Masu masuUp = myColorPos.getyIndex() == 0 ? masu[myColorPos.getyIndex()][myColorPos.getxIndex()]
+								: masu[myColorPos.getyIndex() - 1][myColorPos.getxIndex()];
+						if (masuUp != masu[myColorPos.getyIndex()][myColorPos.getxIndex()]) {
+							otherColorPos.add(new Position(myColorPos.getyIndex() - 1, myColorPos.getxIndex()));
+						}
+						Masu masuRight = myColorPos.getxIndex() == getXLength() - 1
+								? masu[myColorPos.getyIndex()][myColorPos.getxIndex()]
+								: masu[myColorPos.getyIndex()][myColorPos.getxIndex() + 1];
+						if (masuRight != masu[myColorPos.getyIndex()][myColorPos.getxIndex()]) {
+							otherColorPos.add(new Position(myColorPos.getyIndex(), myColorPos.getxIndex() + 1));
+						}
+						Masu masuDown = myColorPos.getyIndex() == getYLength() - 1
+								? masu[myColorPos.getyIndex()][myColorPos.getxIndex()]
+								: masu[myColorPos.getyIndex() + 1][myColorPos.getxIndex()];
+						if (masuDown != masu[myColorPos.getyIndex()][myColorPos.getxIndex()]) {
+							otherColorPos.add(new Position(myColorPos.getyIndex() + 1, myColorPos.getxIndex()));
+						}
+						Masu masuLeft = myColorPos.getxIndex() == 0
+								? masu[myColorPos.getyIndex()][myColorPos.getxIndex()]
+								: masu[myColorPos.getyIndex()][myColorPos.getxIndex() - 1];
+						if (masuLeft != masu[myColorPos.getyIndex()][myColorPos.getxIndex()]) {
+							otherColorPos.add(new Position(myColorPos.getyIndex(), myColorPos.getxIndex() - 1));
+						}
+					}
 					// 別の色のマスを
+
+					// 形状判定
+
 				}
 			}
 			return true;

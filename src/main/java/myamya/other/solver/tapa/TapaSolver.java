@@ -7,18 +7,19 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import myamya.other.solver.Common;
 import myamya.other.solver.Common.Difficulty;
 import myamya.other.solver.Common.Direction;
 import myamya.other.solver.Common.GeneratorResult;
 import myamya.other.solver.Common.Masu;
 import myamya.other.solver.Common.Position;
 import myamya.other.solver.Generator;
+import myamya.other.solver.HintPattern;
 import myamya.other.solver.Solver;
 
 public class TapaSolver implements Solver {
 	public static class TapaGenerator implements Generator {
 
-		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
 		private static final String FULL_NUMS = "０１２３４５６７８９";
 
 		static class TapaSolverForGenerator extends TapaSolver {
@@ -79,14 +80,16 @@ public class TapaSolver implements Solver {
 
 		private final int height;
 		private final int width;
+		private final HintPattern hintPattern;
 
-		public TapaGenerator(int height, int width) {
+		public TapaGenerator(int height, int width, HintPattern hintPattern) {
 			this.height = height;
 			this.width = width;
+			this.hintPattern = hintPattern;
 		}
 
 		public static void main(String[] args) {
-			new TapaGenerator(10, 10).generate();
+			new TapaGenerator(10, 10, HintPattern.getByVal(7, 10, 10)).generate();
 		}
 
 		@Override
@@ -136,12 +139,11 @@ public class TapaSolver implements Solver {
 				}
 				// 数字埋め＆マス初期化
 				// まず数字を埋める
-				List<Position> numberPosList = new ArrayList<>();
+				boolean existBlack = false;
 				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
 					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
 						if (wkField.masu[yIndex][xIndex] == Masu.NOT_BLACK) {
 							List<Integer> oneNumbers = new ArrayList<>();
-							Position pos = new Position(yIndex, xIndex);
 							int wkCnt = 0;
 							if (yIndex != 0 && xIndex != 0 && wkField.masu[yIndex - 1][xIndex - 1] == Masu.BLACK) {
 								wkCnt++;
@@ -206,15 +208,34 @@ public class TapaSolver implements Solver {
 							}
 							Collections.shuffle(oneNumbers);
 							wkField.numbers[yIndex][xIndex] = oneNumbers;
-							numberPosList.add(pos);
+						} else {
+							existBlack = true;
 						}
 					}
 				}
-				System.out.println(wkField);
+				if (!existBlack) {
+					// 全白ます問題は出ないようにする
+					wkField = new ExtendedField(height, width);
+					index = 0;
+					continue;
+				}
+				// 数字のマス以外を戻す
+				List<Set<Position>> numberPosSetList = hintPattern.getPosSetList();
 				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
 					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
 						if (wkField.numbers[yIndex][xIndex] == null) {
 							wkField.masu[yIndex][xIndex] = Masu.SPACE;
+							for (Iterator<Set<Position>> iterator = numberPosSetList.iterator(); iterator.hasNext();) {
+								Set<Position> posSet = iterator.next();
+								if (posSet.contains(new Position(yIndex, xIndex))) {
+									for (Position pos : posSet) {
+										wkField.masu[pos.getyIndex()][pos.getxIndex()] = Masu.SPACE;
+										wkField.numbers[pos.getyIndex()][pos.getxIndex()] = null;
+										wkField.numbersCand[pos.getyIndex()][pos.getxIndex()] = null;
+									}
+									iterator.remove();
+								}
+							}
 						} else {
 							wkField.numbersCand[yIndex][xIndex] = wkField
 									.solveNumbersCand(wkField.numbers[yIndex][xIndex]);
@@ -222,124 +243,284 @@ public class TapaSolver implements Solver {
 					}
 				}
 				// 解けるかな？
-				level = new TapaSolverForGenerator(new TapaSolver.Field(wkField), 200).solve2();
+				level = new TapaSolverForGenerator(new TapaSolver.Field(wkField), 8000).solve2();
 				if (level == -1) {
 					// 解けなければやり直し
 					wkField = new ExtendedField(height, width);
 					index = 0;
 				} else {
 					// ヒントを限界まで減らす
-					Collections.shuffle(numberPosList);
-					for (Position numberPos : numberPosList) {
+					Collections.shuffle(numberPosSetList);
+					for (Set<Position> numberPosSet : numberPosSetList) {
 						TapaSolver.Field virtual = new TapaSolver.Field(wkField, true);
-						virtual.masu[numberPos.getyIndex()][numberPos.getxIndex()] = Masu.SPACE;
-						virtual.numbers[numberPos.getyIndex()][numberPos.getxIndex()] = null;
-						virtual.numbersCand[numberPos.getyIndex()][numberPos.getxIndex()] = null;
-						int solveResult = new TapaSolverForGenerator(virtual, 5000).solve2();
+						for (Position numberPos : numberPosSet) {
+							virtual.masu[numberPos.getyIndex()][numberPos.getxIndex()] = Masu.SPACE;
+							virtual.numbers[numberPos.getyIndex()][numberPos.getxIndex()] = null;
+							virtual.numbersCand[numberPos.getyIndex()][numberPos.getxIndex()] = null;
+						}
+						int solveResult = new TapaSolverForGenerator(virtual, 8000).solve2();
 						if (solveResult != -1) {
-							wkField.masu[numberPos.getyIndex()][numberPos.getxIndex()] = Masu.SPACE;
-							wkField.numbers[numberPos.getyIndex()][numberPos.getxIndex()] = null;
-							wkField.numbersCand[numberPos.getyIndex()][numberPos.getxIndex()] = null;
+							for (Position numberPos : numberPosSet) {
+								wkField.masu[numberPos.getyIndex()][numberPos.getxIndex()] = Masu.SPACE;
+								wkField.numbers[numberPos.getyIndex()][numberPos.getxIndex()] = null;
+								wkField.numbersCand[numberPos.getyIndex()][numberPos.getxIndex()] = null;
+							}
 							level = solveResult;
 						}
 					}
 					break;
 				}
 			}
-			level = (int) Math.sqrt(level);
-			String status = "Lv:" + level + "の問題を獲得！(数字/四角：" + wkField.getHintCount().split("/")[0] + "/"
-					+ wkField.getHintCount().split("/")[1] + ")";
+			level = (int) Math.sqrt(level) + 1;
+			String status = "Lv:" + level + "の問題を獲得！(ヒント数：" + wkField.getHintCount() + ")";
 			String url = wkField.getPuzPreURL();
 			String link = "<a href=\"" + url + "\" target=\"_blank\">ぱずぷれv3で解く</a>";
 			StringBuilder sb = new StringBuilder();
-			//			int baseSize = 20;
-			//			int margin = 5;
-			//			sb.append(
-			//					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
-			//							+ "height=\"" + (wkField.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
-			//							+ (wkField.getXLength() * baseSize + 2 * baseSize) + "\" >");
-			//			// 数字描画
-			//			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
-			//				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
-			//					if (wkField.getNumbers()[yIndex][xIndex] != null) {
-			//						sb.append("<rect y=\"" + (yIndex * baseSize + 2 + margin)
-			//								+ "\" x=\""
-			//								+ (xIndex * baseSize + baseSize + 2)
-			//								+ "\" width=\""
-			//								+ (baseSize - 4)
-			//								+ "\" height=\""
-			//								+ (baseSize - 4)
-			//								+ "\" fill=\"white\" stroke-width=\"1\" stroke=\"black\">"
-			//								+ "\">"
-			//								+ "</rect>");
-			//						if (wkField.getNumbers()[yIndex][xIndex] != -1) {
-			//							String numberStr = String.valueOf(wkField.getNumbers()[yIndex][xIndex]);
-			//							int numIdx = HALF_NUMS.indexOf(numberStr);
-			//							String masuStr = null;
-			//							if (numIdx >= 0) {
-			//								masuStr = FULL_NUMS.substring(numIdx / 2, numIdx / 2 + 1);
-			//							} else {
-			//								masuStr = numberStr;
-			//							}
-			//							sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 4 + margin)
-			//									+ "\" x=\""
-			//									+ (xIndex * baseSize + baseSize + 2)
-			//									+ "\" font-size=\""
-			//									+ (baseSize - 5)
-			//									+ "\" textLength=\""
-			//									+ (baseSize - 5)
-			//									+ "\" lengthAdjust=\"spacingAndGlyphs\">"
-			//									+ masuStr
-			//									+ "</text>");
-			//						}
-			//					}
-			//				}
-			//			}
-			//			// 横壁描画
-			//			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
-			//				for (int xIndex = -1; xIndex < wkField.getXLength(); xIndex++) {
-			//					boolean oneYokoWall = xIndex == -1 || xIndex == wkField.getXLength() - 1;
-			//					sb.append("<line y1=\""
-			//							+ (yIndex * baseSize + margin)
-			//							+ "\" x1=\""
-			//							+ (xIndex * baseSize + 2 * baseSize)
-			//							+ "\" y2=\""
-			//							+ (yIndex * baseSize + baseSize + margin)
-			//							+ "\" x2=\""
-			//							+ (xIndex * baseSize + 2 * baseSize)
-			//							+ "\" stroke-width=\"1\" fill=\"none\"");
-			//					if (oneYokoWall) {
-			//						sb.append("stroke=\"#000\" ");
-			//					} else {
-			//						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
-			//					}
-			//					sb.append(">"
-			//							+ "</line>");
-			//				}
-			//			}
-			//			// 縦壁描画
-			//			for (int yIndex = -1; yIndex < wkField.getYLength(); yIndex++) {
-			//				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
-			//					boolean oneTateWall = yIndex == -1 || yIndex == wkField.getYLength() - 1;
-			//					sb.append("<line y1=\""
-			//							+ (yIndex * baseSize + baseSize + margin)
-			//							+ "\" x1=\""
-			//							+ (xIndex * baseSize + baseSize)
-			//							+ "\" y2=\""
-			//							+ (yIndex * baseSize + baseSize + margin)
-			//							+ "\" x2=\""
-			//							+ (xIndex * baseSize + baseSize + baseSize)
-			//							+ "\" stroke-width=\"1\" fill=\"none\"");
-			//					if (oneTateWall) {
-			//						sb.append("stroke=\"#000\" ");
-			//					} else {
-			//						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
-			//					}
-			//					sb.append(">"
-			//							+ "</line>");
-			//				}
-			//			}
-			//			sb.append("</svg>");
+			int baseSize = 20;
+			int margin = 5;
+			sb.append(
+					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
+							+ "height=\"" + (wkField.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
+							+ (wkField.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			// 横壁描画
+			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = -1; xIndex < wkField.getXLength(); xIndex++) {
+					boolean oneYokoWall = xIndex == -1 || xIndex == wkField.getXLength() - 1;
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + margin)
+							+ "\" x1=\""
+							+ (xIndex * baseSize + 2 * baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ (xIndex * baseSize + 2 * baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneYokoWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">"
+							+ "</line>");
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = -1; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+					boolean oneTateWall = yIndex == -1 || yIndex == wkField.getYLength() - 1;
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x1=\""
+							+ (xIndex * baseSize + baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ (xIndex * baseSize + baseSize + baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneTateWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">"
+							+ "</line>");
+				}
+			}
+			// 数字描画
+			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+					Common.Masu oneMasu = wkField.getMasu()[yIndex][xIndex];
+					if (wkField.getNumbers()[yIndex][xIndex] != null) {
+						if (wkField.getNumbers()[yIndex][xIndex].size() == 1) {
+							String masuStr = null;
+							if (wkField.getNumbers()[yIndex][xIndex].get(0) == -1) {
+								masuStr = "？";
+							} else {
+								masuStr = FULL_NUMS.substring(wkField.getNumbers()[yIndex][xIndex].get(0),
+										wkField.getNumbers()[yIndex][xIndex].get(0) + 1);
+							}
+							sb.append("<text y=\"" + (yIndex * baseSize + baseSize + margin - 4)
+									+ "\" x=\""
+									+ (xIndex * baseSize + baseSize)
+									+ "\" font-size=\""
+									+ (baseSize - 2)
+									+ "\" textLength=\""
+									+ (baseSize - 2)
+									+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+									+ masuStr
+									+ "</text>");
+						} else if (wkField.getNumbers()[yIndex][xIndex].size() == 2) {
+							String masuStr1 = null;
+							if (wkField.getNumbers()[yIndex][xIndex].get(0) == -1) {
+								masuStr1 = "？";
+							} else {
+								masuStr1 = FULL_NUMS.substring(wkField.getNumbers()[yIndex][xIndex].get(0),
+										wkField.getNumbers()[yIndex][xIndex].get(0) + 1);
+							}
+							String masuStr2 = null;
+							if (wkField.getNumbers()[yIndex][xIndex].get(1) == -1) {
+								masuStr2 = "？";
+							} else {
+								masuStr2 = FULL_NUMS.substring(wkField.getNumbers()[yIndex][xIndex].get(1),
+										wkField.getNumbers()[yIndex][xIndex].get(1) + 1);
+							}
+							sb.append("<text y=\"" + (yIndex * baseSize + (baseSize / 2) + margin - 1)
+									+ "\" x=\""
+									+ (xIndex * baseSize + baseSize)
+									+ "\" font-size=\""
+									+ (baseSize + 2) / 2
+									+ "\" textLength=\""
+									+ (baseSize + 2) / 2
+									+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+									+ masuStr1
+									+ "</text>");
+							sb.append("<text y=\"" + (yIndex * baseSize + baseSize + margin - 1)
+									+ "\" x=\""
+									+ (xIndex * baseSize + baseSize + (baseSize / 2))
+									+ "\" font-size=\""
+									+ (baseSize + 2) / 2
+									+ "\" textLength=\""
+									+ (baseSize + 2) / 2
+									+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+									+ masuStr2
+									+ "</text>");
+						} else if (wkField.getNumbers()[yIndex][xIndex].size() == 3) {
+							String masuStr1 = null;
+							if (wkField.getNumbers()[yIndex][xIndex].get(0) == -1) {
+								masuStr1 = "？";
+							} else {
+								masuStr1 = FULL_NUMS.substring(wkField.getNumbers()[yIndex][xIndex].get(0),
+										wkField.getNumbers()[yIndex][xIndex].get(0) + 1);
+							}
+							String masuStr2 = null;
+							if (wkField.getNumbers()[yIndex][xIndex].get(1) == -1) {
+								masuStr2 = "？";
+							} else {
+								masuStr2 = FULL_NUMS.substring(wkField.getNumbers()[yIndex][xIndex].get(1),
+										wkField.getNumbers()[yIndex][xIndex].get(1) + 1);
+							}
+							String masuStr3 = null;
+							if (wkField.getNumbers()[yIndex][xIndex].get(2) == -1) {
+								masuStr3 = "？";
+							} else {
+								masuStr3 = FULL_NUMS.substring(wkField.getNumbers()[yIndex][xIndex].get(2),
+										wkField.getNumbers()[yIndex][xIndex].get(2) + 1);
+							}
+							sb.append("<text y=\"" + (yIndex * baseSize + (baseSize / 2) + margin - 1)
+									+ "\" x=\""
+									+ (xIndex * baseSize + baseSize)
+									+ "\" font-size=\""
+									+ (baseSize) / 2
+									+ "\" textLength=\""
+									+ (baseSize) / 2
+									+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+									+ masuStr1
+									+ "</text>");
+							sb.append("<text y=\"" + (yIndex * baseSize + baseSize + margin - 1)
+									+ "\" x=\""
+									+ (xIndex * baseSize + baseSize + (baseSize / 4))
+									+ "\" font-size=\""
+									+ (baseSize) / 2
+									+ "\" textLength=\""
+									+ (baseSize) / 2
+									+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+									+ masuStr2
+									+ "</text>");
+							sb.append("<text y=\"" + (yIndex * baseSize + (baseSize / 2) + margin - 1)
+									+ "\" x=\""
+									+ (xIndex * baseSize + baseSize + (baseSize / 2))
+									+ "\" font-size=\""
+									+ (baseSize) / 2
+									+ "\" textLength=\""
+									+ (baseSize) / 2
+									+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+									+ masuStr3
+									+ "</text>");
+						} else if (wkField.getNumbers()[yIndex][xIndex].size() == 4) {
+							String masuStr1 = null;
+							if (wkField.getNumbers()[yIndex][xIndex].get(0) == -1) {
+								masuStr1 = "？";
+							} else {
+								masuStr1 = FULL_NUMS.substring(wkField.getNumbers()[yIndex][xIndex].get(0),
+										wkField.getNumbers()[yIndex][xIndex].get(0) + 1);
+							}
+							String masuStr2 = null;
+							if (wkField.getNumbers()[yIndex][xIndex].get(1) == -1) {
+								masuStr2 = "？";
+							} else {
+								masuStr2 = FULL_NUMS.substring(wkField.getNumbers()[yIndex][xIndex].get(1),
+										wkField.getNumbers()[yIndex][xIndex].get(1) + 1);
+							}
+							String masuStr3 = null;
+							if (wkField.getNumbers()[yIndex][xIndex].get(2) == -1) {
+								masuStr3 = "？";
+							} else {
+								masuStr3 = FULL_NUMS.substring(wkField.getNumbers()[yIndex][xIndex].get(2),
+										wkField.getNumbers()[yIndex][xIndex].get(2) + 1);
+							}
+							String masuStr4 = null;
+							if (wkField.getNumbers()[yIndex][xIndex].get(3) == -1) {
+								masuStr4 = "？";
+							} else {
+								masuStr4 = FULL_NUMS.substring(wkField.getNumbers()[yIndex][xIndex].get(3),
+										wkField.getNumbers()[yIndex][xIndex].get(3) + 1);
+							}
+							sb.append("<text y=\"" + (yIndex * baseSize + (baseSize * 3 / 4) + margin - 1)
+									+ "\" x=\""
+									+ (xIndex * baseSize + baseSize)
+									+ "\" font-size=\""
+									+ (baseSize) / 2
+									+ "\" textLength=\""
+									+ (baseSize) / 2
+									+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+									+ masuStr1
+									+ "</text>");
+							sb.append("<text y=\"" + (yIndex * baseSize + (baseSize / 2) + margin - 1)
+									+ "\" x=\""
+									+ (xIndex * baseSize + baseSize + (baseSize / 4))
+									+ "\" font-size=\""
+									+ (baseSize) / 2
+									+ "\" textLength=\""
+									+ (baseSize) / 2
+									+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+									+ masuStr2
+									+ "</text>");
+							sb.append("<text y=\"" + (yIndex * baseSize + baseSize + margin - 1)
+									+ "\" x=\""
+									+ (xIndex * baseSize + baseSize + (baseSize / 4))
+									+ "\" font-size=\""
+									+ (baseSize) / 2
+									+ "\" textLength=\""
+									+ (baseSize) / 2
+									+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+									+ masuStr3
+									+ "</text>");
+							sb.append("<text y=\"" + (yIndex * baseSize + (baseSize * 3 / 4) + margin - 1)
+									+ "\" x=\""
+									+ (xIndex * baseSize + baseSize + (baseSize / 2))
+									+ "\" font-size=\""
+									+ (baseSize) / 2
+									+ "\" textLength=\""
+									+ (baseSize) / 2
+									+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+									+ masuStr4
+									+ "</text>");
+						}
+					} else {
+						sb.append("<text y=\"" + (yIndex * baseSize + baseSize + margin - 4)
+								+ "\" x=\""
+								+ (xIndex * baseSize + baseSize)
+								+ "\" font-size=\""
+								+ (baseSize - 2)
+								+ "\" textLength=\""
+								+ (baseSize - 2)
+								+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+								+ oneMasu.toString()
+								+ "</text>");
+					}
+				}
+			}
+			sb.append("</svg>");
 			System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
 			System.out.println(level);
 			System.out.println(wkField.getHintCount());
@@ -367,13 +548,67 @@ public class TapaSolver implements Solver {
 		}
 
 		public String getHintCount() {
-			// TODO 自動生成されたメソッド・スタブ
-			return "0/0";
+			int numberCnt = 0;
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					if (numbers[yIndex][xIndex] != null) {
+						numberCnt++;
+					}
+				}
+			}
+			return String.valueOf(numberCnt);
 		}
 
 		public String getPuzPreURL() {
-			// TODO 自動生成されたメソッド・スタブ
-			return null;
+			StringBuilder sb = new StringBuilder();
+			sb.append("http://pzv.jp/p.html?tapa/" + getXLength() + "/" + getYLength() + "/");
+			int interval = 0;
+			for (int i = 0; i < getYLength() * getXLength(); i++) {
+				int yIndex = i / getXLength();
+				int xIndex = i % getXLength();
+				if (numbers[yIndex][xIndex] == null) {
+					interval++;
+					if (interval == 20) {
+						sb.append("z");
+						interval = 0;
+					}
+				} else {
+					List<Integer> nums = numbers[yIndex][xIndex];
+					String numStr = null;
+					if (nums.size() == 1) {
+						numStr = Integer.toHexString(nums.get(0));
+					} else if (nums.size() == 2) {
+						int num = nums.get(0) * 6 + nums.get(1);
+						numStr = "a";
+						numStr = numStr + Integer.toString(num, 36);
+					} else if (nums.size() == 3) {
+						int num = nums.get(0) * 16 + nums.get(1) * 4 + nums.get(2);
+						if (num >= 36) {
+							numStr = "c";
+							num = num - 36;
+						} else {
+							numStr = "b";
+						}
+						numStr = numStr + Integer.toString(num, 36);
+					} else if (nums.size() == 4) {
+						numStr = "9";
+					}
+					if (interval == 0) {
+						sb.append(numStr);
+					} else {
+						sb.append(ALPHABET_FROM_G.substring(interval - 1, interval));
+						sb.append(numStr);
+						interval = 0;
+					}
+				}
+			}
+			if (interval != 0) {
+				sb.append(ALPHABET_FROM_G.substring(interval - 1, interval));
+			}
+			if (sb.charAt(sb.length() - 1) == '.') {
+				sb.append("/");
+			}
+			return sb.toString();
 		}
 
 		public List<Integer>[][] getNumbers() {
@@ -876,16 +1111,16 @@ public class TapaSolver implements Solver {
 		/**
 		 * フィールドに1つは黒マスが必要。
 		 */
-		private boolean finalSolve() {
-			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
-				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					if (masu[yIndex][xIndex] != Masu.NOT_BLACK) {
-						return true;
-					}
-				}
-			}
-			return false;
-		}
+		//		private boolean finalSolve() {
+		//			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+		//				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+		//					if (masu[yIndex][xIndex] != Masu.NOT_BLACK) {
+		//						return true;
+		//					}
+		//				}
+		//			}
+		//			return false;
+		//		}
 
 		/**
 		 * 各種チェックを1セット実行
@@ -905,9 +1140,9 @@ public class TapaSolver implements Solver {
 				if (!connectSolve()) {
 					return false;
 				}
-				if (!finalSolve()) {
-					return false;
-				}
+				//				if (!finalSolve()) {
+				//					return false;
+				//				}
 			}
 			return true;
 		}
@@ -972,8 +1207,9 @@ public class TapaSolver implements Solver {
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
 		System.out.println("難易度:" + (count * 3));
 		System.out.println(field);
+		int level = (int) Math.sqrt(count) + 1;
 		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count * 3).toString();
+				+ Difficulty.getByCount(count * 3).toString() + "(Lv:" + level + ")";
 	}
 
 	/**

@@ -21,7 +21,7 @@ $(function() {
         var cond = JSON.stringify(param);
         localStorage.setItem('condchuni', cond);
         $.ajax({
-            url: 'ChuniKadaiWeb',
+        	url: location.host.indexOf('localhost') == -1 ? 'https://myamyaapi.herokuapp.com/ChuniKadaiWeb' : 'ChuniKadaiWeb',
             type: 'POST',
             dataType: 'text',
             data: param

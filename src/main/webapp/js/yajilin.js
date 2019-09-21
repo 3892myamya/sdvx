@@ -9,7 +9,7 @@ $(function() {
         var param = {};
         param.url = $('#edt_url').val();
         $.ajax({
-            url: 'SolverWeb',
+            url: location.host.indexOf('localhost') == -1 ? 'https://myamyaapi.herokuapp.com/SolverWeb' : 'SolverWeb',
             type: 'POST',
             dataType: 'text',
             data: param

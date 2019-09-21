@@ -68,7 +68,7 @@ public class GeradewegSolver implements Solver {
 		}
 
 		public static void main(String[] args) {
-			new GeradewegGenerator(17, 17).generate();
+			new GeradewegGenerator(10, 10).generate();
 		}
 
 		@Override
@@ -101,28 +101,27 @@ public class GeradewegSolver implements Solver {
 					if ((toYokoWall && wkField.yokoWall[yIndex][xIndex] == Wall.SPACE)
 							|| (!toYokoWall && wkField.tateWall[yIndex][xIndex] == Wall.SPACE)) {
 						boolean isOk = false;
-						List<Integer> numIdxList = new ArrayList<>();
-						for (int i = 0; i < 2; i++) {
-							numIdxList.add(i);
+						GeradewegSolver.Field virtual = new GeradewegSolver.Field(wkField, true);
+						if (toYokoWall) {
+							virtual.yokoWall[yIndex][xIndex] = Wall.NOT_EXISTS;
+						} else {
+							virtual.tateWall[yIndex][xIndex] = Wall.NOT_EXISTS;
 						}
-						Collections.shuffle(numIdxList);
-						for (int masuNum : numIdxList) {
-							GeradewegSolver.Field virtual = new GeradewegSolver.Field(wkField);
-							if (masuNum < 1) {
-								if (toYokoWall) {
-									virtual.yokoWall[yIndex][xIndex] = Wall.EXISTS;
-								} else {
-									virtual.tateWall[yIndex][xIndex] = Wall.EXISTS;
-								}
-							} else if (masuNum < 2) {
-								if (toYokoWall) {
-									virtual.yokoWall[yIndex][xIndex] = Wall.NOT_EXISTS;
-								} else {
-									virtual.tateWall[yIndex][xIndex] = Wall.NOT_EXISTS;
-								}
+						if (virtual.solveAndCheck()) {
+							isOk = true;
+							wkField.masu = virtual.masu;
+							wkField.yokoWall = virtual.yokoWall;
+							wkField.tateWall = virtual.tateWall;
+						} else {
+							virtual = new GeradewegSolver.Field(wkField, true);
+							if (toYokoWall) {
+								virtual.yokoWall[yIndex][xIndex] = Wall.EXISTS;
+							} else {
+								virtual.tateWall[yIndex][xIndex] = Wall.EXISTS;
 							}
 							if (virtual.solveAndCheck()) {
 								isOk = true;
+								wkField.masu = virtual.masu;
 								wkField.yokoWall = virtual.yokoWall;
 								wkField.tateWall = virtual.tateWall;
 							}
@@ -143,50 +142,40 @@ public class GeradewegSolver implements Solver {
 				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
 					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
 						Position pos = new Position(yIndex, xIndex);
-						Wall wallUp = yIndex == 0 ? Wall.EXISTS : wkField.tateWall[yIndex - 1][xIndex];
-						Wall wallRight = xIndex == wkField.getXLength() - 1 ? Wall.EXISTS
-								: wkField.yokoWall[yIndex][xIndex];
-						Wall wallDown = yIndex == wkField.getYLength() - 1 ? Wall.EXISTS
-								: wkField.tateWall[yIndex][xIndex];
-						Wall wallLeft = xIndex == 0 ? Wall.EXISTS : wkField.yokoWall[yIndex][xIndex - 1];
-						if ((wallUp == Wall.NOT_EXISTS && wallRight == Wall.NOT_EXISTS)
-								|| (wallRight == Wall.NOT_EXISTS && wallDown == Wall.NOT_EXISTS)
-								|| (wallDown == Wall.NOT_EXISTS && wallLeft == Wall.NOT_EXISTS)
-								|| (wallLeft == Wall.NOT_EXISTS && wallUp == Wall.NOT_EXISTS)) {
-							// カーブは同じ長さの場合のみ表出
-							// TODO この辺から作っていく
-						} else {
-							// 直線は数字全表出
-							int upSpaceCnt = 0;
-							for (int targetY = yIndex - 1; targetY >= 0; targetY--) {
-								if (wkField.tateWall[targetY][xIndex] == Wall.EXISTS) {
-									break;
-								}
-								upSpaceCnt++;
+						// 直線は数字全表出
+						int upSpaceCnt = 0;
+						for (int targetY = yIndex - 1; targetY >= 0; targetY--) {
+							if (wkField.tateWall[targetY][xIndex] == Wall.EXISTS) {
+								break;
 							}
-							int rightSpaceCnt = 0;
-							for (int targetX = xIndex + 1; targetX < wkField.getXLength(); targetX++) {
-								if (wkField.yokoWall[yIndex][targetX - 1] == Wall.EXISTS) {
-									break;
-								}
-								rightSpaceCnt++;
+							upSpaceCnt++;
+						}
+						int rightSpaceCnt = 0;
+						for (int targetX = xIndex + 1; targetX < wkField.getXLength(); targetX++) {
+							if (wkField.yokoWall[yIndex][targetX - 1] == Wall.EXISTS) {
+								break;
 							}
-							int downSpaceCnt = 0;
-							for (int targetY = yIndex + 1; targetY < wkField.getYLength(); targetY++) {
-								if (wkField.tateWall[targetY - 1][xIndex] == Wall.EXISTS) {
-									break;
-								}
-								downSpaceCnt++;
+							rightSpaceCnt++;
+						}
+						int downSpaceCnt = 0;
+						for (int targetY = yIndex + 1; targetY < wkField.getYLength(); targetY++) {
+							if (wkField.tateWall[targetY - 1][xIndex] == Wall.EXISTS) {
+								break;
 							}
-							int leftSpaceCnt = 0;
-							for (int targetX = xIndex - 1; targetX >= 0; targetX--) {
-								if (wkField.yokoWall[yIndex][targetX] == Wall.EXISTS) {
-									break;
-								}
-								leftSpaceCnt++;
+							downSpaceCnt++;
+						}
+						int leftSpaceCnt = 0;
+						for (int targetX = xIndex - 1; targetX >= 0; targetX--) {
+							if (wkField.yokoWall[yIndex][targetX] == Wall.EXISTS) {
+								break;
 							}
-							int aroundSpaceCnt = upSpaceCnt + rightSpaceCnt + downSpaceCnt + leftSpaceCnt;
-							wkField.numbers[yIndex][xIndex] = aroundSpaceCnt;
+							leftSpaceCnt++;
+						}
+						int varticalCount = upSpaceCnt + downSpaceCnt;
+						int horizonalCount = rightSpaceCnt + leftSpaceCnt;
+						if (!(varticalCount == 0 && horizonalCount == 0)
+								&& (varticalCount == 0 || horizonalCount == 0 || varticalCount == horizonalCount)) {
+							wkField.numbers[yIndex][xIndex] = varticalCount == 0 ? horizonalCount : varticalCount;
 							numberPosList.add(pos);
 						}
 					}
@@ -197,23 +186,23 @@ public class GeradewegSolver implements Solver {
 						if (wkField.numbers[yIndex][xIndex] == null) {
 							// 数字マスは白確定なので戻さない
 							wkField.masu[yIndex][xIndex] = Masu.SPACE;
-							if (yIndex != 0 && wkField.numbers[yIndex - 1][xIndex] == null) {
-								wkField.tateWall[yIndex - 1][xIndex] = Wall.SPACE;
-							}
-							if (xIndex != wkField.getXLength() - 1 && wkField.numbers[yIndex][xIndex + 1] == null) {
-								wkField.yokoWall[yIndex][xIndex] = Wall.SPACE;
-							}
-							if (yIndex != wkField.getYLength() - 1 && wkField.numbers[yIndex + 1][xIndex] == null) {
-								wkField.tateWall[yIndex][xIndex] = Wall.SPACE;
-							}
-							if (xIndex != 0 && wkField.numbers[yIndex][xIndex - 1] == null) {
-								wkField.yokoWall[yIndex][xIndex - 1] = Wall.SPACE;
-							}
+						}
+						if (yIndex != 0) {
+							wkField.tateWall[yIndex - 1][xIndex] = Wall.SPACE;
+						}
+						if (xIndex != wkField.getXLength() - 1) {
+							wkField.yokoWall[yIndex][xIndex] = Wall.SPACE;
+						}
+						if (yIndex != wkField.getYLength() - 1) {
+							wkField.tateWall[yIndex][xIndex] = Wall.SPACE;
+						}
+						if (xIndex != 0) {
+							wkField.yokoWall[yIndex][xIndex - 1] = Wall.SPACE;
 						}
 					}
 				}
 				// 解けるかな？
-				level = new GeradewegSolverForGenerator(new GeradewegSolver.Field(wkField), 50).solve2();
+				level = new GeradewegSolverForGenerator(new GeradewegSolver.Field(wkField), 100).solve2();
 				if (level == -1) {
 					// 解けなければやり直し
 					wkField = new GeradewegSolver.Field(height, width);
@@ -226,44 +215,12 @@ public class GeradewegSolver implements Solver {
 						GeradewegSolver.Field virtual = new GeradewegSolver.Field(wkField, true);
 						int yIndex = numberPos.getyIndex();
 						int xIndex = numberPos.getxIndex();
-						if (virtual.numbers[yIndex][xIndex] != 0) {
-							virtual.numbers[yIndex][xIndex] = 0;
-						} else {
-							virtual.numbers[yIndex][xIndex] = null;
-							virtual.masu[yIndex][xIndex] = Masu.SPACE;
-							if (yIndex != 0 && virtual.numbers[yIndex - 1][xIndex] == null) {
-								virtual.tateWall[yIndex - 1][xIndex] = Wall.SPACE;
-							}
-							if (xIndex != virtual.getXLength() - 1 && virtual.numbers[yIndex][xIndex + 1] == null) {
-								virtual.yokoWall[yIndex][xIndex] = Wall.SPACE;
-							}
-							if (yIndex != virtual.getYLength() - 1 && virtual.numbers[yIndex + 1][xIndex] == null) {
-								virtual.tateWall[yIndex][xIndex] = Wall.SPACE;
-							}
-							if (xIndex != 0 && virtual.numbers[yIndex][xIndex - 1] == null) {
-								virtual.yokoWall[yIndex][xIndex - 1] = Wall.SPACE;
-							}
-						}
-						int solveResult = new GeradewegSolverForGenerator(virtual, 1500).solve2();
+						virtual.numbers[yIndex][xIndex] = null;
+						virtual.masu[yIndex][xIndex] = Masu.SPACE;
+						int solveResult = new GeradewegSolverForGenerator(virtual, 5000).solve2();
 						if (solveResult != -1) {
-							if (wkField.numbers[yIndex][xIndex] != 0) {
-								wkField.numbers[yIndex][xIndex] = 0;
-							} else {
-								wkField.numbers[yIndex][xIndex] = null;
-								wkField.masu[yIndex][xIndex] = Masu.SPACE;
-								if (yIndex != 0 && wkField.numbers[yIndex - 1][xIndex] == null) {
-									wkField.tateWall[yIndex - 1][xIndex] = Wall.SPACE;
-								}
-								if (xIndex != wkField.getXLength() - 1 && wkField.numbers[yIndex][xIndex + 1] == null) {
-									wkField.yokoWall[yIndex][xIndex] = Wall.SPACE;
-								}
-								if (yIndex != wkField.getYLength() - 1 && wkField.numbers[yIndex + 1][xIndex] == null) {
-									wkField.tateWall[yIndex][xIndex] = Wall.SPACE;
-								}
-								if (xIndex != 0 && wkField.numbers[yIndex][xIndex - 1] == null) {
-									wkField.yokoWall[yIndex][xIndex - 1] = Wall.SPACE;
-								}
-							}
+							wkField.numbers[yIndex][xIndex] = null;
+							wkField.masu[yIndex][xIndex] = Masu.SPACE;
 							level = solveResult;
 						}
 					}
@@ -891,20 +848,27 @@ public class GeradewegSolver implements Solver {
 		 */
 		public boolean connectSolve() {
 			Set<Position> whitePosSet = new HashSet<>();
+			Set<Position> blackCandPosSet = new HashSet<>();
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					Position pos = new Position(yIndex, xIndex);
 					if (masu[yIndex][xIndex] == Masu.NOT_BLACK) {
-						Position whitePos = new Position(yIndex, xIndex);
 						if (whitePosSet.isEmpty()) {
-							whitePosSet.add(whitePos);
-							setContinuePosSet(whitePos, whitePosSet, null);
+							whitePosSet.add(pos);
+							setContinuePosSet(pos, whitePosSet, null);
 						} else {
-							if (!whitePosSet.contains(whitePos)) {
+							if (!whitePosSet.contains(pos)) {
 								return false;
 							}
 						}
+					} else if (masu[yIndex][xIndex] == Masu.SPACE) {
+						blackCandPosSet.add(pos);
 					}
 				}
+			}
+			blackCandPosSet.removeAll(whitePosSet);
+			for (Position pos : blackCandPosSet) {
+				masu[pos.getyIndex()][pos.getxIndex()] = Masu.BLACK;
 			}
 			return true;
 		}
@@ -1255,6 +1219,11 @@ public class GeradewegSolver implements Solver {
 		for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 			for (int xIndex = 0; xIndex < field.getXLength() - 1; xIndex++) {
 				if (field.yokoWall[yIndex][xIndex] == Wall.SPACE) {
+					Masu masuLeft = field.masu[yIndex][xIndex];
+					Masu masuRight = field.masu[yIndex][xIndex + 1];
+					if (masuLeft == Masu.SPACE && masuRight == Masu.SPACE) {
+						continue;
+					}
 					count++;
 					if (!oneCandYokoWallSolve(field, yIndex, xIndex, recursive)) {
 						return false;
@@ -1265,6 +1234,11 @@ public class GeradewegSolver implements Solver {
 		for (int yIndex = 0; yIndex < field.getYLength() - 1; yIndex++) {
 			for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
 				if (field.tateWall[yIndex][xIndex] == Wall.SPACE) {
+					Masu masuUp = field.masu[yIndex][xIndex];
+					Masu masuDown = field.masu[yIndex + 1][xIndex];
+					if (masuUp == Masu.SPACE && masuDown == Masu.SPACE) {
+						continue;
+					}
 					count++;
 					if (!oneCandTateWallSolve(field, yIndex, xIndex, recursive)) {
 						return false;
