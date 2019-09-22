@@ -104,9 +104,27 @@ public class MasyuSolver implements Solver {
 						boolean isOk = false;
 						MasyuSolver.Field virtual = new MasyuSolver.Field(wkField, true);
 						if (toYokoWall) {
-							virtual.yokoWall[yIndex][xIndex] = Wall.NOT_EXISTS;
+							if ((yIndex != 0 && (wkField.tateWall[yIndex - 1][xIndex] == Wall.NOT_EXISTS ||
+									wkField.tateWall[yIndex - 1][xIndex + 1] == Wall.NOT_EXISTS))
+									|| (yIndex != wkField.getYLength() - 1
+											&& (wkField.tateWall[yIndex][xIndex] == Wall.NOT_EXISTS ||
+													wkField.tateWall[yIndex][xIndex + 1] == Wall.NOT_EXISTS))) {
+								// カーブができにくくする処理
+								virtual.yokoWall[yIndex][xIndex] = Wall.EXISTS;
+							} else {
+								virtual.yokoWall[yIndex][xIndex] = Wall.NOT_EXISTS;
+							}
 						} else {
-							virtual.tateWall[yIndex][xIndex] = Wall.NOT_EXISTS;
+							if (xIndex != 0 && (virtual.yokoWall[yIndex][xIndex - 1] == Wall.NOT_EXISTS ||
+									virtual.yokoWall[yIndex + 1][xIndex - 1] == Wall.NOT_EXISTS)
+									|| (xIndex != wkField.getXLength() - 1
+											&& (virtual.yokoWall[yIndex][xIndex] == Wall.NOT_EXISTS ||
+													virtual.yokoWall[yIndex + 1][xIndex] == Wall.NOT_EXISTS))) {
+								// カーブができにくくする処理
+								virtual.tateWall[yIndex][xIndex] = Wall.EXISTS;
+							} else {
+								virtual.tateWall[yIndex][xIndex] = Wall.NOT_EXISTS;
+							}
 						}
 						if (virtual.solveAndCheck()) {
 							isOk = true;
@@ -762,7 +780,7 @@ public class MasyuSolver implements Solver {
 		}
 
 		/**
-		 * 指定した位置のマスをカーブさせる。できない場合falseを返す。
+		 * 指定した位置のマスをカーブさせる。必ずチェック処理後に呼ぶこと。
 		 */
 		private void toCurve(int yIndex, int xIndex) {
 			Wall wallUp = yIndex == 0 ? Wall.EXISTS : tateWall[yIndex - 1][xIndex];
@@ -893,32 +911,16 @@ public class MasyuSolver implements Solver {
 							}
 						} else if (existsCount == 2) {
 							if (wallUp == Wall.SPACE) {
-								if (masu[yIndex - 1][xIndex] == Masu.BLACK) {
-									return false;
-								}
 								tateWall[yIndex - 1][xIndex] = Wall.NOT_EXISTS;
-								masu[yIndex - 1][xIndex] = Masu.NOT_BLACK;
 							}
 							if (wallRight == Wall.SPACE) {
-								if (masu[yIndex][xIndex + 1] == Masu.BLACK) {
-									return false;
-								}
 								yokoWall[yIndex][xIndex] = Wall.NOT_EXISTS;
-								masu[yIndex][xIndex + 1] = Masu.NOT_BLACK;
 							}
 							if (wallDown == Wall.SPACE) {
-								if (masu[yIndex + 1][xIndex] == Masu.BLACK) {
-									return false;
-								}
 								tateWall[yIndex][xIndex] = Wall.NOT_EXISTS;
-								masu[yIndex + 1][xIndex] = Masu.NOT_BLACK;
 							}
 							if (wallLeft == Wall.SPACE) {
-								if (masu[yIndex][xIndex - 1] == Masu.BLACK) {
-									return false;
-								}
 								yokoWall[yIndex][xIndex - 1] = Wall.NOT_EXISTS;
-								masu[yIndex][xIndex - 1] = Masu.NOT_BLACK;
 							}
 						}
 					}
@@ -1229,8 +1231,9 @@ public class MasyuSolver implements Solver {
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
 		System.out.println("難易度:" + (count));
 		System.out.println(field);
+		int level = (int) Math.sqrt(count / 3) + 1;
 		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count).toString();
+				+ Difficulty.getByCount(count).toString() + "(Lv:" + level + ")";
 	}
 
 	/**
@@ -1242,6 +1245,11 @@ public class MasyuSolver implements Solver {
 		for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 			for (int xIndex = 0; xIndex < field.getXLength() - 1; xIndex++) {
 				if (field.yokoWall[yIndex][xIndex] == Wall.SPACE) {
+					Masu masuLeft = field.masu[yIndex][xIndex];
+					Masu masuRight = field.masu[yIndex][xIndex + 1];
+					if (masuLeft == Masu.SPACE && masuRight == Masu.SPACE) {
+						continue;
+					}
 					count++;
 					if (!oneCandYokoWallSolve(field, yIndex, xIndex, recursive)) {
 						return false;
@@ -1252,6 +1260,11 @@ public class MasyuSolver implements Solver {
 		for (int yIndex = 0; yIndex < field.getYLength() - 1; yIndex++) {
 			for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
 				if (field.tateWall[yIndex][xIndex] == Wall.SPACE) {
+					Masu masuUp = field.masu[yIndex][xIndex];
+					Masu masuDown = field.masu[yIndex + 1][xIndex];
+					if (masuUp == Masu.SPACE && masuDown == Masu.SPACE) {
+						continue;
+					}
 					count++;
 					if (!oneCandTateWallSolve(field, yIndex, xIndex, recursive)) {
 						return false;
