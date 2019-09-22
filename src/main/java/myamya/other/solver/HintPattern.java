@@ -46,7 +46,7 @@ public abstract class HintPattern {
 		@Override
 		public List<Set<Position>> getPosSetList() {
 			List<Set<Position>> result = new ArrayList<>();
-			for (int i = 0; i < ((getHeight() * getWidth() + 1) / 2); i++) {
+			for (int i = 0; i <= ((getHeight() * getWidth() + 1) / 2); i++) {
 				Set<Position> set = new HashSet<>();
 				int yIndex = i / getWidth();
 				int xIndex = i % getWidth();
@@ -68,7 +68,7 @@ public abstract class HintPattern {
 		@Override
 		public List<Set<Position>> getPosSetList() {
 			List<Set<Position>> result = new ArrayList<>();
-			for (int i = 0; i < (getHeight() - 1) * (getWidth() + 1) / 2; i++) {
+			for (int i = 0; i < (getHeight()) * (getWidth() + 1) / 2; i++) {
 				Set<Position> set = new HashSet<>();
 				int yIndex = i / ((getWidth() + 1) / 2);
 				int xIndex = i % ((getWidth() + 1) / 2);
