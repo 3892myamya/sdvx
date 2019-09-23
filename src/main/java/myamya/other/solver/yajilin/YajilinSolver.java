@@ -11,6 +11,7 @@ import java.util.Set;
 
 import myamya.other.solver.Common.Difficulty;
 import myamya.other.solver.Common.Direction;
+import myamya.other.solver.Common.Masu;
 import myamya.other.solver.Common.Position;
 import myamya.other.solver.Common.Wall;
 import myamya.other.solver.Solver;
@@ -30,16 +31,18 @@ public class YajilinSolver implements Solver {
 
 		private final int height;
 		private final int width;
+		private final Position pos;
 		private final Arrow arrow;
 
-		public ArrowSolver(int height, int width, Arrow arrow) {
+		public ArrowSolver(int height, int width, Position pos, Arrow arrow) {
 			this.height = height;
 			this.width = width;
+			this.pos = pos;
 			this.arrow = arrow;
 		}
 
 		public static void main(String[] args) {
-			List<String> result = new ArrowSolver(10, 10, new Arrow(new Position(9, 5), Direction.UP, '3'))
+			List<String> result = new ArrowSolver(10, 10, new Position(9, 5), new Arrow(Direction.UP, '3'))
 					.solve();
 			System.out.println(result);
 		}
@@ -49,7 +52,7 @@ public class YajilinSolver implements Solver {
 		 */
 		public List<String> solve() {
 			List<String> result = new ArrayList<>();
-			oneSolve(result, new StringBuilder(), arrow.getPosition(), 0);
+			oneSolve(result, new StringBuilder(), pos, 0);
 			return result.size() >= CANDMAX ? null : result;
 		}
 
@@ -62,22 +65,22 @@ public class YajilinSolver implements Solver {
 				StringBuilder newSb = new StringBuilder(sb);
 				if (arrow.getDirection() == Direction.UP) {
 					for (int yIndex = nowPos.getyIndex() - 1; yIndex >= 0; yIndex--) {
-						newSb.append(MasuImpl.NOT_BLACK.toString());
+						newSb.append(Masu.NOT_BLACK.toString());
 					}
 				}
 				if (arrow.getDirection() == Direction.RIGHT) {
 					for (int xIndex = nowPos.getxIndex() + 1; xIndex < width; xIndex++) {
-						newSb.append(MasuImpl.NOT_BLACK.toString());
+						newSb.append(Masu.NOT_BLACK.toString());
 					}
 				}
 				if (arrow.getDirection() == Direction.DOWN) {
 					for (int yIndex = nowPos.getyIndex() + 1; yIndex < height; yIndex++) {
-						newSb.append(MasuImpl.NOT_BLACK.toString());
+						newSb.append(Masu.NOT_BLACK.toString());
 					}
 				}
 				if (arrow.getDirection() == Direction.LEFT) {
 					for (int xIndex = nowPos.getxIndex() - 1; xIndex >= 0; xIndex--) {
-						newSb.append(MasuImpl.NOT_BLACK.toString());
+						newSb.append(Masu.NOT_BLACK.toString());
 					}
 				}
 				result.add(newSb.toString());
@@ -88,18 +91,18 @@ public class YajilinSolver implements Solver {
 						return;
 					} else {
 						if (nowPos.getyIndex() != 1) {
-							sb.append(MasuImpl.BLACK.toString());
-							sb.append(MasuImpl.NOT_BLACK.toString());
+							sb.append(Masu.BLACK.toString());
+							sb.append(Masu.NOT_BLACK.toString());
 							oneSolve(result, sb, new Position(nowPos.getyIndex() - 2, nowPos.getxIndex()),
 									nowBlack + 1);
 							sb.setLength(sb.length() - 2);
 						} else {
-							sb.append(MasuImpl.BLACK.toString());
+							sb.append(Masu.BLACK.toString());
 							oneSolve(result, sb, new Position(nowPos.getyIndex() - 1, nowPos.getxIndex()),
 									nowBlack + 1);
 							sb.setLength(sb.length() - 1);
 						}
-						sb.append(MasuImpl.NOT_BLACK.toString());
+						sb.append(Masu.NOT_BLACK.toString());
 						oneSolve(result, sb, new Position(nowPos.getyIndex() - 1, nowPos.getxIndex()), nowBlack);
 						sb.setLength(sb.length() - 1);
 					}
@@ -109,18 +112,18 @@ public class YajilinSolver implements Solver {
 						return;
 					} else {
 						if (nowPos.getxIndex() != width - 2) {
-							sb.append(MasuImpl.BLACK.toString());
-							sb.append(MasuImpl.NOT_BLACK.toString());
+							sb.append(Masu.BLACK.toString());
+							sb.append(Masu.NOT_BLACK.toString());
 							oneSolve(result, sb, new Position(nowPos.getyIndex(), nowPos.getxIndex() + 2),
 									nowBlack + 1);
 							sb.setLength(sb.length() - 2);
 						} else {
-							sb.append(MasuImpl.BLACK.toString());
+							sb.append(Masu.BLACK.toString());
 							oneSolve(result, sb, new Position(nowPos.getyIndex(), nowPos.getxIndex() + 1),
 									nowBlack + 1);
 							sb.setLength(sb.length() - 1);
 						}
-						sb.append(MasuImpl.NOT_BLACK.toString());
+						sb.append(Masu.NOT_BLACK.toString());
 						oneSolve(result, sb, new Position(nowPos.getyIndex(), nowPos.getxIndex() + 1),
 								nowBlack);
 						sb.setLength(sb.length() - 1);
@@ -131,18 +134,18 @@ public class YajilinSolver implements Solver {
 						return;
 					} else {
 						if (nowPos.getyIndex() != height - 2) {
-							sb.append(MasuImpl.BLACK.toString());
-							sb.append(MasuImpl.NOT_BLACK.toString());
+							sb.append(Masu.BLACK.toString());
+							sb.append(Masu.NOT_BLACK.toString());
 							oneSolve(result, sb, new Position(nowPos.getyIndex() + 2, nowPos.getxIndex()),
 									nowBlack + 1);
 							sb.setLength(sb.length() - 2);
 						} else {
-							sb.append(MasuImpl.BLACK.toString());
+							sb.append(Masu.BLACK.toString());
 							oneSolve(result, sb, new Position(nowPos.getyIndex() + 1, nowPos.getxIndex()),
 									nowBlack + 1);
 							sb.setLength(sb.length() - 1);
 						}
-						sb.append(MasuImpl.NOT_BLACK.toString());
+						sb.append(Masu.NOT_BLACK.toString());
 						oneSolve(result, sb, new Position(nowPos.getyIndex() + 1, nowPos.getxIndex()), nowBlack);
 						sb.setLength(sb.length() - 1);
 					}
@@ -152,18 +155,18 @@ public class YajilinSolver implements Solver {
 						return;
 					} else {
 						if (nowPos.getxIndex() != 1) {
-							sb.append(MasuImpl.BLACK.toString());
-							sb.append(MasuImpl.NOT_BLACK.toString());
+							sb.append(Masu.BLACK.toString());
+							sb.append(Masu.NOT_BLACK.toString());
 							oneSolve(result, sb, new Position(nowPos.getyIndex(), nowPos.getxIndex() - 2),
 									nowBlack + 1);
 							sb.setLength(sb.length() - 2);
 						} else {
-							sb.append(MasuImpl.BLACK.toString());
+							sb.append(Masu.BLACK.toString());
 							oneSolve(result, sb, new Position(nowPos.getyIndex(), nowPos.getxIndex() - 1),
 									nowBlack + 1);
 							sb.setLength(sb.length() - 1);
 						}
-						sb.append(MasuImpl.NOT_BLACK.toString());
+						sb.append(Masu.NOT_BLACK.toString());
 						oneSolve(result, sb, new Position(nowPos.getyIndex(), nowPos.getxIndex() - 1),
 								nowBlack);
 						sb.setLength(sb.length() - 1);
@@ -174,52 +177,16 @@ public class YajilinSolver implements Solver {
 
 	}
 
-	public interface Masu {
-		@Override
-		public String toString();
-
-		public String toStringWeb();
-	}
-
-	public enum MasuImpl implements Masu {
-		SPACE("　"), BLACK("■"), NOT_BLACK("・");
-
-		String str;
-
-		MasuImpl(String str) {
-			this.str = str;
-		}
-
-		@Override
-		public String toString() {
-			return str;
-		}
-
-		@Override
-		public String toStringWeb() {
-			return str;
-		}
-	}
-
 	/**
 	 * 矢印のマス
 	 */
-	public static class Arrow implements Masu {
-		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
-		private static final String FULL_NUMS = "０１２３４５６７８９";
-
-		private final Position position;
+	public static class Arrow {
 		private final Direction direction;
 		private final int count;
 
-		public Arrow(Position position, Direction direction, int count) {
-			this.position = position;
+		public Arrow(Direction direction, int count) {
 			this.direction = direction;
 			this.count = count;
-		}
-
-		public Position getPosition() {
-			return position;
 		}
 
 		public Direction getDirection() {
@@ -235,17 +202,6 @@ public class YajilinSolver implements Solver {
 			return count == -1 ? "？" : (count >= 10 ? String.valueOf(count) : direction.toString() + count);
 		}
 
-		public String toStringForweb() {
-			String wkstr = String.valueOf(count);
-			int index = HALF_NUMS.indexOf(wkstr);
-			if (index >= 0) {
-				wkstr = FULL_NUMS.substring(index / 2,
-						index / 2 + 1);
-			}
-			return direction.getDirectString() + wkstr;
-		}
-
-		@Override
 		public String toStringWeb() {
 			return count == -1 ? "？" : direction.getDirectString() + count;
 		}
@@ -256,6 +212,8 @@ public class YajilinSolver implements Solver {
 
 		// マスの情報
 		private Masu[][] masu;
+		// 矢印の情報
+		private Arrow[][] arrows;
 		// 横をふさぐ壁が存在するか
 		// 0,0 = trueなら、0,0と0,1の間に壁があるという意味
 		private Wall[][] yokoWall;
@@ -269,6 +227,10 @@ public class YajilinSolver implements Solver {
 
 		public Masu[][] getMasu() {
 			return masu;
+		}
+
+		public Arrow[][] getArrows() {
+			return arrows;
 		}
 
 		public Wall[][] getYokoWall() {
@@ -289,13 +251,14 @@ public class YajilinSolver implements Solver {
 
 		public Field(int height, int width, String param, boolean out) {
 			masu = new Masu[height][width];
+			arrows = new Arrow[height][width];
 			yokoWall = new Wall[height][width - 1];
 			tateWall = new Wall[height - 1][width];
 			arrowsInfo = new HashMap<>();
 			this.out = out;
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					masu[yIndex][xIndex] = MasuImpl.SPACE;
+					masu[yIndex][xIndex] = Masu.SPACE;
 				}
 			}
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
@@ -329,7 +292,8 @@ public class YajilinSolver implements Solver {
 								i++;
 							} else {
 								Position arrowPos = new Position(index / getXLength(), index % getXLength());
-								masu[arrowPos.getyIndex()][arrowPos.getxIndex()] = new Arrow(arrowPos, direction, -1);
+								masu[arrowPos.getyIndex()][arrowPos.getxIndex()] = Masu.NOT_BLACK;
+								arrows[arrowPos.getyIndex()][arrowPos.getxIndex()] = new Arrow(direction, -1);
 								// 周囲の壁を閉鎖
 								if (arrowPos.getyIndex() != 0) {
 									tateWall[arrowPos.getyIndex() - 1][arrowPos.getxIndex()] = Wall.EXISTS;
@@ -354,14 +318,15 @@ public class YajilinSolver implements Solver {
 					Arrow arrow;
 					if (adjust) {
 						i++;
-						arrow = new Arrow(arrowPos, direction, Character.getNumericValue(ch) * 16
+						arrow = new Arrow(direction, Character.getNumericValue(ch) * 16
 								+ Character.getNumericValue(param.charAt(i)));
 					} else {
-						arrow = new Arrow(arrowPos, direction, Character.getNumericValue(ch));
+						arrow = new Arrow(direction, Character.getNumericValue(ch));
 					}
-					masu[arrowPos.getyIndex()][arrowPos.getxIndex()] = arrow;
+					masu[arrowPos.getyIndex()][arrowPos.getxIndex()] = Masu.NOT_BLACK;
+					arrows[arrowPos.getyIndex()][arrowPos.getxIndex()] = arrow;
 					arrowsInfo.put(arrow,
-							new ArrowSolver(getYLength(), getXLength(), arrow)
+							new ArrowSolver(getYLength(), getXLength(), arrowPos, arrow)
 									.solve());
 					// 周囲の壁を閉鎖
 					if (arrowPos.getyIndex() != 0) {
@@ -385,6 +350,7 @@ public class YajilinSolver implements Solver {
 
 		public Field(Field other) {
 			masu = new Masu[other.getYLength()][other.getXLength()];
+			arrows = other.arrows;
 			yokoWall = new Wall[other.getYLength()][other.getXLength() - 1];
 			tateWall = new Wall[other.getYLength() - 1][other.getXLength()];
 			arrowsInfo = new HashMap<>();
@@ -419,7 +385,11 @@ public class YajilinSolver implements Solver {
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				sb.append("□");
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					sb.append(masu[yIndex][xIndex]);
+					if (arrows[yIndex][xIndex] != null) {
+						sb.append(arrows[yIndex][xIndex]);
+					} else {
+						sb.append(masu[yIndex][xIndex]);
+					}
 					if (xIndex != getXLength() - 1) {
 						sb.append(yokoWall[yIndex][xIndex]);
 					}
@@ -471,8 +441,8 @@ public class YajilinSolver implements Solver {
 		private boolean arrowSolve() {
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					if (masu[yIndex][xIndex] instanceof Arrow) {
-						Arrow arrow = (Arrow) masu[yIndex][xIndex];
+					if (arrows[yIndex][xIndex] != null) {
+						Arrow arrow = arrows[yIndex][xIndex];
 						if (arrow.getCount() == -1) {
 							continue;
 						}
@@ -517,9 +487,9 @@ public class YajilinSolver implements Solver {
 						//															}
 						//															break;
 						//														}
-						//													} else if (masu[pos.getyIndex()][pos.getxIndex()] == MasuImpl.BLACK) {
+						//													} else if (masu[pos.getyIndex()][pos.getxIndex()] == Masu.BLACK) {
 						//														blackCount++;
-						//													} else if (masu[pos.getyIndex()][pos.getxIndex()] == MasuImpl.NOT_BLACK) {
+						//													} else if (masu[pos.getyIndex()][pos.getxIndex()] == Masu.NOT_BLACK) {
 						//														notBlackCount++;
 						//													}
 						//													adjust++;
@@ -542,10 +512,9 @@ public class YajilinSolver implements Solver {
 									if (arrow.getDirection() == Direction.LEFT) {
 										pos = new Position(yIndex, xIndex - 1 - idx);
 									}
-									if ((masu[pos.getyIndex()][pos.getxIndex()] == MasuImpl.BLACK
+									if ((masu[pos.getyIndex()][pos.getxIndex()] == Masu.BLACK
 											&& state.charAt(idx) == '・')
-											|| ((masu[pos.getyIndex()][pos.getxIndex()] == MasuImpl.NOT_BLACK
-													|| masu[pos.getyIndex()][pos.getxIndex()] instanceof Arrow)
+											|| ((masu[pos.getyIndex()][pos.getxIndex()] == Masu.NOT_BLACK)
 													&& state.charAt(idx) == '■')) {
 										iterator.remove();
 										break;
@@ -579,15 +548,12 @@ public class YajilinSolver implements Solver {
 									if (arrow.getDirection() == Direction.LEFT) {
 										pos = new Position(yIndex, xIndex - 1 - idx);
 									}
-									if (masu[pos.getyIndex()][pos.getxIndex()] instanceof Arrow) {
-										continue;
-									}
 									if (fixState.charAt(idx) == '■') {
-										masu[pos.getyIndex()][pos.getxIndex()] = MasuImpl.BLACK;
+										masu[pos.getyIndex()][pos.getxIndex()] = Masu.BLACK;
 									} else if (fixState.charAt(idx) == '・') {
-										masu[pos.getyIndex()][pos.getxIndex()] = MasuImpl.NOT_BLACK;
+										masu[pos.getyIndex()][pos.getxIndex()] = Masu.NOT_BLACK;
 									} else {
-										masu[pos.getyIndex()][pos.getxIndex()] = MasuImpl.SPACE;
+										masu[pos.getyIndex()][pos.getxIndex()] = Masu.SPACE;
 									}
 								}
 							}
@@ -600,13 +566,13 @@ public class YajilinSolver implements Solver {
 							if (arrow.getDirection() == Direction.UP) {
 								while (pivot.getyIndex() - 1 - idx >= 0) {
 									Position pos = new Position(pivot.getyIndex() - 1 - idx, pivot.getxIndex());
-									if (masu[pos.getyIndex()][pos.getxIndex()] == MasuImpl.BLACK) {
+									if (masu[pos.getyIndex()][pos.getxIndex()] == Masu.BLACK) {
 										blackCnt++;
 										if (arrow.getCount() < blackCnt) {
 											return false;
 										}
 										nextCanSpace = false;
-									} else if (masu[pos.getyIndex()][pos.getxIndex()] == MasuImpl.SPACE) {
+									} else if (masu[pos.getyIndex()][pos.getxIndex()] == Masu.SPACE) {
 										if (nextCanSpace) {
 											spaceCnt++;
 											nextCanSpace = false;
@@ -622,13 +588,13 @@ public class YajilinSolver implements Solver {
 							if (arrow.getDirection() == Direction.RIGHT) {
 								while (pivot.getxIndex() + 1 + idx < getXLength()) {
 									Position pos = new Position(pivot.getyIndex(), pivot.getxIndex() + 1 + idx);
-									if (masu[pos.getyIndex()][pos.getxIndex()] == MasuImpl.BLACK) {
+									if (masu[pos.getyIndex()][pos.getxIndex()] == Masu.BLACK) {
 										blackCnt++;
 										if (arrow.getCount() < blackCnt) {
 											return false;
 										}
 										nextCanSpace = false;
-									} else if (masu[pos.getyIndex()][pos.getxIndex()] == MasuImpl.SPACE) {
+									} else if (masu[pos.getyIndex()][pos.getxIndex()] == Masu.SPACE) {
 										if (nextCanSpace) {
 											spaceCnt++;
 											nextCanSpace = false;
@@ -644,13 +610,13 @@ public class YajilinSolver implements Solver {
 							if (arrow.getDirection() == Direction.DOWN) {
 								while (pivot.getyIndex() + 1 + idx < getYLength()) {
 									Position pos = new Position(pivot.getyIndex() + 1 + idx, pivot.getxIndex());
-									if (masu[pos.getyIndex()][pos.getxIndex()] == MasuImpl.BLACK) {
+									if (masu[pos.getyIndex()][pos.getxIndex()] == Masu.BLACK) {
 										blackCnt++;
 										if (arrow.getCount() < blackCnt) {
 											return false;
 										}
 										nextCanSpace = false;
-									} else if (masu[pos.getyIndex()][pos.getxIndex()] == MasuImpl.SPACE) {
+									} else if (masu[pos.getyIndex()][pos.getxIndex()] == Masu.SPACE) {
 										if (nextCanSpace) {
 											spaceCnt++;
 											nextCanSpace = false;
@@ -666,13 +632,13 @@ public class YajilinSolver implements Solver {
 							if (arrow.getDirection() == Direction.LEFT) {
 								while (pivot.getxIndex() - 1 - idx >= 0) {
 									Position pos = new Position(pivot.getyIndex(), pivot.getxIndex() - 1 - idx);
-									if (masu[pos.getyIndex()][pos.getxIndex()] == MasuImpl.BLACK) {
+									if (masu[pos.getyIndex()][pos.getxIndex()] == Masu.BLACK) {
 										blackCnt++;
 										if (arrow.getCount() < blackCnt) {
 											return false;
 										}
 										nextCanSpace = false;
-									} else if (masu[pos.getyIndex()][pos.getxIndex()] == MasuImpl.SPACE) {
+									} else if (masu[pos.getyIndex()][pos.getxIndex()] == Masu.SPACE) {
 										if (nextCanSpace) {
 											spaceCnt++;
 											nextCanSpace = false;
@@ -703,201 +669,110 @@ public class YajilinSolver implements Solver {
 		public boolean nextSolve() {
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					if (masu[yIndex][xIndex] == MasuImpl.BLACK) {
-						Masu masuUp, masuRight, masuDown, masuLeft;
-						// 周囲の壁を閉鎖
-						if (yIndex != 0) {
-							if (tateWall[yIndex - 1][xIndex] == Wall.NOT_EXISTS) {
+					if (arrows[yIndex][xIndex] == null) {
+						if (masu[yIndex][xIndex] == Masu.BLACK) {
+							Masu masuUp, masuRight, masuDown, masuLeft;
+							// 周囲の壁を閉鎖
+							if (yIndex != 0) {
+								if (tateWall[yIndex - 1][xIndex] == Wall.NOT_EXISTS) {
+									return false;
+								}
+								tateWall[yIndex - 1][xIndex] = Wall.EXISTS;
+								masuUp = masu[yIndex - 1][xIndex];
+							} else {
+								masuUp = Masu.NOT_BLACK;
+							}
+							if (xIndex != getXLength() - 1) {
+								if (yokoWall[yIndex][xIndex] == Wall.NOT_EXISTS) {
+									return false;
+								}
+								yokoWall[yIndex][xIndex] = Wall.EXISTS;
+								masuRight = masu[yIndex][xIndex + 1];
+							} else {
+								masuRight = Masu.NOT_BLACK;
+							}
+							if (yIndex != getYLength() - 1) {
+								if (tateWall[yIndex][xIndex] == Wall.NOT_EXISTS) {
+									return false;
+								}
+								tateWall[yIndex][xIndex] = Wall.EXISTS;
+								masuDown = masu[yIndex + 1][xIndex];
+							} else {
+								masuDown = Masu.NOT_BLACK;
+							}
+							if (xIndex != 0) {
+								if (yokoWall[yIndex][xIndex - 1] == Wall.NOT_EXISTS) {
+									return false;
+								}
+								yokoWall[yIndex][xIndex - 1] = Wall.EXISTS;
+								masuLeft = masu[yIndex][xIndex - 1];
+							} else {
+								masuLeft = Masu.NOT_BLACK;
+							}
+							if (masuUp == Masu.BLACK || masuRight == Masu.BLACK || masuDown == Masu.BLACK
+									|| masuLeft == Masu.BLACK) {
 								return false;
 							}
-							tateWall[yIndex - 1][xIndex] = Wall.EXISTS;
-							masuUp = masu[yIndex - 1][xIndex];
+							if (masuUp == Masu.SPACE) {
+								masu[yIndex - 1][xIndex] = Masu.NOT_BLACK;
+							}
+							if (masuRight == Masu.SPACE) {
+								masu[yIndex][xIndex + 1] = Masu.NOT_BLACK;
+							}
+							if (masuDown == Masu.SPACE) {
+								masu[yIndex + 1][xIndex] = Masu.NOT_BLACK;
+							}
+							if (masuLeft == Masu.SPACE) {
+								masu[yIndex][xIndex - 1] = Masu.NOT_BLACK;
+							}
 						} else {
-							masuUp = MasuImpl.NOT_BLACK;
-						}
-						if (xIndex != getXLength() - 1) {
-							if (yokoWall[yIndex][xIndex] == Wall.NOT_EXISTS) {
-								return false;
+							int existsCount = 0;
+							int notExistsCount = 0;
+							Wall wallUp = yIndex == 0 ? Wall.EXISTS : tateWall[yIndex - 1][xIndex];
+							if (wallUp == Wall.EXISTS) {
+								existsCount++;
+							} else if (wallUp == Wall.NOT_EXISTS) {
+								if (masu[yIndex - 1][xIndex] == Masu.BLACK) {
+									return false;
+								}
+								masu[yIndex - 1][xIndex] = Masu.NOT_BLACK;
+								notExistsCount++;
 							}
-							yokoWall[yIndex][xIndex] = Wall.EXISTS;
-							masuRight = masu[yIndex][xIndex + 1];
-						} else {
-							masuRight = MasuImpl.NOT_BLACK;
-						}
-						if (yIndex != getYLength() - 1) {
-							if (tateWall[yIndex][xIndex] == Wall.NOT_EXISTS) {
-								return false;
+							Wall wallRight = xIndex == getXLength() - 1 ? Wall.EXISTS : yokoWall[yIndex][xIndex];
+							if (wallRight == Wall.EXISTS) {
+								existsCount++;
+							} else if (wallRight == Wall.NOT_EXISTS) {
+								if (masu[yIndex][xIndex + 1] == Masu.BLACK) {
+									return false;
+								}
+								masu[yIndex][xIndex + 1] = Masu.NOT_BLACK;
+								notExistsCount++;
 							}
-							tateWall[yIndex][xIndex] = Wall.EXISTS;
-							masuDown = masu[yIndex + 1][xIndex];
-						} else {
-							masuDown = MasuImpl.NOT_BLACK;
-						}
-						if (xIndex != 0) {
-							if (yokoWall[yIndex][xIndex - 1] == Wall.NOT_EXISTS) {
-								return false;
+							Wall wallDown = yIndex == getYLength() - 1 ? Wall.EXISTS : tateWall[yIndex][xIndex];
+							if (wallDown == Wall.EXISTS) {
+								existsCount++;
+							} else if (wallDown == Wall.NOT_EXISTS) {
+								if (masu[yIndex + 1][xIndex] == Masu.BLACK) {
+									return false;
+								}
+								masu[yIndex + 1][xIndex] = Masu.NOT_BLACK;
+								notExistsCount++;
 							}
-							yokoWall[yIndex][xIndex - 1] = Wall.EXISTS;
-							masuLeft = masu[yIndex][xIndex - 1];
-						} else {
-							masuLeft = MasuImpl.NOT_BLACK;
-						}
-						if (masuUp == MasuImpl.BLACK || masuRight == MasuImpl.BLACK || masuDown == MasuImpl.BLACK
-								|| masuLeft == MasuImpl.BLACK) {
-							return false;
-						}
-						if (masuUp == MasuImpl.SPACE) {
-							masu[yIndex - 1][xIndex] = MasuImpl.NOT_BLACK;
-						}
-						if (masuRight == MasuImpl.SPACE) {
-							masu[yIndex][xIndex + 1] = MasuImpl.NOT_BLACK;
-						}
-						if (masuDown == MasuImpl.SPACE) {
-							masu[yIndex + 1][xIndex] = MasuImpl.NOT_BLACK;
-						}
-						if (masuLeft == MasuImpl.SPACE) {
-							masu[yIndex][xIndex - 1] = MasuImpl.NOT_BLACK;
-						}
-					} else {
-						int existsCount = 0;
-						int notExistsCount = 0;
-						Wall wallUp = yIndex == 0 ? Wall.EXISTS : tateWall[yIndex - 1][xIndex];
-						if (wallUp == Wall.EXISTS) {
-							existsCount++;
-						} else if (wallUp == Wall.NOT_EXISTS) {
-							if (masu[yIndex - 1][xIndex] == MasuImpl.BLACK) {
-								return false;
+							Wall wallLeft = xIndex == 0 ? Wall.EXISTS : yokoWall[yIndex][xIndex - 1];
+							if (wallLeft == Wall.EXISTS) {
+								existsCount++;
+							} else if (wallLeft == Wall.NOT_EXISTS) {
+								if (masu[yIndex][xIndex - 1] == Masu.BLACK) {
+									return false;
+								}
+								masu[yIndex][xIndex - 1] = Masu.NOT_BLACK;
+								notExistsCount++;
 							}
-							masu[yIndex - 1][xIndex] = MasuImpl.NOT_BLACK;
-							notExistsCount++;
-						}
-						Wall wallRight = xIndex == getXLength() - 1 ? Wall.EXISTS : yokoWall[yIndex][xIndex];
-						if (wallRight == Wall.EXISTS) {
-							existsCount++;
-						} else if (wallRight == Wall.NOT_EXISTS) {
-							if (masu[yIndex][xIndex + 1] == MasuImpl.BLACK) {
-								return false;
-							}
-							masu[yIndex][xIndex + 1] = MasuImpl.NOT_BLACK;
-							notExistsCount++;
-						}
-						Wall wallDown = yIndex == getYLength() - 1 ? Wall.EXISTS : tateWall[yIndex][xIndex];
-						if (wallDown == Wall.EXISTS) {
-							existsCount++;
-						} else if (wallDown == Wall.NOT_EXISTS) {
-							if (masu[yIndex + 1][xIndex] == MasuImpl.BLACK) {
-								return false;
-							}
-							masu[yIndex + 1][xIndex] = MasuImpl.NOT_BLACK;
-							notExistsCount++;
-						}
-						Wall wallLeft = xIndex == 0 ? Wall.EXISTS : yokoWall[yIndex][xIndex - 1];
-						if (wallLeft == Wall.EXISTS) {
-							existsCount++;
-						} else if (wallLeft == Wall.NOT_EXISTS) {
-							if (masu[yIndex][xIndex - 1] == MasuImpl.BLACK) {
-								return false;
-							}
-							masu[yIndex][xIndex - 1] = MasuImpl.NOT_BLACK;
-							notExistsCount++;
-						}
-						// 自分が白マスなら壁は必ず2マス
-						if (masu[yIndex][xIndex] == MasuImpl.NOT_BLACK) {
-							if (existsCount > 2 || notExistsCount > 2) {
-								return false;
-							}
-							if (notExistsCount == 2) {
-								if (wallUp == Wall.SPACE) {
-									tateWall[yIndex - 1][xIndex] = Wall.EXISTS;
+							// 自分が白マスなら壁は必ず2マス
+							if (masu[yIndex][xIndex] == Masu.NOT_BLACK) {
+								if (existsCount > 2 || notExistsCount > 2) {
+									return false;
 								}
-								if (wallRight == Wall.SPACE) {
-									yokoWall[yIndex][xIndex] = Wall.EXISTS;
-								}
-								if (wallDown == Wall.SPACE) {
-									tateWall[yIndex][xIndex] = Wall.EXISTS;
-								}
-								if (wallLeft == Wall.SPACE) {
-									yokoWall[yIndex][xIndex - 1] = Wall.EXISTS;
-								}
-							} else if (existsCount == 2) {
-								if (wallUp == Wall.SPACE) {
-									if (masu[yIndex - 1][xIndex] == MasuImpl.BLACK) {
-										return false;
-									}
-									tateWall[yIndex - 1][xIndex] = Wall.NOT_EXISTS;
-									masu[yIndex - 1][xIndex] = MasuImpl.NOT_BLACK;
-								}
-								if (wallRight == Wall.SPACE) {
-									if (masu[yIndex][xIndex + 1] == MasuImpl.BLACK) {
-										return false;
-									}
-									yokoWall[yIndex][xIndex] = Wall.NOT_EXISTS;
-									masu[yIndex][xIndex + 1] = MasuImpl.NOT_BLACK;
-								}
-								if (wallDown == Wall.SPACE) {
-									if (masu[yIndex + 1][xIndex] == MasuImpl.BLACK) {
-										return false;
-									}
-									tateWall[yIndex][xIndex] = Wall.NOT_EXISTS;
-									masu[yIndex + 1][xIndex] = MasuImpl.NOT_BLACK;
-								}
-								if (wallLeft == Wall.SPACE) {
-									if (masu[yIndex][xIndex - 1] == MasuImpl.BLACK) {
-										return false;
-									}
-									yokoWall[yIndex][xIndex - 1] = Wall.NOT_EXISTS;
-									masu[yIndex][xIndex - 1] = MasuImpl.NOT_BLACK;
-								}
-							}
-						} else if (masu[yIndex][xIndex] == MasuImpl.SPACE) {
-							// 自分が不確定マスなら壁は2マスか4マス
-							if ((existsCount == 3 && notExistsCount == 1)
-									|| notExistsCount > 2) {
-								return false;
-							}
-							if (existsCount == 2) {
-								// 壁が2個の場合、壁のない方の白マス確定(出口理論)
-								if (wallUp != Wall.EXISTS) {
-									if (masu[yIndex - 1][xIndex] == MasuImpl.BLACK) {
-										return false;
-									}
-									masu[yIndex - 1][xIndex] = MasuImpl.NOT_BLACK;
-								}
-								if (wallRight != Wall.EXISTS) {
-									if (masu[yIndex][xIndex + 1] == MasuImpl.BLACK) {
-										return false;
-									}
-									masu[yIndex][xIndex + 1] = MasuImpl.NOT_BLACK;
-								}
-								if (wallDown != Wall.EXISTS) {
-									if (masu[yIndex + 1][xIndex] == MasuImpl.BLACK) {
-										return false;
-									}
-									masu[yIndex + 1][xIndex] = MasuImpl.NOT_BLACK;
-								}
-								if (wallLeft != Wall.EXISTS) {
-									if (masu[yIndex][xIndex - 1] == MasuImpl.BLACK) {
-										return false;
-									}
-									masu[yIndex][xIndex - 1] = MasuImpl.NOT_BLACK;
-								}
-							}
-							if (existsCount > 2) {
-								masu[yIndex][xIndex] = MasuImpl.BLACK;
-								if (wallUp == Wall.SPACE) {
-									tateWall[yIndex - 1][xIndex] = Wall.EXISTS;
-								}
-								if (wallRight == Wall.SPACE) {
-									yokoWall[yIndex][xIndex] = Wall.EXISTS;
-								}
-								if (wallDown == Wall.SPACE) {
-									tateWall[yIndex][xIndex] = Wall.EXISTS;
-								}
-								if (wallLeft == Wall.SPACE) {
-									yokoWall[yIndex][xIndex - 1] = Wall.EXISTS;
-								}
-							} else if (notExistsCount != 0) {
-								masu[yIndex][xIndex] = MasuImpl.NOT_BLACK;
 								if (notExistsCount == 2) {
 									if (wallUp == Wall.SPACE) {
 										tateWall[yIndex - 1][xIndex] = Wall.EXISTS;
@@ -910,6 +785,99 @@ public class YajilinSolver implements Solver {
 									}
 									if (wallLeft == Wall.SPACE) {
 										yokoWall[yIndex][xIndex - 1] = Wall.EXISTS;
+									}
+								} else if (existsCount == 2) {
+									if (wallUp == Wall.SPACE) {
+										if (masu[yIndex - 1][xIndex] == Masu.BLACK) {
+											return false;
+										}
+										tateWall[yIndex - 1][xIndex] = Wall.NOT_EXISTS;
+										masu[yIndex - 1][xIndex] = Masu.NOT_BLACK;
+									}
+									if (wallRight == Wall.SPACE) {
+										if (masu[yIndex][xIndex + 1] == Masu.BLACK) {
+											return false;
+										}
+										yokoWall[yIndex][xIndex] = Wall.NOT_EXISTS;
+										masu[yIndex][xIndex + 1] = Masu.NOT_BLACK;
+									}
+									if (wallDown == Wall.SPACE) {
+										if (masu[yIndex + 1][xIndex] == Masu.BLACK) {
+											return false;
+										}
+										tateWall[yIndex][xIndex] = Wall.NOT_EXISTS;
+										masu[yIndex + 1][xIndex] = Masu.NOT_BLACK;
+									}
+									if (wallLeft == Wall.SPACE) {
+										if (masu[yIndex][xIndex - 1] == Masu.BLACK) {
+											return false;
+										}
+										yokoWall[yIndex][xIndex - 1] = Wall.NOT_EXISTS;
+										masu[yIndex][xIndex - 1] = Masu.NOT_BLACK;
+									}
+								}
+							} else if (masu[yIndex][xIndex] == Masu.SPACE) {
+								// 自分が不確定マスなら壁は2マスか4マス
+								if ((existsCount == 3 && notExistsCount == 1)
+										|| notExistsCount > 2) {
+									return false;
+								}
+								if (existsCount == 2) {
+									// 壁が2個の場合、壁のない方の白マス確定(出口理論)
+									if (wallUp != Wall.EXISTS) {
+										if (masu[yIndex - 1][xIndex] == Masu.BLACK) {
+											return false;
+										}
+										masu[yIndex - 1][xIndex] = Masu.NOT_BLACK;
+									}
+									if (wallRight != Wall.EXISTS) {
+										if (masu[yIndex][xIndex + 1] == Masu.BLACK) {
+											return false;
+										}
+										masu[yIndex][xIndex + 1] = Masu.NOT_BLACK;
+									}
+									if (wallDown != Wall.EXISTS) {
+										if (masu[yIndex + 1][xIndex] == Masu.BLACK) {
+											return false;
+										}
+										masu[yIndex + 1][xIndex] = Masu.NOT_BLACK;
+									}
+									if (wallLeft != Wall.EXISTS) {
+										if (masu[yIndex][xIndex - 1] == Masu.BLACK) {
+											return false;
+										}
+										masu[yIndex][xIndex - 1] = Masu.NOT_BLACK;
+									}
+								}
+								if (existsCount > 2) {
+									masu[yIndex][xIndex] = Masu.BLACK;
+									if (wallUp == Wall.SPACE) {
+										tateWall[yIndex - 1][xIndex] = Wall.EXISTS;
+									}
+									if (wallRight == Wall.SPACE) {
+										yokoWall[yIndex][xIndex] = Wall.EXISTS;
+									}
+									if (wallDown == Wall.SPACE) {
+										tateWall[yIndex][xIndex] = Wall.EXISTS;
+									}
+									if (wallLeft == Wall.SPACE) {
+										yokoWall[yIndex][xIndex - 1] = Wall.EXISTS;
+									}
+								} else if (notExistsCount != 0) {
+									masu[yIndex][xIndex] = Masu.NOT_BLACK;
+									if (notExistsCount == 2) {
+										if (wallUp == Wall.SPACE) {
+											tateWall[yIndex - 1][xIndex] = Wall.EXISTS;
+										}
+										if (wallRight == Wall.SPACE) {
+											yokoWall[yIndex][xIndex] = Wall.EXISTS;
+										}
+										if (wallDown == Wall.SPACE) {
+											tateWall[yIndex][xIndex] = Wall.EXISTS;
+										}
+										if (wallLeft == Wall.SPACE) {
+											yokoWall[yIndex][xIndex - 1] = Wall.EXISTS;
+										}
 									}
 								}
 							}
@@ -927,7 +895,7 @@ public class YajilinSolver implements Solver {
 			Set<Position> whitePosSet = new HashSet<>();
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					if (masu[yIndex][xIndex] == MasuImpl.NOT_BLACK) {
+					if (arrows[yIndex][xIndex] == null && masu[yIndex][xIndex] == Masu.NOT_BLACK) {
 						Position whitePos = new Position(yIndex, xIndex);
 						if (whitePosSet.isEmpty()) {
 							whitePosSet.add(whitePos);
@@ -1061,7 +1029,7 @@ public class YajilinSolver implements Solver {
 					int spaceCnt = 0;
 					Position spacePos = null;
 					while (pivot.getyIndex() - 1 - idx >= 0 && pivot.getxIndex() != 0
-							&& masu[pivot.getyIndex() - 1 - idx][pivot.getxIndex()] != MasuImpl.BLACK) {
+							&& masu[pivot.getyIndex() - 1 - idx][pivot.getxIndex()] != Masu.BLACK) {
 						Position pos = new Position(pivot.getyIndex() - 1 - idx, pivot.getxIndex() - 1);
 						if (yokoWall[pos.getyIndex()][pos.getxIndex()] == Wall.NOT_EXISTS) {
 							whiteCnt++;
@@ -1080,7 +1048,7 @@ public class YajilinSolver implements Solver {
 					spaceCnt = 0;
 					spacePos = null;
 					while (pivot.getyIndex() - 1 - idx >= 0 && pivot.getxIndex() != getXLength() - 1
-							&& masu[pivot.getyIndex() - 1 - idx][pivot.getxIndex()] != MasuImpl.BLACK) {
+							&& masu[pivot.getyIndex() - 1 - idx][pivot.getxIndex()] != Masu.BLACK) {
 						Position pos = new Position(pivot.getyIndex() - 1 - idx, pivot.getxIndex());
 						if (yokoWall[pos.getyIndex()][pos.getxIndex()] == Wall.NOT_EXISTS) {
 							whiteCnt++;
@@ -1100,7 +1068,7 @@ public class YajilinSolver implements Solver {
 					spaceCnt = 0;
 					spacePos = null;
 					while (pivot.getyIndex() + 1 + idx < getYLength() && pivot.getxIndex() != 0
-							&& masu[pivot.getyIndex() + 1 + idx][pivot.getxIndex()] != MasuImpl.BLACK) {
+							&& masu[pivot.getyIndex() + 1 + idx][pivot.getxIndex()] != Masu.BLACK) {
 						Position pos = new Position(pivot.getyIndex() + 1 + idx, pivot.getxIndex() - 1);
 						if (yokoWall[pos.getyIndex()][pos.getxIndex()] == Wall.NOT_EXISTS) {
 							whiteCnt++;
@@ -1120,7 +1088,7 @@ public class YajilinSolver implements Solver {
 					spaceCnt = 0;
 					spacePos = null;
 					while (pivot.getyIndex() + 1 + idx < getYLength() && pivot.getxIndex() != getXLength() - 1
-							&& masu[pivot.getyIndex() + 1 + idx][pivot.getxIndex()] != MasuImpl.BLACK) {
+							&& masu[pivot.getyIndex() + 1 + idx][pivot.getxIndex()] != Masu.BLACK) {
 						Position pos = new Position(pivot.getyIndex() + 1 + idx, pivot.getxIndex());
 						if (yokoWall[pos.getyIndex()][pos.getxIndex()] == Wall.NOT_EXISTS) {
 							whiteCnt++;
@@ -1140,7 +1108,7 @@ public class YajilinSolver implements Solver {
 					spaceCnt = 0;
 					spacePos = null;
 					while (pivot.getxIndex() + 1 + idx < getXLength() && pivot.getyIndex() != 0
-							&& masu[pivot.getyIndex()][pivot.getxIndex() + 1 + idx] != MasuImpl.BLACK) {
+							&& masu[pivot.getyIndex()][pivot.getxIndex() + 1 + idx] != Masu.BLACK) {
 						Position pos = new Position(pivot.getyIndex() - 1, pivot.getxIndex() + 1 + idx);
 						if (tateWall[pos.getyIndex()][pos.getxIndex()] == Wall.NOT_EXISTS) {
 							whiteCnt++;
@@ -1160,7 +1128,7 @@ public class YajilinSolver implements Solver {
 					spaceCnt = 0;
 					spacePos = null;
 					while (pivot.getxIndex() + 1 + idx < getXLength() && pivot.getyIndex() != getYLength() - 1
-							&& masu[pivot.getyIndex()][pivot.getxIndex() + 1 + idx] != MasuImpl.BLACK) {
+							&& masu[pivot.getyIndex()][pivot.getxIndex() + 1 + idx] != Masu.BLACK) {
 						Position pos = new Position(pivot.getyIndex(), pivot.getxIndex() + 1 + idx);
 						if (tateWall[pos.getyIndex()][pos.getxIndex()] == Wall.NOT_EXISTS) {
 							whiteCnt++;
@@ -1180,7 +1148,7 @@ public class YajilinSolver implements Solver {
 					spaceCnt = 0;
 					spacePos = null;
 					while (pivot.getxIndex() - 1 - idx >= 0 && pivot.getyIndex() != 0
-							&& masu[pivot.getyIndex()][pivot.getxIndex() - 1 - idx] != MasuImpl.BLACK) {
+							&& masu[pivot.getyIndex()][pivot.getxIndex() - 1 - idx] != Masu.BLACK) {
 						Position pos = new Position(pivot.getyIndex() - 1, pivot.getxIndex() - 1 - idx);
 						if (tateWall[pos.getyIndex()][pos.getxIndex()] == Wall.NOT_EXISTS) {
 							whiteCnt++;
@@ -1200,7 +1168,7 @@ public class YajilinSolver implements Solver {
 					spaceCnt = 0;
 					spacePos = null;
 					while (pivot.getxIndex() - 1 - idx >= 0 && pivot.getyIndex() != getYLength() - 1
-							&& masu[pivot.getyIndex()][pivot.getxIndex() - 1 - idx] != MasuImpl.BLACK) {
+							&& masu[pivot.getyIndex()][pivot.getxIndex() - 1 - idx] != Masu.BLACK) {
 						Position pos = new Position(pivot.getyIndex(), pivot.getxIndex() - 1 - idx);
 						if (tateWall[pos.getyIndex()][pos.getxIndex()] == Wall.NOT_EXISTS) {
 							whiteCnt++;
@@ -1220,12 +1188,12 @@ public class YajilinSolver implements Solver {
 
 		private boolean oneOutSideCheck(Position pivot, int whiteCnt, int spaceCnt, Position spacePos, boolean isYoko) {
 			if (spaceCnt == 0 && whiteCnt % 2 == 1) {
-				if (masu[pivot.getyIndex()][pivot.getxIndex()] == MasuImpl.BLACK) {
+				if (masu[pivot.getyIndex()][pivot.getxIndex()] == Masu.BLACK) {
 					return false;
-				} else if (masu[pivot.getyIndex()][pivot.getxIndex()] == MasuImpl.SPACE) {
-					masu[pivot.getyIndex()][pivot.getxIndex()] = MasuImpl.NOT_BLACK;
+				} else if (masu[pivot.getyIndex()][pivot.getxIndex()] == Masu.SPACE) {
+					masu[pivot.getyIndex()][pivot.getxIndex()] = Masu.NOT_BLACK;
 				}
-			} else if (masu[pivot.getyIndex()][pivot.getxIndex()] == MasuImpl.BLACK && spaceCnt == 1) {
+			} else if (masu[pivot.getyIndex()][pivot.getxIndex()] == Masu.BLACK && spaceCnt == 1) {
 				if (whiteCnt % 2 == 1) {
 					if (isYoko) {
 						yokoWall[spacePos.getyIndex()][spacePos.getxIndex()] = Wall.NOT_EXISTS;
@@ -1246,7 +1214,7 @@ public class YajilinSolver implements Solver {
 		public boolean isSolved() {
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					if (masu[yIndex][xIndex] == MasuImpl.SPACE) {
+					if (masu[yIndex][xIndex] == Masu.SPACE) {
 						return false;
 					}
 				}
@@ -1325,27 +1293,27 @@ public class YajilinSolver implements Solver {
 		String str = field.getStateDump();
 		for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 			for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
-				if (field.masu[yIndex][xIndex] == MasuImpl.SPACE) {
+				if (field.masu[yIndex][xIndex] == Masu.SPACE) {
 					// 周囲に空白が少ない個所を優先して調査
-					Masu masuUp = yIndex == 0 ? MasuImpl.BLACK
+					Masu masuUp = yIndex == 0 ? Masu.BLACK
 							: field.masu[yIndex - 1][xIndex];
-					Masu masuRight = xIndex == field.getXLength() - 1 ? MasuImpl.BLACK
+					Masu masuRight = xIndex == field.getXLength() - 1 ? Masu.BLACK
 							: field.masu[yIndex][xIndex + 1];
-					Masu masuDown = yIndex == field.getYLength() - 1 ? MasuImpl.BLACK
+					Masu masuDown = yIndex == field.getYLength() - 1 ? Masu.BLACK
 							: field.masu[yIndex + 1][xIndex];
-					Masu masuLeft = xIndex == 0 ? MasuImpl.BLACK
+					Masu masuLeft = xIndex == 0 ? Masu.BLACK
 							: field.masu[yIndex][xIndex - 1];
 					int whiteCnt = 0;
-					if (masuUp == MasuImpl.SPACE) {
+					if (masuUp == Masu.SPACE) {
 						whiteCnt++;
 					}
-					if (masuRight == MasuImpl.SPACE) {
+					if (masuRight == Masu.SPACE) {
 						whiteCnt++;
 					}
-					if (masuDown == MasuImpl.SPACE) {
+					if (masuDown == Masu.SPACE) {
 						whiteCnt++;
 					}
-					if (masuLeft == MasuImpl.SPACE) {
+					if (masuLeft == Masu.SPACE) {
 						whiteCnt++;
 					}
 					if (whiteCnt > 3) {
@@ -1391,7 +1359,7 @@ public class YajilinSolver implements Solver {
 	 */
 	private boolean oneCandSolve(Field field, int yIndex, int xIndex, int recursive) {
 		Field virtual = new Field(field);
-		virtual.masu[yIndex][xIndex] = MasuImpl.BLACK;
+		virtual.masu[yIndex][xIndex] = Masu.BLACK;
 		boolean allowBlack = virtual.solveAndCheck();
 		if (allowBlack && recursive > 0) {
 			if (!candSolve(virtual, recursive - 1)) {
@@ -1399,7 +1367,7 @@ public class YajilinSolver implements Solver {
 			}
 		}
 		Field virtual2 = new Field(field);
-		virtual2.masu[yIndex][xIndex] = MasuImpl.NOT_BLACK;
+		virtual2.masu[yIndex][xIndex] = Masu.NOT_BLACK;
 		boolean allowNotBlack = virtual2.solveAndCheck();
 		if (allowNotBlack && recursive > 0) {
 			if (!candSolve(virtual2, recursive - 1)) {

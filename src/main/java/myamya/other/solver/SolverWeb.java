@@ -169,44 +169,48 @@ public class SolverWeb extends HttpServlet {
 							+ (field.getXLength() * baseSize + baseSize) + "\" >");
 			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
-					YajilinSolver.Masu oneMasu = field.getMasu()[yIndex][xIndex];
 					String str = "";
-					if (oneMasu.toString().equals("・")) {
-						Wall up = yIndex == 0 ? Wall.EXISTS : field.getTateWall()[yIndex - 1][xIndex];
-						Wall right = xIndex == field.getXLength() - 1 ? Wall.EXISTS
-								: field.getYokoWall()[yIndex][xIndex];
-						Wall down = yIndex == field.getYLength() - 1 ? Wall.EXISTS
-								: field.getTateWall()[yIndex][xIndex];
-						Wall left = xIndex == 0 ? Wall.EXISTS : field.getYokoWall()[yIndex][xIndex - 1];
-						if (up == Wall.NOT_EXISTS && right == Wall.NOT_EXISTS
-								&& down == Wall.EXISTS &&
-								left == Wall.EXISTS) {
-							str = "└";
-						} else if (up == Wall.NOT_EXISTS && right == Wall.EXISTS
-								&& down == Wall.NOT_EXISTS &&
-								left == Wall.EXISTS) {
-							str = "│";
-						} else if (up == Wall.NOT_EXISTS && right == Wall.EXISTS
-								&& down == Wall.EXISTS &&
-								left == Wall.NOT_EXISTS) {
-							str = "┘";
-						} else if (up == Wall.EXISTS && right == Wall.NOT_EXISTS
-								&& down == Wall.NOT_EXISTS &&
-								left == Wall.EXISTS) {
-							str = "┌";
-						} else if (up == Wall.EXISTS && right == Wall.NOT_EXISTS
-								&& down == Wall.EXISTS &&
-								left == Wall.NOT_EXISTS) {
-							str = "─";
-						} else if (up == Wall.EXISTS && right == Wall.EXISTS
-								&& down == Wall.NOT_EXISTS &&
-								left == Wall.NOT_EXISTS) {
-							str = "┐";
-						} else {
-							str = oneMasu.toStringWeb();
-						}
+					if (field.getArrows()[yIndex][xIndex] != null) {
+						str = field.getArrows()[yIndex][xIndex].toStringWeb();
 					} else {
-						str = oneMasu.toStringWeb();
+						Masu oneMasu = field.getMasu()[yIndex][xIndex];
+						if (oneMasu.toString().equals("・")) {
+							Wall up = yIndex == 0 ? Wall.EXISTS : field.getTateWall()[yIndex - 1][xIndex];
+							Wall right = xIndex == field.getXLength() - 1 ? Wall.EXISTS
+									: field.getYokoWall()[yIndex][xIndex];
+							Wall down = yIndex == field.getYLength() - 1 ? Wall.EXISTS
+									: field.getTateWall()[yIndex][xIndex];
+							Wall left = xIndex == 0 ? Wall.EXISTS : field.getYokoWall()[yIndex][xIndex - 1];
+							if (up == Wall.NOT_EXISTS && right == Wall.NOT_EXISTS
+									&& down == Wall.EXISTS &&
+									left == Wall.EXISTS) {
+								str = "└";
+							} else if (up == Wall.NOT_EXISTS && right == Wall.EXISTS
+									&& down == Wall.NOT_EXISTS &&
+									left == Wall.EXISTS) {
+								str = "│";
+							} else if (up == Wall.NOT_EXISTS && right == Wall.EXISTS
+									&& down == Wall.EXISTS &&
+									left == Wall.NOT_EXISTS) {
+								str = "┘";
+							} else if (up == Wall.EXISTS && right == Wall.NOT_EXISTS
+									&& down == Wall.NOT_EXISTS &&
+									left == Wall.EXISTS) {
+								str = "┌";
+							} else if (up == Wall.EXISTS && right == Wall.NOT_EXISTS
+									&& down == Wall.EXISTS &&
+									left == Wall.NOT_EXISTS) {
+								str = "─";
+							} else if (up == Wall.EXISTS && right == Wall.EXISTS
+									&& down == Wall.NOT_EXISTS &&
+									left == Wall.NOT_EXISTS) {
+								str = "┐";
+							} else {
+								str = oneMasu.toString();
+							}
+						} else {
+							str = oneMasu.toString();
+						}
 					}
 					sb.append("<text y=\"" + (yIndex * baseSize + baseSize)
 							+ "\" x=\""
