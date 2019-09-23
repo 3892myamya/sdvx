@@ -61,21 +61,33 @@ $(function() {
     });
     var showhide = function () {
         var type = $('#sel_type').val();
-        if (type == 'sudoku') {
+        if (type == 'sudoku' || type == 'akari' || type == 'slither' || type == 'creek' || type == 'gokigen' || type == 'tapa') {
             $('#lbl_pattern').show();
             $('#sel_pattern').show();
-            $('#lbl_size').hide();
-            $('#sel_size').hide();
-        } else if (type == 'akari' || type == 'slither' || type == 'creek' || type == 'gokigen' || type == 'tapa') {
-            $('#lbl_pattern').show();
-            $('#sel_pattern').show();
-            $('#lbl_size').show();
-            $('#sel_size').show();
         } else {
             $('#lbl_pattern').hide();
             $('#sel_pattern').hide();
-            $('#lbl_size').show();
-            $('#sel_size').show();
+        }
+        // この辺の書き方がいかにもJQuery的で古くさい…モダンFW使いたい…
+        if (type == 'sudoku'){
+            $('#sel_size_option_3').hide();
+            $('#sel_size_option_5').hide();
+            $('#sel_size_option_7').hide();
+            $('#sel_size_option_8').hide();
+            $('#sel_size_option_10').hide();
+            if ($('#sel_size').val() < 6){
+            	$('#sel_size').val(4);
+            } else if ($('#sel_size').val() < 9){
+            	$('#sel_size').val(6);
+            } else {
+            	$('#sel_size').val(9);
+            }
+        } else {
+            $('#sel_size_option_3').show();
+            $('#sel_size_option_5').show();
+            $('#sel_size_option_7').show();
+            $('#sel_size_option_8').show();
+            $('#sel_size_option_10').show();
         }
         if (type == 'tapa'){
             $('#sel_option_6').hide();

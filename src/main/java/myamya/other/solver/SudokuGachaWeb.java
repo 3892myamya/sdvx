@@ -29,7 +29,7 @@ public class SudokuGachaWeb extends HttpServlet {
 
 	abstract static class GeneratorThlead extends Thread {
 		private GeneratorResult result = new GeneratorResult(
-				"申し訳ありません。時間内に抽選が完了しませんでした。再度お試しください。");
+				"申し訳ありません。時間内に抽選が完了しませんでした。時間をおいて再度お試しください。");
 
 		@Override
 		public void run() {
@@ -40,15 +40,19 @@ public class SudokuGachaWeb extends HttpServlet {
 	}
 
 	static class SudokuGeneratorThlead extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
 		protected final int pattern;
 
-		SudokuGeneratorThlead(int pattern) {
+		SudokuGeneratorThlead(int height, int width, int pattern) {
+			this.height = height;
+			this.width = width;
 			this.pattern = pattern;
 		}
 
 		@Override
 		Generator getGenerator() {
-			return new SudokuGenerator(pattern);
+			return new SudokuGenerator(height, width, HintPattern.getByVal(pattern, height, width));
 		}
 
 	}
@@ -216,41 +220,39 @@ public class SudokuGachaWeb extends HttpServlet {
 		try {
 			String type = request.getParameter("type");
 			GeneratorThlead t;
+			int height = Integer.parseInt(request.getParameter("height"));
+			int width = Integer.parseInt(request.getParameter("width"));
+			if (height > 10 || width > 10) {
+				throw new IllegalArgumentException();
+			}
 			if (type.equals("sudoku")) {
 				int pattern = Integer.parseInt(request.getParameter("pattern"));
-				t = new SudokuGeneratorThlead(pattern);
+				t = new SudokuGeneratorThlead(height, width, pattern);
+			} else if (type.equals("nurimisaki")) {
+				t = new NurimisakiGeneratorThlead(height, width);
+			} else if (type.equals("shakashaka")) {
+				t = new ShakashakaGeneratorThlead(height, width);
+			} else if (type.equals("gokigen")) {
+				int pattern = Integer.parseInt(request.getParameter("pattern"));
+				t = new GokigenGeneratorThlead(height, width, pattern);
+			} else if (type.equals("creek")) {
+				int pattern = Integer.parseInt(request.getParameter("pattern"));
+				t = new CreekGeneratorThlead(height, width, pattern);
+			} else if (type.equals("tasquare")) {
+				t = new TasquareGeneratorThlead(height, width);
+			} else if (type.equals("reflect")) {
+				t = new ReflectGeneratorThlead(height, width);
+			} else if (type.equals("slither")) {
+				int pattern = Integer.parseInt(request.getParameter("pattern"));
+				t = new SlitherGeneratorThlead(height, width, pattern);
+			} else if (type.equals("akari")) {
+				int pattern = Integer.parseInt(request.getParameter("pattern"));
+				t = new AkariGeneratorThlead(height, width, pattern);
+			} else if (type.equals("tapa")) {
+				int pattern = Integer.parseInt(request.getParameter("pattern"));
+				t = new TapaGeneratorThlead(height, width, pattern);
 			} else {
-				int height = Integer.parseInt(request.getParameter("height"));
-				int width = Integer.parseInt(request.getParameter("width"));
-				if (height > 10 || width > 10) {
-					throw new IllegalArgumentException();
-				}
-				if (type.equals("nurimisaki")) {
-					t = new NurimisakiGeneratorThlead(height, width);
-				} else if (type.equals("shakashaka")) {
-					t = new ShakashakaGeneratorThlead(height, width);
-				} else if (type.equals("gokigen")) {
-					int pattern = Integer.parseInt(request.getParameter("pattern"));
-					t = new GokigenGeneratorThlead(height, width, pattern);
-				} else if (type.equals("creek")) {
-					int pattern = Integer.parseInt(request.getParameter("pattern"));
-					t = new CreekGeneratorThlead(height, width, pattern);
-				} else if (type.equals("tasquare")) {
-					t = new TasquareGeneratorThlead(height, width);
-				} else if (type.equals("reflect")) {
-					t = new ReflectGeneratorThlead(height, width);
-				} else if (type.equals("slither")) {
-					int pattern = Integer.parseInt(request.getParameter("pattern"));
-					t = new SlitherGeneratorThlead(height, width, pattern);
-				} else if (type.equals("akari")) {
-					int pattern = Integer.parseInt(request.getParameter("pattern"));
-					t = new AkariGeneratorThlead(height, width, pattern);
-				} else if (type.equals("tapa")) {
-					int pattern = Integer.parseInt(request.getParameter("pattern"));
-					t = new TapaGeneratorThlead(height, width, pattern);
-				} else {
-					throw new IllegalArgumentException();
-				}
+				throw new IllegalArgumentException();
 			}
 			t.start();
 			t.join(28000);
@@ -260,12 +262,15 @@ public class SudokuGachaWeb extends HttpServlet {
 			resultMap.put("url", t.result.getUrl());
 			resultMap.put("txt", t.result.getTxt());
 			resultMap.put("level", t.result.getLevel());
-		} catch (Exception e) {
+		} catch (
+
+		Exception e) {
 			e.printStackTrace();
 			resultMap.put("status", "予期せぬエラーが発生しました。");
 			resultMap.put("result", "");
 		}
-		try (PrintWriter out = response.getWriter()) {
+		try (
+				PrintWriter out = response.getWriter()) {
 			out.print(JSON.encode(resultMap));
 		}
 	}

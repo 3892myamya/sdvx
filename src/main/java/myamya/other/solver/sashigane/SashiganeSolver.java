@@ -65,7 +65,7 @@ public class SashiganeSolver implements Solver {
 		}
 
 		public static void main(String[] args) {
-			new SashiganeGenerator(4, 4).generate();
+			new SashiganeGenerator(10, 10).generate();
 		}
 
 		@Override

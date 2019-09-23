@@ -2,7 +2,6 @@ package myamya.other.solver.sudoku;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -10,185 +9,25 @@ import java.util.Set;
 import myamya.other.solver.Common.GeneratorResult;
 import myamya.other.solver.Common.Position;
 import myamya.other.solver.Generator;
+import myamya.other.solver.HintPattern;
 import myamya.other.solver.Solver;
 
 public class SudokuSolver implements Solver {
 
 	public static class SudokuGenerator implements Generator {
 
-		enum HintPattern {
-			NONE(0, 81) {
-				@Override
-				Set<Position> getPosSet(int num) {
-					Set<Position> result = new HashSet<>();
-					int yIndex = num / 9;
-					int xIndex = num % 9;
-					result.add(new Position(yIndex, xIndex));
-					return result;
-				}
-			},
-			POINT(1, 41) {
-				@Override
-				Set<Position> getPosSet(int num) {
-					Set<Position> result = new HashSet<>();
-					int yIndex = num / 9;
-					int xIndex = num % 9;
-					result.add(new Position(yIndex, xIndex));
-					result.add(new Position(8 - yIndex, 8 - xIndex));
-					return result;
-				}
-			},
-			HORIZONAL(2, 45) {
-				@Override
-				Set<Position> getPosSet(int num) {
-					Set<Position> result = new HashSet<>();
-					int yIndex = num / 5;
-					int xIndex = num % 5;
-					result.add(new Position(yIndex, xIndex));
-					result.add(new Position(yIndex, 8 - xIndex));
-					return result;
-				}
-			},
-			VARTICAL(3, 45) {
-				@Override
-				Set<Position> getPosSet(int num) {
-					Set<Position> result = new HashSet<>();
-					int yIndex = num % 5;
-					int xIndex = num / 5;
-					result.add(new Position(yIndex, xIndex));
-					result.add(new Position(8 - yIndex, xIndex));
-					return result;
-				}
-			},
-			DESC_SLASH(4, 45) {
-				@Override
-				Set<Position> getPosSet(int num) {
-					Set<Position> result = new HashSet<>();
-					int wknum;
-					if (num < 9) {
-						wknum = num;
-					} else if (num < 17) {
-						wknum = num + 1;
-					} else if (num < 24) {
-						wknum = num + 3;
-					} else if (num < 30) {
-						wknum = num + 6;
-					} else if (num < 35) {
-						wknum = num + 10;
-					} else if (num < 39) {
-						wknum = num + 15;
-					} else if (num < 42) {
-						wknum = num + 21;
-					} else if (num < 44) {
-						wknum = num + 28;
-					} else {
-						wknum = num + 36;
-					}
-					int yIndex = wknum / 9;
-					int xIndex = wknum % 9;
-					result.add(new Position(yIndex, xIndex));
-					result.add(new Position(xIndex, yIndex));
-					return result;
-				}
-			},
-			ASC_SLASH(5, 45) {
-				@Override
-				Set<Position> getPosSet(int num) {
-					Set<Position> result = new HashSet<>();
-					int wknum;
-					if (num < 9) {
-						wknum = num;
-					} else if (num < 17) {
-						wknum = num;
-					} else if (num < 24) {
-						wknum = num + 1;
-					} else if (num < 30) {
-						wknum = num + 3;
-					} else if (num < 35) {
-						wknum = num + 6;
-					} else if (num < 39) {
-						wknum = num + 10;
-					} else if (num < 42) {
-						wknum = num + 15;
-					} else if (num < 44) {
-						wknum = num + 21;
-					} else {
-						wknum = num + 28;
-					}
-					int yIndex = wknum / 9;
-					int xIndex = wknum % 9;
-					result.add(new Position(yIndex, xIndex));
-					result.add(new Position(8 - xIndex, 8 - yIndex));
-					return result;
-				}
-			},
-			ALL(6, 25) {
-				@Override
-				Set<Position> getPosSet(int num) {
-					Set<Position> result = new HashSet<>();
-					int yIndex = num / 5;
-					int xIndex = num % 5;
-					result.add(new Position(yIndex, xIndex));
-					result.add(new Position(8 - yIndex, xIndex));
-					result.add(new Position(yIndex, 8 - xIndex));
-					result.add(new Position(8 - yIndex, 8 - xIndex));
-					return result;
-				}
-			},
-			MANJI(7, 21) {
-				@Override
-				Set<Position> getPosSet(int num) {
-					Set<Position> result = new HashSet<>();
-					if (num == 20) {
-						result.add(new Position(4, 4));
-					} else {
-						int yIndex = num / 4;
-						int xIndex = num % 4;
-						result.add(new Position(yIndex, xIndex));
-						result.add(new Position(8 - xIndex, yIndex));
-						result.add(new Position(8 - yIndex, 8 - xIndex));
-						result.add(new Position(xIndex, 8 - yIndex));
-					}
-					return result;
-				}
-			};
-			abstract Set<Position> getPosSet(int num);
+		private final int height;
+		private final int width;
+		private final HintPattern hintPattern;
 
-			int val;
-			int count;
-
-			HintPattern(int val, int count) {
-				this.val = val;
-				this.count = count;
-			}
-
-			public int getCount() {
-				return count;
-			}
-
-			public static HintPattern getByVal(int val) {
-				for (HintPattern one : HintPattern.values()) {
-					if (one.val == val) {
-						return one;
-					}
-				}
-				return null;
-			}
-
-			public int getVal() {
-				return val;
-			}
-
-		}
-
-		private final int pattern;
-
-		public SudokuGenerator(int pattern) {
-			this.pattern = pattern;
+		public SudokuGenerator(int height, int width, HintPattern hintPattern) {
+			this.height = height;
+			this.width = width;
+			this.hintPattern = hintPattern;
 		}
 
 		public static void main(String[] args) {
-			new SudokuGenerator(HintPattern.POINT.getVal()).generate();
+			new SudokuGenerator(4, 4, HintPattern.getByVal(7, 4, 4)).generate();
 		}
 
 		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
@@ -196,91 +35,98 @@ public class SudokuSolver implements Solver {
 
 		@Override
 		public GeneratorResult generate() {
-			HintPattern hintPattern = HintPattern.getByVal(pattern);
-			SudokuSolver.Field wkField = new SudokuSolver.Field(9, 9);
+			SudokuSolver.ExtendedField wkField = new SudokuSolver.ExtendedField(height, width);
 			int index = 0;
-			long start = System.nanoTime();
-			while (!wkField.isSolved()) {
-				int yIndex = index / 9;
-				int xIndex = index % 9;
-				if (wkField.numbersCand[yIndex][xIndex].size() != 0) {
-					int numIdx = (int) (Math.random() * wkField.numbersCand[yIndex][xIndex].size());
-					SudokuSolver.Field virtual = new SudokuSolver.Field(wkField);
-					virtual.numbersCand[yIndex][xIndex] = new ArrayList<>();
-					virtual.numbersCand[yIndex][xIndex].add(wkField.numbersCand[yIndex][xIndex].get(numIdx));
-					if (!virtual.solveAndCheck()) {
-						// 破綻したら0から作り直す。
-						wkField = new SudokuSolver.Field(9, 9);
-						index = 0;
-						continue;
-					} else {
-						wkField.numbersCand = virtual.numbersCand;
-					}
-				}
-				index++;
-			}
-			List<Integer> numIdxList = new ArrayList<>();
-			for (int i = 0; i < hintPattern.getCount(); i++) {
-				numIdxList.add(i);
-			}
-			Collections.shuffle(numIdxList);
 			int level = 0;
-			for (Integer numIdx : numIdxList) {
-				SudokuSolver.Field virtual = new SudokuSolver.Field(wkField);
-				for (Position pos : hintPattern.getPosSet(numIdx)) {
-					virtual.numbersCand[pos.getyIndex()][pos.getxIndex()] = new ArrayList<>();
-					for (int number = 0; number < wkField.getYLength(); number++) {
-						virtual.numbersCand[pos.getyIndex()][pos.getxIndex()].add(number + 1);
+			long start = System.nanoTime();
+			while (true) {
+				while (!wkField.isSolved()) {
+					int yIndex = index / width;
+					int xIndex = index % width;
+					if (wkField.numbersCand[yIndex][xIndex].size() != 0) {
+						int numIdx = (int) (Math.random() * wkField.numbersCand[yIndex][xIndex].size());
+						SudokuSolver.ExtendedField virtual = new SudokuSolver.ExtendedField(wkField);
+						virtual.numbersCand[yIndex][xIndex] = new ArrayList<>();
+						virtual.numbersCand[yIndex][xIndex].add(wkField.numbersCand[yIndex][xIndex].get(numIdx));
+						if (!virtual.solveAndCheck()) {
+							// 破綻したら0から作り直す。
+							wkField = new SudokuSolver.ExtendedField(height, width);
+							index = 0;
+							continue;
+						} else {
+							wkField.numbersCand = virtual.numbersCand;
+						}
 					}
+					index++;
 				}
-				int solveResult = new SudokuSolver(virtual) {
-					public int solve2() {
-						while (!field.isSolved()) {
-							String befStr = field.getStateDump();
-							if (!field.solveAndCheck()) {
-								return -1;
-							}
-							count = count + field.cnt;
-							field.cnt = 0;
-							if (field.getStateDump().equals(befStr)) {
-								if (!candSolve(field, 0)) {
+				List<Set<Position>> numberPosSetList = hintPattern.getPosSetList();
+				Collections.shuffle(numberPosSetList);
+				boolean isAdvance = false;
+				for (Set<Position> numberPosSet : numberPosSetList) {
+					SudokuSolver.ExtendedField virtual = new SudokuSolver.ExtendedField(wkField);
+					for (Position numberPos : numberPosSet) {
+						virtual.numbersCand[numberPos.getyIndex()][numberPos.getxIndex()] = new ArrayList<>();
+						for (int number = 0; number < wkField.getYLength(); number++) {
+							virtual.numbersCand[numberPos.getyIndex()][numberPos.getxIndex()].add(number + 1);
+						}
+					}
+					int solveResult = new SudokuSolver(virtual) {
+						public int solve2() {
+							while (!field.isSolved()) {
+								String befStr = field.getStateDump();
+								if (!field.solveAndCheck()) {
 									return -1;
 								}
+								count = count + field.cnt;
+								field.cnt = 0;
 								if (field.getStateDump().equals(befStr)) {
-									if (!candSolve(field, 1)) {
+									if (!candSolve(field, 0)) {
 										return -1;
 									}
 									if (field.getStateDump().equals(befStr)) {
-										return -1;
+										if (!candSolve(field, 1)) {
+											return -1;
+										}
+										if (field.getStateDump().equals(befStr)) {
+											return -1;
+										}
 									}
 								}
 							}
+							int level = (int) Math.sqrt(count) - 10;
+							return (level < 1 ? 1 : level);
 						}
-						int level = (int) Math.sqrt(count) - 10;
-						return (level < 1 ? 1 : level);
-					}
 
-					@Override
-					protected boolean candSolve(Field field, int recursive) {
-						if (this.count >= 100000) {
-							return false;
-						} else {
-							return super.candSolve(field, recursive);
+						@Override
+						protected boolean candSolve(Field field, int recursive) {
+							if (this.count >= 100000) {
+								return false;
+							} else {
+								return super.candSolve(field, recursive);
+							}
 						}
-					}
-				}.solve2();
-				if (solveResult != -1) {
-					for (Position pos : hintPattern.getPosSet(numIdx)) {
-						wkField.numbersCand[pos.getyIndex()][pos.getxIndex()] = new ArrayList<>();
-						for (int number = 0; number < wkField.getYLength(); number++) {
-							wkField.numbersCand[pos.getyIndex()][pos.getxIndex()].add(number + 1);
+					}.solve2();
+					if (solveResult != -1) {
+						for (Position numberPos : numberPosSet) {
+							wkField.numbersCand[numberPos.getyIndex()][numberPos.getxIndex()] = new ArrayList<>();
+							for (int number = 0; number < wkField.getYLength(); number++) {
+								wkField.numbersCand[numberPos.getyIndex()][numberPos.getxIndex()].add(number + 1);
+							}
 						}
 						level = solveResult;
+						isAdvance = true;
 					}
 				}
+				if (isAdvance) {
+					break;
+				} else {
+					// 数字が減らなければ作りなおし
+					wkField = new SudokuSolver.ExtendedField(height, width);
+					index = 0;
+				}
 			}
-			Field field = new Field(wkField.numbersCand);
-			String status = "Lv" + level + "の問題を獲得！(ヒント数" + field.getHintCount() + ")";
+			SudokuSolver.ExtendedField field = new SudokuSolver.ExtendedField(wkField.numbersCand);
+			String status = "Lv:" + level + "の問題を獲得！(ヒント数" + field.getHintCount() + ")";
 			String url = field.getPuzPreURL();
 			String link = "<a href=\"" + url + "\" target=\"_blank\">ぱずぷれv3で解く</a>";
 			StringBuilder sb = new StringBuilder();
@@ -290,7 +136,6 @@ public class SudokuSolver implements Solver {
 					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
 							+ "height=\"" + (field.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
 							+ (field.getXLength() * baseSize + 2 * baseSize) + "\" >");
-
 			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
 					if (field.getNumbers()[yIndex][xIndex] != null) {
@@ -316,7 +161,7 @@ public class SudokuSolver implements Solver {
 			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 				for (int xIndex = -1; xIndex < field.getXLength(); xIndex++) {
 					boolean oneYokoWall = xIndex == -1 || xIndex == field.getXLength() - 1
-							|| xIndex % 3 == 2;
+							|| xIndex % field.getRoomWidth() == field.getRoomWidth() - 1;
 					sb.append("<line y1=\""
 							+ (yIndex * baseSize + margin)
 							+ "\" x1=\""
@@ -339,7 +184,7 @@ public class SudokuSolver implements Solver {
 			for (int yIndex = -1; yIndex < field.getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
 					boolean oneTateWall = yIndex == -1 || yIndex == field.getYLength() - 1
-							|| yIndex % 3 == 2;
+							|| yIndex % field.getRoomHeight() == field.getRoomHeight() - 1;
 					sb.append("<line y1=\""
 							+ (yIndex * baseSize + baseSize + margin)
 							+ "\" x1=\""
@@ -650,7 +495,7 @@ public class SudokuSolver implements Solver {
 
 		public String getPuzPreURL() {
 			StringBuilder sb = new StringBuilder();
-			sb.append("http://pzv.jp/p.html?sudoku/9/9/");
+			sb.append("http://pzv.jp/p.html?sudoku/" + getXLength() + "/" + getYLength() + "/");
 			int interval = 0;
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
@@ -715,6 +560,19 @@ public class SudokuSolver implements Solver {
 		// 1部屋の幅
 		private final int roomWidth;
 
+		/**
+		 * プレーンな盤面生成
+		 */
+		public ExtendedField(int height, int width) {
+			super(height, width);
+			roomHeight = getYLength() == 4 ? 2
+					: getYLength() == 6 ? 2
+							: getYLength() == 9 ? 3 : getYLength() == 16 ? 4 : getYLength() == 25 ? 5 : 0;
+			roomWidth = getXLength() == 4 ? 2
+					: getXLength() == 6 ? 3
+							: getXLength() == 9 ? 3 : getXLength() == 16 ? 4 : getXLength() == 25 ? 5 : 0;
+		}
+
 		public ExtendedField(int height, int width, String param) {
 			super(height, width, param);
 			roomHeight = getYLength() == 4 ? 2
@@ -729,6 +587,16 @@ public class SudokuSolver implements Solver {
 			super(other);
 			roomHeight = other.roomHeight;
 			roomWidth = other.roomWidth;
+		}
+
+		public ExtendedField(List<Integer>[][] numbersCand) {
+			super(numbersCand);
+			roomHeight = getYLength() == 4 ? 2
+					: getYLength() == 6 ? 2
+							: getYLength() == 9 ? 3 : getYLength() == 16 ? 4 : getYLength() == 25 ? 5 : 0;
+			roomWidth = getXLength() == 4 ? 2
+					: getXLength() == 6 ? 3
+							: getXLength() == 9 ? 3 : getXLength() == 16 ? 4 : getXLength() == 25 ? 5 : 0;
 		}
 
 		@Override
@@ -762,9 +630,9 @@ public class SudokuSolver implements Solver {
 		}
 	}
 
-	public SudokuSolver(Field field) {
-		this.field = new Field(field);
-		this.isExtended = false;
+	public SudokuSolver(ExtendedField field) {
+		this.field = new ExtendedField(field);
+		this.isExtended = true;
 	}
 
 	public Field getField() {
