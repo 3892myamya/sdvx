@@ -8,15 +8,10 @@ import myamya.other.solver.Solver;
 
 public class SashiganeSolver implements Solver {
 
-	public interface Mark {
-		@Override
-		public String toString();
-	}
-
 	/**
 	 * 矢印のマス
 	 */
-	public static class Arrow implements Mark {
+	public static class Arrow {
 		private final Direction direction;
 
 		public Arrow(Direction direction) {
@@ -36,7 +31,7 @@ public class SashiganeSolver implements Solver {
 	/**
 	 * 丸のマス
 	 */
-	public static class Circle implements Mark {
+	public static class Circle {
 
 		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
 		private static final String FULL_NUMS = "○①②③④⑤⑥⑦⑧⑨";
@@ -73,8 +68,10 @@ public class SashiganeSolver implements Solver {
 		static final String ALPHABET_FROM_G = "ghij";
 		static final String ALPHABET_FROM_K = "klmnopqrstuvwxyz";
 
-		// 約物の情報
-		private Mark[][] mark;
+		// 矢印の情報
+		private Arrow[][] arrows;
+		// 丸の情報
+		private Circle[][] circles;
 		// 横をふさぐ壁が存在するか
 		// 0,0 = trueなら、0,0と0,1の間に壁があるという意味
 		private Wall[][] yokoWall;
@@ -82,8 +79,12 @@ public class SashiganeSolver implements Solver {
 		// 0,0 = trueなら、0,0と1,0の間に壁があるという意味
 		private Wall[][] tateWall;
 
-		public Mark[][] getMark() {
-			return mark;
+		public Arrow[][] getArrows() {
+			return arrows;
+		}
+
+		public Circle[][] getCircles() {
+			return circles;
 		}
 
 		public Wall[][] getYokoWall() {
@@ -95,15 +96,16 @@ public class SashiganeSolver implements Solver {
 		}
 
 		public int getYLength() {
-			return mark.length;
+			return arrows.length;
 		}
 
 		public int getXLength() {
-			return mark[0].length;
+			return arrows[0].length;
 		}
 
 		public Field(int height, int width, String param) {
-			mark = new Mark[height][width];
+			arrows = new Arrow[height][width];
+			circles = new Circle[height][width];
 			yokoWall = new Wall[height][width - 1];
 			tateWall = new Wall[height - 1][width];
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
@@ -127,7 +129,7 @@ public class SashiganeSolver implements Solver {
 					if (arrowInt != -1) {
 						Direction direction = Direction.getByNum(arrowInt + 1);
 						Position pos = new Position(index / getXLength(), index % getXLength());
-						mark[pos.getyIndex()][pos.getxIndex()] = new Arrow(direction);
+						arrows[pos.getyIndex()][pos.getxIndex()] = new Arrow(direction);
 						if (pos.getyIndex() != 0) {
 							if (direction != Direction.UP) {
 								tateWall[pos.getyIndex() - 1][pos.getxIndex()] = Wall.EXISTS;
@@ -178,7 +180,7 @@ public class SashiganeSolver implements Solver {
 								cnt = Integer.parseInt(String.valueOf(ch), 16);
 							}
 							Position pos = new Position(index / getXLength(), index % getXLength());
-							mark[pos.getyIndex()][pos.getxIndex()] = new Circle(cnt);
+							circles[pos.getyIndex()][pos.getxIndex()] = new Circle(cnt);
 						} catch (NumberFormatException e) {
 							// 関係ない文字が来ていた場合は1文字進めるため何もしない
 						}
@@ -189,10 +191,10 @@ public class SashiganeSolver implements Solver {
 			// 連続する○の間に壁をいれる。これを先にやると何かと都合がいいので。
 			for (int yIndex = 0; yIndex < getYLength() - 1; yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength() - 1; xIndex++) {
-					if (mark[yIndex][xIndex] instanceof Circle && mark[yIndex][xIndex + 1] instanceof Circle) {
+					if (circles[yIndex][xIndex] != null && circles[yIndex][xIndex + 1] != null) {
 						yokoWall[yIndex][xIndex] = Wall.EXISTS;
 					}
-					if (mark[yIndex][xIndex] instanceof Circle && mark[yIndex + 1][xIndex] instanceof Circle) {
+					if (circles[yIndex][xIndex] != null && circles[yIndex + 1][xIndex] != null) {
 						tateWall[yIndex][xIndex] = Wall.EXISTS;
 					}
 				}
@@ -200,7 +202,8 @@ public class SashiganeSolver implements Solver {
 		}
 
 		public Field(Field other) {
-			mark = other.mark;
+			arrows = other.arrows;
+			circles = other.circles;
 			yokoWall = new Wall[other.getYLength()][other.getXLength() - 1];
 			tateWall = new Wall[other.getYLength() - 1][other.getXLength()];
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
@@ -225,9 +228,10 @@ public class SashiganeSolver implements Solver {
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				sb.append("□");
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					Mark oneMark = mark[yIndex][xIndex];
-					if (oneMark != null) {
-						sb.append(oneMark.toString());
+					if (arrows[yIndex][xIndex] != null) {
+						sb.append(arrows[yIndex][xIndex].toString());
+					} else if (circles[yIndex][xIndex] != null) {
+						sb.append(circles[yIndex][xIndex].toString());
 					} else {
 						sb.append("　");
 					}
@@ -304,7 +308,7 @@ public class SashiganeSolver implements Solver {
 					} else if (wallLeft == Wall.NOT_EXISTS) {
 						notExistsCount++;
 					}
-					if (mark[yIndex][xIndex] instanceof Circle) {
+					if (circles[yIndex][xIndex] != null) {
 						if ((wallUp == Wall.EXISTS && wallDown == Wall.EXISTS)
 								|| (wallRight == Wall.EXISTS && wallLeft == Wall.EXISTS)) {
 							return false;
@@ -398,7 +402,7 @@ public class SashiganeSolver implements Solver {
 		private boolean curveSolve() {
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					if (!(mark[yIndex][xIndex] instanceof Arrow)) {
+					if (arrows[yIndex][xIndex] == null) {
 						int notExistsCount = 0;
 						boolean toUp = false, toRight = false, toDown = false, toLeft = false;
 						Wall wallUp = yIndex == 0 ? Wall.EXISTS : tateWall[yIndex - 1][xIndex];
@@ -540,7 +544,7 @@ public class SashiganeSolver implements Solver {
 						if (toUp) {
 							for (int i = 1;; i++) {
 								if (yIndex - i == 0 || tateWall[yIndex - i - 1][xIndex] == Wall.EXISTS
-										|| mark[yIndex - i][xIndex] instanceof Circle) {
+										|| circles[yIndex - i][xIndex] != null) {
 									boolean canRight = true, canLeft = true;
 									if (xIndex == getXLength() - 1 || yokoWall[yIndex - i][xIndex] == Wall.EXISTS) {
 										canRight = false;
@@ -584,7 +588,7 @@ public class SashiganeSolver implements Solver {
 						if (toRight) {
 							for (int i = 1;; i++) {
 								if (xIndex + i == getXLength() - 1 || yokoWall[yIndex][xIndex + i] == Wall.EXISTS
-										|| mark[yIndex][xIndex + i] instanceof Circle) {
+										|| circles[yIndex][xIndex + i] != null) {
 									boolean canUp = true, canDown = true;
 									if (yIndex == 0 || tateWall[yIndex - 1][xIndex + i] == Wall.EXISTS) {
 										canUp = false;
@@ -628,7 +632,7 @@ public class SashiganeSolver implements Solver {
 						if (toDown) {
 							for (int i = 1;; i++) {
 								if (yIndex + i == getYLength() - 1 || tateWall[yIndex + i][xIndex] == Wall.EXISTS
-										|| mark[yIndex + i][xIndex] instanceof Circle) {
+										|| circles[yIndex + i][xIndex] != null) {
 									boolean canRight = true, canLeft = true;
 									if (xIndex == getXLength() - 1 || yokoWall[yIndex + i][xIndex] == Wall.EXISTS) {
 										canRight = false;
@@ -672,7 +676,7 @@ public class SashiganeSolver implements Solver {
 						if (toLeft) {
 							for (int i = 1;; i++) {
 								if (xIndex - i == 0 || yokoWall[yIndex][xIndex - i - 1] == Wall.EXISTS
-										|| mark[yIndex][xIndex - i] instanceof Circle) {
+										|| circles[yIndex][xIndex - i] != null) {
 									boolean canUp = true, canDown = true;
 									if (yIndex == 0 || tateWall[yIndex - 1][xIndex - i] == Wall.EXISTS) {
 										canUp = false;
@@ -726,7 +730,7 @@ public class SashiganeSolver implements Solver {
 									if (curveX != 0 && yokoWall[curveY - i][curveX - 1] == Wall.NOT_EXISTS) {
 										return false;
 									}
-									if (mark[curveY - i][curveX] instanceof Circle) {
+									if (circles[curveY - i][curveX] != null) {
 										return false;
 									}
 									if (curveY - i == 0 || tateWall[curveY - i - 1][curveX] != Wall.NOT_EXISTS) {
@@ -741,7 +745,7 @@ public class SashiganeSolver implements Solver {
 									if (curveY != 0 && tateWall[curveY - 1][curveX + i] == Wall.NOT_EXISTS) {
 										return false;
 									}
-									if (mark[curveY][curveX + i] instanceof Circle) {
+									if (circles[curveY][curveX + i] != null) {
 										return false;
 									}
 									if (curveX + i == getXLength() - 1
@@ -757,7 +761,7 @@ public class SashiganeSolver implements Solver {
 									if (curveX != 0 && yokoWall[curveY + i][curveX - 1] == Wall.NOT_EXISTS) {
 										return false;
 									}
-									if (mark[curveY + i][curveX] instanceof Circle) {
+									if (circles[curveY + i][curveX] != null) {
 										return false;
 									}
 									if (curveY + i == getYLength() - 1
@@ -773,7 +777,7 @@ public class SashiganeSolver implements Solver {
 									if (curveY != 0 && tateWall[curveY - 1][curveX - i] == Wall.NOT_EXISTS) {
 										return false;
 									}
-									if (mark[curveY][curveX - i] instanceof Circle) {
+									if (circles[curveY][curveX - i] != null) {
 										return false;
 									}
 									if (curveX - i == 0 || yokoWall[curveY][curveX - i - 1] != Wall.NOT_EXISTS) {
@@ -797,8 +801,8 @@ public class SashiganeSolver implements Solver {
 		public boolean limitSolve() {
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					if (mark[yIndex][xIndex] instanceof Circle) {
-						Circle circle = (Circle) mark[yIndex][xIndex];
+					if (circles[yIndex][xIndex] != null) {
+						Circle circle = circles[yIndex][xIndex];
 						if (circle.getCnt() == -1) {
 							continue;
 						}
@@ -807,7 +811,7 @@ public class SashiganeSolver implements Solver {
 							if (tateWall[targetY][xIndex] == Wall.EXISTS) {
 								break;
 							}
-							if (mark[targetY][xIndex] instanceof Circle) {
+							if (circles[targetY][xIndex] != null) {
 								break;
 							}
 							upSpaceCnt++;
@@ -817,7 +821,7 @@ public class SashiganeSolver implements Solver {
 							if (yokoWall[yIndex][targetX - 1] == Wall.EXISTS) {
 								break;
 							}
-							if (mark[yIndex][targetX] instanceof Circle) {
+							if (circles[yIndex][targetX] != null) {
 								break;
 							}
 							rightSpaceCnt++;
@@ -827,7 +831,7 @@ public class SashiganeSolver implements Solver {
 							if (tateWall[targetY - 1][xIndex] == Wall.EXISTS) {
 								break;
 							}
-							if (mark[targetY][xIndex] instanceof Circle) {
+							if (circles[targetY][xIndex] != null) {
 								break;
 							}
 							downSpaceCnt++;
@@ -837,7 +841,7 @@ public class SashiganeSolver implements Solver {
 							if (yokoWall[yIndex][targetX] == Wall.EXISTS) {
 								break;
 							}
-							if (mark[yIndex][targetX] instanceof Circle) {
+							if (circles[yIndex][targetX] != null) {
 								break;
 							}
 							leftSpaceCnt++;
@@ -945,8 +949,8 @@ public class SashiganeSolver implements Solver {
 		public boolean numberSolve() {
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					if (mark[yIndex][xIndex] instanceof Circle) {
-						Circle circle = (Circle) mark[yIndex][xIndex];
+					if (circles[yIndex][xIndex] != null) {
+						Circle circle = circles[yIndex][xIndex];
 						if (circle.getCnt() == -1) {
 							continue;
 						}
@@ -1077,7 +1081,7 @@ public class SashiganeSolver implements Solver {
 		int height = Integer.parseInt(params[params.length - 2]);
 		int width = Integer.parseInt(params[params.length - 3]);
 		String param = params[params.length - 1];
-		System.out.println(new SashiganeSolver(height, width, param).solve());
+		System.out.println(new SashiganeSolverNeo(height, width, param).solve());
 	}
 
 	@Override

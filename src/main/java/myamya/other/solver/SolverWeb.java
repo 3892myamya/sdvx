@@ -79,7 +79,6 @@ import myamya.other.solver.ringring.RingringSolver;
 import myamya.other.solver.ripple.RippleSolver;
 import myamya.other.solver.roma.RomaSolver;
 import myamya.other.solver.sashigane.SashiganeSolver;
-import myamya.other.solver.sashigane.SashiganeSolver.Mark;
 import myamya.other.solver.satogaeri.SatogaeriSolver;
 import myamya.other.solver.scrin.ScrinSolver;
 import myamya.other.solver.shakashaka.ShakashakaSolver;
@@ -2091,8 +2090,7 @@ public class SolverWeb extends HttpServlet {
 							+ (field.getXLength() * baseSize + 2 * baseSize) + "\" >");
 			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
-					Mark oneMark = field.getMark()[yIndex][xIndex];
-					if (oneMark instanceof SashiganeSolver.Circle) {
+					if (field.getCircles()[yIndex][xIndex] != null) {
 						sb.append("<circle cy=\"" + (yIndex * baseSize + (baseSize / 2) + margin)
 								+ "\" cx=\""
 								+ (xIndex * baseSize + baseSize + (baseSize / 2))
@@ -2100,8 +2098,8 @@ public class SolverWeb extends HttpServlet {
 								+ (baseSize / 2 - 2)
 								+ "\" fill=\"white\", stroke=\"black\">"
 								+ "</circle>");
-						if (((SashiganeSolver.Circle) oneMark).getCnt() != -1) {
-							String numberStr = String.valueOf(((SashiganeSolver.Circle) oneMark).getCnt());
+						if (field.getCircles()[yIndex][xIndex].getCnt() != -1) {
+							String numberStr = String.valueOf(field.getCircles()[yIndex][xIndex].getCnt());
 							int index = HALF_NUMS.indexOf(numberStr);
 							String masuStr = null;
 							if (index >= 0) {
@@ -2120,11 +2118,10 @@ public class SolverWeb extends HttpServlet {
 									+ masuStr
 									+ "</text>");
 						}
-					} else if (oneMark != null) {
+					} else if (field.getArrows()[yIndex][xIndex] != null) {
 						int lengthAdjust = 0;
-						if (oneMark instanceof SashiganeSolver.Arrow
-								&& (((SashiganeSolver.Arrow) oneMark).getDirection() == Direction.UP
-										|| ((SashiganeSolver.Arrow) oneMark).getDirection() == Direction.DOWN)) {
+						if (field.getArrows()[yIndex][xIndex].getDirection() == Direction.UP
+								|| field.getArrows()[yIndex][xIndex].getDirection() == Direction.DOWN) {
 							lengthAdjust = 6;
 						}
 						sb.append("<text y=\"" + (yIndex * baseSize + baseSize + margin - 4)
@@ -2135,7 +2132,7 @@ public class SolverWeb extends HttpServlet {
 								+ "\" textLength=\""
 								+ (baseSize - 2 - lengthAdjust)
 								+ "\" lengthAdjust=\"spacingAndGlyphs\">"
-								+ oneMark.toString()
+								+ field.getArrows()[yIndex][xIndex].toString()
 								+ "</text>");
 					}
 				}
