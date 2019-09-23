@@ -250,7 +250,8 @@ public class MasyuSolver implements Solver {
 					for (Position numberPos : numberPosList) {
 						MasyuSolver.Field virtual = new MasyuSolver.Field(wkField, true);
 						virtual.pearl[numberPos.getyIndex()][numberPos.getxIndex()] = null;
-						int solveResult = new MasyuSolverForGenerator(virtual, 5000).solve2();
+						// TODO もっとでかくしたい
+						int solveResult = new MasyuSolverForGenerator(virtual, 4000).solve2();
 						if (solveResult != -1) {
 							wkField.pearl[numberPos.getyIndex()][numberPos.getxIndex()] = null;
 							level = solveResult;
@@ -259,8 +260,7 @@ public class MasyuSolver implements Solver {
 					break;
 				}
 			}
-			level = (int) Math.sqrt(level / 3) + 1;
-
+			level = (int) Math.sqrt(level * 2 / 3) + 1;
 			String status = "Lv:" + level + "の問題を獲得！(ヒント数：" + wkField.getHintCount() + ")";
 			String url = wkField.getPuzPreURL();
 			String link = "<a href=\"" + url + "\" target=\"_blank\">ぱずぷれv3で解く</a>";
@@ -1229,11 +1229,11 @@ public class MasyuSolver implements Solver {
 			}
 		}
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
-		System.out.println("難易度:" + (count));
+		System.out.println("難易度:" + (count * 2));
 		System.out.println(field);
-		int level = (int) Math.sqrt(count / 3) + 1;
+		int level = (int) Math.sqrt(count * 2 / 3) + 1;
 		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count).toString() + "(Lv:" + level + ")";
+				+ Difficulty.getByCount(count * 2).toString() + "(Lv:" + level + ")";
 	}
 
 	/**

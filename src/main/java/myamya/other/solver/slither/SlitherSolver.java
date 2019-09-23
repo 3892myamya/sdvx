@@ -70,7 +70,7 @@ public class SlitherSolver implements Solver {
 		}
 
 		public static void main(String[] args) {
-			new SlitherGenerator(10, 10, HintPattern.getByVal(7, 10, 10)).generate();
+			new SlitherGenerator(10, 10, HintPattern.getByVal(0, 10, 10)).generate();
 		}
 
 		@Override
