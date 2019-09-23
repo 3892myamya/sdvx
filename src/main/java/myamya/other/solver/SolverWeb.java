@@ -2120,8 +2120,8 @@ public class SolverWeb extends HttpServlet {
 						}
 					} else if (field.getArrows()[yIndex][xIndex] != null) {
 						int lengthAdjust = 0;
-						if (field.getArrows()[yIndex][xIndex].getDirection() == Direction.UP
-								|| field.getArrows()[yIndex][xIndex].getDirection() == Direction.DOWN) {
+						if (field.getArrows()[yIndex][xIndex] == Direction.UP
+								|| field.getArrows()[yIndex][xIndex] == Direction.DOWN) {
 							lengthAdjust = 6;
 						}
 						sb.append("<text y=\"" + (yIndex * baseSize + baseSize + margin - 4)
@@ -2132,7 +2132,7 @@ public class SolverWeb extends HttpServlet {
 								+ "\" textLength=\""
 								+ (baseSize - 2 - lengthAdjust)
 								+ "\" lengthAdjust=\"spacingAndGlyphs\">"
-								+ field.getArrows()[yIndex][xIndex].toString()
+								+ field.getArrows()[yIndex][xIndex].getDirectString()
 								+ "</text>");
 					}
 				}

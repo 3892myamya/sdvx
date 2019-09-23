@@ -431,9 +431,7 @@ public class GeradewegSolver implements Solver {
 			System.out.println(wkField.getHintCount());
 			System.out.println(wkField);
 			return new GeneratorResult(status, sb.toString(), link, url, level, "");
-
 		}
-
 	}
 
 	public static class Field {
