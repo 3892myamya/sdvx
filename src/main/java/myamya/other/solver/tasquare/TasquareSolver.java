@@ -600,7 +600,7 @@ public class TasquareSolver implements Solver {
 		/**
 		 * 各種チェックを1セット実行
 		 */
-		private boolean solveAndCheck() {
+		protected boolean solveAndCheck() {
 			if (!sikakuSolve()) {
 				return false;
 			}

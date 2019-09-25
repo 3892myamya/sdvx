@@ -299,8 +299,8 @@ public class NurimisakiSolver implements Solver {
 					break;
 				}
 			}
-			level = (int) Math.sqrt(level) + 1;
-			String status = "Lv" + level + "の問題を獲得！(数字/岬：" + wkField.getHintCount().split("/")[0] + "/"
+			level = (int) Math.sqrt(level * 5 / 3) + 1;
+			String status = "Lv:" + level + "の問題を獲得！(数字/岬：" + wkField.getHintCount().split("/")[0] + "/"
 					+ wkField.getHintCount().split("/")[1] + ")";
 			String url = wkField.getPuzPreURL();
 			String link = "<a href=\"" + url + "\" target=\"_blank\">ぱずぷれv3で解く</a>";
@@ -1465,11 +1465,11 @@ public class NurimisakiSolver implements Solver {
 			}
 		}
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
-		System.out.println("難易度:" + (count * 3));
+		System.out.println("難易度:" + (count * 5));
 		System.out.println(field);
-		int level = (int) Math.sqrt(count) + 1;
+		int level = (int) Math.sqrt(count * 5 / 3) + 1;
 		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count * 3).toString() + "(Lv:" + level + ")";
+				+ Difficulty.getByCount(count * 5).toString() + "(Lv:" + level + ")";
 	}
 
 	/**

@@ -69,37 +69,56 @@ $(function() {
             $('#sel_pattern').hide();
         }
         // この辺の書き方がいかにもJQuery的で古くさい…モダンFW使いたい…
+        var nowSelSizeVal = $('#sel_size').val();
+        $('#sel_size').empty();
         if (type == 'sudoku'){
-            $('#sel_size_option_3').hide();
-            $('#sel_size_option_5').hide();
-            $('#sel_size_option_7').hide();
-            $('#sel_size_option_8').hide();
-            $('#sel_size_option_10').hide();
-            if ($('#sel_size').val() < 6){
+            $('#sel_size').append('<option value="4">4 x 4</option>');
+            $('#sel_size').append('<option value="6">6 x 6</option>');
+            $('#sel_size').append('<option value="9">9 x 9</option>');
+            if (nowSelSizeVal < 6){
             	$('#sel_size').val(4);
-            } else if ($('#sel_size').val() < 9){
+            } else if (nowSelSizeVal < 9){
             	$('#sel_size').val(6);
             } else {
             	$('#sel_size').val(9);
             }
         } else {
-            $('#sel_size_option_3').show();
-            $('#sel_size_option_5').show();
-            $('#sel_size_option_7').show();
-            $('#sel_size_option_8').show();
-            $('#sel_size_option_10').show();
+            $('#sel_size').append('<option value="3">3 x 3</option>');
+            $('#sel_size').append('<option value="4">4 x 4</option>');
+            $('#sel_size').append('<option value="5">5 x 5</option>');
+            $('#sel_size').append('<option value="6">6 x 6</option>');
+            $('#sel_size').append('<option value="7">7 x 7</option>');
+            $('#sel_size').append('<option value="8">8 x 8</option>');
+            $('#sel_size').append('<option value="9">9 x 9</option>');
+            $('#sel_size').append('<option value="10">10 x 10</option>');
+        	$('#sel_size').val(nowSelSizeVal);
         }
+        var nowSelPetternVal = $('#sel_pattern').val();
+        $('#sel_pattern').empty();
         if (type == 'tapa'){
-            $('#sel_option_6').hide();
-            $('#sel_option_7').hide();
-            if ($('#sel_pattern').val() == 6){
+        	$('#sel_pattern').append('<option value="0">フリー</option>');
+        	$('#sel_pattern').append('<option value="1">点対称</option>');
+        	$('#sel_pattern').append('<option value="2">左右対称</option>');
+        	$('#sel_pattern').append('<option value="3">上下対称</option>');
+        	$('#sel_pattern').append('<option value="4">＼対称</option>');
+        	$('#sel_pattern').append('<option value="5">／対称</option>');
+            if (nowSelPetternVal== 6){
             	$('#sel_pattern').val(2);
-            } else if ($('#sel_pattern').val() == 7){
+            } else if (nowSelPetternVal == 7){
             	$('#sel_pattern').val(1);
+            } else {
+               	$('#sel_pattern').val(nowSelPetternVal);
             }
         } else {
-            $('#sel_option_6').show();
-            $('#sel_option_7').show();
+        	$('#sel_pattern').append('<option value="0">フリー</option>');
+        	$('#sel_pattern').append('<option value="1">点対称</option>');
+        	$('#sel_pattern').append('<option value="2">左右対称</option>');
+        	$('#sel_pattern').append('<option value="3">上下対称</option>');
+        	$('#sel_pattern').append('<option value="4">＼対称</option>');
+        	$('#sel_pattern').append('<option value="5">／対称</option>');
+        	$('#sel_pattern').append('<option value="6">上下左右対称</option>');
+        	$('#sel_pattern').append('<option value="7">卍型</option>');
+          	$('#sel_pattern').val(nowSelPetternVal);
         }
         var oneRule = ruleMap[type];
         if (oneRule !== undefined){
