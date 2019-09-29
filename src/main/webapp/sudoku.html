@@ -12,9 +12,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ペンシルパズルガチャ(ペンパガチャ)</title>
     <meta name="description" content="ペンシルパズルガチャ(ペンパガチャ)は自動生成されたペンシルパズルの問題がゲットできるガチャです。引いた問題はぱずぷれv3さんで解いたりTwitterでシェア可能です。あなたは高レベルのレア問をゲットできるか？"/>
-    <link rel="stylesheet" href="css/sudoku.css?ver=20190923"/>
+    <link rel="stylesheet" href="css/jsgrid.min.css"/>
+    <link rel="stylesheet" href="css/jsgrid-theme.min.css"/>
+    <link rel="stylesheet" href="css/sudoku.css?ver=20190929"/>
     <script src="js/jquery-3.3.1.min.js"></script>
-    <script src="js/sudoku.js?ver=20190924"></script>
+    <script src="js/jsgrid.min.js"></script>
+    <script src="js/sudoku.js?ver=20190930"></script>
 </head>
 <body>
 <div id="div_title">ペンシルパズルガチャ<span style="font-size: xx-small;">(旧：数独ガチャ)</span></div>
@@ -23,6 +26,7 @@
 <select id="sel_type" name="sel_type">
 	<option value="creek">クリークガチャ</option>
 	<option value="gokigen">ごきげんななめガチャ</option>
+	<option value="sashigane">さしがねガチャ</option>
 	<option value="shakashaka">シャカシャカガチャ</option>
 	<option value="sudoku">数独ガチャ</option>
 	<option value="slither">スリザーリンクガチャ</option>
@@ -65,20 +69,27 @@
 
 <div id="div_result">
 </div>
-<div id="div_link">
+<div id="div_link" style="font-size: large;">
 </div>
 <div id="div_tweet">
 <a id="tweetbtn" href="https://twitter.com/intent/tweet?hashtags=ペンパガチャ&text=ペンシルパズルの問題がゲットできるガチャです。&tw_p=tweetbutton&url=https%3a%2f%2ft%2eco%2fGg5hFCjLwP" target="_blank" rel="nofollow">
 <img id="tweetpng" src="tweetbtn.png" width="80" height="20">
 </a>
 </div>
+<hr>
 <div id="div_rule" style="font-size: x-small;">
 <a id="a_rule" href="" target="_blank"></a>
 </div>
+<hr>
+<div id="div_history" style="font-size: small;">
+<label id="lbl_history">あなたのガチャ履歴(最大20回分)</label>
+<button type="button" id="btn_clear">履歴をクリア</button>
+<div id="grid"></div>
+</div>
 <div>
+<hr>
 <input type="text" id="edt_if" name="edt_if" disabled/>
 </div>
-<hr>
 <div style="font-size: x-small;">
 ※お気づきの点やご要望は<a href="https://twitter.com/3892myamya/" target="_blank">@3892myamya</a>まで。
 </div>

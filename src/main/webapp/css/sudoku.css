@@ -28,3 +28,30 @@ div{
 #edt_if{
   width: 250px;
 }
+
+#grid {
+	margin-top: 2px;
+    max-width: 500px;
+}
+
+.jsgrid-header-row>.jsgrid-header-cell {
+    background: #d9d9ff;
+}
+
+.jsgrid-grid-header {
+    overflow-y: auto;
+}
+
+.jsgrid-grid-body {
+    overflow-y: auto;
+}
+
+.jsgrid-header-cell {
+    font-size:.8em;
+    padding:.2em;
+}
+
+.jsgrid-cell {
+    font-size:.8em;
+    padding:.2em;
+}
