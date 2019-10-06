@@ -84,11 +84,15 @@ public class BuildingSolver implements Solver {
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
 					numbersCand[yIndex][xIndex] = new ArrayList<>();
-					for (int i = 1; i <= getYLength() || i <= getXLength(); i++) {
+					for (int i = 1; i <= getMaxNumCand(); i++) {
 						numbersCand[yIndex][xIndex].add(i);
 					}
 				}
 			}
+		}
+
+		public int getMaxNumCand() {
+			return getYLength() > getXLength() ? getYLength() : getXLength();
 		}
 
 		@SuppressWarnings("unchecked")
@@ -279,54 +283,126 @@ public class BuildingSolver implements Solver {
 		}
 
 		/**
-		 * 外周数字は、その方向から順に数字を見て、そこまでの最大数字よりも
-		 * 大きくなった回数を示す。それを踏まえたうえで候補の除外を行う。
+		 * 外周数字を見て明らかに破綻している場合falseを返す。
 		 */
 		private boolean hintSolve() {
-			for (int x = 0; x < upHints.length; x++) {
+			for (int x = 0; x < getXLength(); x++) {
 				Integer upHint = upHints[x];
 				if (upHint != null) {
-					int minmaxHeight = 0;
-					int maxmaxHeight = 0;
-					int seeCnt = 0;
-					int notSeeCnt = 0;
-					for (int y = 0; y < numbersCand[x].length; y++) {
-						List<Integer> oneCand = numbersCand[x][y];
-						if (upHint == seeCnt) {
-							// これ以上見えてはいけない場合、maxHeightを超える候補を消す。
-							for (Iterator<Integer> iterator = oneCand.iterator(); iterator.hasNext();) {
-								int cand = (Integer) iterator.next();
-								if (cand > maxmaxHeight) {
-									iterator.remove();
-								}
+					int fixMaxHeight = 0;
+					int minSeeCnt = 0;
+					int maxSeeCnt = 0;
+					for (int y = 0; y < getYLength(); y++) {
+						if (numbersCand[y][x].size() == 1) {
+							if (fixMaxHeight < numbersCand[y][x].get(0)) {
+								fixMaxHeight = numbersCand[y][x].get(0);
+								minSeeCnt++;
+								maxSeeCnt++;
 							}
-							if (oneCand.isEmpty()) {
-								return false;
+						} else {
+							// 1ではなくなった時点で抜ける。
+							if (fixMaxHeight < getYLength()) {
+								// 最大の高さのビルが登場していなければ1足す
+								minSeeCnt++;
 							}
+							// 残りマス数か許容高さのうち少ないほうを足す
+							int masu = getYLength() - y;
+							int height = getMaxNumCand() - fixMaxHeight;
+							maxSeeCnt = maxSeeCnt + (masu < height ? masu : height);
+							break;
 						}
-						if (upHint == getYLength() - notSeeCnt) {
-							// ここ以降全部見えなくていはいけない場合、maxheightに満たない候補を消す。
-							for (Iterator<Integer> iterator = oneCand.iterator(); iterator.hasNext();) {
-								int cand = (Integer) iterator.next();
-								if (cand < minmaxHeight) {
-									iterator.remove();
-								}
+					}
+					if (minSeeCnt > upHint || maxSeeCnt < upHint) {
+						return false;
+					}
+				}
+				Integer downHint = downHints[x];
+				if (downHint != null) {
+					int fixMaxHeight = 0;
+					int minSeeCnt = 0;
+					int maxSeeCnt = 0;
+					for (int y = getYLength() - 1; y >= 0; y--) {
+						if (numbersCand[y][x].size() == 1) {
+							if (fixMaxHeight < numbersCand[y][x].get(0)) {
+								fixMaxHeight = numbersCand[y][x].get(0);
+								minSeeCnt++;
+								maxSeeCnt++;
 							}
-							if (oneCand.isEmpty()) {
-								return false;
+						} else {
+							// 1ではなくなった時点で抜ける。
+							if (fixMaxHeight < getYLength()) {
+								// 最大の高さのビルが登場していなければ1足す
+								minSeeCnt++;
 							}
+							// 残りマス数か許容高さのうち少ないほうを足す
+							int masu = y + 1;
+							int height = getMaxNumCand() - fixMaxHeight;
+							maxSeeCnt = maxSeeCnt + (masu < height ? masu : height);
+							break;
 						}
-						// そのマスの候補の一番小さい値が現在の最大値を上回った場合、
-						// 確定で見えると判定し、最大値を上書きする。
-						if (minmaxHeight < oneCand.get(0)) {
-							minmaxHeight = oneCand.get(0);
-							maxmaxHeight = oneCand.get(oneCand.size() - 1);
-							seeCnt++;
-						} else if (minmaxHeight > oneCand.get(oneCand.size() - 1)) {
-							// そのマスの候補の一番大きい値が現在の最大値を下回った場合、
-							// 確定で見えないと判定する
-							notSeeCnt++;
+					}
+					if (minSeeCnt > downHint || maxSeeCnt < downHint) {
+						return false;
+					}
+				}
+			}
+			for (int y = 0; y < getYLength(); y++) {
+				Integer leftHint = leftHints[y];
+				if (leftHint != null) {
+					int fixMaxHeight = 0;
+					int minSeeCnt = 0;
+					int maxSeeCnt = 0;
+					for (int x = 0; x < getXLength(); x++) {
+						if (numbersCand[y][x].size() == 1) {
+							if (fixMaxHeight < numbersCand[y][x].get(0)) {
+								fixMaxHeight = numbersCand[y][x].get(0);
+								minSeeCnt++;
+								maxSeeCnt++;
+							}
+						} else {
+							// 1ではなくなった時点で抜ける。
+							if (fixMaxHeight < getXLength()) {
+								// 最大の高さのビルが登場していなければ1足す
+								minSeeCnt++;
+							}
+							// 残りマス数か許容高さのうち少ないほうを足す
+							int masu = getXLength() - x;
+							int height = getMaxNumCand() - fixMaxHeight;
+							maxSeeCnt = maxSeeCnt + (masu < height ? masu : height);
+							break;
 						}
+					}
+					if (minSeeCnt > leftHint || maxSeeCnt < leftHint) {
+						return false;
+					}
+				}
+				Integer rightHint = rightHints[y];
+				if (rightHint != null) {
+					int fixMaxHeight = 0;
+					int minSeeCnt = 0;
+					int maxSeeCnt = 0;
+					for (int x = getXLength() - 1; x >= 0; x--) {
+						if (numbersCand[y][x].size() == 1) {
+							if (fixMaxHeight < numbersCand[y][x].get(0)) {
+								fixMaxHeight = numbersCand[y][x].get(0);
+								minSeeCnt++;
+								maxSeeCnt++;
+							}
+						} else {
+							// 1ではなくなった時点で抜ける。
+							if (fixMaxHeight < getXLength()) {
+								// 最大の高さのビルが登場していなければ1足す
+								minSeeCnt++;
+							}
+							// 残りマス数か許容高さのうち少ないほうを足す
+							int masu = x + 1;
+							int height = getMaxNumCand() - fixMaxHeight;
+							maxSeeCnt = maxSeeCnt + (masu < height ? masu : height);
+							break;
+						}
+					}
+					if (minSeeCnt > rightHint || maxSeeCnt < rightHint) {
+						return false;
 					}
 				}
 			}
@@ -375,7 +451,7 @@ public class BuildingSolver implements Solver {
 	}
 
 	public static void main(String[] args) {
-		String url = "https://puzz.link/p?building/6/6/h512m32l256g"; //urlを入れれば試せる
+		String url = ""; //urlを入れれば試せる
 		String[] params = url.split("/");
 		int height = Integer.parseInt(params[params.length - 2]);
 		int width = Integer.parseInt(params[params.length - 3]);
@@ -385,6 +461,7 @@ public class BuildingSolver implements Solver {
 
 	@Override
 	public String solve() {
+		System.out.println(field);
 		long start = System.nanoTime();
 		while (!field.isSolved()) {
 			System.out.println(field);
@@ -417,10 +494,10 @@ public class BuildingSolver implements Solver {
 			}
 		}
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
-		System.out.println("難易度:" + (count * 50));
+		System.out.println("難易度:" + (count));
 		System.out.println(field);
 		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count * 50).toString();
+				+ Difficulty.getByCount(count).toString();
 	}
 
 	/**
@@ -447,6 +524,17 @@ public class BuildingSolver implements Solver {
 							if (!arrowCand) {
 								iterator.remove();
 							}
+							//							Field virtual2 = new Field(field);
+							//							virtual2.numbersCand[yIndex][xIndex].remove(new Integer(oneCand));
+							//							boolean notArrowCand = virtual2.solveAndCheck();
+							//							if (notArrowCand && recursive > 0) {
+							//								notArrowCand = candSolve(virtual2, recursive - 1);
+							//							}
+							//							if (!notArrowCand) {
+							//								field.numbersCand[yIndex][xIndex].clear();
+							//								field.numbersCand[yIndex][xIndex].add(oneCand);
+							//								break;
+							//							}
 						}
 						if (field.numbersCand[yIndex][xIndex].size() == 0) {
 							return false;
