@@ -10,6 +10,7 @@ var ruleMap = {
 	slither : {name: "スリザーリンク", url:"https://www.nikoli.co.jp/ja/puzzles/slitherlink/",source:"ニコリ公式"},
 	tapa : {name: "Tapa", url:"http://indi.s58.xrea.com/tapa/",source:"連続発破保管庫さん"},
 	sashigane : {name: "さしがね", url:"https://www.nikoli.co.jp/ja/puzzles/sashigane/",source:"ニコリ公式"},
+	masyu : {name: "ましゅ", url:"https://www.nikoli.co.jp/ja/puzzles/masyu/",source:"ニコリ公式"},
 }
 
 var option = {

@@ -103,7 +103,7 @@ public class TasquareSolver implements Solver {
 					Sikaku sikaku = iterator.next();
 					int sikakuLength = (int) Math.sqrt(sikaku.getAreaSize());
 					int fieldLength = height < width ? height : width;
-					sikakuLength = sikakuLength == 1 ? fieldLength / 3 : sikakuLength;
+					sikakuLength = sikakuLength == 1 ? fieldLength / 4 : sikakuLength;
 					int fieldSize = (int) Math.pow(fieldLength - 1, 4);
 					int isOkRange = (int) Math.pow(fieldLength - sikakuLength, 4);
 					if (isOkRange < Math.random() * fieldSize) {
