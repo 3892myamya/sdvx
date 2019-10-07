@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Set;
 
 import myamya.other.solver.Common.Difficulty;
-import myamya.other.solver.Common.Direction;
 import myamya.other.solver.Common.Masu;
 import myamya.other.solver.Common.Position;
 import myamya.other.solver.Solver;
@@ -316,86 +315,47 @@ public class ChoconaSolver implements Solver {
 		 * 長方形にできなかった場合はfalseを返す。
 		 */
 		public boolean rectSolve() {
-			Set<Position> whitePosSet = new HashSet<>();
-			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
-				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					if (masu[yIndex][xIndex] == Masu.BLACK) {
-						whitePosSet.add(new Position(yIndex, xIndex));
+			boolean advance = false;
+			for (int yIndex = 0; yIndex < getYLength() - 1; yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength() - 1; xIndex++) {
+					Masu masu1 = masu[yIndex][xIndex];
+					Masu masu2 = masu[yIndex][xIndex + 1];
+					Masu masu3 = masu[yIndex + 1][xIndex];
+					Masu masu4 = masu[yIndex + 1][xIndex + 1];
+					if (masu1 == Masu.BLACK && masu2 == Masu.BLACK && masu3 == Masu.BLACK && masu4 == Masu.NOT_BLACK) {
+						return false;
 					}
-				}
-			}
-			while (!whitePosSet.isEmpty()) {
-				Position typicalWhitePos = new ArrayList<>(whitePosSet).get(0);
-				Set<Position> continuePosSet = new HashSet<>();
-				continuePosSet.add(typicalWhitePos);
-				setContinueBlackPosSet(typicalWhitePos, continuePosSet, null);
-				int minY = getYLength() - 1;
-				int maxY = 0;
-				int minX = getXLength() - 1;
-				int maxX = 0;
-				for (Position pos : continuePosSet) {
-					if (pos.getyIndex() < minY) {
-						minY = pos.getyIndex();
+					if (masu1 == Masu.BLACK && masu2 == Masu.BLACK && masu3 == Masu.NOT_BLACK && masu4 == Masu.BLACK) {
+						return false;
 					}
-					if (pos.getyIndex() > maxY) {
-						maxY = pos.getyIndex();
+					if (masu1 == Masu.BLACK && masu2 == Masu.NOT_BLACK && masu3 == Masu.BLACK && masu4 == Masu.BLACK) {
+						return false;
 					}
-					if (pos.getxIndex() < minX) {
-						minX = pos.getxIndex();
+					if (masu1 == Masu.NOT_BLACK && masu2 == Masu.BLACK && masu3 == Masu.BLACK && masu4 == Masu.BLACK) {
+						return false;
 					}
-					if (pos.getxIndex() > maxX) {
-						maxX = pos.getxIndex();
+					if (masu1 == Masu.BLACK && masu2 == Masu.BLACK && masu3 == Masu.BLACK && masu4 == Masu.SPACE) {
+						advance = true;
+						masu[yIndex + 1][xIndex + 1] = Masu.BLACK;
 					}
-				}
-				for (int yIndex = minY; yIndex <= maxY; yIndex++) {
-					for (int xIndex = minX; xIndex <= maxX; xIndex++) {
-						if (masu[yIndex][xIndex] == Masu.NOT_BLACK) {
-							return false;
-						}
+					if (masu1 == Masu.BLACK && masu2 == Masu.BLACK && masu3 == Masu.SPACE && masu4 == Masu.BLACK) {
+						advance = true;
+						masu[yIndex + 1][xIndex] = Masu.BLACK;
+					}
+					if (masu1 == Masu.BLACK && masu2 == Masu.SPACE && masu3 == Masu.BLACK && masu4 == Masu.BLACK) {
+						advance = true;
+						masu[yIndex][xIndex + 1] = Masu.BLACK;
+					}
+					if (masu1 == Masu.SPACE && masu2 == Masu.BLACK && masu3 == Masu.BLACK && masu4 == Masu.BLACK) {
+						advance = true;
 						masu[yIndex][xIndex] = Masu.BLACK;
 					}
 				}
-				whitePosSet.removeAll(continuePosSet);
+			}
+			if (advance) {
+				return rectSolve();
 			}
 			return true;
-		}
-
-		/**
-		 * posを起点に上下左右に黒確定マスを無制限につなげていく。
-		 */
-		private void setContinueBlackPosSet(Position pos, Set<Position> continuePosSet, Direction from) {
-			if (pos.getyIndex() != 0 && from != Direction.UP) {
-				Position nextPos = new Position(pos.getyIndex() - 1, pos.getxIndex());
-				if (masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.BLACK
-						&& !continuePosSet.contains(nextPos)) {
-					continuePosSet.add(nextPos);
-					setContinueBlackPosSet(nextPos, continuePosSet, Direction.DOWN);
-				}
-			}
-			if (pos.getxIndex() != getXLength() - 1 && from != Direction.RIGHT) {
-				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() + 1);
-				if (masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.BLACK
-						&& !continuePosSet.contains(nextPos)) {
-					continuePosSet.add(nextPos);
-					setContinueBlackPosSet(nextPos, continuePosSet, Direction.LEFT);
-				}
-			}
-			if (pos.getyIndex() != getYLength() - 1 && from != Direction.DOWN) {
-				Position nextPos = new Position(pos.getyIndex() + 1, pos.getxIndex());
-				if (masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.BLACK
-						&& !continuePosSet.contains(nextPos)) {
-					continuePosSet.add(nextPos);
-					setContinueBlackPosSet(nextPos, continuePosSet, Direction.UP);
-				}
-			}
-			if (pos.getxIndex() != 0 && from != Direction.LEFT) {
-				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() - 1);
-				if (masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.BLACK
-						&& !continuePosSet.contains(nextPos)) {
-					continuePosSet.add(nextPos);
-					setContinueBlackPosSet(nextPos, continuePosSet, Direction.RIGHT);
-				}
-			}
 		}
 
 		/**
@@ -488,7 +448,7 @@ public class ChoconaSolver implements Solver {
 	}
 
 	public static void main(String[] args) {
-		String url = ""; //urlを入れれば試せる
+		String url = "https://puzz.link/p?chocona/20/20/gl96i4cdagrcd1n0o0633of67gqof1v51bu0o7c1gri01jl03730c6618e6aqmsgr5d1mlsa4ml48j5s6jtk9fvrvs2cvh82e00130026db0gcj1800cj0g73o00gs0o801f667pr7uehtvsnsfr9b90455052131320h-78h34g0j45g32h1g0g15h3h23k33h101h23143332441"; //urlを入れれば試せる
 		String[] params = url.split("/");
 		int height = Integer.parseInt(params[params.length - 2]);
 		int width = Integer.parseInt(params[params.length - 3]);
