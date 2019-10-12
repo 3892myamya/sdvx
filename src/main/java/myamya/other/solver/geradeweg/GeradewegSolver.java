@@ -372,7 +372,7 @@ public class GeradewegSolver implements Solver {
 
 		public String getPuzPreURL() {
 			StringBuilder sb = new StringBuilder();
-			sb.append("http://puzz.link/p.html?geradeweg/" + getXLength() + "/" + getYLength() + "/");
+			sb.append("http://puzz.link/p?geradeweg/" + getXLength() + "/" + getYLength() + "/");
 			int interval = 0;
 			for (int i = 0; i < getYLength() * getXLength(); i++) {
 				int yIndex = i / getXLength();
