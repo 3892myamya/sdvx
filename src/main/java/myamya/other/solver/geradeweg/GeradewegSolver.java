@@ -82,6 +82,7 @@ public class GeradewegSolver implements Solver {
 			int index = 0;
 			int level = 0;
 			long start = System.nanoTime();
+			int type = (int) (Math.random() * 2);//問題傾向を最初に抽選。0はカーブ多め、1は直線多め
 			while (true) {
 				// 問題生成部
 				while (!wkField.isSolved()) {
@@ -102,10 +103,36 @@ public class GeradewegSolver implements Solver {
 							|| (!toYokoWall && wkField.tateWall[yIndex][xIndex] == Wall.SPACE)) {
 						boolean isOk = false;
 						GeradewegSolver.Field virtual = new GeradewegSolver.Field(wkField, true);
-						if (toYokoWall) {
-							virtual.yokoWall[yIndex][xIndex] = Wall.NOT_EXISTS;
+						if (type == 0) {
+							if (toYokoWall) {
+								virtual.yokoWall[yIndex][xIndex] = Wall.NOT_EXISTS;
+							} else {
+								virtual.tateWall[yIndex][xIndex] = Wall.NOT_EXISTS;
+							}
 						} else {
-							virtual.tateWall[yIndex][xIndex] = Wall.NOT_EXISTS;
+							if (toYokoWall) {
+								if ((yIndex != 0 && (wkField.tateWall[yIndex - 1][xIndex] == Wall.NOT_EXISTS ||
+										wkField.tateWall[yIndex - 1][xIndex + 1] == Wall.NOT_EXISTS))
+										|| (yIndex != wkField.getYLength() - 1
+												&& (wkField.tateWall[yIndex][xIndex] == Wall.NOT_EXISTS ||
+														wkField.tateWall[yIndex][xIndex + 1] == Wall.NOT_EXISTS))) {
+									// カーブができにくくする処理
+									virtual.yokoWall[yIndex][xIndex] = Wall.EXISTS;
+								} else {
+									virtual.yokoWall[yIndex][xIndex] = Wall.NOT_EXISTS;
+								}
+							} else {
+								if (xIndex != 0 && (virtual.yokoWall[yIndex][xIndex - 1] == Wall.NOT_EXISTS ||
+										virtual.yokoWall[yIndex + 1][xIndex - 1] == Wall.NOT_EXISTS)
+										|| (xIndex != wkField.getXLength() - 1
+												&& (virtual.yokoWall[yIndex][xIndex] == Wall.NOT_EXISTS ||
+														virtual.yokoWall[yIndex + 1][xIndex] == Wall.NOT_EXISTS))) {
+									// カーブができにくくする処理
+									virtual.tateWall[yIndex][xIndex] = Wall.EXISTS;
+								} else {
+									virtual.tateWall[yIndex][xIndex] = Wall.NOT_EXISTS;
+								}
+							}
 						}
 						if (virtual.solveAndCheck()) {
 							isOk = true;
@@ -217,7 +244,7 @@ public class GeradewegSolver implements Solver {
 						int xIndex = numberPos.getxIndex();
 						virtual.numbers[yIndex][xIndex] = null;
 						virtual.masu[yIndex][xIndex] = Masu.SPACE;
-						int solveResult = new GeradewegSolverForGenerator(virtual, 5000).solve2();
+						int solveResult = new GeradewegSolverForGenerator(virtual, 6000).solve2();
 						if (solveResult != -1) {
 							wkField.numbers[yIndex][xIndex] = null;
 							wkField.masu[yIndex][xIndex] = Masu.SPACE;
@@ -230,7 +257,7 @@ public class GeradewegSolver implements Solver {
 			level = (int) Math.sqrt(level * 3 / 3) + 1;
 			String status = "Lv:" + level + "の問題を獲得！(数字：" + wkField.getHintCount() + ")";
 			String url = wkField.getPuzPreURL();
-			String link = "<a href=\"" + url + "\" target=\"_blank\">ぱずぷれv3で解く</a>";
+			String link = "<a href=\"" + url + "\" target=\"_blank\">puzz.linkで解く</a>";
 			StringBuilder sb = new StringBuilder();
 			int baseSize = 20;
 			int margin = 5;
@@ -285,9 +312,18 @@ public class GeradewegSolver implements Solver {
 			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
 					if (wkField.getNumbers()[yIndex][xIndex] != null) {
+						sb.append("<circle cy=\"" + (yIndex * baseSize + (baseSize / 2) + margin)
+								+ "\" cx=\""
+								+ (xIndex * baseSize + baseSize + (baseSize / 2))
+								+ "\" r=\""
+								+ (baseSize / 2 - 2)
+								+ "\" fill=\"white\", stroke=\"black\">"
+								+ "</circle>");
+						String numberStr = String.valueOf(wkField.getNumbers()[yIndex][xIndex]);
 						String masuStr = null;
-						if (wkField.getNumbers()[yIndex][xIndex] > 0) {
-							String numberStr = String.valueOf(wkField.getNumbers()[yIndex][xIndex]);
+						if (numberStr.equals("-1")) {
+							masuStr = "？";
+						} else {
 							int numIdx = HALF_NUMS.indexOf(numberStr);
 							if (numIdx >= 0) {
 								masuStr = FULL_NUMS.substring(numIdx / 2, numIdx / 2 + 1);
@@ -295,138 +331,21 @@ public class GeradewegSolver implements Solver {
 								masuStr = numberStr;
 							}
 						}
-						Wall up = yIndex == 0 ? Wall.EXISTS : wkField.getTateWall()[yIndex - 1][xIndex];
-						Wall right = xIndex == wkField.getXLength() - 1 ? Wall.EXISTS
-								: wkField.getYokoWall()[yIndex][xIndex];
-						Wall down = yIndex == wkField.getYLength() - 1 ? Wall.EXISTS
-								: wkField.getTateWall()[yIndex][xIndex];
-						Wall left = xIndex == 0 ? Wall.EXISTS : wkField.getYokoWall()[yIndex][xIndex - 1];
-						if (up == Wall.NOT_EXISTS && right == Wall.NOT_EXISTS
-								&& down == Wall.EXISTS && left == Wall.EXISTS) {
-							sb.append("<path d=\"M "
-									+ (xIndex * baseSize + baseSize)
-									+ " "
-									+ (yIndex * baseSize + margin)
-									+ " L"
-									+ (xIndex * baseSize + baseSize)
-									+ " "
-									+ (yIndex * baseSize + baseSize + margin)
-									+ " L"
-									+ (xIndex * baseSize + baseSize + baseSize)
-									+ " "
-									+ (yIndex * baseSize + baseSize + margin)
-									+ " Z\" >"
-									+ "</path>");
-							if (masuStr != null) {
-								sb.append("<text y=\"" + (yIndex * baseSize + baseSize + margin - 1)
-										+ "\" x=\""
-										+ (xIndex * baseSize + baseSize)
-										+ "\" fill=\""
-										+ "white"
-										+ "\" font-size=\""
-										+ (baseSize + 2) / 2
-										+ "\" textLength=\""
-										+ (baseSize + 2) / 2
-										+ "\" lengthAdjust=\"spacingAndGlyphs\">"
-										+ masuStr
-										+ "</text>");
-							}
-						} else if (up == Wall.NOT_EXISTS && right == Wall.EXISTS
-								&& down == Wall.EXISTS && left == Wall.NOT_EXISTS) {
-							sb.append("<path d=\"M "
-									+ (xIndex * baseSize + baseSize + baseSize)
-									+ " "
-									+ (yIndex * baseSize + margin)
-									+ " L"
-									+ (xIndex * baseSize + baseSize)
-									+ " "
-									+ (yIndex * baseSize + baseSize + margin)
-									+ " L"
-									+ (xIndex * baseSize + baseSize + baseSize)
-									+ " "
-									+ (yIndex * baseSize + baseSize + margin)
-									+ " Z\" >"
-									+ "</path>");
-							if (masuStr != null) {
-								sb.append("<text y=\"" + (yIndex * baseSize + baseSize + margin - 1)
-										+ "\" x=\""
-										+ (xIndex * baseSize + baseSize + (baseSize / 2))
-										+ "\" fill=\""
-										+ "white"
-										+ "\" font-size=\""
-										+ (baseSize + 2) / 2
-										+ "\" textLength=\""
-										+ (baseSize + 2) / 2
-										+ "\" lengthAdjust=\"spacingAndGlyphs\">"
-										+ masuStr
-										+ "</text>");
-							}
-						} else if (up == Wall.EXISTS && right == Wall.NOT_EXISTS
-								&& down == Wall.NOT_EXISTS && left == Wall.EXISTS) {
-							sb.append("<path d=\"M "
-									+ (xIndex * baseSize + baseSize)
-									+ " "
-									+ (yIndex * baseSize + margin)
-									+ " L"
-									+ (xIndex * baseSize + baseSize + baseSize)
-									+ " "
-									+ (yIndex * baseSize + margin)
-									+ " L"
-									+ (xIndex * baseSize + baseSize)
-									+ " "
-									+ (yIndex * baseSize + baseSize + margin)
-									+ " Z\" >"
-									+ "</path>");
-							if (masuStr != null) {
-								sb.append("<text y=\"" + (yIndex * baseSize + (baseSize / 2) + margin - 1)
-										+ "\" x=\""
-										+ (xIndex * baseSize + baseSize)
-										+ "\" fill=\""
-										+ "white"
-										+ "\" font-size=\""
-										+ (baseSize + 2) / 2
-										+ "\" textLength=\""
-										+ (baseSize + 2) / 2
-										+ "\" lengthAdjust=\"spacingAndGlyphs\">"
-										+ masuStr
-										+ "</text>");
-							}
-						} else if (up == Wall.EXISTS && right == Wall.EXISTS
-								&& down == Wall.NOT_EXISTS && left == Wall.NOT_EXISTS) {
-							sb.append("<path d=\"M "
-									+ (xIndex * baseSize + baseSize)
-									+ " "
-									+ (yIndex * baseSize + margin)
-									+ " L"
-									+ (xIndex * baseSize + baseSize + baseSize)
-									+ " "
-									+ (yIndex * baseSize + margin)
-									+ " L"
-									+ (xIndex * baseSize + baseSize + baseSize)
-									+ " "
-									+ (yIndex * baseSize + baseSize + margin)
-									+ " Z\" >"
-									+ "</path>");
-							if (masuStr != null) {
-								sb.append("<text y=\"" + (yIndex * baseSize + (baseSize / 2) + margin - 1)
-										+ "\" x=\""
-										+ (xIndex * baseSize + baseSize + (baseSize / 2))
-										+ "\" fill=\""
-										+ "white"
-										+ "\" font-size=\""
-										+ (baseSize + 2) / 2
-										+ "\" textLength=\""
-										+ (baseSize + 2) / 2
-										+ "\" lengthAdjust=\"spacingAndGlyphs\">"
-										+ masuStr
-										+ "</text>");
-							}
-						}
+						sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 4 + margin)
+								+ "\" x=\""
+								+ (xIndex * baseSize + baseSize + 2)
+								+ "\" font-size=\""
+								+ (baseSize - 5)
+								+ "\" textLength=\""
+								+ (baseSize - 5)
+								+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+								+ masuStr
+								+ "</text>");
 					}
 				}
 			}
 			sb.append("</svg>");
-			System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
+			System.out.println(((System.nanoTime() - start) / 1000000) + "ms.type:" + type);
 			System.out.println(level);
 			System.out.println(wkField.getHintCount());
 			System.out.println(wkField);
@@ -453,80 +372,53 @@ public class GeradewegSolver implements Solver {
 
 		public String getPuzPreURL() {
 			StringBuilder sb = new StringBuilder();
-			//			sb.append("http://pzv.jp/p.html?geradeweg/" + getXLength() + "/" + getYLength() + "/");
-			//			int interval = 0;
-			//			for (int i = 0; i < getYLength() * getXLength(); i++) {
-			//				int yIndex = i / getXLength();
-			//				int xIndex = i % getXLength();
-			//				if (numbers[yIndex][xIndex] == null && !crossPosSet.contains(new Position(yIndex, xIndex))) {
-			//					interval++;
-			//					if (interval == 26) {
-			//						sb.append("z");
-			//						interval = 0;
-			//					}
-			//				} else {
-			//					String numStr = null;
-			//					int numTop;
-			//					Integer num = numbers[yIndex][xIndex];
-			//					if (num != null) {
-			//						Wall up = yIndex == 0 ? Wall.EXISTS : tateWall[yIndex - 1][xIndex];
-			//						Wall right = xIndex == getXLength() - 1 ? Wall.EXISTS : yokoWall[yIndex][xIndex];
-			//						Wall down = yIndex == getYLength() - 1 ? Wall.EXISTS : tateWall[yIndex][xIndex];
-			//						Wall left = xIndex == 0 ? Wall.EXISTS : yokoWall[yIndex][xIndex - 1];
-			//						if (up == Wall.NOT_EXISTS && right == Wall.NOT_EXISTS
-			//								&& down == Wall.EXISTS && left == Wall.EXISTS) {
-			//							numTop = 1;
-			//						} else if (up == Wall.NOT_EXISTS && right == Wall.EXISTS
-			//								&& down == Wall.EXISTS && left == Wall.NOT_EXISTS) {
-			//							numTop = 2;
-			//						} else if (up == Wall.EXISTS && right == Wall.EXISTS
-			//								&& down == Wall.NOT_EXISTS && left == Wall.NOT_EXISTS) {
-			//							numTop = 3;
-			//						} else if (up == Wall.EXISTS && right == Wall.NOT_EXISTS
-			//								&& down == Wall.NOT_EXISTS && left == Wall.EXISTS) {
-			//							numTop = 4;
-			//						} else {
-			//							throw new IllegalStateException();
-			//						}
-			//						if (num >= 16) {
-			//							numTop = numTop + 5;
-			//						}
-			//						numStr = numTop + Integer.toHexString(num);
-			//					} else if (crossPosSet.contains(new Position(yIndex, xIndex))) {
-			//						numStr = "5";
-			//					}
-			//					if (interval == 0) {
-			//						sb.append(numStr);
-			//					} else {
-			//						sb.append(ALPHABET.substring(interval - 1, interval));
-			//						sb.append(numStr);
-			//						interval = 0;
-			//					}
-			//				}
-			//			}
-			//			if (interval != 0) {
-			//				sb.append(ALPHABET.substring(interval - 1, interval));
-			//			}
-			//			if (sb.charAt(sb.length() - 1) == '.') {
-			//				sb.append("/");
-			//			}
+			sb.append("http://puzz.link/p.html?geradeweg/" + getXLength() + "/" + getYLength() + "/");
+			int interval = 0;
+			for (int i = 0; i < getYLength() * getXLength(); i++) {
+				int yIndex = i / getXLength();
+				int xIndex = i % getXLength();
+				if (numbers[yIndex][xIndex] == null) {
+					interval++;
+					if (interval == 20) {
+						sb.append("z");
+						interval = 0;
+					}
+				} else {
+					Integer num = numbers[yIndex][xIndex];
+					String numStr = Integer.toHexString(num);
+					if (numStr.length() == 2) {
+						numStr = "-" + numStr;
+					} else if (numStr.length() == 3) {
+						numStr = "+" + numStr;
+					}
+					if (interval == 0) {
+						sb.append(numStr);
+					} else {
+						sb.append(ALPHABET_FROM_G.substring(interval - 1, interval));
+						sb.append(numStr);
+						interval = 0;
+					}
+				}
+			}
+			if (interval != 0) {
+				sb.append(ALPHABET_FROM_G.substring(interval - 1, interval));
+			}
+			if (sb.charAt(sb.length() - 1) == '.') {
+				sb.append("/");
+			}
 			return sb.toString();
 		}
 
 		public String getHintCount() {
-			int kuroCnt = 0;
 			int numberCnt = 0;
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
 					if (numbers[yIndex][xIndex] != null) {
-						kuroCnt++;
-						if (numbers[yIndex][xIndex] != 0) {
-							numberCnt++;
-						}
+						numberCnt++;
 					}
 				}
 			}
-			return String.valueOf(numberCnt + "/" + kuroCnt);
+			return String.valueOf(numberCnt);
 		}
 
 		public Masu[][] getMasu() {
@@ -1111,6 +1003,19 @@ public class GeradewegSolver implements Solver {
 			}
 			return true;
 		}
+		/**
+		 * フィールドに1つは白ますが必要。
+		 */
+		private boolean finalSolve() {
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					if (masu[yIndex][xIndex] != Masu.BLACK) {
+						return true;
+					}
+				}
+			}
+			return false;
+		}
 
 		/**
 		 * 各種チェックを1セット実行
@@ -1130,6 +1035,9 @@ public class GeradewegSolver implements Solver {
 					return false;
 				}
 				if (!connectSolve()) {
+					return false;
+				}
+				if (!finalSolve()) {
 					return false;
 				}
 			}

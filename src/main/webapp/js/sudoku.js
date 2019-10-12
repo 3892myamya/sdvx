@@ -11,6 +11,7 @@ var ruleMap = {
 	tapa : {name: "Tapa", url:"http://indi.s58.xrea.com/tapa/",source:"連続発破保管庫さん"},
 	sashigane : {name: "さしがね", url:"https://www.nikoli.co.jp/ja/puzzles/sashigane/",source:"ニコリ公式"},
 	masyu : {name: "ましゅ", url:"https://www.nikoli.co.jp/ja/puzzles/masyu/",source:"ニコリ公式"},
+	geradeweg : {name: "グラーデヴェグ", url:"",source:""},
 }
 
 var option = {
@@ -183,9 +184,11 @@ $(function() {
           	$('#sel_pattern').val(nowSelPetternVal);
         }
         var oneRule = ruleMap[type];
-        $('#a_rule').attr('href', oneRule.url)
-        $('#a_rule').text(oneRule.name + 'のルールを表示(' + oneRule.source + ')')
-        $('#div_rule').show();
+        if (oneRule.url != ''){
+            $('#a_rule').attr('href', oneRule.url)
+            $('#a_rule').text(oneRule.name + 'のルールを表示(' + oneRule.source + ')')
+            $('#div_rule').show();
+        }
     }
     var updateHistory = function(time, type, resultObj){
         var history = localStorage.getItem('history');
@@ -197,7 +200,7 @@ $(function() {
     		time:time,
     		type:ruleMap[type].name,
     		level:resultObj.level,
-    		link:resultObj.link.replace('ぱずぷれv3で',''),
+    		link:resultObj.link.replace('puzz\.linkで','').replace('ぱずぷれv3で',''),
     	});
     	if (historyObj.length > 20 ){
     		historyObj.pop();

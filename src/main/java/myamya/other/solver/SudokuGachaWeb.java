@@ -14,6 +14,7 @@ import javax.servlet.http.HttpServletResponse;
 import myamya.other.solver.Common.GeneratorResult;
 import myamya.other.solver.akari.AkariSolver.AkariGenerator;
 import myamya.other.solver.creek.CreekSolver.CreekGenerator;
+import myamya.other.solver.geradeweg.GeradewegSolver.GeradewegGenerator;
 import myamya.other.solver.gokigen.GokigenSolver.GokigenGenerator;
 import myamya.other.solver.masyu.MasyuSolver.MasyuGenerator;
 import myamya.other.solver.nurimisaki.NurimisakiSolver.NurimisakiGenerator;
@@ -247,6 +248,22 @@ public class SudokuGachaWeb extends HttpServlet {
 
 	}
 
+	static class GeradewegGeneratorThlead extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+
+		GeradewegGeneratorThlead(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new GeradewegGenerator(height, width);
+		}
+
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -292,6 +309,8 @@ public class SudokuGachaWeb extends HttpServlet {
 				t = new SashiganeGeneratorThlead(height, width, pattern);
 			} else if (type.equals("masyu")) {
 				t = new MasyuGeneratorThlead(height, width);
+			} else if (type.equals("geradeweg")) {
+				t = new GeradewegGeneratorThlead(height, width);
 			} else {
 				throw new IllegalArgumentException();
 			}
