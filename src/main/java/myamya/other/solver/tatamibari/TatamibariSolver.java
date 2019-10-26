@@ -202,7 +202,7 @@ public class TatamibariSolver implements Solver {
 			return sb.toString();
 		}
 
-		private boolean existTateWall(int yIndex, int xIndex) {
+		public boolean existTateWall(int yIndex, int xIndex) {
 			for (int y = 0; y < getYLength(); y++) {
 				for (int x = 0; x < getXLength(); x++) {
 					if (roomCand[y][x] != null && roomCand[y][x].size() == 1) {
@@ -219,7 +219,7 @@ public class TatamibariSolver implements Solver {
 			return false;
 		}
 
-		private boolean existYokoWall(int yIndex, int xIndex) {
+		public boolean existYokoWall(int yIndex, int xIndex) {
 			for (int y = 0; y < getYLength(); y++) {
 				for (int x = 0; x < getXLength(); x++) {
 					if (roomCand[y][x] != null && roomCand[y][x].size() == 1) {
@@ -361,7 +361,7 @@ public class TatamibariSolver implements Solver {
 	}
 
 	public static void main(String[] args) {
-		String url = "http://pzv.jp/p.html?tatamibari/10/10/2i3l1g3i3j3i2g1h3g3i2h1i3p2i2h2i3g2h3g3i2j1i2g3l2i2"; //urlを入れれば試せる
+		String url = ""; //urlを入れれば試せる
 		String[] params = url.split("/");
 		int height = Integer.parseInt(params[params.length - 2]);
 		int width = Integer.parseInt(params[params.length - 3]);

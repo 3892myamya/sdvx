@@ -12,6 +12,7 @@ var ruleMap = {
 	sashigane : {name: "さしがね", url:"https://www.nikoli.co.jp/ja/puzzles/sashigane/",source:"ニコリ公式"},
 	masyu : {name: "ましゅ", url:"https://www.nikoli.co.jp/ja/puzzles/masyu/",source:"ニコリ公式"},
 	geradeweg : {name: "グラーデヴェグ", url:"",source:""},
+	bag : {name: "バッグ", url:"https://www.nikoli.co.jp/ja/puzzles/bag/",source:"ニコリ公式"},
 }
 
 var option = {

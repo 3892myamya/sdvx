@@ -13,6 +13,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import myamya.other.solver.Common.GeneratorResult;
 import myamya.other.solver.akari.AkariSolver.AkariGenerator;
+import myamya.other.solver.bag.BagSolver.BagGenerator;
 import myamya.other.solver.creek.CreekSolver.CreekGenerator;
 import myamya.other.solver.geradeweg.GeradewegSolver.GeradewegGenerator;
 import myamya.other.solver.gokigen.GokigenSolver.GokigenGenerator;
@@ -264,6 +265,22 @@ public class SudokuGachaWeb extends HttpServlet {
 
 	}
 
+	static class BagGeneratorThlead extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+
+		BagGeneratorThlead(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new BagGenerator(height, width);
+		}
+
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -311,6 +328,8 @@ public class SudokuGachaWeb extends HttpServlet {
 				t = new MasyuGeneratorThlead(height, width);
 			} else if (type.equals("geradeweg")) {
 				t = new GeradewegGeneratorThlead(height, width);
+			} else if (type.equals("bag")) {
+				t = new BagGeneratorThlead(height, width);
 			} else {
 				throw new IllegalArgumentException();
 			}
