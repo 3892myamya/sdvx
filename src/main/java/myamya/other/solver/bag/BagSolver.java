@@ -3,6 +3,7 @@ package myamya.other.solver.bag;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -12,6 +13,7 @@ import myamya.other.solver.Common.GeneratorResult;
 import myamya.other.solver.Common.Masu;
 import myamya.other.solver.Common.Position;
 import myamya.other.solver.Generator;
+import myamya.other.solver.HintPattern;
 import myamya.other.solver.Solver;
 
 public class BagSolver implements Solver {
@@ -60,14 +62,16 @@ public class BagSolver implements Solver {
 
 		private final int height;
 		private final int width;
+		private final HintPattern hintPattern;
 
-		public BagGenerator(int height, int width) {
+		public BagGenerator(int height, int width, HintPattern hintPattern) {
 			this.height = height;
 			this.width = width;
+			this.hintPattern = hintPattern;
 		}
 
 		public static void main(String[] args) {
-			new BagGenerator(20, 20).generate();
+			new BagGenerator(20, 20, HintPattern.getByVal(0, 20, 20)).generate();
 		}
 
 		@Override
@@ -154,10 +158,22 @@ public class BagSolver implements Solver {
 						}
 					}
 				}
+				// 数字のマス以外を戻す
+				List<Set<Position>> numberPosSetList = hintPattern.getPosSetList();
 				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
 					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
 						if (wkField.numbers[yIndex][xIndex] == null) {
 							wkField.masu[yIndex][xIndex] = Masu.SPACE;
+							for (Iterator<Set<Position>> iterator = numberPosSetList.iterator(); iterator.hasNext();) {
+								Set<Position> posSet = iterator.next();
+								if (posSet.contains(new Position(yIndex, xIndex))) {
+									for (Position pos : posSet) {
+										wkField.masu[pos.getyIndex()][pos.getxIndex()] = Masu.SPACE;
+										wkField.numbers[pos.getyIndex()][pos.getxIndex()] = null;
+									}
+									iterator.remove();
+								}
+							}
 						}
 					}
 				}
@@ -169,15 +185,19 @@ public class BagSolver implements Solver {
 					index = 0;
 				} else {
 					// ヒントを限界まで減らす
-					Collections.shuffle(numberPosList);
-					for (Position numberPos : numberPosList) {
+					Collections.shuffle(numberPosSetList);
+					for (Set<Position> numberPosSet : numberPosSetList) {
 						BagSolver.Field virtual = new BagSolver.Field(wkField, true);
-						virtual.masu[numberPos.getyIndex()][numberPos.getxIndex()] = Masu.SPACE;
-						virtual.numbers[numberPos.getyIndex()][numberPos.getxIndex()] = null;
-						int solveResult = new BagSolverForGenerator(virtual, 6000).solve2();
+						for (Position numberPos : numberPosSet) {
+							virtual.masu[numberPos.getyIndex()][numberPos.getxIndex()] = Masu.SPACE;
+							virtual.numbers[numberPos.getyIndex()][numberPos.getxIndex()] = null;
+						}
+						int solveResult = new BagSolverForGenerator(virtual, 15000).solve2();
 						if (solveResult != -1) {
-							wkField.masu[numberPos.getyIndex()][numberPos.getxIndex()] = Masu.SPACE;
-							wkField.numbers[numberPos.getyIndex()][numberPos.getxIndex()] = null;
+							for (Position numberPos : numberPosSet) {
+								wkField.masu[numberPos.getyIndex()][numberPos.getxIndex()] = Masu.SPACE;
+								wkField.numbers[numberPos.getyIndex()][numberPos.getxIndex()] = null;
+							}
 							level = solveResult;
 						}
 					}

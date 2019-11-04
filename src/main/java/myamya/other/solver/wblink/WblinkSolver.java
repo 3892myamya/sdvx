@@ -263,10 +263,24 @@ public class WblinkSolver implements Solver {
 		}
 
 		public boolean isSolved() {
+			Set<Position> fixed = new HashSet<>();
 			for (Set<Position> oneCandidates : candidates.values()) {
 				if (oneCandidates.size() != 1) {
 					return false;
+				} else {
+					fixed.add(new ArrayList<>(oneCandidates).get(0));
 				}
+			}
+			// 黒マスが回収しきれてない場合解けていない。
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					if (black[yIndex][xIndex]) {
+						fixed.remove(new Position(yIndex, xIndex));
+					}
+				}
+			}
+			if (!fixed.isEmpty()) {
+				return false;
 			}
 			return solveAndCheck();
 		}

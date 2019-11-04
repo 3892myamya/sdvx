@@ -17,6 +17,7 @@ import myamya.other.solver.bag.BagSolver.BagGenerator;
 import myamya.other.solver.creek.CreekSolver.CreekGenerator;
 import myamya.other.solver.geradeweg.GeradewegSolver.GeradewegGenerator;
 import myamya.other.solver.gokigen.GokigenSolver.GokigenGenerator;
+import myamya.other.solver.kurodoko.KurodokoSolver.KurodokoGenerator;
 import myamya.other.solver.masyu.MasyuSolver.MasyuGenerator;
 import myamya.other.solver.nurimisaki.NurimisakiSolver.NurimisakiGenerator;
 import myamya.other.solver.reflect.ReflectSolver.ReflectGenerator;
@@ -268,15 +269,35 @@ public class SudokuGachaWeb extends HttpServlet {
 	static class BagGeneratorThlead extends GeneratorThlead {
 		protected final int height;
 		protected final int width;
+		protected final int pattern;
 
-		BagGeneratorThlead(int height, int width) {
+		BagGeneratorThlead(int height, int width, int pattern) {
 			this.height = height;
 			this.width = width;
+			this.pattern = pattern;
 		}
 
 		@Override
 		Generator getGenerator() {
-			return new BagGenerator(height, width);
+			return new BagGenerator(height, width, HintPattern.getByVal(pattern, height, width));
+		}
+
+	}
+
+	static class KurodokoGeneratorThlead extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+		protected final int pattern;
+
+		KurodokoGeneratorThlead(int height, int width, int pattern) {
+			this.height = height;
+			this.width = width;
+			this.pattern = pattern;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new KurodokoGenerator(height, width, HintPattern.getByVal(pattern, height, width));
 		}
 
 	}
@@ -329,7 +350,11 @@ public class SudokuGachaWeb extends HttpServlet {
 			} else if (type.equals("geradeweg")) {
 				t = new GeradewegGeneratorThlead(height, width);
 			} else if (type.equals("bag")) {
-				t = new BagGeneratorThlead(height, width);
+				int pattern = Integer.parseInt(request.getParameter("pattern"));
+				t = new BagGeneratorThlead(height, width, pattern);
+			} else if (type.equals("kurodoko")) {
+				int pattern = Integer.parseInt(request.getParameter("pattern"));
+				t = new KurodokoGeneratorThlead(height, width, pattern);
 			} else {
 				throw new IllegalArgumentException();
 			}

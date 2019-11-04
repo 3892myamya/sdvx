@@ -13,6 +13,7 @@ var ruleMap = {
 	masyu : {name: "ましゅ", url:"https://www.nikoli.co.jp/ja/puzzles/masyu/",source:"ニコリ公式"},
 	geradeweg : {name: "グラーデヴェグ", url:"",source:""},
 	bag : {name: "バッグ", url:"https://www.nikoli.co.jp/ja/puzzles/bag/",source:"ニコリ公式"},
+	kurodoko : {name: "黒どこ", url:"https://www.nikoli.co.jp/ja/puzzles/where_is_black_cells/",source:"ニコリ公式"},
 }
 
 var option = {
@@ -27,7 +28,7 @@ var option = {
 	pattern_0: '<option value="0">フリー</option>',
 	pattern_1: '<option value="1">点対称</option>',
 	pattern_2: '<option value="2">左右対称</option>',
-	pattern_3: '<option value="3">対称</option>',
+	pattern_3: '<option value="3">上下対称</option>',
 	pattern_4: '<option value="4">＼対称</option>',
 	pattern_5: '<option value="5">／対称</option>',
 	pattern_6: '<option value="6">上下左右対称</option>',
@@ -112,7 +113,8 @@ $(function() {
     });
     var showhide = function () {
         var type = $('#sel_type').val();
-        if (type == 'sudoku' || type == 'akari' || type == 'slither' || type == 'creek' || type == 'gokigen' || type == 'tapa') {
+        if (type == 'sudoku' || type == 'akari' || type == 'slither' || type == 'creek'
+        	|| type == 'gokigen' || type == 'tapa' || type == 'bag' || type == 'kurodoko') {
             $('#lbl_pattern').show();
             $('#sel_pattern').show();
         } else {
@@ -159,7 +161,7 @@ $(function() {
         }
         var nowSelPetternVal = $('#sel_pattern').val();
         $('#sel_pattern').empty();
-        if (type == 'tapa'){
+        if (type == 'tapa' || type == 'bag'){
         	$('#sel_pattern').append(option.pattern_0);
         	$('#sel_pattern').append(option.pattern_1);
         	$('#sel_pattern').append(option.pattern_2);
