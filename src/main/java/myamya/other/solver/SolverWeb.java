@@ -36,6 +36,8 @@ import myamya.other.solver.aquarium.AquariumSolver;
 import myamya.other.solver.bag.BagSolver;
 import myamya.other.solver.barns.BarnsSolver;
 import myamya.other.solver.cells.CellsSolver;
+import myamya.other.solver.compass.CompassSolver;
+import myamya.other.solver.compass.CompassSolver.Compass;
 import myamya.other.solver.country.CountrySolver;
 import myamya.other.solver.creek.CreekSolver;
 import myamya.other.solver.dosufuwa.DosufuwaSolver;
@@ -9619,6 +9621,200 @@ public class SolverWeb extends HttpServlet {
 
 	}
 
+	static class CompassSolverThread extends AbsSolverThlead {
+		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
+		private static final String FULL_NUMS = "０１２３４５６７８９";
+
+		CompassSolverThread(int height, int width, String param) {
+			super(height, width, param);
+		}
+
+		@Override
+		protected Solver getSolver() {
+			return new CompassSolver(height, width, param);
+		}
+
+		@Override
+		public String makeCambus() {
+			CompassSolver.Field field = ((CompassSolver) solver).getField();
+			StringBuilder sb = new StringBuilder();
+			int baseSize = 30;
+			int margin = 5;
+			sb.append(
+					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
+							+ "height=\"" + (field.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
+							+ (field.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			// 記号描画
+			for (Entry<Integer, Compass> entry : field.getCompasses().entrySet()) {
+				int yIndex = entry.getValue().getPos().getyIndex();
+				int xIndex = entry.getValue().getPos().getxIndex();
+				sb.append("<line y1=\""
+						+ (yIndex * baseSize + margin)
+						+ "\" x1=\""
+						+ (xIndex * baseSize + baseSize)
+						+ "\" y2=\""
+						+ (yIndex * baseSize + baseSize + margin)
+						+ "\" x2=\""
+						+ (xIndex * baseSize + baseSize + baseSize)
+						+ "\" stroke-width=\"1\" fill=\"none\"");
+				sb.append("stroke=\"#000\" ");
+				sb.append(">"
+						+ "</line>");
+				sb.append("<line y1=\""
+						+ (yIndex * baseSize + margin)
+						+ "\" x1=\""
+						+ (xIndex * baseSize + baseSize + baseSize)
+						+ "\" y2=\""
+						+ (yIndex * baseSize + baseSize + margin)
+						+ "\" x2=\""
+						+ (xIndex * baseSize + baseSize)
+						+ "\" stroke-width=\"1\" fill=\"none\"");
+				sb.append("stroke=\"#000\" ");
+				sb.append(">"
+						+ "</line>");
+				if (entry.getValue().getLeftCnt() != -1) {
+					String str;
+					String numberStr = String.valueOf(entry.getValue().getLeftCnt());
+					int index = HALF_NUMS.indexOf(numberStr);
+					if (index >= 0) {
+						str = FULL_NUMS.substring(index / 2, index / 2 + 1);
+					} else {
+						str = numberStr;
+					}
+					sb.append("<text y=\"" + (yIndex * baseSize + (baseSize * 2 / 3) + margin - 1)
+							+ "\" x=\""
+							+ (xIndex * baseSize + baseSize)
+							+ "\" font-size=\""
+							+ (baseSize) / 3
+							+ "\" textLength=\""
+							+ (baseSize) / 3
+							+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+							+ str
+							+ "</text>");
+				}
+				if (entry.getValue().getUpCnt() != -1) {
+					String str;
+					String numberStr = String.valueOf(entry.getValue().getUpCnt());
+					int index = HALF_NUMS.indexOf(numberStr);
+					if (index >= 0) {
+						str = FULL_NUMS.substring(index / 2, index / 2 + 1);
+					} else {
+						str = numberStr;
+					}
+					sb.append("<text y=\"" + (yIndex * baseSize + (baseSize / 3) + margin - 1)
+							+ "\" x=\""
+							+ (xIndex * baseSize + baseSize + (baseSize / 3))
+							+ "\" font-size=\""
+							+ (baseSize) / 3
+							+ "\" textLength=\""
+							+ (baseSize) / 3
+							+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+							+ str
+							+ "</text>");
+				}
+				if (entry.getValue().getDownCnt() != -1) {
+					String str;
+					String numberStr = String.valueOf(entry.getValue().getDownCnt());
+					int index = HALF_NUMS.indexOf(numberStr);
+					if (index >= 0) {
+						str = FULL_NUMS.substring(index / 2, index / 2 + 1);
+					} else {
+						str = numberStr;
+					}
+					sb.append("<text y=\"" + (yIndex * baseSize + baseSize + margin - 1)
+							+ "\" x=\""
+							+ (xIndex * baseSize + baseSize + (baseSize / 3))
+							+ "\" font-size=\""
+							+ (baseSize) / 3
+							+ "\" textLength=\""
+							+ (baseSize) / 3
+							+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+							+ str
+							+ "</text>");
+				}
+				if (entry.getValue().getRightCnt() != -1) {
+					String str;
+					String numberStr = String.valueOf(entry.getValue().getRightCnt());
+					int index = HALF_NUMS.indexOf(numberStr);
+					if (index >= 0) {
+						str = FULL_NUMS.substring(index / 2, index / 2 + 1);
+					} else {
+						str = numberStr;
+					}
+					sb.append("<text y=\"" + (yIndex * baseSize + (baseSize * 2 / 3) + margin - 1)
+							+ "\" x=\""
+							+ (xIndex * baseSize + baseSize + (baseSize * 2 / 3))
+							+ "\" font-size=\""
+							+ (baseSize) / 3
+							+ "\" textLength=\""
+							+ (baseSize) / 3
+							+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+							+ str
+							+ "</text>");
+				}
+			}
+
+			// 横壁描画
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = -1; xIndex < field.getXLength(); xIndex++) {
+					boolean oneYokoWall = xIndex == -1 || xIndex == field.getXLength() - 1 ||
+							!new ArrayList<>(field.getNumbersCand()[yIndex][xIndex])
+									.removeAll(field.getNumbersCand()[yIndex][xIndex + 1]);
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + margin)
+							+ "\" x1=\""
+							+ (xIndex * baseSize + 2 * baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ (xIndex * baseSize + 2 * baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneYokoWall) {
+						if (xIndex == -1 || xIndex == field.getXLength() - 1) {
+							sb.append("stroke=\"#000\" ");
+						} else {
+							sb.append("stroke=\"green\" ");
+						}
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">"
+							+ "</line>");
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = -1; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					boolean oneTateWall = yIndex == -1 || yIndex == field.getYLength() - 1 ||
+							!new ArrayList<>(field.getNumbersCand()[yIndex][xIndex])
+									.removeAll(field.getNumbersCand()[yIndex + 1][xIndex]);
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x1=\""
+							+ (xIndex * baseSize + baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ (xIndex * baseSize + baseSize + baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneTateWall) {
+						if (yIndex == -1 || yIndex == field.getYLength() - 1) {
+							sb.append("stroke=\"#000\" ");
+						} else {
+							sb.append("stroke=\"green\" ");
+						}
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">"
+							+ "</line>");
+				}
+			}
+			sb.append("</svg>");
+			return sb.toString();
+		}
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -9819,6 +10015,8 @@ public class SolverWeb extends HttpServlet {
 					t = new TatamibariSolverThread(height, width, param);
 				} else if (puzzleType.contains("wblink")) {
 					t = new WblinkSolverThread(height, width, param);
+				} else if (puzzleType.contains("compass")) {
+					t = new CompassSolverThread(height, width, param);
 				} else {
 					throw new IllegalArgumentException();
 				}
