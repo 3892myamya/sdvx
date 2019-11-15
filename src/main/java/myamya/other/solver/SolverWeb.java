@@ -9921,7 +9921,7 @@ public class SolverWeb extends HttpServlet {
 								+ "\">"
 								+ "</rect>");
 						if (field.getArrows()[yIndex][xIndex].getCount() != -1) {
-							sb.append("<text y=\"" + (yIndex * baseSize + baseSize + margin - 2)
+							sb.append("<text y=\"" + (yIndex * baseSize + baseSize + margin - 3)
 									+ "\" x=\""
 									+ (xIndex * baseSize + baseSize)
 									+ "\" font-size=\""
@@ -9970,7 +9970,7 @@ public class SolverWeb extends HttpServlet {
 							} else {
 								str = oneMasu.toString();
 							}
-							sb.append("<text y=\"" + (yIndex * baseSize + baseSize + margin)
+							sb.append("<text y=\"" + (yIndex * baseSize + baseSize + margin - 2)
 									+ "\" x=\""
 									+ (xIndex * baseSize + baseSize)
 									+ "\" font-size=\""
