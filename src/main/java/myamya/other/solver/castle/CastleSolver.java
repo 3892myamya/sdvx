@@ -636,13 +636,13 @@ public class CastleSolver implements Solver {
 				}
 				if (notExistsCount % 2 != 0) {
 					if (spacePos != null) {
-						tateWall[spacePos.getyIndex()][spacePos.getxIndex()] = Wall.EXISTS;
+						tateWall[spacePos.getyIndex()][spacePos.getxIndex()] = Wall.NOT_EXISTS;
 					} else {
 						return false;
 					}
 				} else {
 					if (spacePos != null) {
-						tateWall[spacePos.getyIndex()][spacePos.getxIndex()] = Wall.NOT_EXISTS;
+						tateWall[spacePos.getyIndex()][spacePos.getxIndex()] = Wall.EXISTS;
 					}
 				}
 			}
@@ -664,13 +664,13 @@ public class CastleSolver implements Solver {
 				}
 				if (notExistsCount % 2 != 0) {
 					if (spacePos != null) {
-						yokoWall[spacePos.getyIndex()][spacePos.getxIndex()] = Wall.EXISTS;
+						yokoWall[spacePos.getyIndex()][spacePos.getxIndex()] = Wall.NOT_EXISTS;
 					} else {
 						return false;
 					}
 				} else {
 					if (spacePos != null) {
-						yokoWall[spacePos.getyIndex()][spacePos.getxIndex()] = Wall.NOT_EXISTS;
+						yokoWall[spacePos.getyIndex()][spacePos.getxIndex()] = Wall.EXISTS;
 					}
 				}
 			}
