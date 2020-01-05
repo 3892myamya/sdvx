@@ -8,8 +8,6 @@ import java.net.URL;
 import java.time.DayOfWeek;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,41 +47,6 @@ public class KadaiGeneratorClasses {
 			}
 			name = (String) map.get("name");
 		}
-
-		VolForceInfo getVolForceInfo() {
-			List<Integer> wk = new ArrayList<>();
-			// ボルフォース下限を計算
-			for (TrackInfo trackInfo : trackList) {
-				for (EffectInfo effectInfo : trackInfo.getEffectMap().values()) {
-					wk.add(effectInfo.getOneVolForce());
-				}
-			}
-			Collections.sort(wk, Comparator.reverseOrder());
-			int volForceTargetCount = wk.size() < 50 ? wk.size() : 50;
-			int volForceMin = wk.get(volForceTargetCount - 1);
-			// 下限でもう一回対象曲を調べる
-			List<OneEffectInfo> volForceList = new ArrayList<>();
-			for (TrackInfo trackInfo : trackList) {
-				for (Entry<EffectDiv, EffectInfo> entry : trackInfo.getEffectMap().entrySet()) {
-					if (entry.getValue().getOneVolForce() >= volForceMin) {
-						volForceList.add(new OneEffectInfo(trackInfo.getId(), trackInfo.getTitle(), entry.getKey(),
-								entry.getValue()));
-					}
-				}
-			}
-			Collections.sort(volForceList, new Comparator<OneEffectInfo>() {
-				@Override
-				public int compare(OneEffectInfo o1, OneEffectInfo o2) {
-					return o2.getEffectInfo().getOneVolForce() - o1.getEffectInfo().getOneVolForce();
-				}
-			});
-			int totalVolForce = 0;
-			for (int i = 0; i < volForceTargetCount; i++) {
-				totalVolForce = totalVolForce + volForceList.get(i).getEffectInfo().getOneVolForce();
-			}
-			return new VolForceInfo(totalVolForce, volForceMin, volForceList);
-		}
-
 	}
 
 	/**

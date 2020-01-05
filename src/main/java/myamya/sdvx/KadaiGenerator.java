@@ -133,7 +133,7 @@ public class KadaiGenerator {
 								}
 							}
 						} else if (mode == Mode.FOR_BORDER) {
-							int borderScore = getBorderScore(border, statusInfo);
+							int borderScore = getBorderScore(BigDecimal.valueOf(border), statusInfo);
 							estimateInfoList.add(
 									new EstimateInfo(trackInfo.getTitle(), statusInfo.getEffectDiv(),
 											BigDecimal.valueOf(borderScore), String.valueOf(borderScore),
@@ -158,7 +158,8 @@ public class KadaiGenerator {
 											isClear ? "達成" : "未達成"));
 						} else if (mode == Mode.FOR_VOLFORCE) {
 							if (volForceMin == -1) {
-								volForceMin = profileInfo.getVolForceInfo().getVolForceMin();
+								volForceMin = KadaiGeneratorUtil.getVolForceInfo(profileInfo.getTrackList())
+										.getVolForceMin();
 							}
 							List<EstimateInfo> recommendVolforceInfo = getRecommendVolforceInfo(trackInfo.getTitle(),
 									entry.getValue(),
@@ -384,9 +385,8 @@ public class KadaiGenerator {
 		return result;
 	}
 
-	private int getBorderScore(int borderInt, StatusInfo statusInfo) {
+	private int getBorderScore(BigDecimal border, StatusInfo statusInfo) {
 		ScoreDiv scoreDiv;
-		BigDecimal border = BigDecimal.valueOf(borderInt);
 		if (statusInfo.getPPer().compareTo(border) >= 0) {
 			scoreDiv = ScoreDiv.PER;
 		} else if (statusInfo.getPGrade998().compareTo(border) >= 0) {

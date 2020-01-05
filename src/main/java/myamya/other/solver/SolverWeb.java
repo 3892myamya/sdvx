@@ -79,6 +79,7 @@ import myamya.other.solver.nanro.NanroSolver;
 import myamya.other.solver.nondango.NondangoSolver;
 import myamya.other.solver.norinori.NorinoriSolver;
 import myamya.other.solver.numlin.NumlinSolver;
+import myamya.other.solver.nuribou.NuribouSolver;
 import myamya.other.solver.nurikabe.NurikabeSolver;
 import myamya.other.solver.nurimisaki.NurimisakiSolver;
 import myamya.other.solver.pipelink.PipelinkSolver;
@@ -106,6 +107,7 @@ import myamya.other.solver.tasquare.TasquareSolver;
 import myamya.other.solver.tatamibari.TatamibariSolver;
 import myamya.other.solver.tentaisho.TentaishoSolver;
 import myamya.other.solver.usoone.UsooneSolver;
+import myamya.other.solver.view.ViewSolver;
 import myamya.other.solver.wblink.WblinkSolver;
 import myamya.other.solver.yajikazu.YajikazuSolver;
 import myamya.other.solver.yajikazu.YajikazuSolver.Arrow;
@@ -10392,7 +10394,7 @@ public class SolverWeb extends HttpServlet {
 					Position numberMasuPos = room.getNumberMasuPos();
 					sb.append("<text y=\"" + (numberMasuPos.getyIndex() * baseSize + baseSize + margin - 12)
 							+ "\" x=\""
-							+ (numberMasuPos.getxIndex() * baseSize + baseSize )
+							+ (numberMasuPos.getxIndex() * baseSize + baseSize)
 							+ "\" fill=\""
 							+ "black"
 							+ "\" font-size=\""
@@ -10402,6 +10404,167 @@ public class SolverWeb extends HttpServlet {
 							+ "\" lengthAdjust=\"spacingAndGlyphs\">"
 							+ roomCountStr
 							+ "</text>");
+				}
+			}
+			sb.append("</svg>");
+			return sb.toString();
+		}
+	}
+
+	static class ViewSolverThread extends AbsSolverThlead {
+		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
+		private static final String FULL_NUMS = "０１２３４５６７８９";
+
+		ViewSolverThread(int height, int width, String param) {
+			super(height, width, param);
+		}
+
+		@Override
+		protected Solver getSolver() {
+			return new ViewSolver(height, width, param);
+		}
+
+		@Override
+		public String makeCambus() {
+			ViewSolver.Field field = ((ViewSolver) solver).getField();
+			StringBuilder sb = new StringBuilder();
+			int baseSize = 20;
+			int margin = 5;
+			sb.append(
+					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
+							+ "height=\"" + (field.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
+							+ (field.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					if (field.getNumbers()[yIndex][xIndex] != null) {
+						String numberStr = String.valueOf(field.getNumbers()[yIndex][xIndex]);
+						String masuStr;
+						int idx = HALF_NUMS.indexOf(numberStr);
+						if (idx >= 0) {
+							masuStr = FULL_NUMS.substring(idx / 2, idx / 2 + 1);
+						} else {
+							masuStr = numberStr;
+						}
+						sb.append("<text y=\"" + (yIndex * baseSize + baseSize + margin - 4)
+								+ "\" x=\""
+								+ (xIndex * baseSize + baseSize + 2)
+								+ "\" fill=\""
+								+ (field.getFixedPosSet().contains(new Position(yIndex, xIndex)) ? "black" : "green")
+								+ "\" font-size=\""
+								+ (baseSize - 5)
+								+ "\" textLength=\""
+								+ (baseSize - 5)
+								+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+								+ masuStr
+								+ "</text>");
+					} else {
+						if (field.getMasu()[yIndex][xIndex] == Masu.BLACK) {
+							sb.append("<rect y=\"" + (yIndex * baseSize + margin)
+									+ "\" x=\""
+									+ (xIndex * baseSize + baseSize)
+									+ "\" width=\""
+									+ (baseSize)
+									+ "\" height=\""
+									+ (baseSize)
+									+ "\" fill=\"lightgray\" >"
+									+ "</rect>");
+							sb.append("<text y=\"" + (yIndex * baseSize + baseSize + margin - 4)
+									+ "\" x=\""
+									+ (xIndex * baseSize + baseSize + 2)
+									+ "\" fill=\""
+									+ "green"
+									+ "\" font-size=\""
+									+ (baseSize - 5)
+									+ "\" textLength=\""
+									+ (baseSize - 5)
+									+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+									+ "×"
+									+ "</text>");
+						} else if (field.getMasu()[yIndex][xIndex] == Masu.NOT_BLACK) {
+							sb.append("<text y=\"" + (yIndex * baseSize + baseSize + margin - 4)
+									+ "\" x=\""
+									+ (xIndex * baseSize + baseSize + 2)
+									+ "\" fill=\""
+									+ "green"
+									+ "\" font-size=\""
+									+ (baseSize - 5)
+									+ "\" textLength=\""
+									+ (baseSize - 5)
+									+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+									+ "○"
+									+ "</text>");
+						}
+					}
+				}
+			}
+			sb.append("</svg>");
+			return sb.toString();
+		}
+	}
+
+	static class NuribouSolverThread extends AbsSolverThlead {
+		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
+		private static final String FULL_NUMS = "０１２３４５６７８９";
+
+		NuribouSolverThread(int height, int width, String param) {
+			super(height, width, param);
+		}
+
+		@Override
+		protected Solver getSolver() {
+			return new NuribouSolver(height, width, param);
+		}
+
+		@Override
+		public String makeCambus() {
+			StringBuilder sb = new StringBuilder();
+			NuribouSolver.Field field = ((NuribouSolver) solver).getField();
+			int baseSize = 20;
+			sb.append(
+					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
+							+ "height=\"" + (field.getYLength() * baseSize + baseSize) + "\" width=\""
+							+ (field.getXLength() * baseSize + baseSize) + "\" >");
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					Common.Masu oneMasu = field.getMasu()[yIndex][xIndex];
+					if (oneMasu.toString().equals("■")) {
+						sb.append("<rect y=\"" + (yIndex * baseSize)
+								+ "\" x=\""
+								+ (xIndex * baseSize + baseSize)
+								+ "\" width=\""
+								+ (baseSize)
+								+ "\" height=\""
+								+ (baseSize)
+								+ "\">"
+								+ "</rect>");
+					} else {
+						String masuStr = null;
+						if (field.getNumbers()[yIndex][xIndex] != null) {
+							if (field.getNumbers()[yIndex][xIndex] == -1) {
+								masuStr = "？";
+							} else {
+								String capacityStr = String.valueOf(field.getNumbers()[yIndex][xIndex]);
+								int index = HALF_NUMS.indexOf(capacityStr);
+								if (index >= 0) {
+									masuStr = FULL_NUMS.substring(index / 2, index / 2 + 1);
+								} else {
+									masuStr = capacityStr;
+								}
+							}
+						} else {
+							masuStr = oneMasu.toString();
+						}
+						sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 4)
+								+ "\" x=\""
+								+ (xIndex * baseSize + baseSize)
+								+ "\" font-size=\""
+								+ (baseSize - 2)
+								+ "\" textLength=\""
+								+ (baseSize - 2)
+								+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+								+ masuStr
+								+ "</text>");
+					}
 				}
 			}
 			sb.append("</svg>");
@@ -10452,17 +10615,30 @@ public class SolverWeb extends HttpServlet {
 					String numberParam = parts.get(4).split("@")[0];
 					t = new AquariumSolverThread(height, width, param, numberParam, sameHeight);
 				}
+			} else if (puzzleType.contains("yajilin") || puzzleType.contains("yajirin")) {
+				boolean isGray = parts.get(1).equals("b");
+				int width;
+				int height;
+				String param;
+				if (isGray) {
+					width = Integer.parseInt(parts.get(2));
+					height = Integer.parseInt(parts.get(3));
+					param = parts.get(4).split("@")[0];
+				} else {
+					width = Integer.parseInt(parts.get(1));
+					height = Integer.parseInt(parts.get(2));
+					param = parts.get(3).split("@")[0];
+				}
+				if (puzzleType.contains("regions")) {
+					t = new YajilinRegionsSolverThlead(height, width, param, puzzleType.contains("out"));
+				} else {
+					t = new YajilinSolverThlead(height, width, param, puzzleType.contains("out"));
+				}
 			} else {
 				int width = Integer.parseInt(parts.get(1));
 				int height = Integer.parseInt(parts.get(2));
 				String param = parts.get(3).split("@")[0];
-				if (puzzleType.contains("yajilin") || puzzleType.contains("yajirin")) {
-					if (puzzleType.contains("regions")) {
-						t = new YajilinRegionsSolverThlead(height, width, param, puzzleType.contains("out"));
-					} else {
-						t = new YajilinSolverThlead(height, width, param, puzzleType.contains("out"));
-					}
-				} else if (puzzleType.contains("nurikabe")) {
+				if (puzzleType.contains("nurikabe")) {
 					t = new NurikabeSolverThread(height, width, param);
 				} else if (puzzleType.contains("stostone")) {
 					t = new StostoneSolverThread(height, width, param);
@@ -10619,6 +10795,10 @@ public class SolverWeb extends HttpServlet {
 					t = new ChoconaSolverThread(height, width, param);
 				} else if (puzzleType.contains("nagenawa")) {
 					t = new NagenawaSolverThread(height, width, param);
+				} else if (puzzleType.contains("view")) {
+					t = new ViewSolverThread(height, width, param);
+				} else if (puzzleType.contains("nuribou")) {
+					t = new NuribouSolverThread(height, width, param);
 				} else {
 					throw new IllegalArgumentException();
 				}
