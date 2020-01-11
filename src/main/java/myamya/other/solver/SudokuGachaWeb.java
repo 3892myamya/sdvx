@@ -14,6 +14,7 @@ import javax.servlet.http.HttpServletResponse;
 import myamya.other.solver.Common.GeneratorResult;
 import myamya.other.solver.akari.AkariSolver.AkariGenerator;
 import myamya.other.solver.bag.BagSolver.BagGenerator;
+import myamya.other.solver.barns.BarnsSolver.BarnsGenerator;
 import myamya.other.solver.creek.CreekSolver.CreekGenerator;
 import myamya.other.solver.geradeweg.GeradewegSolver.GeradewegGenerator;
 import myamya.other.solver.gokigen.GokigenSolver.GokigenGenerator;
@@ -302,6 +303,22 @@ public class SudokuGachaWeb extends HttpServlet {
 
 	}
 
+	static class BarnsGeneratorThlead extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+
+		BarnsGeneratorThlead(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new BarnsGenerator(height, width);
+		}
+
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -355,6 +372,8 @@ public class SudokuGachaWeb extends HttpServlet {
 			} else if (type.equals("kurodoko")) {
 				int pattern = Integer.parseInt(request.getParameter("pattern"));
 				t = new KurodokoGeneratorThlead(height, width, pattern);
+			} else if (type.equals("barns")) {
+				t = new BarnsGeneratorThlead(height, width);
 			} else {
 				throw new IllegalArgumentException();
 			}
