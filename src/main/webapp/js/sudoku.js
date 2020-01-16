@@ -15,6 +15,7 @@ var ruleMap = {
 	bag : {name: "バッグ", url:"https://www.nikoli.co.jp/ja/puzzles/bag/",source:"ニコリ公式"},
 	kurodoko : {name: "黒どこ", url:"https://www.nikoli.co.jp/ja/puzzles/where_is_black_cells/",source:"ニコリ公式"},
 	barns : {name: "バーンズ", url:"http://indi.s58.xrea.com/barns/",source:"連続発破保管庫さん"},
+	midloop : {name: "ミッドループ", url:"https://www.nikoli.co.jp/ja/puzzles/mid-loop/",source:"ニコリ公式"},
 }
 
 var option = {
