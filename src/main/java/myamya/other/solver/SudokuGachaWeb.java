@@ -14,6 +14,7 @@ import javax.servlet.http.HttpServletResponse;
 import myamya.other.solver.Common.GeneratorResult;
 import myamya.other.solver.akari.AkariSolver.AkariGenerator;
 import myamya.other.solver.bag.BagSolver.BagGenerator;
+import myamya.other.solver.balance.BalanceSolver.BalanceGenerator;
 import myamya.other.solver.barns.BarnsSolver.BarnsGenerator;
 import myamya.other.solver.creek.CreekSolver.CreekGenerator;
 import myamya.other.solver.geradeweg.GeradewegSolver.GeradewegGenerator;
@@ -27,6 +28,7 @@ import myamya.other.solver.sashigane.SashiganeSolver.SashiganeGenerator;
 import myamya.other.solver.shakashaka.ShakashakaSolver.ShakashakaGenerator;
 import myamya.other.solver.slither.SlitherSolver.SlitherGenerator;
 import myamya.other.solver.sudoku.SudokuSolver.SudokuGenerator;
+import myamya.other.solver.sukoro.SukoroSolver.SukoroGenerator;
 import myamya.other.solver.tapa.TapaSolver.TapaGenerator;
 import myamya.other.solver.tasquare.TasquareSolver.TasquareGenerator;
 import net.arnx.jsonic.JSON;
@@ -336,6 +338,40 @@ public class SudokuGachaWeb extends HttpServlet {
 
 	}
 
+	static class SukoroGeneratorThlead extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+		protected final int pattern;
+
+		SukoroGeneratorThlead(int height, int width, int pattern) {
+			this.height = height;
+			this.width = width;
+			this.pattern = pattern;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new SukoroGenerator(height, width, HintPattern.getByVal(height >= 9 ? 0 : pattern, height, width));
+		}
+
+	}
+
+	static class BalanceGeneratorThlead extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+
+		BalanceGeneratorThlead(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new BalanceGenerator(height, width);
+		}
+
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -393,6 +429,11 @@ public class SudokuGachaWeb extends HttpServlet {
 				t = new BarnsGeneratorThlead(height, width);
 			} else if (type.equals("midloop")) {
 				t = new MidloopGeneratorThlead(height, width);
+			} else if (type.equals("sukoro")) {
+				int pattern = Integer.parseInt(request.getParameter("pattern"));
+				t = new SukoroGeneratorThlead(height, width, pattern);
+			} else if (type.equals("balance")) {
+				t = new BalanceGeneratorThlead(height, width);
 			} else {
 				throw new IllegalArgumentException();
 			}

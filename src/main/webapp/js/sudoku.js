@@ -16,6 +16,8 @@ var ruleMap = {
 	kurodoko : {name: "黒どこ", url:"https://www.nikoli.co.jp/ja/puzzles/where_is_black_cells/",source:"ニコリ公式"},
 	barns : {name: "バーンズ", url:"http://indi.s58.xrea.com/barns/",source:"連続発破保管庫さん"},
 	midloop : {name: "ミッドループ", url:"https://www.nikoli.co.jp/ja/puzzles/mid-loop/",source:"ニコリ公式"},
+	sukoro : {name: "数コロ", url:"https://www.nikoli.co.jp/ja/puzzles/sukoro/",source:"ニコリ公式"},
+	balance : {name: "バランスループ", url:"",source:""},
 }
 
 var option = {
@@ -113,10 +115,14 @@ $(function() {
     $('#sel_type').change(function(){
         showhide();
     });
+    $('#sel_size').change(function(){
+        showhide();
+    });
     var showhide = function () {
         var type = $('#sel_type').val();
         if (type == 'sudoku' || type == 'akari' || type == 'slither' || type == 'creek'
-        	|| type == 'gokigen' || type == 'tapa' || type == 'bag' || type == 'kurodoko') {
+        	|| type == 'gokigen' || type == 'tapa' || type == 'bag' || type == 'kurodoko'
+        	|| type == 'sukoro') {
             $('#lbl_pattern').show();
             $('#sel_pattern').show();
         } else {
@@ -136,6 +142,18 @@ $(function() {
             	$('#sel_size').val(6);
             } else {
             	$('#sel_size').val(9);
+            }
+        } else if (type == 'balance'){
+            $('#sel_size').append(option.size_3);
+            $('#sel_size').append(option.size_4);
+            $('#sel_size').append(option.size_5);
+            $('#sel_size').append(option.size_6);
+            $('#sel_size').append(option.size_7);
+            $('#sel_size').append(option.size_8);
+            if (nowSelSizeVal > 8){
+            	$('#sel_size').val(8);
+            } else {
+               	$('#sel_size').val(nowSelSizeVal);
             }
         } else if (type == 'sashigane' || type == 'barns'){
             $('#sel_size').append(option.size_4);
@@ -177,6 +195,24 @@ $(function() {
             } else {
                	$('#sel_pattern').val(nowSelPetternVal);
             }
+        } else if (type == 'sukoro'){
+        	$('#sel_pattern').append(option.pattern_0);
+        	if (nowSelSizeVal <= 8) {
+            	$('#sel_pattern').append(option.pattern_1);
+            	$('#sel_pattern').append(option.pattern_2);
+            	$('#sel_pattern').append(option.pattern_3);
+            	$('#sel_pattern').append(option.pattern_4);
+            	$('#sel_pattern').append(option.pattern_5);
+            	if (nowSelPetternVal== 6){
+            		$('#sel_pattern').val(2);
+            	} else if (nowSelPetternVal == 7){
+            		$('#sel_pattern').val(1);
+            	} else {
+            		$('#sel_pattern').val(nowSelPetternVal);
+            	}
+        	} else {
+        		$('#sel_pattern').val(0);
+        	}
         } else {
         	$('#sel_pattern').append(option.pattern_0);
         	$('#sel_pattern').append(option.pattern_1);
@@ -193,6 +229,8 @@ $(function() {
             $('#a_rule').attr('href', oneRule.url)
             $('#a_rule').text(oneRule.name + 'のルールを表示(' + oneRule.source + ')')
             $('#div_rule').show();
+        } else {
+            $('#div_rule').hide();
         }
     }
     var updateHistory = function(time, type, resultObj){
