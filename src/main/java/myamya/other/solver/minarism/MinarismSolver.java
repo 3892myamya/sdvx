@@ -1,16 +1,262 @@
 package myamya.other.solver.minarism;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
 import myamya.other.solver.Common.Difficulty;
+import myamya.other.solver.Common.GeneratorResult;
 import myamya.other.solver.Common.Position;
+import myamya.other.solver.Generator;
 import myamya.other.solver.Solver;
 
 public class MinarismSolver implements Solver {
+	public static class MinarismGenerator implements Generator {
+		static class MinarismSolverForGenerator extends MinarismSolver {
+			private final int limit;
+
+			public MinarismSolverForGenerator(Field field, int limit) {
+				super(field);
+				this.limit = limit;
+			}
+
+			public int solve2() {
+				while (!field.isSolved()) {
+					String befStr = field.getStateDump();
+					if (!field.solveAndCheck()) {
+						return -1;
+					}
+					if (field.getStateDump().equals(befStr)) {
+						if (!candSolve(field, 0)) {
+							return -1;
+						}
+						if (field.getStateDump().equals(befStr)) {
+							if (!candSolve(field, 1)) {
+								return -1;
+							}
+							if (field.getStateDump().equals(befStr)) {
+								if (!candSolve(field, 2)) {
+									return -1;
+								}
+								if (field.getStateDump().equals(befStr)) {
+									return -1;
+								}
+							}
+						}
+					}
+				}
+				return count;
+			}
+
+			@Override
+			protected boolean candSolve(Field field, int recursive) {
+				if (this.count >= limit) {
+					return false;
+				} else {
+					return super.candSolve(field, recursive);
+				}
+			}
+		}
+
+		private final int height;
+		private final int width;
+
+		public MinarismGenerator(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		public static void main(String[] args) {
+			new MinarismGenerator(5, 5).generate();
+		}
+
+		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
+		private static final String FULL_NUMS = "０１２３４５６７８９";
+
+		@Override
+		public GeneratorResult generate() {
+			MinarismSolver.Field wkField = new MinarismSolver.Field(height, width);
+			int index = 0;
+			int level = 0;
+			long start = System.nanoTime();
+			while (true) {
+				// 問題生成部
+				while (!wkField.isSolved()) {
+					int yIndex = index / width;
+					int xIndex = index % width;
+					if (wkField.numbersCand[yIndex][xIndex].size() != 0) {
+						int numIdx = (int) (Math.random() * wkField.numbersCand[yIndex][xIndex].size());
+						MinarismSolver.Field virtual = new MinarismSolver.Field(wkField);
+						virtual.numbersCand[yIndex][xIndex] = new ArrayList<>();
+						virtual.numbersCand[yIndex][xIndex].add(wkField.numbersCand[yIndex][xIndex].get(numIdx));
+						if (!virtual.solveAndCheck()) {
+							// 破綻したら0から作り直す。
+							wkField = new MinarismSolver.Field(height, width);
+							index = 0;
+							continue;
+						} else {
+							wkField.numbersCand = virtual.numbersCand;
+						}
+					}
+					index++;
+				}
+				List<Integer> indexList = new ArrayList<>();
+				for (int i = 0; i < ((height * (width - 1)) + ((height - 1) * width)); i++) {
+					indexList.add(i);
+				}
+				// 記号付与
+				for (Integer posBase : indexList) {
+					boolean toYokoWall;
+					int yIndex, xIndex;
+					if (posBase < height * (width - 1)) {
+						toYokoWall = true;
+						yIndex = posBase / (width - 1);
+						xIndex = posBase % (width - 1);
+					} else {
+						toYokoWall = false;
+						posBase = posBase - (height * (width - 1));
+						yIndex = posBase / width;
+						xIndex = posBase % width;
+					}
+					// 1/2の確率で数字か不等号かにする
+					if (toYokoWall) {
+						int masu1 = wkField.numbersCand[yIndex][xIndex].get(0);
+						int masu2 = wkField.numbersCand[yIndex][xIndex + 1].get(0);
+						if (Math.random() * 2 < 1) {
+							wkField.yokoWallNum[yIndex][xIndex] = masu1 < masu2 ? -2 : -1;
+						} else {
+							wkField.yokoWallNum[yIndex][xIndex] = masu1 < masu2 ? masu2 - masu1 : masu1 - masu2;
+						}
+					} else {
+						int masu1 = wkField.numbersCand[yIndex][xIndex].get(0);
+						int masu2 = wkField.numbersCand[yIndex + 1][xIndex].get(0);
+						if (Math.random() * 2 < 1) {
+							wkField.tateWallNum[yIndex][xIndex] = masu1 < masu2 ? -2 : -1;
+						} else {
+							wkField.tateWallNum[yIndex][xIndex] = masu1 < masu2 ? masu2 - masu1 : masu1 - masu2;
+						}
+					}
+				}
+				// マスを戻す
+				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+						wkField.numbersCand[yIndex][xIndex] = new ArrayList<>();
+						for (int i = 1; i <= height || i <= width; i++) {
+							wkField.numbersCand[yIndex][xIndex].add(i);
+						}
+					}
+				}
+
+				// 解けるかな？
+				level = new MinarismSolverForGenerator(new Field(wkField), 100).solve2();
+				if (level == -1) {
+					// 解けなければやり直し
+					wkField = new Field(height, width);
+					index = 0;
+				} else {
+					// ヒントを限界まで減らす
+					Collections.shuffle(indexList);
+					for (Integer posBase : indexList) {
+						System.out.println(wkField);
+						Field virtual = new Field(wkField, true);
+						boolean toYokoWall;
+						int yIndex, xIndex;
+						if (posBase < height * (width - 1)) {
+							toYokoWall = true;
+							yIndex = posBase / (width - 1);
+							xIndex = posBase % (width - 1);
+						} else {
+							toYokoWall = false;
+							posBase = posBase - (height * (width - 1));
+							yIndex = posBase / width;
+							xIndex = posBase % width;
+						}
+						if (toYokoWall) {
+							virtual.yokoWallNum[yIndex][xIndex] = 0;
+						} else {
+							virtual.tateWallNum[yIndex][xIndex] = 0;
+						}
+						int solveResult = new MinarismSolverForGenerator(virtual, 1500).solve2();
+						if (solveResult != -1) {
+							if (toYokoWall) {
+								wkField.yokoWallNum[yIndex][xIndex] = 0;
+							} else {
+								wkField.tateWallNum[yIndex][xIndex] = 0;
+							}
+							level = solveResult;
+						}
+					}
+					break;
+				}
+			}
+			level = (int) Math.sqrt(level * 20 / 3) + 1;
+			String status = "Lv:" + level + "の問題を獲得！(数字:" + wkField.getHintCount() + ")";
+			String url = wkField.getPuzPreURL();
+			String link = "<a href=\"" + url + "\" target=\"_blank\">ぱずぷれv3で解く</a>";
+			StringBuilder sb = new StringBuilder();
+			int baseSize = 20;
+			int margin = 5;
+			sb.append(
+					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
+							+ "height=\"" + (wkField.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
+							+ (wkField.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			// 横壁描画
+			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = -1; xIndex < wkField.getXLength(); xIndex++) {
+					boolean oneYokoWall = xIndex == -1 || xIndex == wkField.getXLength() - 1;
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + margin)
+							+ "\" x1=\""
+							+ (xIndex * baseSize + 2 * baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ (xIndex * baseSize + 2 * baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneYokoWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">"
+							+ "</line>");
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = -1; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+					boolean oneTateWall = yIndex == -1 || yIndex == wkField.getYLength() - 1;
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x1=\""
+							+ (xIndex * baseSize + baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ (xIndex * baseSize + baseSize + baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneTateWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">"
+							+ "</line>");
+				}
+			}
+			sb.append("</svg>");
+			System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
+			System.out.println(level);
+			System.out.println(wkField.getHintCount());
+			System.out.println(wkField);
+			return new GeneratorResult(status, sb.toString(), link, url, level, "");
+
+		}
+
+	}
 
 	public static class Field {
 		static final String ALPHABET_FROM_I = "ijklmnopqrstuvwxyz";
@@ -24,6 +270,16 @@ public class MinarismSolver implements Solver {
 
 		public List<Integer>[][] getNumbersCand() {
 			return numbersCand;
+		}
+
+		public String getPuzPreURL() {
+			// TODO 自動生成されたメソッド・スタブ
+			return null;
+		}
+
+		public String getHintCount() {
+			// TODO 自動生成されたメソッド・スタブ
+			return null;
 		}
 
 		public int[][] getYokoWall() {
@@ -113,6 +369,43 @@ public class MinarismSolver implements Solver {
 			}
 			yokoWallNum = other.yokoWallNum;
 			tateWallNum = other.tateWallNum;
+		}
+
+		@SuppressWarnings("unchecked")
+		public Field(int height, int width) {
+			numbersCand = new ArrayList[height][width];
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					numbersCand[yIndex][xIndex] = new ArrayList<>();
+					for (int i = 1; i <= getYLength() || i <= getXLength(); i++) {
+						numbersCand[yIndex][xIndex].add(i);
+					}
+				}
+			}
+			yokoWallNum = new int[height][width - 1];
+			tateWallNum = new int[height - 1][width];
+		}
+
+		@SuppressWarnings("unchecked")
+		public Field(Field other, boolean flag) {
+			numbersCand = new ArrayList[other.getYLength()][other.getXLength()];
+			yokoWallNum = new int[other.getYLength()][other.getXLength() - 1];
+			tateWallNum = new int[other.getYLength() - 1][other.getXLength()];
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					numbersCand[yIndex][xIndex] = new ArrayList<>(other.numbersCand[yIndex][xIndex]);
+				}
+			}
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength() - 1; xIndex++) {
+					yokoWallNum[yIndex][xIndex] = other.yokoWallNum[yIndex][xIndex];
+				}
+			}
+			for (int yIndex = 0; yIndex < getYLength() - 1; yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					tateWallNum[yIndex][xIndex] = other.tateWallNum[yIndex][xIndex];
+				}
+			}
 		}
 
 		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
@@ -435,11 +728,15 @@ public class MinarismSolver implements Solver {
 
 	}
 
-	private final Field field;
-	private int count = 0;
+	protected final Field field;
+	protected int count = 0;
 
 	public MinarismSolver(int height, int width, String param) {
 		field = new Field(height, width, param);
+	}
+
+	public MinarismSolver(Field field) {
+		this.field = new Field(field);
 	}
 
 	public Field getField() {
@@ -447,7 +744,7 @@ public class MinarismSolver implements Solver {
 	}
 
 	public static void main(String[] args) {
-		String url = "http://pzv.jp/p.html?minarism/7/7/jhhphhjhgj12jhgjhgphgjhihihighigihihk4n3kgigihihgihigig"; //urlを入れれば試せる
+		String url = "https://puzz.link/p?minarism/5/5/2jhigjhkhj4l2r2ihi3l"; //urlを入れれば試せる
 		String[] params = url.split("/");
 		int height = Integer.parseInt(params[params.length - 2]);
 		int width = Integer.parseInt(params[params.length - 3]);
@@ -489,17 +786,17 @@ public class MinarismSolver implements Solver {
 			}
 		}
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
-		System.out.println("難易度:" + (count * 50));
+		System.out.println("難易度:" + (count * 20));
 		System.out.println(field);
 		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count * 50).toString();
+				+ Difficulty.getByCount(count * 20).toString();
 	}
 
 	/**
 	 * 仮置きして調べる
 	 * @param posSet
 	 */
-	private boolean candSolve(Field field, int recursive) {
+	protected boolean candSolve(Field field, int recursive) {
 		while (true) {
 			String befStr = field.getStateDump();
 			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
