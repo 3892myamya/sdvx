@@ -345,4 +345,9 @@ public class Common {
 		}
 
 	}
+
+	public static class CountOverException extends RuntimeException {
+		// ガチャでカウントオーバーなのにまれにOK判定が出ることがあるらしいので、
+		// 強制的に例外扱いにするためのクラス。
+	}
 }

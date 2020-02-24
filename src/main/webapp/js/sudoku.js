@@ -18,6 +18,7 @@ var ruleMap = {
 	midloop : {name: "ミッドループ", url:"https://www.nikoli.co.jp/ja/puzzles/mid-loop/",source:"ニコリ公式"},
 	sukoro : {name: "数コロ", url:"https://www.nikoli.co.jp/ja/puzzles/sukoro/",source:"ニコリ公式"},
 	balance : {name: "バランスループ", url:"",source:""},
+	minarism : {name: "マイナリズム", url:"	http://indi.s58.xrea.com/minarism/",source:"連続発破保管庫さん"},
 }
 
 var option = {
@@ -142,6 +143,17 @@ $(function() {
             	$('#sel_size').val(6);
             } else {
             	$('#sel_size').val(9);
+            }
+        } else if (type == 'minarism'){
+            $('#sel_size').append(option.size_3);
+            $('#sel_size').append(option.size_4);
+            $('#sel_size').append(option.size_5);
+            $('#sel_size').append(option.size_6);
+            $('#sel_size').append(option.size_7);
+            if (nowSelSizeVal > 7){
+            	$('#sel_size').val(7);
+            } else {
+               	$('#sel_size').val(nowSelSizeVal);
             }
         } else if (type == 'balance'){
             $('#sel_size').append(option.size_3);

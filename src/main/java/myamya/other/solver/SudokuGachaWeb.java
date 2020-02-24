@@ -22,6 +22,7 @@ import myamya.other.solver.gokigen.GokigenSolver.GokigenGenerator;
 import myamya.other.solver.kurodoko.KurodokoSolver.KurodokoGenerator;
 import myamya.other.solver.masyu.MasyuSolver.MasyuGenerator;
 import myamya.other.solver.midloop.MidloopSolver.MidloopGenerator;
+import myamya.other.solver.minarism.MinarismSolver.MinarismGenerator;
 import myamya.other.solver.nurimisaki.NurimisakiSolver.NurimisakiGenerator;
 import myamya.other.solver.reflect.ReflectSolver.ReflectGenerator;
 import myamya.other.solver.sashigane.SashiganeSolver.SashiganeGenerator;
@@ -372,6 +373,22 @@ public class SudokuGachaWeb extends HttpServlet {
 
 	}
 
+	static class MinarismGeneratorThlead extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+
+		MinarismGeneratorThlead(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new MinarismGenerator(height, width);
+		}
+
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -434,6 +451,8 @@ public class SudokuGachaWeb extends HttpServlet {
 				t = new SukoroGeneratorThlead(height, width, pattern);
 			} else if (type.equals("balance")) {
 				t = new BalanceGeneratorThlead(height, width);
+			} else if (type.equals("minarism")) {
+				t = new MinarismGeneratorThlead(height, width);
 			} else {
 				throw new IllegalArgumentException();
 			}

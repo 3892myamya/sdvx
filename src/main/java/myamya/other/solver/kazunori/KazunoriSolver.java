@@ -46,6 +46,14 @@ public class KazunoriSolver implements Solver {
 			return tateWall;
 		}
 
+		public int[][] getYokoWallNum() {
+			return yokoWallNum;
+		}
+
+		public int[][] getTateWallNum() {
+			return tateWallNum;
+		}
+
 		public int getYLength() {
 			return numbersCand.length;
 		}

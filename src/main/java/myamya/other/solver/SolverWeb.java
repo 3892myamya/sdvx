@@ -64,6 +64,7 @@ import myamya.other.solver.icelom.IcelomSolver;
 import myamya.other.solver.juosan.JuosanSolver;
 import myamya.other.solver.kakuro.KakuroSolver;
 import myamya.other.solver.kakuro.KakuroSolver.Block;
+import myamya.other.solver.kazunori.KazunoriSolver;
 import myamya.other.solver.kropki.KropkiSolver;
 import myamya.other.solver.kurochute.KurochuteSolver;
 import myamya.other.solver.kurodoko.KurodokoSolver;
@@ -75,6 +76,7 @@ import myamya.other.solver.masyu.MasyuSolver;
 import myamya.other.solver.masyu.MasyuSolver.Pearl;
 import myamya.other.solver.maxi.MaxiSolver;
 import myamya.other.solver.midloop.MidloopSolver;
+import myamya.other.solver.minarism.MinarismSolver;
 import myamya.other.solver.moonsun.MoonsunSolver;
 import myamya.other.solver.nagare.NagareSolver;
 import myamya.other.solver.nagenawa.NagenawaSolver;
@@ -11037,6 +11039,423 @@ public class SolverWeb extends HttpServlet {
 		}
 	}
 
+	static class KazunoriSolverThread extends AbsSolverThlead {
+		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
+		private static final String FULL_NUMS = "０１２３４５６７８９";
+
+		KazunoriSolverThread(int height, int width, String param) {
+			super(height, width, param);
+		}
+
+		@Override
+		protected Solver getSolver() {
+			return new KazunoriSolver(height, width, param);
+		}
+
+		@Override
+		public String makeCambus() {
+			KazunoriSolver.Field field = ((KazunoriSolver) solver).getField();
+			StringBuilder sb = new StringBuilder();
+			int baseSize = 20;
+			int margin = 5;
+			sb.append(
+					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
+							+ "height=\"" + (field.getYLength() * baseSize + 2 * baseSize) + "\" width=\""
+							+ (field.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			// 横壁描画
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = -1; xIndex < field.getXLength(); xIndex++) {
+					boolean oneYokoWall = xIndex == -1 || xIndex == field.getXLength() - 1
+							|| field.getYokoWall()[yIndex][xIndex];
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + margin)
+							+ "\" x1=\""
+							+ (xIndex * baseSize + 2 * baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ (xIndex * baseSize + 2 * baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneYokoWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">"
+							+ "</line>");
+					if (xIndex != -1 && xIndex != field.getXLength() - 1
+							&& field.getYokoWallNum()[yIndex][xIndex] != 0) {
+						sb.append("<circle cy=\"" + (yIndex * baseSize + (baseSize / 2) + margin)
+								+ "\" cx=\""
+								+ (xIndex * baseSize + baseSize + baseSize)
+								+ "\" r=\""
+								+ 5
+								+ "\" fill=\"white\", stroke=\"black\">"
+								+ "</circle>");
+						String numberStr = String.valueOf(field.getYokoWallNum()[yIndex][xIndex]);
+						String masuStr;
+						int idx = HALF_NUMS.indexOf(numberStr);
+						if (idx >= 0) {
+							masuStr = FULL_NUMS.substring(idx / 2, idx / 2 + 1);
+						} else {
+							masuStr = numberStr;
+						}
+						sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 6 + margin)
+								+ "\" x=\""
+								+ (xIndex * baseSize + baseSize + (baseSize / 2) + 5)
+								+ "\" font-size=\""
+								+ 10
+								+ "\" textLength=\""
+								+ 10
+								+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+								+ masuStr
+								+ "</text>");
+					}
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = -1; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					boolean oneTateWall = yIndex == -1 || yIndex == field.getYLength() - 1
+							|| field.getTateWall()[yIndex][xIndex];
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x1=\""
+							+ (xIndex * baseSize + baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ (xIndex * baseSize + baseSize + baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneTateWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">"
+							+ "</line>");
+					if (yIndex != -1 && yIndex != field.getYLength() - 1
+							&& field.getTateWallNum()[yIndex][xIndex] != 0) {
+						sb.append("<circle cy=\"" + (yIndex * baseSize + baseSize + margin)
+								+ "\" cx=\""
+								+ (xIndex * baseSize + baseSize + (baseSize / 2))
+								+ "\" r=\""
+								+ 5
+								+ "\" fill=\"white\", stroke=\"black\">"
+								+ "</circle>");
+						String numberStr = String.valueOf(field.getTateWallNum()[yIndex][xIndex]);
+						String masuStr;
+						int idx = HALF_NUMS.indexOf(numberStr);
+						if (idx >= 0) {
+							masuStr = FULL_NUMS.substring(idx / 2, idx / 2 + 1);
+						} else {
+							masuStr = numberStr;
+						}
+						sb.append("<text y=\"" + (yIndex * baseSize + baseSize + (baseSize / 2) - 6 + margin)
+								+ "\" x=\""
+								+ (xIndex * baseSize + baseSize + 5)
+								+ "\" font-size=\""
+								+ 10
+								+ "\" textLength=\""
+								+ 10
+								+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+								+ masuStr
+								+ "</text>");
+					}
+				}
+			}
+			// 数字描画
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					if (field.getNumbersCand()[yIndex][xIndex].size() == 1) {
+						String numberStr = String.valueOf(field.getNumbersCand()[yIndex][xIndex].get(0));
+						String masuStr;
+						int idx = HALF_NUMS.indexOf(numberStr);
+						if (idx >= 0) {
+							masuStr = FULL_NUMS.substring(idx / 2, idx / 2 + 1);
+						} else {
+							masuStr = numberStr;
+						}
+						sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 4 + margin)
+								+ "\" x=\""
+								+ (xIndex * baseSize + baseSize + 2)
+								+ "\" font-size=\""
+								+ (baseSize - 5)
+								+ "\" textLength=\""
+								+ (baseSize - 5)
+								+ "\" fill=\""
+								+ "green"
+								+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+								+ masuStr
+								+ "</text>");
+					}
+				}
+			}
+			sb.append("</svg>");
+			return sb.toString();
+		}
+	}
+
+	static class MinarismSolverThread extends AbsSolverThlead {
+		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
+		private static final String FULL_NUMS = "０１２３４５６７８９";
+
+		MinarismSolverThread(int height, int width, String param) {
+			super(height, width, param);
+		}
+
+		@Override
+		protected Solver getSolver() {
+			return new MinarismSolver(height, width, param);
+		}
+
+		@Override
+		public String makeCambus() {
+			MinarismSolver.Field field = ((MinarismSolver) solver).getField();
+			StringBuilder sb = new StringBuilder();
+			int baseSize = 20;
+			int margin = 5;
+			sb.append(
+					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
+							+ "height=\"" + (field.getYLength() * baseSize + 2 * baseSize) + "\" width=\""
+							+ (field.getXLength() * baseSize + 2 * baseSize) + "\" >");
+
+			// 横壁描画
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = -1; xIndex < field.getXLength(); xIndex++) {
+					boolean oneYokoWall = xIndex == -1 || xIndex == field.getXLength() - 1;
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + margin)
+							+ "\" x1=\""
+							+ (xIndex * baseSize + 2 * baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ (xIndex * baseSize + 2 * baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneYokoWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">"
+							+ "</line>");
+					if (xIndex != -1 && xIndex != field.getXLength() - 1) {
+						if (field.getYokoWallNum()[yIndex][xIndex] > 0) {
+							sb.append("<circle cy=\"" + (yIndex * baseSize + (baseSize / 2) + margin)
+									+ "\" cx=\""
+									+ (xIndex * baseSize + baseSize + baseSize)
+									+ "\" r=\""
+									+ 5
+									+ "\" fill=\"white\", stroke=\"black\">"
+									+ "</circle>");
+							String numberStr = String.valueOf(field.getYokoWallNum()[yIndex][xIndex]);
+							String masuStr;
+							int idx = HALF_NUMS.indexOf(numberStr);
+							if (idx >= 0) {
+								masuStr = FULL_NUMS.substring(idx / 2, idx / 2 + 1);
+							} else {
+								masuStr = numberStr;
+							}
+							sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 6 + margin)
+									+ "\" x=\""
+									+ (xIndex * baseSize + baseSize + (baseSize / 2) + 5)
+									+ "\" font-size=\""
+									+ 10
+									+ "\" textLength=\""
+									+ 10
+									+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+									+ masuStr
+									+ "</text>");
+						} else if (field.getYokoWallNum()[yIndex][xIndex] == -2) {
+							sb.append("<line y1=\""
+									+ (yIndex * baseSize + (baseSize / 2) - 3 + margin)
+									+ "\" x1=\""
+									+ (xIndex * baseSize + baseSize + baseSize + 3)
+									+ "\" y2=\""
+									+ (yIndex * baseSize + (baseSize / 2) + margin)
+									+ "\" x2=\""
+									+ (xIndex * baseSize + baseSize + baseSize - 3)
+									+ "\" stroke-width=\"1\" fill=\"none\"");
+							sb.append("stroke=\"#000\" ");
+							sb.append(">"
+									+ "</line>");
+							sb.append("<line y1=\""
+									+ (yIndex * baseSize + (baseSize / 2) + margin)
+									+ "\" x1=\""
+									+ (xIndex * baseSize + baseSize + baseSize - 3)
+									+ "\" y2=\""
+									+ (yIndex * baseSize + (baseSize / 2) + 3 + margin)
+									+ "\" x2=\""
+									+ (xIndex * baseSize + baseSize + baseSize + 3)
+									+ "\" stroke-width=\"1\" fill=\"none\"");
+							sb.append("stroke=\"#000\" ");
+							sb.append(">"
+									+ "</line>");
+						} else if (field.getYokoWallNum()[yIndex][xIndex] == -1) {
+							sb.append("<line y1=\""
+									+ (yIndex * baseSize + (baseSize / 2) - 3 + margin)
+									+ "\" x1=\""
+									+ (xIndex * baseSize + baseSize + baseSize - 3)
+									+ "\" y2=\""
+									+ (yIndex * baseSize + (baseSize / 2) + margin)
+									+ "\" x2=\""
+									+ (xIndex * baseSize + baseSize + baseSize + 3)
+									+ "\" stroke-width=\"1\" fill=\"none\"");
+							sb.append("stroke=\"#000\" ");
+							sb.append(">"
+									+ "</line>");
+							sb.append("<line y1=\""
+									+ (yIndex * baseSize + (baseSize / 2) + margin)
+									+ "\" x1=\""
+									+ (xIndex * baseSize + baseSize + baseSize + 3)
+									+ "\" y2=\""
+									+ (yIndex * baseSize + (baseSize / 2) + 3 + margin)
+									+ "\" x2=\""
+									+ (xIndex * baseSize + baseSize + baseSize - 3)
+									+ "\" stroke-width=\"1\" fill=\"none\"");
+							sb.append("stroke=\"#000\" ");
+							sb.append(">"
+									+ "</line>");
+						}
+					}
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = -1; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					boolean oneTateWall = yIndex == -1 || yIndex == field.getYLength() - 1;
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x1=\""
+							+ (xIndex * baseSize + baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ (xIndex * baseSize + baseSize + baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneTateWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">"
+							+ "</line>");
+					if (yIndex != -1 && yIndex != field.getYLength() - 1) {
+						if (field.getTateWallNum()[yIndex][xIndex] > 0) {
+							sb.append("<circle cy=\"" + (yIndex * baseSize + baseSize + margin)
+									+ "\" cx=\""
+									+ (xIndex * baseSize + baseSize + (baseSize / 2))
+									+ "\" r=\""
+									+ 5
+									+ "\" fill=\"white\", stroke=\"black\">"
+									+ "</circle>");
+							String numberStr = String.valueOf(field.getTateWallNum()[yIndex][xIndex]);
+							String masuStr;
+							int idx = HALF_NUMS.indexOf(numberStr);
+							if (idx >= 0) {
+								masuStr = FULL_NUMS.substring(idx / 2, idx / 2 + 1);
+							} else {
+								masuStr = numberStr;
+							}
+							sb.append("<text y=\"" + (yIndex * baseSize + baseSize + (baseSize / 2) - 6 + margin)
+									+ "\" x=\""
+									+ (xIndex * baseSize + baseSize + 5)
+									+ "\" font-size=\""
+									+ 10
+									+ "\" textLength=\""
+									+ 10
+									+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+									+ masuStr
+									+ "</text>");
+						} else if (field.getTateWallNum()[yIndex][xIndex] == -2) {
+							sb.append("<line y1=\""
+									+ (yIndex * baseSize + baseSize + 3 + margin)
+									+ "\" x1=\""
+									+ (xIndex * baseSize + baseSize + (baseSize / 2) - 3)
+									+ "\" y2=\""
+									+ (yIndex * baseSize + baseSize - 3 + margin)
+									+ "\" x2=\""
+									+ (xIndex * baseSize + baseSize + (baseSize / 2))
+									+ "\" stroke-width=\"1\" fill=\"none\"");
+							sb.append("stroke=\"#000\" ");
+							sb.append(">"
+									+ "</line>");
+							sb.append("<line y1=\""
+									+ (yIndex * baseSize + baseSize - 3 + margin)
+									+ "\" x1=\""
+									+ (xIndex * baseSize + baseSize + (baseSize / 2))
+									+ "\" y2=\""
+									+ (yIndex * baseSize + baseSize + 3 + margin)
+									+ "\" x2=\""
+									+ (xIndex * baseSize + baseSize + (baseSize / 2) + 3)
+									+ "\" stroke-width=\"1\" fill=\"none\"");
+							sb.append("stroke=\"#000\" ");
+							sb.append(">"
+									+ "</line>");
+						} else if (field.getTateWallNum()[yIndex][xIndex] == -1) {
+							sb.append("<line y1=\""
+									+ (yIndex * baseSize + baseSize - 3 + margin)
+									+ "\" x1=\""
+									+ (xIndex * baseSize + baseSize + (baseSize / 2) - 3)
+									+ "\" y2=\""
+									+ (yIndex * baseSize + baseSize + 3 + margin)
+									+ "\" x2=\""
+									+ (xIndex * baseSize + baseSize + (baseSize / 2))
+									+ "\" stroke-width=\"1\" fill=\"none\"");
+							sb.append("stroke=\"#000\" ");
+							sb.append(">"
+									+ "</line>");
+							sb.append("<line y1=\""
+									+ (yIndex * baseSize + baseSize + 3 + margin)
+									+ "\" x1=\""
+									+ (xIndex * baseSize + baseSize + (baseSize / 2))
+									+ "\" y2=\""
+									+ (yIndex * baseSize + baseSize - 3 + margin)
+									+ "\" x2=\""
+									+ (xIndex * baseSize + baseSize + (baseSize / 2) + 3)
+									+ "\" stroke-width=\"1\" fill=\"none\"");
+							sb.append("stroke=\"#000\" ");
+							sb.append(">"
+									+ "</line>");
+						}
+					}
+				}
+			}
+			// 数字描画
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					if (field.getNumbersCand()[yIndex][xIndex].size() == 1) {
+						String numberStr = String.valueOf(field.getNumbersCand()[yIndex][xIndex].get(0));
+						String masuStr;
+						int idx = HALF_NUMS.indexOf(numberStr);
+						if (idx >= 0) {
+							masuStr = FULL_NUMS.substring(idx / 2, idx / 2 + 1);
+						} else {
+							masuStr = numberStr;
+						}
+						sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 4 + margin)
+								+ "\" x=\""
+								+ (xIndex * baseSize + baseSize + 2)
+								+ "\" font-size=\""
+								+ (baseSize - 5)
+								+ "\" textLength=\""
+								+ (baseSize - 5)
+								+ "\" fill=\""
+								+ "green"
+								+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+								+ masuStr
+								+ "</text>");
+					}
+				}
+			}
+
+			sb.append("</svg>");
+			return sb.toString();
+		}
+
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -11270,6 +11689,10 @@ public class SolverWeb extends HttpServlet {
 					t = new MaxiSolverThread(height, width, param);
 				} else if (puzzleType.contains("balance")) {
 					t = new BalanceSolverThread(height, width, param);
+				} else if (puzzleType.contains("kazunori")) {
+					t = new KazunoriSolverThread(height, width, param);
+				} else if (puzzleType.contains("minarism")) {
+					t = new MinarismSolverThread(height, width, param);
 				} else {
 					throw new IllegalArgumentException();
 				}
