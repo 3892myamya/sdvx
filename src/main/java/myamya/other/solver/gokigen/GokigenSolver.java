@@ -37,7 +37,7 @@ public class GokigenSolver implements Solver {
 					}
 					int recursiveCnt = 0;
 					while (field.getStateDump().equals(befStr) && recursiveCnt < 3) {
-						if (!candSolve(field, recursiveCnt)) {
+						if (!candSolve(field, recursiveCnt == 2 ? 999 : recursiveCnt)) {
 							return -1;
 						}
 						recursiveCnt++;
@@ -736,7 +736,7 @@ public class GokigenSolver implements Solver {
 			}
 			int recursiveCnt = 0;
 			while (field.getStateDump().equals(befStr) && recursiveCnt < 3) {
-				if (!candSolve(field, recursiveCnt)) {
+				if (!candSolve(field, recursiveCnt == 2 ? 999 : recursiveCnt)) {
 					return "問題に矛盾がある可能性があります。途中経過を返します。";
 				}
 				recursiveCnt++;
