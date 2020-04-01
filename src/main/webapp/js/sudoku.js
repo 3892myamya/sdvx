@@ -19,6 +19,7 @@ var ruleMap = {
 	sukoro : {name: "数コロ", url:"https://www.nikoli.co.jp/ja/puzzles/sukoro/",source:"ニコリ公式"},
 	balance : {name: "バランスループ", url:"",source:""},
 	minarism : {name: "マイナリズム", url:"	http://indi.s58.xrea.com/minarism/",source:"連続発破保管庫さん"},
+	box : {name: "ボックス", url:"",source:""},
 }
 
 var option = {
@@ -164,6 +165,19 @@ $(function() {
             $('#sel_size').append(option.size_8);
             if (nowSelSizeVal > 8){
             	$('#sel_size').val(8);
+            } else {
+               	$('#sel_size').val(nowSelSizeVal);
+            }
+        } else if (type == 'box'){
+            $('#sel_size').append(option.size_3);
+            $('#sel_size').append(option.size_4);
+            $('#sel_size').append(option.size_5);
+            $('#sel_size').append(option.size_6);
+            $('#sel_size').append(option.size_7);
+            $('#sel_size').append(option.size_8);
+            $('#sel_size').append(option.size_9);
+            if (nowSelSizeVal > 9){
+            	$('#sel_size').val(9);
             } else {
                	$('#sel_size').val(nowSelSizeVal);
             }

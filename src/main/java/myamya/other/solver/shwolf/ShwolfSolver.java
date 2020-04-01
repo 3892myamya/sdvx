@@ -82,6 +82,8 @@ public class ShwolfSolver implements Solver {
 				int interval;
 				if (ch == '.') {
 					interval = 36;
+					index = index + interval;
+					continue;
 				} else {
 					interval = Character.getNumericValue(ch);
 				}
