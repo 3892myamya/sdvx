@@ -283,7 +283,7 @@ public class BoxSolver implements Solver {
 			return masu;
 		}
 
-		private static final String FOR_URL = "0123456789abcdefghijklmnopqrstux";
+		private static final String FOR_URL = "0123456789abcdefghijklmnopqrstuv";
 
 		public String getPuzPreURL() {
 			StringBuilder sb = new StringBuilder();
