@@ -20,6 +20,7 @@ var ruleMap = {
 	balance : {name: "バランスループ", url:"",source:""},
 	minarism : {name: "マイナリズム", url:"	http://indi.s58.xrea.com/minarism/",source:"連続発破保管庫さん"},
 	box : {name: "ボックス", url:"",source:""},
+	kurotto : {name: "クロット", url:"https://www.nikoli.co.jp/ja/puzzles/kurotto/",source:"ニコリ公式"},
 }
 
 var option = {
@@ -78,6 +79,7 @@ $(function() {
         $('#div_result').text('');
         $('#div_link').text('');
         $('#caption').text('抽選中です。少々お待ちください……');
+        $('#loading').show();
         var param = {};
         param.type = $('#sel_type').val();
         param.pattern = $('#sel_pattern').val();
@@ -95,6 +97,7 @@ $(function() {
         }).done(function(result) {
             var resultObj = JSON.parse(result);
             $('#caption').text(resultObj.status);
+            $('#loading').hide();
             if (resultObj.result != ''){
                 $('#div_result').html(resultObj.result);
                 $('#div_link').html(resultObj.link);
@@ -112,6 +115,7 @@ $(function() {
             }
         }).fail(function() {
             $('#caption').text('通信時にエラーが発生しました');
+            $('#loading').hide();
         });
     });
     $('#sel_type').change(function(){
@@ -156,7 +160,7 @@ $(function() {
             } else {
                	$('#sel_size').val(nowSelSizeVal);
             }
-        } else if (type == 'balance'){
+        } else if (type == 'balance' || type == 'kurotto'){
             $('#sel_size').append(option.size_3);
             $('#sel_size').append(option.size_4);
             $('#sel_size').append(option.size_5);
@@ -311,5 +315,6 @@ $(function() {
     }
     $('#tweetbtn').hide();
     $('#edt_if').hide();
+    $('#loading').hide();
     showhide();
 });

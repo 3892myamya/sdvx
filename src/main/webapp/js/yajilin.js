@@ -6,6 +6,7 @@ $(function() {
         }
         $('#div_result').children().remove();
         $('#caption').text('処理中です。少々お待ちください……');
+        $('#loading').show();
         var param = {};
         param.url = $('#edt_url').val();
         $.ajax({
@@ -17,11 +18,14 @@ $(function() {
             var resultObj = JSON.parse(result);
             $('#caption').text(resultObj.status);
             $('#div_result').html(resultObj.result);
+            $('#loading').hide();
         }).fail(function() {
             $('#caption').text('通信時にエラーが発生しました');
+            $('#loading').hide();
         });
     });
     $('#div_readme_head').click(function(){
         $('#div_readme_body').slideToggle();
     });
+    $('#loading').hide();
 });

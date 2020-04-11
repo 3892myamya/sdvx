@@ -14,10 +14,10 @@
     <meta name="description" content="ペンシルパズルガチャ(ペンパガチャ)は自動生成されたペンシルパズルの問題がゲットできるガチャです。引いた問題はぱずぷれv3さんで解いたりTwitterでシェア可能です。あなたは高レベルのレア問をゲットできるか？"/>
     <link rel="stylesheet" href="css/jsgrid.min.css"/>
     <link rel="stylesheet" href="css/jsgrid-theme.min.css"/>
-    <link rel="stylesheet" href="css/sudoku.css?ver=20190929"/>
+    <link rel="stylesheet" href="css/sudoku.css?ver=20200411"/>
     <script src="js/jquery-3.3.1.min.js"></script>
     <script src="js/jsgrid.min.js"></script>
-    <script src="js/sudoku.js?ver=20200401"></script>
+    <script src="js/sudoku.js?ver=20200411"></script>
 </head>
 <body>
 <div id="div_title">ペンシルパズルガチャ<span style="font-size: xx-small;">(旧：数独ガチャ)</span></div>
@@ -26,6 +26,7 @@
 <select id="sel_type" name="sel_type">
 	<option value="geradeweg">グラーデヴェグガチャ</option>
 	<option value="creek">クリークガチャ</option>
+	<option value="kurotto">クロットガチャ</option>
 	<option value="kurodoko">黒どこガチャ</option>
 	<option value="gokigen">ごきげんななめガチャ</option>
 	<option value="sashigane">さしがねガチャ</option>
@@ -75,6 +76,7 @@
 <div>
 <button type="button" id="btn_submit">ガチャを回す！</button>
 <label id="caption"></label>
+<img id="loading" src="icon_loader_a_ww_02_s1.gif" width="22" height="22" border="0" alt="">
 </div>
 
 <div id="div_result">

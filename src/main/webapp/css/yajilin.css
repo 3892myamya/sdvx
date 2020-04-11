@@ -30,3 +30,7 @@ body{
 #div_readme_body {
     font-size:.8em;
 }
+
+#loading {
+    vertical-align: middle;
+}

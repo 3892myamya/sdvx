@@ -17,6 +17,11 @@ div{
   height: 45px;
   width: 120px;
 }
+
+#loading {
+    vertical-align: middle;
+}
+
 #tweetpng {
     vertical-align: middle;
 }

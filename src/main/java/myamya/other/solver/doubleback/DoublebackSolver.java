@@ -817,7 +817,6 @@ public class DoublebackSolver implements Solver {
 	 * @param posSet
 	 */
 	private boolean candSolve(Field field, int recursive) {
-		System.out.println(field);
 		String str = field.getStateDump();
 		for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 			for (int xIndex = 0; xIndex < field.getXLength() - 1; xIndex++) {

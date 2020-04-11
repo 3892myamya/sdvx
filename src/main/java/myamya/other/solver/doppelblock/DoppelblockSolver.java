@@ -26,6 +26,14 @@ public class DoppelblockSolver implements Solver {
 			return numbersCand;
 		}
 
+		public Integer[] getUpHints() {
+			return upHints;
+		}
+
+		public Integer[] getLeftHints() {
+			return leftHints;
+		}
+
 		public int getYLength() {
 			return numbersCand.length;
 		}
@@ -114,7 +122,7 @@ public class DoppelblockSolver implements Solver {
 				if (upHints[xIndex] != null) {
 					String numStr = String.valueOf(upHints[xIndex]);
 					int index = HALF_NUMS.indexOf(numStr);
-					if (index == 0) {
+					if (index == -1) {
 						sb.append(numStr);
 					} else {
 						sb.append(FULL_NUMS.substring(index / 2, index / 2 + 1));
@@ -135,7 +143,7 @@ public class DoppelblockSolver implements Solver {
 				if (leftHints[yIndex] != null) {
 					String numStr = String.valueOf(leftHints[yIndex]);
 					int index = HALF_NUMS.indexOf(numStr);
-					if (index == 0) {
+					if (index == -1) {
 						sb.append(numStr);
 					} else {
 						sb.append(FULL_NUMS.substring(index / 2, index / 2 + 1));
@@ -279,6 +287,7 @@ public class DoppelblockSolver implements Solver {
 
 		/**
 		 * 外周数字は、0に挟まれるマスの合計値となる。
+		 * TODO 0が2箇所決まってからでないと使えないので遅い。難しい問題が増えたら何とかする
 		 */
 		private boolean hintSolve() {
 			for (int x = 0; x < getXLength(); x++) {
@@ -301,6 +310,9 @@ public class DoppelblockSolver implements Solver {
 						List<Position> member = new ArrayList<>();
 						for (int y = y1 + 1; y < y2; y++) {
 							member.add(new Position(y, x));
+						}
+						if (member.isEmpty() && (upHint != null && upHint != 0)) {
+							return false;
 						}
 						for (Position pos : member) {
 							// 自分以外のグループ内のマス
@@ -345,6 +357,9 @@ public class DoppelblockSolver implements Solver {
 						List<Position> member = new ArrayList<>();
 						for (int x = x1 + 1; x < x2; x++) {
 							member.add(new Position(y, x));
+						}
+						if (member.isEmpty() && (leftHint != null && leftHint != 0)) {
+							return false;
 						}
 						for (Position pos : member) {
 							// 自分以外のグループ内のマス
@@ -438,7 +453,7 @@ public class DoppelblockSolver implements Solver {
 	}
 
 	public static void main(String[] args) {
-		String url = "https://puzz.link/p?doppelblock/5/5/2g413h5g1"; //urlを入れれば試せる
+		String url = ""; //urlを入れれば試せる
 		String[] params = url.split("/");
 		int height = Integer.parseInt(params[params.length - 2]);
 		int width = Integer.parseInt(params[params.length - 3]);
@@ -481,10 +496,10 @@ public class DoppelblockSolver implements Solver {
 			}
 		}
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
-		System.out.println("難易度:" + (count));
+		System.out.println("難易度:" + (count / 12));
 		System.out.println(field);
 		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count).toString();
+				+ Difficulty.getByCount(count / 12).toString();
 	}
 
 	/**
@@ -492,15 +507,14 @@ public class DoppelblockSolver implements Solver {
 	 * @param posSet
 	 */
 	private boolean candSolve(Field field, int recursive) {
-		System.out.println(field);
 		while (true) {
 			String befStr = field.getStateDump();
 			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
 					if (field.numbersCand[yIndex][xIndex].size() != 1) {
+						count++;
 						for (Iterator<Integer> iterator = field.numbersCand[yIndex][xIndex].iterator(); iterator
 								.hasNext();) {
-							count++;
 							int oneCand = iterator.next();
 							Field virtual = new Field(field);
 							virtual.numbersCand[yIndex][xIndex].clear();

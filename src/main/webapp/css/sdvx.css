@@ -32,6 +32,10 @@ body{
     max-width: 500px;
 }
 
+#loading {
+    vertical-align: middle;
+}
+
 #tweetpng {
     vertical-align: middle;
 }

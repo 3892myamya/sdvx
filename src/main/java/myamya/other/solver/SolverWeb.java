@@ -77,6 +77,7 @@ import myamya.other.solver.makaro.MakaroSolver;
 import myamya.other.solver.masyu.MasyuSolver;
 import myamya.other.solver.masyu.MasyuSolver.Pearl;
 import myamya.other.solver.maxi.MaxiSolver;
+import myamya.other.solver.mejilink.MejilinkSolver;
 import myamya.other.solver.midloop.MidloopSolver;
 import myamya.other.solver.minarism.MinarismSolver;
 import myamya.other.solver.moonsun.MoonsunSolver;
@@ -11936,6 +11937,110 @@ public class SolverWeb extends HttpServlet {
 		}
 	}
 
+	static class MejilinkSolverThread extends AbsSolverThlead {
+
+		MejilinkSolverThread(int height, int width, String param) {
+			super(height, width, param);
+		}
+
+		@Override
+		protected Solver getSolver() {
+			return new MejilinkSolver(height, width, param);
+		}
+
+		@Override
+		public String makeCambus() {
+			StringBuilder sb = new StringBuilder();
+			MejilinkSolver.Field field = ((MejilinkSolver) solver).getField();
+			int baseSize = 20;
+			int margin = 5;
+			sb.append(
+					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
+							+ "height=\"" + (field.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
+							+ (field.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			// 点描画
+			for (int yIndex = 0; yIndex < field.getYLength() + 1; yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength() + 1; xIndex++) {
+					sb.append("<circle cy=\"" + (yIndex * baseSize + margin)
+							+ "\" cx=\""
+							+ (xIndex * baseSize + baseSize)
+							+ "\" r=\""
+							+ 1
+							+ "\" fill=\"black\", stroke=\"black\">"
+							+ "</circle>");
+				}
+			}
+			// 横壁描画
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength() + 1; xIndex++) {
+					boolean oneYokoWall = field.getYokoExtraWall()[yIndex][xIndex] == Wall.EXISTS;
+					if (oneYokoWall) {
+						sb.append("<line y1=\""
+								+ (yIndex * baseSize + margin)
+								+ "\" x1=\""
+								+ ((xIndex - 1) * baseSize + 2 * baseSize)
+								+ "\" y2=\""
+								+ (yIndex * baseSize + baseSize + margin)
+								+ "\" x2=\""
+								+ ((xIndex - 1) * baseSize + 2 * baseSize)
+								+ "\" stroke-width=\"1\" fill=\"none\"");
+						sb.append("stroke=\"#000\" ");
+						sb.append(">"
+								+ "</line>");
+					} else if (field.getYokoHeyaWall()[yIndex][xIndex]) {
+						sb.append("<line y1=\""
+								+ (yIndex * baseSize + margin)
+								+ "\" x1=\""
+								+ ((xIndex - 1) * baseSize + 2 * baseSize)
+								+ "\" y2=\""
+								+ (yIndex * baseSize + baseSize + margin)
+								+ "\" x2=\""
+								+ ((xIndex - 1) * baseSize + 2 * baseSize)
+								+ "\" stroke-width=\"1\" fill=\"none\"");
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+						sb.append(">"
+								+ "</line>");
+					}
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = 0; yIndex < field.getYLength() + 1; yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					boolean oneTateWall = field.getTateExtraWall()[yIndex][xIndex] == Wall.EXISTS;
+					if (oneTateWall) {
+						sb.append("<line y1=\""
+								+ (yIndex * baseSize + margin)
+								+ "\" x1=\""
+								+ (xIndex * baseSize + baseSize)
+								+ "\" y2=\""
+								+ (yIndex * baseSize + margin)
+								+ "\" x2=\""
+								+ (xIndex * baseSize + baseSize + baseSize)
+								+ "\" stroke-width=\"1\" fill=\"none\"");
+						sb.append("stroke=\"#000\" ");
+						sb.append(">"
+								+ "</line>");
+					} else if (field.getTateHeyaWall()[yIndex][xIndex]) {
+						sb.append("<line y1=\""
+								+ (yIndex * baseSize + margin)
+								+ "\" x1=\""
+								+ (xIndex * baseSize + baseSize)
+								+ "\" y2=\""
+								+ (yIndex * baseSize + margin)
+								+ "\" x2=\""
+								+ (xIndex * baseSize + baseSize + baseSize)
+								+ "\" stroke-width=\"1\" fill=\"none\"");
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+						sb.append(">"
+								+ "</line>");
+					}
+				}
+			}
+			sb.append("</svg>");
+			return sb.toString();
+		}
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -12179,6 +12284,8 @@ public class SolverWeb extends HttpServlet {
 					t = new SimpleloopSolverThread(height, width, param);
 				} else if (puzzleType.contains("box")) {
 					t = new BoxSolverThread(height, width, param);
+				} else if (puzzleType.contains("mejilink")) {
+					t = new MejilinkSolverThread(height, width, param);
 				} else {
 					throw new IllegalArgumentException();
 				}

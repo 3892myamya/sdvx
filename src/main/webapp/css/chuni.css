@@ -27,6 +27,10 @@ body{
     font-size:.8em;
 }
 
+#loading {
+    vertical-align: middle;
+}
+
 #tweetpng {
     vertical-align: middle;
 }

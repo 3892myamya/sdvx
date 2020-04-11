@@ -17,11 +17,11 @@ import myamya.other.solver.bag.BagSolver.BagGenerator;
 import myamya.other.solver.balance.BalanceSolver.BalanceGenerator;
 import myamya.other.solver.barns.BarnsSolver.BarnsGenerator;
 import myamya.other.solver.box.BoxSolver.BoxGenerator;
-import myamya.other.solver.box.BoxSolver.BoxGenerator;
 import myamya.other.solver.creek.CreekSolver.CreekGenerator;
 import myamya.other.solver.geradeweg.GeradewegSolver.GeradewegGenerator;
 import myamya.other.solver.gokigen.GokigenSolver.GokigenGenerator;
 import myamya.other.solver.kurodoko.KurodokoSolver.KurodokoGenerator;
+import myamya.other.solver.kurotto.KurottoSolver.KurottoGenerator;
 import myamya.other.solver.masyu.MasyuSolver.MasyuGenerator;
 import myamya.other.solver.midloop.MidloopSolver.MidloopGenerator;
 import myamya.other.solver.minarism.MinarismSolver.MinarismGenerator;
@@ -407,6 +407,22 @@ public class SudokuGachaWeb extends HttpServlet {
 
 	}
 
+	static class KurottoGeneratorThlead extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+
+		KurottoGeneratorThlead(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new KurottoGenerator(height, width);
+		}
+
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -473,6 +489,8 @@ public class SudokuGachaWeb extends HttpServlet {
 				t = new MinarismGeneratorThlead(height, width);
 			} else if (type.equals("box")) {
 				t = new BoxGeneratorThlead(height, width);
+			} else if (type.equals("kurotto")) {
+				t = new KurottoGeneratorThlead(height, width);
 			} else {
 				throw new IllegalArgumentException();
 			}

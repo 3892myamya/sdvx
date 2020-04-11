@@ -8,6 +8,7 @@ $(function() {
         $('#grid').empty();
         $('#achieve_info').text('');
         $('#caption').text('処理中です。少々お待ちください……');
+        $('#loading').show();
         var param = {};
         param.userid = $('#edt_userid').val();
         param.mode = $('#sel_mode').val();
@@ -27,6 +28,7 @@ $(function() {
         }).done(function(result) {
             var resultObj = JSON.parse(result);
             $('#caption').text(resultObj.error_msg);
+            $('#loading').hide();
             if (resultObj.error_msg == ''){
                 if (param.mode == 4 ) {
                     $('#achieve_info').text(' 到達率: ' + resultObj.achieve_info);
@@ -117,6 +119,7 @@ $(function() {
             }
         }).fail(function() {
             $('#caption').text('通信時にエラーが発生しました');
+            $('#loading').hide();
         });
     });
     $('#div_readme_head').click(function(){
@@ -208,5 +211,6 @@ $(function() {
         $('#sel_border').val(50);
         $('#sel_clear').val(2);
     }
+    $('#loading').hide();
     showhide();
 });
