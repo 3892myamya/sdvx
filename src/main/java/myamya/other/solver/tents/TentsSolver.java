@@ -471,13 +471,12 @@ public class TentsSolver implements Solver {
 					interval = 0;
 				} else {
 					interval++;
-					if (interval == 18) {
-						if (fallTree) {
-							sb.append("h");
-						} else {
-							sb.append("z");
-						}
+					if (interval == 18 && fallTree) {
+						sb.append("h");
 						fallTree = false;
+						interval = 1;
+					} else if (interval == 18 && !fallTree) {
+						sb.append("z");
 						interval = 0;
 					}
 				}
