@@ -21,6 +21,7 @@ var ruleMap = {
 	minarism : {name: "マイナリズム", url:"	http://indi.s58.xrea.com/minarism/",source:"連続発破保管庫さん"},
 	box : {name: "ボックス", url:"",source:""},
 	kurotto : {name: "クロット", url:"https://www.nikoli.co.jp/ja/puzzles/kurotto/",source:"ニコリ公式"},
+	tents : {name: "Tents", url:"",source:""},
 }
 
 var option = {

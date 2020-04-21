@@ -34,6 +34,7 @@ import myamya.other.solver.sudoku.SudokuSolver.SudokuGenerator;
 import myamya.other.solver.sukoro.SukoroSolver.SukoroGenerator;
 import myamya.other.solver.tapa.TapaSolver.TapaGenerator;
 import myamya.other.solver.tasquare.TasquareSolver.TasquareGenerator;
+import myamya.other.solver.tents.TentsSolver.TentsGenerator;
 import net.arnx.jsonic.JSON;
 
 @WebServlet("/SudokuGacha")
@@ -423,6 +424,22 @@ public class SudokuGachaWeb extends HttpServlet {
 
 	}
 
+	static class TentsGeneratorThlead extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+
+		TentsGeneratorThlead(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new TentsGenerator(height, width);
+		}
+
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -491,6 +508,8 @@ public class SudokuGachaWeb extends HttpServlet {
 				t = new BoxGeneratorThlead(height, width);
 			} else if (type.equals("kurotto")) {
 				t = new KurottoGeneratorThlead(height, width);
+			} else if (type.equals("tents")) {
+				t = new TentsGeneratorThlead(height, width);
 			} else {
 				throw new IllegalArgumentException();
 			}
