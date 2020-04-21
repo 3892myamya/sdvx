@@ -10,6 +10,11 @@ import myamya.other.solver.Common.Position;
 import myamya.other.solver.Common.Wall;
 import myamya.other.solver.Solver;
 
+/**
+ * TODO 現在のアイスロームソルバーでは出入り口で交差する場合に対応できない
+ * 対応するとしたら、出入り口に相当するマスを数字とみなすのではなく、
+ * 出入り口から出た[後]の盤面の外のマスを仮想的に数字とみなすようにしないといけない。
+ */
 public class IcelomSolver implements Solver {
 
 	public static class Field {

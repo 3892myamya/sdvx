@@ -169,8 +169,8 @@ public class KurottoSolver implements Solver {
 				}
 			}
 			level = (int) Math.sqrt(level / 3) + 1;
-			String status = "Lv:" + level + "の問題を獲得！(数字/丸：" + wkField.getHintCount().split("/")[0] + "/"
-					+ wkField.getHintCount().split("/")[1] + ")";
+			String status = "Lv:" + level + "の問題を獲得！(数字/丸：" + wkField.getHintCount().split("/")[1] + "/"
+					+ wkField.getHintCount().split("/")[0] + ")";
 			String url = wkField.getPuzPreURL();
 			String link = "<a href=\"" + url + "\" target=\"_blank\">ぱずぷれv3で解く</a>";
 			StringBuilder sb = new StringBuilder();

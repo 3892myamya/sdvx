@@ -1,29 +1,247 @@
 package myamya.other.solver.nurikabe;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import myamya.other.solver.Common.Difficulty;
 import myamya.other.solver.Common.Direction;
+import myamya.other.solver.Common.GeneratorResult;
 import myamya.other.solver.Common.Masu;
 import myamya.other.solver.Common.Position;
+import myamya.other.solver.Generator;
 import myamya.other.solver.Solver;
 
 public class NurikabeSolver implements Solver {
+	public static class NurikabeGenerator implements Generator {
+
+		private static final String FULL_NUMS = "０１２３４５６７８９";
+
+		static class NurikabeSolverForGenerator extends NurikabeSolver {
+			private final int limit;
+
+			public NurikabeSolverForGenerator(Field field, int limit) {
+				super(field);
+				this.limit = limit;
+			}
+
+			public int solve2() {
+				while (!field.isSolved()) {
+					String befStr = field.getStateDump();
+					if (!field.solveAndCheck()) {
+						return -1;
+					}
+					int recursiveCnt = 0;
+					while (field.getStateDump().equals(befStr) && recursiveCnt < 3) {
+						if (!candSolve(field, recursiveCnt == 2 ? 999 : recursiveCnt)) {
+							return -1;
+						}
+						recursiveCnt++;
+					}
+					if (recursiveCnt == 3 && field.getStateDump().equals(befStr)) {
+						return -1;
+					}
+				}
+				return count;
+			}
+
+			@Override
+			protected boolean candSolve(Field field, int recursive) {
+				if (this.count >= limit) {
+					return false;
+				} else {
+					return super.candSolve(field, recursive);
+				}
+			}
+		}
+
+		static class ExtendedField extends NurikabeSolver.Field {
+			public ExtendedField(Field other) {
+				super(other);
+			}
+
+			public ExtendedField(int height, int width) {
+				super(height, width);
+			}
+
+			@Override
+			protected boolean notStandAloneSolve() {
+				// 数字があとから決まるので、ここではじいてしまうとダメ。
+				// 全通過させる
+				return true;
+			}
+
+			@Override
+			protected boolean whiteCountSolve() {
+				// 数字があとから決まるので、ここではじいてしまうとダメ。
+				// 全通過させる
+				return true;
+			}
+
+		}
+
+		private final int height;
+		private final int width;
+
+		public NurikabeGenerator(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		public static void main(String[] args) {
+			new NurikabeGenerator(10, 10).generate();
+		}
+
+		@Override
+		public GeneratorResult generate() {
+			ExtendedField wkField = new ExtendedField(height, width);
+			List<Integer> indexList = new ArrayList<>();
+			for (int i = 0; i < height * width; i++) {
+				indexList.add(i);
+			}
+			Collections.shuffle(indexList);
+			int index = 0;
+			int level = 0;
+			long start = System.nanoTime();
+			while (true) {
+				// 問題生成部
+				while (!wkField.isSolved()) {
+					int yIndex = indexList.get(index) / width;
+					int xIndex = indexList.get(index) % width;
+					if (wkField.masu[yIndex][xIndex] == Masu.SPACE) {
+						boolean isOk = false;
+						List<Integer> numIdxList = new ArrayList<>();
+						for (int i = 0; i < 2; i++) {
+							numIdxList.add(i);
+						}
+						Collections.shuffle(numIdxList);
+						for (int masuNum : numIdxList) {
+							ExtendedField virtual = new ExtendedField(wkField);
+							if (masuNum < 1) {
+								virtual.masu[yIndex][xIndex] = Masu.NOT_BLACK;
+							} else if (masuNum < 2) {
+								virtual.masu[yIndex][xIndex] = Masu.BLACK;
+							}
+							if (virtual.solveAndCheck()) {
+								isOk = true;
+								wkField.masu = virtual.masu;
+								break;
+							}
+						}
+						if (!isOk) {
+							// 破綻したら0から作り直す。
+							wkField = new ExtendedField(height, width);
+							index = 0;
+							continue;
+						}
+					}
+					index++;
+				}
+				// 数字埋め＆マス初期化
+				// まず数字を埋める
+				boolean existBlack = false;
+				List<Position> notBlackPosList = new ArrayList<>();
+				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+						if (wkField.masu[yIndex][xIndex] == Masu.NOT_BLACK) {
+							notBlackPosList.add(new Position(yIndex, xIndex));
+						} else {
+							existBlack = true;
+						}
+					}
+				}
+				if (!existBlack) {
+					// 全白ます問題は出ないようにする
+					wkField = new ExtendedField(height, width);
+					index = 0;
+					continue;
+				}
+				Collections.shuffle(notBlackPosList);
+				Set<Position> alreadyPosSet = new HashSet<>();
+				for (Position pos : notBlackPosList) {
+					if (alreadyPosSet.contains(pos)) {
+						continue;
+					}
+					Set<Position> continueWhitePosSet = wkField.getContinueWhitePosSet(pos);
+					wkField.numbers[pos.getyIndex()][pos.getxIndex()] = continueWhitePosSet.size();
+					alreadyPosSet.addAll(continueWhitePosSet);
+				}
+				System.out.println(wkField);
+				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+						if (wkField.numbers[yIndex][xIndex] == null) {
+							wkField.masu[yIndex][xIndex] = Masu.SPACE;
+						}
+					}
+				}
+				Field solvingField = new NurikabeSolver.Field(wkField);
+				solvingField.farSolve();
+				level = new NurikabeSolverForGenerator(solvingField, 10000).solve2();
+				if (level == -1) {
+					// 解けなければやり直し
+					wkField = new ExtendedField(height, width);
+					index = 0;
+				} else {
+					break;
+				}
+			}
+			level = (int) Math.sqrt(level) + 1;
+			String status = "Lv:" + level + "の問題を獲得！(ヒント数：" + wkField.getHintCount() + ")";
+			String url = wkField.getPuzPreURL();
+			String link = "<a href=\"" + url + "\" target=\"_blank\">ぱずぷれv3で解く</a>";
+			StringBuilder sb = new StringBuilder();
+			int baseSize = 20;
+			int margin = 5;
+			sb.append(
+					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
+							+ "height=\"" + (wkField.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
+							+ (wkField.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			sb.append("</svg>");
+			System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
+			System.out.println(level);
+			System.out.println(wkField.getHintCount());
+			System.out.println(wkField);
+			return new GeneratorResult(status, sb.toString(), link, url, level, "");
+
+		}
+
+	}
 
 	public static class Field {
 		static final String ALPHABET_FROM_G = "ghijklmnopqrstuvwxyz";
 
 		// マスの情報
-		private Masu[][] masu;
+		protected Masu[][] masu;
 		// 数字の情報
-		private final Integer[][] numbers;
+		protected final Integer[][] numbers;
 		// 確定した部屋の位置情報。再調査しないことでスピードアップ
 		private Set<Position> fixedPosSet;
 
 		public Masu[][] getMasu() {
 			return masu;
+		}
+
+		/**
+		 * あるマスからつながる白マスセットを返す。ジェネレータ用
+		 * posが白マスであることは事前にチェックしている前提
+		 */
+		protected Set<Position> getContinueWhitePosSet(Position pos) {
+			Set<Position> result = new HashSet<>();
+			result.add(pos);
+			setContinueWhitePosSet(Integer.MAX_VALUE, pos, result, null);
+			return result;
+		}
+
+		public String getHintCount() {
+			// TODO 自動生成されたメソッド・スタブ
+			return null;
+		}
+
+		public String getPuzPreURL() {
+			// TODO 自動生成されたメソッド・スタブ
+			return null;
 		}
 
 		public Integer[][] getNumbers() {
@@ -36,6 +254,17 @@ public class NurikabeSolver implements Solver {
 
 		public int getXLength() {
 			return masu[0].length;
+		}
+
+		public Field(int height, int width) {
+			masu = new Masu[height][width];
+			numbers = new Integer[height][width];
+			fixedPosSet = new HashSet<>();
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					masu[yIndex][xIndex] = Masu.SPACE;
+				}
+			}
 		}
 
 		public Field(int height, int width, String param) {
@@ -559,7 +788,7 @@ public class NurikabeSolver implements Solver {
 		/**
 		 * 数字が入らない孤立するマスができてはならない。
 		 */
-		private boolean notStandAloneSolve() {
+		protected boolean notStandAloneSolve() {
 			Set<Position> whitePosSet = new HashSet<>();
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
@@ -632,7 +861,7 @@ public class NurikabeSolver implements Solver {
 		 * 各種チェックを1セット実行
 		 * @param recursive
 		 */
-		private boolean solveAndCheck() {
+		protected boolean solveAndCheck() {
 			String str = getStateDump();
 			if (!roomSolve()) {
 				return false;
@@ -655,7 +884,7 @@ public class NurikabeSolver implements Solver {
 			return true;
 		}
 
-		private boolean whiteCountSolve() {
+		protected boolean whiteCountSolve() {
 			int fixWhiteCount = 0;
 			int whiteCnt = 0;
 			int blackCnt = 0;
@@ -716,11 +945,15 @@ public class NurikabeSolver implements Solver {
 
 	}
 
-	private final Field field;
-	private int count;
+	protected final Field field;
+	protected int count;
 
 	public NurikabeSolver(int height, int width, String param) {
 		field = new Field(height, width, param);
+	}
+
+	public NurikabeSolver(Field field) {
+		this.field = new Field(field);
 	}
 
 	public Field getField() {
@@ -766,7 +999,7 @@ public class NurikabeSolver implements Solver {
 	/**
 	 * 仮置きして調べる
 	 */
-	private boolean candSolve(Field field, int recursive) {
+	protected boolean candSolve(Field field, int recursive) {
 		String str = field.getStateDump();
 		for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 			for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
