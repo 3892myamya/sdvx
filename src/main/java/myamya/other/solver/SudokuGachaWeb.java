@@ -35,6 +35,7 @@ import myamya.other.solver.sukoro.SukoroSolver.SukoroGenerator;
 import myamya.other.solver.tapa.TapaSolver.TapaGenerator;
 import myamya.other.solver.tasquare.TasquareSolver.TasquareGenerator;
 import myamya.other.solver.tents.TentsSolver.TentsGenerator;
+import myamya.other.solver.walllogic.WalllogicSolver.WalllogicGenerator;
 import net.arnx.jsonic.JSON;
 
 @WebServlet("/SudokuGacha")
@@ -440,6 +441,24 @@ public class SudokuGachaWeb extends HttpServlet {
 
 	}
 
+	static class WalllogicGeneratorThlead extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+		protected final int pattern;
+
+		WalllogicGeneratorThlead(int height, int width, int pattern) {
+			this.height = height;
+			this.width = width;
+			this.pattern = pattern;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new WalllogicGenerator(height, width, HintPattern.getByVal(pattern, height, width));
+		}
+
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -510,6 +529,9 @@ public class SudokuGachaWeb extends HttpServlet {
 				t = new KurottoGeneratorThlead(height, width);
 			} else if (type.equals("tents")) {
 				t = new TentsGeneratorThlead(height, width);
+			} else if (type.equals("walllogic")) {
+				int pattern = Integer.parseInt(request.getParameter("pattern"));
+				t = new WalllogicGeneratorThlead(height, width, pattern);
 			} else {
 				throw new IllegalArgumentException();
 			}

@@ -22,6 +22,7 @@ var ruleMap = {
 	box : {name: "ボックス", url:"",source:""},
 	kurotto : {name: "クロット", url:"https://www.nikoli.co.jp/ja/puzzles/kurotto/",source:"ニコリ公式"},
 	tents : {name: "Tents", url:"",source:""},
+	walllogic : {name: "ウォールロジック", url:"https://ja.wikipedia.org/wiki/%E3%82%A6%E3%82%A9%E3%83%BC%E3%83%AB%E3%83%AD%E3%82%B8%E3%83%83%E3%82%AF",source:"Wikipedia"},
 }
 
 var option = {
@@ -129,7 +130,7 @@ $(function() {
         var type = $('#sel_type').val();
         if (type == 'sudoku' || type == 'akari' || type == 'slither' || type == 'creek'
         	|| type == 'gokigen' || type == 'tapa' || type == 'bag' || type == 'kurodoko'
-        	|| type == 'sukoro') {
+        	|| type == 'sukoro' || type == 'walllogic') {
             $('#lbl_pattern').show();
             $('#sel_pattern').show();
         } else {
