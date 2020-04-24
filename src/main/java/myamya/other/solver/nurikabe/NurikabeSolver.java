@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import myamya.other.solver.Common.CountOverException;
 import myamya.other.solver.Common.Difficulty;
 import myamya.other.solver.Common.Direction;
 import myamya.other.solver.Common.GeneratorResult;
@@ -17,6 +18,7 @@ import myamya.other.solver.Solver;
 public class NurikabeSolver implements Solver {
 	public static class NurikabeGenerator implements Generator {
 
+		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
 		private static final String FULL_NUMS = "０１２３４５６７８９";
 
 		static class NurikabeSolverForGenerator extends NurikabeSolver {
@@ -28,21 +30,25 @@ public class NurikabeSolver implements Solver {
 			}
 
 			public int solve2() {
-				while (!field.isSolved()) {
-					String befStr = field.getStateDump();
-					if (!field.solveAndCheck()) {
-						return -1;
-					}
-					int recursiveCnt = 0;
-					while (field.getStateDump().equals(befStr) && recursiveCnt < 3) {
-						if (!candSolve(field, recursiveCnt == 2 ? 999 : recursiveCnt)) {
+				try {
+					while (!field.isSolved()) {
+						String befStr = field.getStateDump();
+						if (!field.solveAndCheck()) {
 							return -1;
 						}
-						recursiveCnt++;
+						int recursiveCnt = 0;
+						while (field.getStateDump().equals(befStr) && recursiveCnt < 3) {
+							if (!candSolve(field, recursiveCnt == 2 ? 999 : recursiveCnt)) {
+								return -1;
+							}
+							recursiveCnt++;
+						}
+						if (recursiveCnt == 3 && field.getStateDump().equals(befStr)) {
+							return -1;
+						}
 					}
-					if (recursiveCnt == 3 && field.getStateDump().equals(befStr)) {
-						return -1;
-					}
+				} catch (CountOverException e) {
+					return -1;
 				}
 				return count;
 			}
@@ -50,7 +56,7 @@ public class NurikabeSolver implements Solver {
 			@Override
 			protected boolean candSolve(Field field, int recursive) {
 				if (this.count >= limit) {
-					return false;
+					throw new CountOverException();
 				} else {
 					return super.candSolve(field, recursive);
 				}
@@ -70,6 +76,65 @@ public class NurikabeSolver implements Solver {
 			protected boolean notStandAloneSolve() {
 				// 数字があとから決まるので、ここではじいてしまうとダメ。
 				// 全通過させる
+				// その代わり、U字型に白マスが発生するのを抑制する(唯一解でなくなるので)
+				for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+					for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+
+						Masu masuUp = yIndex == 0 ? Masu.BLACK : masu[yIndex - 1][xIndex];
+						Masu masuRight = xIndex == getXLength() - 1 ? Masu.BLACK : masu[yIndex][xIndex + 1];
+						Masu masuDown = yIndex == getYLength() - 1 ? Masu.BLACK : masu[yIndex + 1][xIndex];
+						Masu masuLeft = xIndex == 0 ? Masu.BLACK : masu[yIndex][xIndex - 1];
+						Masu masuUpRight = yIndex == 0 || xIndex == getXLength() - 1 ? Masu.BLACK
+								: masu[yIndex - 1][xIndex + 1];
+						Masu masuRightDown = xIndex == getXLength() - 1 || yIndex == getYLength() - 1 ? Masu.BLACK
+								: masu[yIndex + 1][xIndex + 1];
+						Masu masuDownLeft = yIndex == getYLength() - 1 || xIndex == 0 ? Masu.BLACK
+								: masu[yIndex + 1][xIndex - 1];
+						Masu masuLeftUp = xIndex == 0 || yIndex == 0 ? Masu.BLACK : masu[yIndex - 1][xIndex - 1];
+
+						if (masu[yIndex][xIndex] == Masu.BLACK) {
+							if (masuUp == Masu.NOT_BLACK && masuUpRight == Masu.NOT_BLACK && masuRight == Masu.NOT_BLACK
+									&& masuRightDown == Masu.NOT_BLACK && masuDown == Masu.NOT_BLACK) {
+								return false;
+							}
+							if (masuDownLeft == Masu.NOT_BLACK && masuLeft == Masu.NOT_BLACK
+									&& masuRight == Masu.NOT_BLACK
+									&& masuRightDown == Masu.NOT_BLACK && masuDown == Masu.NOT_BLACK) {
+								return false;
+							}
+							if (masuDownLeft == Masu.NOT_BLACK && masuLeft == Masu.NOT_BLACK
+									&& masuLeftUp == Masu.NOT_BLACK
+									&& masuUp == Masu.NOT_BLACK && masuDown == Masu.NOT_BLACK) {
+								return false;
+							}
+							if (masuRight == Masu.NOT_BLACK && masuLeft == Masu.NOT_BLACK
+									&& masuLeftUp == Masu.NOT_BLACK
+									&& masuUp == Masu.NOT_BLACK && masuUpRight == Masu.NOT_BLACK) {
+								return false;
+							}
+						} else if (masu[yIndex][xIndex] == Masu.SPACE) {
+							if (masuUp == Masu.NOT_BLACK && masuUpRight == Masu.NOT_BLACK && masuRight == Masu.NOT_BLACK
+									&& masuRightDown == Masu.NOT_BLACK && masuDown == Masu.NOT_BLACK) {
+								masu[yIndex][xIndex] = Masu.NOT_BLACK;
+							}
+							if (masuDownLeft == Masu.NOT_BLACK && masuLeft == Masu.NOT_BLACK
+									&& masuRight == Masu.NOT_BLACK
+									&& masuRightDown == Masu.NOT_BLACK && masuDown == Masu.NOT_BLACK) {
+								masu[yIndex][xIndex] = Masu.NOT_BLACK;
+							}
+							if (masuDownLeft == Masu.NOT_BLACK && masuLeft == Masu.NOT_BLACK
+									&& masuLeftUp == Masu.NOT_BLACK
+									&& masuUp == Masu.NOT_BLACK && masuDown == Masu.NOT_BLACK) {
+								masu[yIndex][xIndex] = Masu.NOT_BLACK;
+							}
+							if (masuRight == Masu.NOT_BLACK && masuLeft == Masu.NOT_BLACK
+									&& masuLeftUp == Masu.NOT_BLACK
+									&& masuUp == Masu.NOT_BLACK && masuUpRight == Masu.NOT_BLACK) {
+								masu[yIndex][xIndex] = Masu.NOT_BLACK;
+							}
+						}
+					}
+				}
 				return true;
 			}
 
@@ -91,7 +156,7 @@ public class NurikabeSolver implements Solver {
 		}
 
 		public static void main(String[] args) {
-			new NurikabeGenerator(10, 10).generate();
+			new NurikabeGenerator(8, 8).generate();
 		}
 
 		@Override
@@ -168,7 +233,6 @@ public class NurikabeSolver implements Solver {
 					wkField.numbers[pos.getyIndex()][pos.getxIndex()] = continueWhitePosSet.size();
 					alreadyPosSet.addAll(continueWhitePosSet);
 				}
-				System.out.println(wkField);
 				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
 					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
 						if (wkField.numbers[yIndex][xIndex] == null) {
@@ -178,7 +242,7 @@ public class NurikabeSolver implements Solver {
 				}
 				Field solvingField = new NurikabeSolver.Field(wkField);
 				solvingField.farSolve();
-				level = new NurikabeSolverForGenerator(solvingField, 10000).solve2();
+				level = new NurikabeSolverForGenerator(solvingField, 3000).solve2();
 				if (level == -1) {
 					// 解けなければやり直し
 					wkField = new ExtendedField(height, width);
@@ -187,7 +251,7 @@ public class NurikabeSolver implements Solver {
 					break;
 				}
 			}
-			level = (int) Math.sqrt(level) + 1;
+			level = (int) Math.sqrt(level / 2 / 3) + 1;
 			String status = "Lv:" + level + "の問題を獲得！(ヒント数：" + wkField.getHintCount() + ")";
 			String url = wkField.getPuzPreURL();
 			String link = "<a href=\"" + url + "\" target=\"_blank\">ぱずぷれv3で解く</a>";
@@ -198,9 +262,85 @@ public class NurikabeSolver implements Solver {
 					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
 							+ "height=\"" + (wkField.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
 							+ (wkField.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			// 横壁描画
+			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = -1; xIndex < wkField.getXLength(); xIndex++) {
+					boolean oneYokoWall = xIndex == -1 || xIndex == wkField.getXLength() - 1;
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + margin)
+							+ "\" x1=\""
+							+ (xIndex * baseSize + 2 * baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ (xIndex * baseSize + 2 * baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneYokoWall) {
+						if (xIndex == -1 || xIndex == wkField.getXLength() - 1) {
+							sb.append("stroke=\"#000\" ");
+						} else {
+							sb.append("stroke=\"green\" ");
+						}
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">"
+							+ "</line>");
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = -1; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+					boolean oneTateWall = yIndex == -1 || yIndex == wkField.getYLength() - 1;
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x1=\""
+							+ (xIndex * baseSize + baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ (xIndex * baseSize + baseSize + baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneTateWall) {
+						if (yIndex == -1 || yIndex == wkField.getYLength() - 1) {
+							sb.append("stroke=\"#000\" ");
+						} else {
+							sb.append("stroke=\"green\" ");
+						}
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">"
+							+ "</line>");
+				}
+			}
+			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+					if (wkField.getNumbers()[yIndex][xIndex] != null) {
+						String numberStr = String.valueOf(wkField.getNumbers()[yIndex][xIndex]);
+						String masuStr;
+						int idx = HALF_NUMS.indexOf(numberStr);
+						if (idx >= 0) {
+							masuStr = FULL_NUMS.substring(idx / 2, idx / 2 + 1);
+						} else {
+							masuStr = numberStr;
+						}
+						sb.append("<text y=\"" + (yIndex * baseSize + baseSize + margin - 4)
+								+ "\" x=\""
+								+ (xIndex * baseSize + baseSize + 2)
+								+ "\" font-size=\""
+								+ (baseSize - 5)
+								+ "\" textLength=\""
+								+ (baseSize - 5)
+								+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+								+ masuStr
+								+ "</text>");
+					}
+				}
+			}
 			sb.append("</svg>");
 			System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
-			System.out.println(level);
+			System.out.println(level + "(nurikabe)");
 			System.out.println(wkField.getHintCount());
 			System.out.println(wkField);
 			return new GeneratorResult(status, sb.toString(), link, url, level, "");
@@ -235,13 +375,54 @@ public class NurikabeSolver implements Solver {
 		}
 
 		public String getHintCount() {
-			// TODO 自動生成されたメソッド・スタブ
-			return null;
+			int numberCnt = 0;
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					if (numbers[yIndex][xIndex] != null) {
+						numberCnt++;
+					}
+				}
+			}
+			return String.valueOf(numberCnt);
 		}
 
 		public String getPuzPreURL() {
-			// TODO 自動生成されたメソッド・スタブ
-			return null;
+			StringBuilder sb = new StringBuilder();
+			sb.append("http://pzv.jp/p.html?nurikabe/" + getXLength() + "/" + getYLength() + "/");
+			int interval = 0;
+			for (int i = 0; i < getYLength() * getXLength(); i++) {
+				int yIndex = i / getXLength();
+				int xIndex = i % getXLength();
+				if (numbers[yIndex][xIndex] == null) {
+					interval++;
+					if (interval == 20) {
+						sb.append("z");
+						interval = 0;
+					}
+				} else {
+					Integer num = numbers[yIndex][xIndex];
+					String numStr = Integer.toHexString(num);
+					if (numStr.length() == 2) {
+						numStr = "-" + numStr;
+					} else if (numStr.length() == 3) {
+						numStr = "+" + numStr;
+					}
+					if (interval == 0) {
+						sb.append(numStr);
+					} else {
+						sb.append(ALPHABET_FROM_G.substring(interval - 1, interval));
+						sb.append(numStr);
+						interval = 0;
+					}
+				}
+			}
+			if (interval != 0) {
+				sb.append(ALPHABET_FROM_G.substring(interval - 1, interval));
+			}
+			if (sb.charAt(sb.length() - 1) == '.') {
+				sb.append("/");
+			}
+			return sb.toString();
 		}
 
 		public Integer[][] getNumbers() {
@@ -992,8 +1173,9 @@ public class NurikabeSolver implements Solver {
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
 		System.out.println("難易度:" + (count / 2));
 		System.out.println(field);
+		int level = (int) Math.sqrt(count / 2 / 3) + 1;
 		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count / 2).toString();
+				+ Difficulty.getByCount(count / 2).toString() + "(Lv:" + level + ")";
 	}
 
 	/**

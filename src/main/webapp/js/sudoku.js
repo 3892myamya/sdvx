@@ -23,6 +23,7 @@ var ruleMap = {
 	kurotto : {name: "クロット", url:"https://www.nikoli.co.jp/ja/puzzles/kurotto/",source:"ニコリ公式"},
 	tents : {name: "Tents", url:"",source:""},
 	walllogic : {name: "ウォールロジック", url:"https://ja.wikipedia.org/wiki/%E3%82%A6%E3%82%A9%E3%83%BC%E3%83%AB%E3%83%AD%E3%82%B8%E3%83%83%E3%82%AF",source:"Wikipedia"},
+	nurikabe : {name: "ぬりかべ", url:"https://www.nikoli.co.jp/ja/puzzles/nurikabe/",source:"ニコリ公式"},
 }
 
 var option = {
@@ -162,7 +163,7 @@ $(function() {
             } else {
                	$('#sel_size').val(nowSelSizeVal);
             }
-        } else if (type == 'balance' || type == 'kurotto'){
+        } else if (type == 'balance' || type == 'kurotto' || type == 'nurikabe' ){
             $('#sel_size').append(option.size_3);
             $('#sel_size').append(option.size_4);
             $('#sel_size').append(option.size_5);

@@ -25,6 +25,7 @@ import myamya.other.solver.kurotto.KurottoSolver.KurottoGenerator;
 import myamya.other.solver.masyu.MasyuSolver.MasyuGenerator;
 import myamya.other.solver.midloop.MidloopSolver.MidloopGenerator;
 import myamya.other.solver.minarism.MinarismSolver.MinarismGenerator;
+import myamya.other.solver.nurikabe.NurikabeSolver.NurikabeGenerator;
 import myamya.other.solver.nurimisaki.NurimisakiSolver.NurimisakiGenerator;
 import myamya.other.solver.reflect.ReflectSolver.ReflectGenerator;
 import myamya.other.solver.sashigane.SashiganeSolver.SashiganeGenerator;
@@ -459,6 +460,22 @@ public class SudokuGachaWeb extends HttpServlet {
 
 	}
 
+	static class NurikabeGeneratorThlead extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+
+		NurikabeGeneratorThlead(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new NurikabeGenerator(height, width);
+		}
+
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -532,6 +549,8 @@ public class SudokuGachaWeb extends HttpServlet {
 			} else if (type.equals("walllogic")) {
 				int pattern = Integer.parseInt(request.getParameter("pattern"));
 				t = new WalllogicGeneratorThlead(height, width, pattern);
+			} else if (type.equals("nurikabe")) {
+				t = new NurikabeGeneratorThlead(height, width);
 			} else {
 				throw new IllegalArgumentException();
 			}
