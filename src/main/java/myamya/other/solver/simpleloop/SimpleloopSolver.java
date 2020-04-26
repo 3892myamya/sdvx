@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import myamya.other.solver.Common.CountOverException;
 import myamya.other.solver.Common.Difficulty;
 import myamya.other.solver.Common.Direction;
 import myamya.other.solver.Common.GeneratorResult;
@@ -16,32 +17,36 @@ import myamya.other.solver.Solver;
 
 public class SimpleloopSolver implements Solver {
 
-	public static class SimpleLoopGenerator implements Generator {
+	public static class SimpleloopGenerator implements Generator {
 
-		static class SimpleLoopSolverForGenerator extends SimpleloopSolver {
+		static class SimpleloopSolverForGenerator extends SimpleloopSolver {
 			private final int limit;
 
-			public SimpleLoopSolverForGenerator(Field field, int limit) {
+			public SimpleloopSolverForGenerator(Field field, int limit) {
 				super(field);
 				this.limit = limit;
 			}
 
 			public int solve2() {
-				while (!field.isSolved()) {
-					String befStr = field.getStateDump();
-					if (!field.solveAndCheck()) {
-						return -1;
-					}
-					int recursiveCnt = 0;
-					while (field.getStateDump().equals(befStr) && recursiveCnt < 3) {
-						if (!candSolve(field, recursiveCnt == 2 ? 999 : recursiveCnt)) {
+				try {
+					while (!field.isSolved()) {
+						String befStr = field.getStateDump();
+						if (!field.solveAndCheck()) {
 							return -1;
 						}
-						recursiveCnt++;
+						int recursiveCnt = 0;
+						while (field.getStateDump().equals(befStr) && recursiveCnt < 3) {
+							if (!candSolve(field, recursiveCnt == 2 ? 999 : recursiveCnt)) {
+								return -1;
+							}
+							recursiveCnt++;
+						}
+						if (recursiveCnt == 3 && field.getStateDump().equals(befStr)) {
+							return -1;
+						}
 					}
-					if (recursiveCnt == 3 && field.getStateDump().equals(befStr)) {
-						return -1;
-					}
+				} catch (CountOverException e) {
+					return -1;
 				}
 				return count;
 			}
@@ -49,30 +54,41 @@ public class SimpleloopSolver implements Solver {
 			@Override
 			protected boolean candSolve(Field field, int recursive) {
 				if (this.count >= limit) {
-					return false;
+					throw new CountOverException();
 				} else {
 					return super.candSolve(field, recursive);
 				}
 			}
 		}
 
+		static class ExtendedField extends SimpleloopSolver.Field {
+			public ExtendedField(Field other) {
+				super(other);
+			}
+
+			public ExtendedField(int height, int width) {
+				super(height, width);
+			}
+
+		}
+
 		private final int height;
 		private final int width;
 
-		public SimpleLoopGenerator(int height, int width) {
+		public SimpleloopGenerator(int height, int width) {
 			this.height = height;
 			this.width = width;
 		}
 
 		public static void main(String[] args) {
-			new SimpleLoopGenerator(10, 10).generate();
+			new SimpleloopGenerator(10, 10).generate();
 		}
 
 		@Override
 		public GeneratorResult generate() {
-			SimpleloopSolver.Field wkField = new SimpleloopSolver.Field(height, width);
+			ExtendedField wkField = new ExtendedField(height, width);
 			List<Integer> indexList = new ArrayList<>();
-			for (int i = 0; i < (height * (width - 1)) + ((height - 1) * width); i++) {
+			for (int i = 0; i < height * width; i++) {
 				indexList.add(i);
 			}
 			Collections.shuffle(indexList);
@@ -81,60 +97,54 @@ public class SimpleloopSolver implements Solver {
 			long start = System.nanoTime();
 			while (true) {
 				// 問題生成部
-				while (!wkField.isSolved()) {
+				while (!wkField.isSolved() && index < height * width) {
 					int posBase = indexList.get(index);
-					boolean toYokoWall;
 					int yIndex, xIndex;
-					if (posBase < height * (width - 1)) {
-						toYokoWall = true;
-						yIndex = posBase / (width - 1);
-						xIndex = posBase % (width - 1);
-					} else {
-						toYokoWall = false;
-						posBase = posBase - (height * (width - 1));
-						yIndex = posBase / width;
-						xIndex = posBase % width;
+					yIndex = posBase / width;
+					xIndex = posBase % width;
+					Field virtual = new Field(wkField, true);
+					int notExistsCount = 0;
+					Wall wallUp = yIndex == 0 ? Wall.EXISTS : virtual.tateWall[yIndex - 1][xIndex];
+					if (wallUp == Wall.NOT_EXISTS) {
+						notExistsCount++;
 					}
-					if ((toYokoWall && wkField.yokoWall[yIndex][xIndex] == Wall.SPACE)
-							|| (!toYokoWall && wkField.tateWall[yIndex][xIndex] == Wall.SPACE)) {
-						boolean isOk = false;
-						List<Integer> numIdxList = new ArrayList<>();
-						for (int i = 0; i < 2; i++) {
-							numIdxList.add(i);
+					Wall wallRight = xIndex == virtual.getXLength() - 1 ? Wall.EXISTS
+							: virtual.yokoWall[yIndex][xIndex];
+					if (wallRight == Wall.NOT_EXISTS) {
+						notExistsCount++;
+					}
+					Wall wallDown = yIndex == virtual.getYLength() - 1 ? Wall.EXISTS : virtual.tateWall[yIndex][xIndex];
+					if (wallDown == Wall.NOT_EXISTS) {
+						notExistsCount++;
+					}
+					Wall wallLeft = xIndex == 0 ? Wall.EXISTS : virtual.yokoWall[yIndex][xIndex - 1];
+					if (wallLeft == Wall.NOT_EXISTS) {
+						notExistsCount++;
+					}
+					if (notExistsCount == 0 && Math.random() * 2 < 1) {
+						virtual.masu[yIndex][xIndex] = true;
+						// 黒マス周りを壁で閉鎖
+						if (yIndex != 0) {
+							virtual.tateWall[yIndex - 1][xIndex] = Wall.EXISTS;
 						}
-						Collections.shuffle(numIdxList);
-						for (int masuNum : numIdxList) {
-							Field virtual = new Field(wkField);
-							if (masuNum < 1) {
-								if (toYokoWall) {
-									virtual.yokoWall[yIndex][xIndex] = Wall.EXISTS;
-								} else {
-									virtual.tateWall[yIndex][xIndex] = Wall.EXISTS;
-								}
-							} else if (masuNum < 2) {
-								if (toYokoWall) {
-									virtual.yokoWall[yIndex][xIndex] = Wall.NOT_EXISTS;
-								} else {
-									virtual.tateWall[yIndex][xIndex] = Wall.NOT_EXISTS;
-								}
-							}
-							if (virtual.solveAndCheck()) {
-								isOk = true;
-								wkField.masu = virtual.masu;
-								wkField.yokoWall = virtual.yokoWall;
-								wkField.tateWall = virtual.tateWall;
-							}
+						if (xIndex != virtual.getXLength() - 1) {
+							virtual.yokoWall[yIndex][xIndex] = Wall.EXISTS;
 						}
-						if (!isOk) {
-							// 破綻したら0から作り直す。
-							wkField = new Field(height, width);
-							Collections.shuffle(indexList);
-							index = 0;
-							continue;
+						if (yIndex != virtual.getYLength() - 1) {
+							virtual.tateWall[yIndex][xIndex] = Wall.EXISTS;
+						}
+						if (xIndex != 0) {
+							virtual.yokoWall[yIndex][xIndex - 1] = Wall.EXISTS;
+						}
+						if (Math.random() * 2 < 1 || virtual.solveAndCheck()) {
+							wkField.masu = virtual.masu;
+							wkField.yokoWall = virtual.yokoWall;
+							wkField.tateWall = virtual.tateWall;
 						}
 					}
 					index++;
 				}
+				System.out.println(wkField);
 				// マスを戻す
 				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
 					for (int xIndex = 0; xIndex < wkField.getXLength() - 1; xIndex++) {
@@ -147,24 +157,43 @@ public class SimpleloopSolver implements Solver {
 					}
 				}
 				// 解けるかな？
-				level = new SimpleLoopSolverForGenerator(wkField, 100).solve2();
+				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+						if (wkField.masu[yIndex][xIndex]) {
+							// 黒マス周りを壁で閉鎖
+							if (yIndex != 0) {
+								wkField.tateWall[yIndex - 1][xIndex] = Wall.EXISTS;
+							}
+							if (xIndex != wkField.getXLength() - 1) {
+								wkField.yokoWall[yIndex][xIndex] = Wall.EXISTS;
+							}
+							if (yIndex != wkField.getYLength() - 1) {
+								wkField.tateWall[yIndex][xIndex] = Wall.EXISTS;
+							}
+							if (xIndex != 0) {
+								wkField.yokoWall[yIndex][xIndex - 1] = Wall.EXISTS;
+							}
+						}
+					}
+				}
+				level = new SimpleloopSolverForGenerator(wkField, 100).solve2();
 				if (level == -1) {
 					// 解けなければやり直し
-					wkField = new SimpleloopSolver.Field(height, width);
+					wkField = new ExtendedField(height, width);
 					Collections.shuffle(indexList);
 					index = 0;
 				} else {
 					break;
 				}
 			}
-			level = (int) Math.sqrt(level * 2 / 3) + 1;
+			level = (int) Math.sqrt(level * 10 / 3) + 1;
 			String status = "Lv:" + level + "の問題を獲得！(黒："
 					+ wkField.getHintCount() + ")";
 			String url = wkField.getPuzPreURL();
-			String link = "<a href=\"" + url + "\" target=\"_blank\">ぱずぷれv3で解く</a>";
-			StringBuilder sb = new StringBuilder();
+			String link = "<a href=\"" + url + "\" target=\"_blank\">puzz.linkで解く</a>";
 			int baseSize = 20;
 			int margin = 5;
+			StringBuilder sb = new StringBuilder();
 			sb.append(
 					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
 							+ "height=\"" + (wkField.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
@@ -183,7 +212,11 @@ public class SimpleloopSolver implements Solver {
 							+ (xIndex * baseSize + 2 * baseSize)
 							+ "\" stroke-width=\"1\" fill=\"none\"");
 					if (oneYokoWall) {
-						sb.append("stroke=\"#000\" ");
+						if (xIndex == -1 || xIndex == wkField.getXLength() - 1) {
+							sb.append("stroke=\"#000\" ");
+						} else {
+							sb.append("stroke=\"green\" ");
+						}
 					} else {
 						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
 					}
@@ -205,12 +238,35 @@ public class SimpleloopSolver implements Solver {
 							+ (xIndex * baseSize + baseSize + baseSize)
 							+ "\" stroke-width=\"1\" fill=\"none\"");
 					if (oneTateWall) {
-						sb.append("stroke=\"#000\" ");
+						if (yIndex == -1 || yIndex == wkField.getYLength() - 1) {
+							sb.append("stroke=\"#000\" ");
+						} else {
+							sb.append("stroke=\"green\" ");
+						}
 					} else {
 						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
 					}
 					sb.append(">"
 							+ "</line>");
+				}
+			}
+			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+					if (wkField.getMasu()[yIndex][xIndex]) {
+						sb.append("<rect y=\"" + (yIndex * baseSize + margin)
+								+ "\" x=\""
+								+ (xIndex * baseSize + baseSize)
+								+ "\" width=\""
+								+ (baseSize)
+								+ "\" height=\""
+								+ (baseSize)
+								+ "\" stroke=\""
+								+ "black"
+								+ "\" fill=\""
+								+ "black"
+								+ "\">"
+								+ "</rect>");
+					}
 				}
 			}
 			sb.append("</svg>");
@@ -225,15 +281,16 @@ public class SimpleloopSolver implements Solver {
 
 	public static class Field {
 		static final String ALPHABET = "abcdefghijklmnopqrstuvwxyz";
+		static final String ALPHABET_AND_NUMBER = "0123456789abcdefghijklmnopqrstuvwxyz";
 
 		// マスの情報 trueなら黒
-		private boolean[][] masu;
+		protected boolean[][] masu;
 		// 横をふさぐ壁が存在するか
 		// 0,0 = trueなら、0,0と0,1の間に壁があるという意味
-		private Wall[][] yokoWall;
+		protected Wall[][] yokoWall;
 		// 縦をふさぐ壁が存在するか
 		// 0,0 = trueなら、0,0と1,0の間に壁があるという意味
-		private Wall[][] tateWall;
+		protected Wall[][] tateWall;
 
 		public boolean[][] getMasu() {
 			return masu;
@@ -241,34 +298,69 @@ public class SimpleloopSolver implements Solver {
 
 		public String getPuzPreURL() {
 			StringBuilder sb = new StringBuilder();
-			sb.append("http://pzv.jp/p.html?masyu/" + getXLength() + "/" + getYLength() + "/");
+			sb.append("https://puzz.link/p?simpleloop/" + getXLength() + "/" + getYLength() + "/");
 			for (int i = 0; i < getYLength() * getXLength(); i++) {
 				int yIndex1 = i / getXLength();
 				int xIndex1 = i % getXLength();
 				i++;
-				int yIndex2 = i / getXLength();
-				int xIndex2 = i % getXLength();
+				int yIndex2 = -1;
+				int xIndex2 = -1;
+				if (i < getYLength() * getXLength()) {
+					yIndex2 = i / getXLength();
+					xIndex2 = i % getXLength();
+				}
 				i++;
-				int yIndex3 = i / getXLength();
-				int xIndex3 = i % getXLength();
-				int bitInfo = 0;
-				sb.append(Integer.toString(bitInfo, 36));
-			}
-			if (sb.charAt(sb.length() - 1) == '.') {
-				sb.append("/");
+				int yIndex3 = -1;
+				int xIndex3 = -1;
+				if (i < getYLength() * getXLength()) {
+					yIndex3 = i / getXLength();
+					xIndex3 = i % getXLength();
+				}
+				i++;
+				int yIndex4 = -1;
+				int xIndex4 = -1;
+				if (i < getYLength() * getXLength()) {
+					yIndex4 = i / getXLength();
+					xIndex4 = i % getXLength();
+				}
+				i++;
+				int yIndex5 = -1;
+				int xIndex5 = -1;
+				if (i < getYLength() * getXLength()) {
+					yIndex5 = i / getXLength();
+					xIndex5 = i % getXLength();
+				}
+				int num = 0;
+				if (yIndex1 != -1 && xIndex1 != -1 && masu[yIndex1][xIndex1]) {
+					num = num + 16;
+				}
+				if (yIndex2 != -1 && xIndex2 != -1 && masu[yIndex2][xIndex2]) {
+					num = num + 8;
+				}
+				if (yIndex3 != -1 && xIndex3 != -1 && masu[yIndex3][xIndex3]) {
+					num = num + 4;
+				}
+				if (yIndex4 != -1 && xIndex4 != -1 && masu[yIndex4][xIndex4]) {
+					num = num + 2;
+				}
+				if (yIndex5 != -1 && xIndex5 != -1 && masu[yIndex5][xIndex5]) {
+					num = num + 1;
+				}
+				sb.append(ALPHABET_AND_NUMBER.substring(num, num + 1));
 			}
 			return sb.toString();
 		}
 
 		public String getHintCount() {
-			int siro = 0;
 			int kuro = 0;
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-
+					if (masu[yIndex][xIndex]) {
+						kuro++;
+					}
 				}
 			}
-			return String.valueOf(siro + "/" + kuro);
+			return String.valueOf(kuro);
 		}
 
 		public Wall[][] getYokoWall() {
@@ -335,7 +427,7 @@ public class SimpleloopSolver implements Solver {
 					bit = Character.getNumericValue(param.charAt(readPos));
 					readPos++;
 				}
-				if (mod == 4 || cnt == (getYLength() * (getXLength() - 1)) - 1) {
+				if (mod == 4 || cnt == (getYLength() * (getXLength())) - 1) {
 					if (mod >= 0) {
 						masu[(cnt - mod + 0) / (getXLength())][(cnt - mod + 0) % (getXLength())] = bit / 16
 								% 2 == 1;
@@ -470,7 +562,7 @@ public class SimpleloopSolver implements Solver {
 		/**
 		 * 白マス隣接セルの周辺の壁の数が2にならない場合もfalseを返す。
 		 */
-		public boolean nextSolve() {
+		protected boolean nextSolve() {
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
 					if (!masu[yIndex][xIndex]) {

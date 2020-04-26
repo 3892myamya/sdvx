@@ -24,6 +24,7 @@ var ruleMap = {
 	tents : {name: "Tents", url:"",source:""},
 	walllogic : {name: "ウォールロジック", url:"https://ja.wikipedia.org/wiki/%E3%82%A6%E3%82%A9%E3%83%BC%E3%83%AB%E3%83%AD%E3%82%B8%E3%83%83%E3%82%AF",source:"Wikipedia"},
 	nurikabe : {name: "ぬりかべ", url:"https://www.nikoli.co.jp/ja/puzzles/nurikabe/",source:"ニコリ公式"},
+	simpleloop : {name: "シンプルループ", url:"",source:""},
 }
 
 var option = {
