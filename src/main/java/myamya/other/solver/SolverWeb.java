@@ -1482,8 +1482,8 @@ public class SolverWeb extends HttpServlet {
 								+ "\" fill=\"lightgray\" >"
 								+ "</rect>");
 					}
-					YinyangSolver.Masu oneMasu = field.getMasu()[yIndex][xIndex];
-					if (oneMasu == YinyangSolver.Masu.WHITE) {
+					Masu oneMasu = field.getMasu()[yIndex][xIndex];
+					if (oneMasu == Masu.NOT_BLACK) {
 						sb.append("<circle cy=\"" + (yIndex * baseSize + (baseSize / 2))
 								+ "\" cx=\""
 								+ (xIndex * baseSize + baseSize + (baseSize / 2))
@@ -1492,7 +1492,7 @@ public class SolverWeb extends HttpServlet {
 								+ "\" fill=\"white\", stroke=\"black\">"
 								+ "</circle>");
 
-					} else if (oneMasu == YinyangSolver.Masu.BLACK) {
+					} else if (oneMasu == Masu.BLACK) {
 						sb.append("<circle cy=\"" + (yIndex * baseSize + (baseSize / 2))
 								+ "\" cx=\""
 								+ (xIndex * baseSize + baseSize + (baseSize / 2))

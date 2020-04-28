@@ -144,7 +144,6 @@ public class SimpleloopSolver implements Solver {
 					}
 					index++;
 				}
-				System.out.println(wkField);
 				// マスを戻す
 				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
 					for (int xIndex = 0; xIndex < wkField.getXLength() - 1; xIndex++) {

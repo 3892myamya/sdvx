@@ -2,18 +2,30 @@ package myamya.other.solver;
 
 public class Common {
 	public enum Masu {
-		SPACE("　"), BLACK("■"), NOT_BLACK("・");
+		SPACE("　", 0), NOT_BLACK("・", 1), BLACK("■", 2);
 
 		String str;
+		int val;
 
-		Masu(String str) {
+		Masu(String str, int val) {
 			this.str = str;
+			this.val = val;
 		}
 
 		@Override
 		public String toString() {
 			return str;
 		}
+
+		public static Masu getByVal(int val) {
+			for (Masu one : Masu.values()) {
+				if (one.val == val) {
+					return one;
+				}
+			}
+			return null;
+		}
+
 	}
 
 	public enum Wall {

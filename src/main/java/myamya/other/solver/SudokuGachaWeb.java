@@ -38,6 +38,7 @@ import myamya.other.solver.tapa.TapaSolver.TapaGenerator;
 import myamya.other.solver.tasquare.TasquareSolver.TasquareGenerator;
 import myamya.other.solver.tents.TentsSolver.TentsGenerator;
 import myamya.other.solver.walllogic.WalllogicSolver.WalllogicGenerator;
+import myamya.other.solver.yinyang.YinyangSolver.YinyangGenerator;
 import net.arnx.jsonic.JSON;
 
 @WebServlet("/SudokuGacha")
@@ -493,6 +494,22 @@ public class SudokuGachaWeb extends HttpServlet {
 
 	}
 
+	static class YinyangGeneratorThlead extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+
+		YinyangGeneratorThlead(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new YinyangGenerator(height, width);
+		}
+
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -570,6 +587,8 @@ public class SudokuGachaWeb extends HttpServlet {
 				t = new NurikabeGeneratorThlead(height, width);
 			} else if (type.equals("simpleloop")) {
 				t = new SimpleloopGeneratorThlead(height, width);
+			} else if (type.equals("yinyang")) {
+				t = new YinyangGeneratorThlead(height, width);
 			} else {
 				throw new IllegalArgumentException();
 			}
