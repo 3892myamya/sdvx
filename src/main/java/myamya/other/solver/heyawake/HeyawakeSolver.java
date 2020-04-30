@@ -1,6 +1,7 @@
 package myamya.other.solver.heyawake;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -10,16 +11,278 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import myamya.other.solver.Common;
+import myamya.other.solver.Common.CountOverException;
 import myamya.other.solver.Common.Difficulty;
 import myamya.other.solver.Common.Direction;
+import myamya.other.solver.Common.GeneratorResult;
 import myamya.other.solver.Common.Masu;
 import myamya.other.solver.Common.Position;
+import myamya.other.solver.Generator;
+import myamya.other.solver.RoomMaker.RoomMaker2;
 import myamya.other.solver.Solver;
 
 public class HeyawakeSolver implements Solver {
+	public static class HeyawakeGenerator implements Generator {
+		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
+		private static final String FULL_NUMS = "０１２３４５６７８９";
+
+		static class HeyawakeSolverForGenerator extends HeyawakeSolver {
+
+			private final int limit;
+
+			public HeyawakeSolverForGenerator(Field field, int limit) {
+				super(field);
+				this.limit = limit;
+			}
+
+			public int solve2() {
+				try {
+					field.roomsCandSetUp();
+					while (!field.isSolved()) {
+						String befStr = field.getStateDump();
+						if (!field.solveAndCheck()) {
+							return -1;
+						}
+						int recursiveCnt = 0;
+						while (field.getStateDump().equals(befStr) && recursiveCnt < 4) {
+							if (!candSolve(field, recursiveCnt)) {
+								return -1;
+							}
+							recursiveCnt++;
+						}
+						if (recursiveCnt == 3 && field.getStateDump().equals(befStr)) {
+							return -1;
+						}
+					}
+				} catch (CountOverException e) {
+					return -1;
+				}
+				return count + field.cnt;
+			}
+
+			@Override
+			protected boolean candSolve(Field field, int recursive) {
+				if (this.count >= limit) {
+					throw new CountOverException();
+				} else {
+					return super.candSolve(field, recursive);
+				}
+			}
+		}
+
+		private static final int NUM = 1;
+		private static final int DENOM = 2;
+
+		private final int height;
+		private final int width;
+
+		public HeyawakeGenerator(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		public static void main(String[] args) {
+			new HeyawakeGenerator(8, 8).generate();
+		}
+
+		@Override
+		public GeneratorResult generate() {
+			RoomMaker2 roomMaker2 = new RoomMaker2(height, width, NUM, DENOM);
+			HeyawakeSolver.Field wkField = new HeyawakeSolver.Field(height, width, roomMaker2);
+			int failCnt = 0;
+			List<Integer> indexList = new ArrayList<>();
+			for (int i = 0; i < height * width; i++) {
+				indexList.add(i);
+			}
+			Collections.shuffle(indexList);
+			int index = 0;
+			int level = 0;
+			long start = System.nanoTime();
+			while (true) {
+				// 問題生成部
+				while (!wkField.isSolved()) {
+					int yIndex = indexList.get(index) / width;
+					int xIndex = indexList.get(index) % width;
+					if (wkField.masu[yIndex][xIndex] == Masu.SPACE) {
+						boolean isOk = false;
+						List<Integer> numIdxList = new ArrayList<>();
+						// 黒マス発生を優先
+						numIdxList.add(1);
+						numIdxList.add(0);
+						for (int masuNum : numIdxList) {
+							HeyawakeSolver.Field virtual = new HeyawakeSolver.Field(wkField);
+							if (masuNum < 1) {
+								virtual.masu[yIndex][xIndex] = Masu.NOT_BLACK;
+							} else if (masuNum < 2) {
+								virtual.masu[yIndex][xIndex] = Masu.BLACK;
+							}
+							if (virtual.solveAndCheck()) {
+								isOk = true;
+								wkField.masu = virtual.masu;
+								break;
+							}
+						}
+						if (!isOk) {
+							// 破綻したら0から作り直す。
+							failCnt++;
+							if (failCnt >= 100) {
+								// 100回以上失敗したら部屋割りが悪いと判断して作り直す
+								failCnt = 0;
+								roomMaker2 = new RoomMaker2(height, width, NUM, DENOM);
+							}
+							wkField = new HeyawakeSolver.Field(height, width, roomMaker2);
+							Collections.shuffle(indexList);
+							index = 0;
+							continue;
+						}
+					}
+					index++;
+				}
+				// 数字埋め
+				List<Integer> roomIdxList = new ArrayList<>();
+				for (Room room : wkField.rooms) {
+					int blackCnt = 0;
+					for (Position pos : room.getMember()) {
+						if (wkField.masu[pos.getyIndex()][pos.getxIndex()] == Masu.BLACK) {
+							blackCnt++;
+						}
+					}
+					room.blackCnt = blackCnt;
+					roomIdxList.add(roomIdxList.size());
+				}
+				// マスを戻す
+				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+						wkField.masu[yIndex][xIndex] = Masu.SPACE;
+					}
+				}
+				// 解けるかな？
+				level = new HeyawakeSolverForGenerator(new HeyawakeSolver.Field(wkField), 500).solve2();
+				if (level == -1) {
+					// 解けなければやり直し
+					roomMaker2 = new RoomMaker2(height, width, NUM, DENOM);
+					Collections.shuffle(indexList);
+					wkField = new HeyawakeSolver.Field(height, width, roomMaker2);
+					index = 0;
+				} else {
+					Collections.shuffle(roomIdxList);
+					for (Integer roomIdx : roomIdxList) {
+						HeyawakeSolver.Field virtual = new HeyawakeSolver.Field(wkField, true);
+						virtual.rooms.get(roomIdx).blackCnt = -1;
+						int solveResult = new HeyawakeSolverForGenerator(virtual, 6000).solve2();
+						if (solveResult != -1) {
+							wkField.rooms.get(roomIdx).blackCnt = -1;
+							level = solveResult;
+						}
+					}
+
+					break;
+				}
+			}
+
+			level = (int) Math.sqrt(level / 3) + 1;
+			String status = "Lv:" + level + "の問題を獲得！(数字/部屋："
+					+ wkField.getHintCount().split("/")[1] + "/"
+					+ wkField.getHintCount().split("/")[0] + ")";
+			String url = wkField.getPuzPreURL();
+			String link = "<a href=\"" + url + "\" target=\"_blank\">ぱずぷれv3で解く</a>";
+			StringBuilder sb = new StringBuilder();
+			int baseSize = 20;
+			int margin = 5;
+			sb.append(
+					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
+							+ "height=\"" + (wkField.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
+							+ (wkField.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			// 横壁描画
+			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = -1; xIndex < wkField.getXLength(); xIndex++) {
+					boolean oneYokoWall = xIndex == -1 || xIndex == wkField.getXLength() - 1
+							|| wkField.getYokoWall()[yIndex][xIndex];
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + margin)
+							+ "\" x1=\""
+							+ (xIndex * baseSize + 2 * baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ (xIndex * baseSize + 2 * baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneYokoWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">"
+							+ "</line>");
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = -1; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+					boolean oneTateWall = yIndex == -1 || yIndex == wkField.getYLength() - 1
+							|| wkField.getTateWall()[yIndex][xIndex];
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x1=\""
+							+ (xIndex * baseSize + baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ (xIndex * baseSize + baseSize + baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneTateWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">"
+							+ "</line>");
+				}
+			}
+			// 数字描画
+			for (Room room : wkField.getRooms()) {
+				int roomBlackCount = room.getBlackCnt();
+				if (roomBlackCount != -1) {
+					String roomBlackCountStr;
+					String wkstr = String.valueOf(roomBlackCount);
+					int idx = HALF_NUMS.indexOf(wkstr);
+					if (idx >= 0) {
+						roomBlackCountStr = FULL_NUMS.substring(idx / 2,
+								idx / 2 + 1);
+					} else {
+						roomBlackCountStr = wkstr;
+					}
+					Position numberMasuPos = room.getNumberMasuPos();
+					String fillColor = wkField.getMasu()[numberMasuPos.getyIndex()][numberMasuPos
+							.getxIndex()] == Common.Masu.BLACK ? "white"
+									: "black";
+					sb.append("<text y=\"" + (numberMasuPos.getyIndex() * baseSize + baseSize - 5 + margin)
+							+ "\" x=\""
+							+ (numberMasuPos.getxIndex() * baseSize + baseSize + 2)
+							+ "\" fill=\""
+							+ fillColor
+							+ "\" font-size=\""
+							+ (baseSize - 5)
+							+ "\" textLength=\""
+							+ (baseSize - 5)
+							+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+							+ roomBlackCountStr
+							+ "</text>");
+				}
+			}
+			sb.append("</svg>");
+			System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
+			System.out.println(level);
+			System.out.println(wkField.getHintCount());
+			System.out.println(wkField);
+			return new GeneratorResult(status, sb.toString(), link, url, level, "");
+		}
+	}
 
 	public static class Field {
 		static final String ALPHABET_FROM_G = "ghijklmnopqrstuvwxyz";
+		static final String ALPHABET_AND_NUMBER = "0123456789abcdefghijklmnopqrstuvwxyz";
 
 		// マスの情報
 		private Masu[][] masu;
@@ -58,6 +321,186 @@ public class HeyawakeSolver implements Solver {
 
 		public int getXLength() {
 			return masu[0].length;
+		}
+
+		public String getPuzPreURL() {
+			StringBuilder sb = new StringBuilder();
+			sb.append("http://pzv.jp/p.html?heyawake/" + getXLength() + "/" + getYLength() + "/");
+			for (int i = 0; i < getYLength() * (getXLength() - 1); i++) {
+				int yIndex1 = i / (getXLength() - 1);
+				int xIndex1 = i % (getXLength() - 1);
+				i++;
+				int yIndex2 = -1;
+				int xIndex2 = -1;
+				if (i < getYLength() * (getXLength() - 1)) {
+					yIndex2 = i / (getXLength() - 1);
+					xIndex2 = i % (getXLength() - 1);
+				}
+				i++;
+				int yIndex3 = -1;
+				int xIndex3 = -1;
+				if (i < getYLength() * (getXLength() - 1)) {
+					yIndex3 = i / (getXLength() - 1);
+					xIndex3 = i % (getXLength() - 1);
+				}
+				i++;
+				int yIndex4 = -1;
+				int xIndex4 = -1;
+				if (i < getYLength() * (getXLength() - 1)) {
+					yIndex4 = i / (getXLength() - 1);
+					xIndex4 = i % (getXLength() - 1);
+				}
+				i++;
+				int yIndex5 = -1;
+				int xIndex5 = -1;
+				if (i < getYLength() * (getXLength() - 1)) {
+					yIndex5 = i / (getXLength() - 1);
+					xIndex5 = i % (getXLength() - 1);
+				}
+				int num = 0;
+				if (yIndex1 != -1 && xIndex1 != -1 && yokoWall[yIndex1][xIndex1]) {
+					num = num + 16;
+				}
+				if (yIndex2 != -1 && xIndex2 != -1 && yokoWall[yIndex2][xIndex2]) {
+					num = num + 8;
+				}
+				if (yIndex3 != -1 && xIndex3 != -1 && yokoWall[yIndex3][xIndex3]) {
+					num = num + 4;
+				}
+				if (yIndex4 != -1 && xIndex4 != -1 && yokoWall[yIndex4][xIndex4]) {
+					num = num + 2;
+				}
+				if (yIndex5 != -1 && xIndex5 != -1 && yokoWall[yIndex5][xIndex5]) {
+					num = num + 1;
+				}
+				sb.append(ALPHABET_AND_NUMBER.substring(num, num + 1));
+			}
+			for (int i = 0; i < (getYLength() - 1) * getXLength(); i++) {
+				int yIndex1 = i / getXLength();
+				int xIndex1 = i % getXLength();
+				i++;
+				int yIndex2 = -1;
+				int xIndex2 = -1;
+				if (i < (getYLength() - 1) * getXLength()) {
+					yIndex2 = i / getXLength();
+					xIndex2 = i % getXLength();
+				}
+				i++;
+				int yIndex3 = -1;
+				int xIndex3 = -1;
+				if (i < (getYLength() - 1) * getXLength()) {
+					yIndex3 = i / getXLength();
+					xIndex3 = i % getXLength();
+				}
+				i++;
+				int yIndex4 = -1;
+				int xIndex4 = -1;
+				if (i < (getYLength() - 1) * getXLength()) {
+					yIndex4 = i / getXLength();
+					xIndex4 = i % getXLength();
+				}
+				i++;
+				int yIndex5 = -1;
+				int xIndex5 = -1;
+				if (i < (getYLength() - 1) * getXLength()) {
+					yIndex5 = i / getXLength();
+					xIndex5 = i % getXLength();
+				}
+				int num = 0;
+				if (yIndex1 != -1 && xIndex1 != -1 && tateWall[yIndex1][xIndex1]) {
+					num = num + 16;
+				}
+				if (yIndex2 != -1 && xIndex2 != -1 && tateWall[yIndex2][xIndex2]) {
+					num = num + 8;
+				}
+				if (yIndex3 != -1 && xIndex3 != -1 && tateWall[yIndex3][xIndex3]) {
+					num = num + 4;
+				}
+				if (yIndex4 != -1 && xIndex4 != -1 && tateWall[yIndex4][xIndex4]) {
+					num = num + 2;
+				}
+				if (yIndex5 != -1 && xIndex5 != -1 && tateWall[yIndex5][xIndex5]) {
+					num = num + 1;
+				}
+				sb.append(ALPHABET_AND_NUMBER.substring(num, num + 1));
+			}
+			int interval = 0;
+			for (int i = 0; i < rooms.size(); i++) {
+				if (rooms.get(i).blackCnt == -1) {
+					interval++;
+					if (interval == 20) {
+						sb.append("z");
+						interval = 0;
+					}
+				} else {
+					Integer num = rooms.get(i).blackCnt;
+					String numStr = Integer.toHexString(num);
+					if (numStr.length() == 2) {
+						numStr = "-" + numStr;
+					} else if (numStr.length() == 3) {
+						numStr = "+" + numStr;
+					}
+					if (interval == 0) {
+						sb.append(numStr);
+					} else {
+						sb.append(ALPHABET_FROM_G.substring(interval - 1, interval));
+						sb.append(numStr);
+						interval = 0;
+					}
+				}
+			}
+			if (interval != 0) {
+				sb.append(ALPHABET_FROM_G.substring(interval - 1, interval));
+			}
+			if (sb.charAt(sb.length() - 1) == '.') {
+				sb.append("/");
+			}
+			return sb.toString();
+		}
+
+		public String getHintCount() {
+			int numberCnt = 0;
+			for (Room room : rooms) {
+				if (room.getBlackCnt() != -1) {
+					numberCnt++;
+				}
+			}
+			return String.valueOf(rooms.size() + "/" + numberCnt);
+		}
+
+		/**
+		 * プレーンなフィールド作成
+		 */
+		public Field(int height, int width, RoomMaker2 roomMaker2) {
+			masu = new Masu[height][width];
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					masu[yIndex][xIndex] = Masu.SPACE;
+				}
+			}
+			yokoWall = roomMaker2.getYokoWall();
+			tateWall = roomMaker2.getTateWall();
+			rooms = new ArrayList<>();
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					Position pos = new Position(yIndex, xIndex);
+					boolean alreadyRoomed = false;
+					for (Room room : rooms) {
+						if (room.getMember().contains(pos)) {
+							alreadyRoomed = true;
+							break;
+						}
+					}
+					if (!alreadyRoomed) {
+						Set<Position> continuePosSet = new HashSet<>();
+						continuePosSet.add(pos);
+						setContinuePosSet(pos, continuePosSet);
+						rooms.add(new Room(-1, new ArrayList<>(continuePosSet)));
+					}
+				}
+			}
+			roomsCand = new HashMap<>();
+			this.ayeheya = false;
 		}
 
 		public Field(int height, int width, String param, boolean ayeheya) {
@@ -220,6 +663,29 @@ public class HeyawakeSolver implements Solver {
 			yokoWall = other.yokoWall;
 			tateWall = other.tateWall;
 			rooms = other.rooms;
+			roomsCand = new HashMap<>();
+			for (Entry<Integer, List<String>> entry : other.roomsCand.entrySet()) {
+				roomsCand.put(entry.getKey(), new ArrayList<>(entry.getValue()));
+			}
+			this.ayeheya = other.ayeheya;
+		}
+
+		/**
+		 * イミュータブルコンストラクタ(ジェネレータ用)
+		 */
+		public Field(Field other, boolean flag) {
+			masu = new Masu[other.getYLength()][other.getXLength()];
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					masu[yIndex][xIndex] = other.masu[yIndex][xIndex];
+				}
+			}
+			yokoWall = other.yokoWall;
+			tateWall = other.tateWall;
+			rooms = new ArrayList<>();
+			for (Room room : other.rooms) {
+				rooms.add(new Room(room.getBlackCnt(), room.getMember()));
+			}
 			roomsCand = new HashMap<>();
 			for (Entry<Integer, List<String>> entry : other.roomsCand.entrySet()) {
 				roomsCand.put(entry.getKey(), new ArrayList<>(entry.getValue()));
@@ -710,7 +1176,7 @@ public class HeyawakeSolver implements Solver {
 		}
 
 		// 黒マスが何マスあるか。数字がない場合は-1
-		private final int blackCnt;
+		private int blackCnt;
 		// 部屋に属するマスの集合
 		private final List<Position> member;
 
@@ -783,11 +1249,15 @@ public class HeyawakeSolver implements Solver {
 		}
 	}
 
-	private final Field field;
-	private int count = 0;
+	protected final Field field;
+	protected int count = 0;
 
 	public HeyawakeSolver(int height, int width, String param, boolean ayeheya) {
 		field = new Field(height, width, param, ayeheya);
+	}
+
+	public HeyawakeSolver(Field field) {
+		this.field = new Field(field);
 	}
 
 	public Field getField() {
@@ -827,14 +1297,15 @@ public class HeyawakeSolver implements Solver {
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
 		System.out.println("難易度:" + (count + field.cnt));
 		System.out.println(field);
+		int level = (int) Math.sqrt((count + field.cnt) / 3) + 1;
 		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count + field.cnt).toString();
+				+ Difficulty.getByCount((count + field.cnt)).toString() + "(Lv:" + level + ")";
 	}
 
 	/**
 	 * 仮置きして調べる
 	 */
-	private boolean candSolve(Field field, int recursive) {
+	protected boolean candSolve(Field field, int recursive) {
 		String str = field.getStateDump();
 		for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 			for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {

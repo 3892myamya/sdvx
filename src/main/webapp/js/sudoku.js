@@ -26,6 +26,7 @@ var ruleMap = {
 	nurikabe : {name: "ぬりかべ", url:"https://www.nikoli.co.jp/ja/puzzles/nurikabe/",source:"ニコリ公式"},
 	simpleloop : {name: "シンプルループ", url:"",source:""},
 	yinyang : {name: "しろまるくろまる", url:"",source:""},
+	heyawake : {name: "へやわけ", url:"https://www.nikoli.co.jp/ja/puzzles/heyawake/",source:"ニコリ公式"},
 }
 
 var option = {
@@ -165,7 +166,7 @@ $(function() {
             } else {
                	$('#sel_size').val(nowSelSizeVal);
             }
-        } else if (type == 'balance' || type == 'kurotto' || type == 'nurikabe' ){
+        } else if (type == 'balance' || type == 'kurotto' || type == 'nurikabe' || type == 'heyawake' ){
             $('#sel_size').append(option.size_3);
             $('#sel_size').append(option.size_4);
             $('#sel_size').append(option.size_5);

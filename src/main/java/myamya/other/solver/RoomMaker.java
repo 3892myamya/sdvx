@@ -27,7 +27,31 @@ public class RoomMaker {
 			return tateWall[0].length;
 		}
 
-		public RoomMaker2(int height, int width) {
+		public boolean[][] getYokoWall() {
+			boolean[][] result = new boolean[getYLength()][getXLength() - 1];
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength() - 1; xIndex++) {
+					result[yIndex][xIndex] = yokoWall[yIndex][xIndex] == Wall.EXISTS;
+				}
+			}
+			return result;
+		}
+
+		public boolean[][] getTateWall() {
+			boolean[][] result = new boolean[getYLength() - 1][getXLength()];
+			for (int yIndex = 0; yIndex < getYLength() - 1; yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					result[yIndex][xIndex] = tateWall[yIndex][xIndex] == Wall.EXISTS;
+				}
+			}
+			return result;
+		}
+
+		/**
+		 * オブジェクト生成と同時に部屋作成。
+		 * num / denom が部屋の仕切り数の割合。1:1なら全部サイズ1の部屋になり、0:1なら1部屋になる。
+		 */
+		public RoomMaker2(int height, int width, int num, int denom) {
 			yokoWall = new Wall[height][width - 1];
 			tateWall = new Wall[height - 1][width];
 			init();
@@ -54,7 +78,7 @@ public class RoomMaker {
 				}
 				if ((toYokoWall && yokoWall[yIndex][xIndex] == Wall.SPACE)
 						|| (!toYokoWall && tateWall[yIndex][xIndex] == Wall.SPACE)) {
-					if (Math.random() * 2 < 1) {
+					if (Math.random() * denom < num) {
 						if (toYokoWall) {
 							yokoWall[yIndex][xIndex] = Wall.EXISTS;
 						} else {
@@ -67,7 +91,14 @@ public class RoomMaker {
 							tateWall[yIndex][xIndex] = Wall.NOT_EXISTS;
 						}
 					}
-					if (!check()) {
+					//					if (!baseCheck()) {
+					//						// 破綻したら0から作り直す。
+					//						init();
+					//						Collections.shuffle(indexList);
+					//						index = 0;
+					//						continue;
+					//					}
+					if (!rectCheck()) {
 						// 破綻したら0から作り直す。
 						init();
 						Collections.shuffle(indexList);
@@ -93,100 +124,333 @@ public class RoomMaker {
 		}
 
 		/**
-		 * 柱から見て壁の数は0、2(直進)、3、4のいずれか
+		 * 柱から見て壁の数が1の場合falseを返す。
 		 */
-		private boolean check() {
+		private boolean baseCheck() {
 			for (int yIndex = 0; yIndex < getYLength() - 1; yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength() - 1; xIndex++) {
-					int exists = 0;
-					int notExists = 0;
-					Wall wall1 = tateWall[yIndex][xIndex];
-					Wall wall2 = tateWall[yIndex][xIndex + 1];
-					Wall wall3 = yokoWall[yIndex][xIndex];
-					Wall wall4 = yokoWall[yIndex + 1][xIndex];
-					if (wall1 == Wall.EXISTS) {
-						exists++;
-					} else if (wall1 == Wall.NOT_EXISTS) {
-						notExists++;
+					Wall wallUp = yokoWall[yIndex][xIndex];
+					Wall wallRight = tateWall[yIndex][xIndex + 1];
+					Wall wallDown = yokoWall[yIndex + 1][xIndex];
+					Wall wallLeft = tateWall[yIndex][xIndex];
+					if (wallUp == Wall.NOT_EXISTS && wallRight == Wall.NOT_EXISTS && wallDown == Wall.NOT_EXISTS) {
+						if (wallLeft == Wall.EXISTS) {
+							return false;
+						}
+						tateWall[yIndex][xIndex] = Wall.NOT_EXISTS;
 					}
-					if (wall2 == Wall.EXISTS) {
-						exists++;
-					} else if (wall2 == Wall.NOT_EXISTS) {
-						notExists++;
+					if (wallUp == Wall.EXISTS && wallRight == Wall.NOT_EXISTS && wallDown == Wall.NOT_EXISTS) {
+						if (wallLeft == Wall.NOT_EXISTS) {
+							return false;
+						}
+						tateWall[yIndex][xIndex] = Wall.EXISTS;
 					}
-					if (wall3 == Wall.EXISTS) {
-						exists++;
-					} else if (wall3 == Wall.NOT_EXISTS) {
-						notExists++;
+					if (wallUp == Wall.NOT_EXISTS && wallRight == Wall.EXISTS && wallDown == Wall.NOT_EXISTS) {
+						if (wallLeft == Wall.NOT_EXISTS) {
+							return false;
+						}
+						tateWall[yIndex][xIndex] = Wall.EXISTS;
 					}
-					if (wall4 == Wall.EXISTS) {
-						exists++;
-					} else if (wall4 == Wall.NOT_EXISTS) {
-						notExists++;
+					if (wallUp == Wall.NOT_EXISTS && wallRight == Wall.NOT_EXISTS && wallDown == Wall.EXISTS) {
+						if (wallLeft == Wall.NOT_EXISTS) {
+							return false;
+						}
+						tateWall[yIndex][xIndex] = Wall.EXISTS;
 					}
-					if (exists == 1 && notExists == 3) {
-						return false;
+					if (wallRight == Wall.NOT_EXISTS && wallDown == Wall.NOT_EXISTS && wallLeft == Wall.NOT_EXISTS) {
+						if (wallUp == Wall.EXISTS) {
+							return false;
+						}
+						yokoWall[yIndex][xIndex] = Wall.NOT_EXISTS;
 					}
-					if (notExists == 3) {
-						if (wall1 == Wall.SPACE) {
+					if (wallRight == Wall.EXISTS && wallDown == Wall.NOT_EXISTS && wallLeft == Wall.NOT_EXISTS) {
+						if (wallUp == Wall.NOT_EXISTS) {
+							return false;
+						}
+						yokoWall[yIndex][xIndex] = Wall.EXISTS;
+					}
+					if (wallRight == Wall.NOT_EXISTS && wallDown == Wall.EXISTS && wallLeft == Wall.NOT_EXISTS) {
+						if (wallUp == Wall.NOT_EXISTS) {
+							return false;
+						}
+						yokoWall[yIndex][xIndex] = Wall.EXISTS;
+					}
+					if (wallRight == Wall.NOT_EXISTS && wallDown == Wall.NOT_EXISTS && wallLeft == Wall.EXISTS) {
+						if (wallUp == Wall.NOT_EXISTS) {
+							return false;
+						}
+						yokoWall[yIndex][xIndex] = Wall.EXISTS;
+					}
+					if (wallDown == Wall.NOT_EXISTS && wallLeft == Wall.NOT_EXISTS && wallUp == Wall.NOT_EXISTS) {
+						if (wallRight == Wall.EXISTS) {
+							return false;
+						}
+						tateWall[yIndex][xIndex + 1] = Wall.NOT_EXISTS;
+					}
+					if (wallDown == Wall.EXISTS && wallLeft == Wall.NOT_EXISTS && wallUp == Wall.NOT_EXISTS) {
+						if (wallRight == Wall.NOT_EXISTS) {
+							return false;
+						}
+						tateWall[yIndex][xIndex + 1] = Wall.EXISTS;
+					}
+					if (wallDown == Wall.NOT_EXISTS && wallLeft == Wall.EXISTS && wallUp == Wall.NOT_EXISTS) {
+						if (wallRight == Wall.NOT_EXISTS) {
+							return false;
+						}
+						tateWall[yIndex][xIndex + 1] = Wall.EXISTS;
+					}
+					if (wallDown == Wall.NOT_EXISTS && wallLeft == Wall.NOT_EXISTS && wallUp == Wall.EXISTS) {
+						if (wallRight == Wall.NOT_EXISTS) {
+							return false;
+						}
+						tateWall[yIndex][xIndex + 1] = Wall.EXISTS;
+					}
+					if (wallLeft == Wall.NOT_EXISTS && wallUp == Wall.NOT_EXISTS && wallRight == Wall.NOT_EXISTS) {
+						if (wallDown == Wall.EXISTS) {
+							return false;
+						}
+						yokoWall[yIndex + 1][xIndex] = Wall.NOT_EXISTS;
+					}
+					if (wallLeft == Wall.EXISTS && wallUp == Wall.NOT_EXISTS && wallRight == Wall.NOT_EXISTS) {
+						if (wallDown == Wall.NOT_EXISTS) {
+							return false;
+						}
+						yokoWall[yIndex + 1][xIndex] = Wall.EXISTS;
+					}
+					if (wallLeft == Wall.NOT_EXISTS && wallUp == Wall.EXISTS && wallRight == Wall.NOT_EXISTS) {
+						if (wallDown == Wall.NOT_EXISTS) {
+							return false;
+						}
+						yokoWall[yIndex + 1][xIndex] = Wall.EXISTS;
+					}
+					if (wallLeft == Wall.NOT_EXISTS && wallUp == Wall.NOT_EXISTS && wallRight == Wall.EXISTS) {
+						if (wallDown == Wall.NOT_EXISTS) {
+							return false;
+						}
+						yokoWall[yIndex + 1][xIndex] = Wall.EXISTS;
+					}
+				}
+			}
+			return true;
+		}
+
+		/**
+		 * 部屋が長方形でなくてはならない場合、当チェックを実施する。
+		 * 柱から見て壁の数は0、2(直進)、3、4のいずれかになる。
+		 */
+		private boolean rectCheck() {
+			for (int yIndex = 0; yIndex < getYLength() - 1; yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength() - 1; xIndex++) {
+					Wall wallUp = yokoWall[yIndex][xIndex];
+					Wall wallRight = tateWall[yIndex][xIndex + 1];
+					Wall wallDown = yokoWall[yIndex + 1][xIndex];
+					Wall wallLeft = tateWall[yIndex][xIndex];
+					if (wallUp == Wall.EXISTS) {
+						if (wallRight == Wall.EXISTS) {
+							if (wallDown == Wall.EXISTS) {
+								// OK
+							}
+							if (wallDown == Wall.NOT_EXISTS) {
+								if (wallLeft == Wall.NOT_EXISTS) {
+									return false;
+								}
+								tateWall[yIndex][xIndex] = Wall.EXISTS;
+							}
+							if (wallLeft == Wall.EXISTS) {
+								// OK
+							}
+							if (wallLeft == Wall.NOT_EXISTS) {
+								if (wallDown == Wall.NOT_EXISTS) {
+									return false;
+								}
+								yokoWall[yIndex + 1][xIndex] = Wall.EXISTS;
+							}
+						}
+						if (wallRight == Wall.NOT_EXISTS) {
+							if (wallDown == Wall.EXISTS) {
+								// OK
+							}
+							if (wallDown == Wall.NOT_EXISTS) {
+								return false;
+							}
+							yokoWall[yIndex + 1][xIndex] = Wall.EXISTS;
+						}
+					}
+					if (wallUp == Wall.NOT_EXISTS) {
+						if (wallRight == Wall.EXISTS) {
+							if (wallLeft == Wall.EXISTS) {
+								// OK
+							}
+							if (wallLeft == Wall.NOT_EXISTS) {
+								return false;
+							}
+							tateWall[yIndex][xIndex] = Wall.EXISTS;
+						}
+						if (wallRight == Wall.NOT_EXISTS) {
+							if (wallDown == Wall.EXISTS) {
+								return false;
+							}
+							if (wallLeft == Wall.EXISTS) {
+								return false;
+							}
+							yokoWall[yIndex + 1][xIndex] = Wall.NOT_EXISTS;
 							tateWall[yIndex][xIndex] = Wall.NOT_EXISTS;
 						}
-						if (wall2 == Wall.SPACE) {
-							tateWall[yIndex][xIndex + 1] = Wall.NOT_EXISTS;
+					}
+					if (wallRight == Wall.EXISTS) {
+						if (wallDown == Wall.EXISTS) {
+							if (wallLeft == Wall.EXISTS) {
+								// OK
+							}
+							if (wallLeft == Wall.NOT_EXISTS) {
+								if (wallUp == Wall.NOT_EXISTS) {
+									return false;
+								}
+								yokoWall[yIndex][xIndex] = Wall.EXISTS;
+							}
+							if (wallUp == Wall.EXISTS) {
+								// OK
+							}
+							if (wallUp == Wall.NOT_EXISTS) {
+								if (wallLeft == Wall.NOT_EXISTS) {
+									return false;
+								}
+								tateWall[yIndex][xIndex] = Wall.EXISTS;
+							}
 						}
-						if (wall3 == Wall.SPACE) {
+						if (wallDown == Wall.NOT_EXISTS) {
+							if (wallLeft == Wall.EXISTS) {
+								// OK
+							}
+							if (wallLeft == Wall.NOT_EXISTS) {
+								return false;
+							}
+							tateWall[yIndex][xIndex] = Wall.EXISTS;
+						}
+					}
+					if (wallRight == Wall.NOT_EXISTS) {
+						if (wallDown == Wall.EXISTS) {
+							if (wallUp == Wall.EXISTS) {
+								// OK
+							}
+							if (wallUp == Wall.NOT_EXISTS) {
+								return false;
+							}
+							yokoWall[yIndex][xIndex] = Wall.EXISTS;
+						}
+						if (wallDown == Wall.NOT_EXISTS) {
+							if (wallLeft == Wall.EXISTS) {
+								return false;
+							}
+							if (wallUp == Wall.EXISTS) {
+								return false;
+							}
+							tateWall[yIndex][xIndex] = Wall.NOT_EXISTS;
 							yokoWall[yIndex][xIndex] = Wall.NOT_EXISTS;
 						}
-						if (wall4 == Wall.SPACE) {
+					}
+					if (wallDown == Wall.EXISTS) {
+						if (wallLeft == Wall.EXISTS) {
+							if (wallUp == Wall.EXISTS) {
+								// OK
+							}
+							if (wallUp == Wall.NOT_EXISTS) {
+								if (wallRight == Wall.NOT_EXISTS) {
+									return false;
+								}
+								tateWall[yIndex][xIndex + 1] = Wall.EXISTS;
+							}
+							if (wallRight == Wall.EXISTS) {
+								// OK
+							}
+							if (wallRight == Wall.NOT_EXISTS) {
+								if (wallUp == Wall.NOT_EXISTS) {
+									return false;
+								}
+								yokoWall[yIndex][xIndex] = Wall.EXISTS;
+							}
+						}
+						if (wallLeft == Wall.NOT_EXISTS) {
+							if (wallUp == Wall.EXISTS) {
+								// OK
+							}
+							if (wallUp == Wall.NOT_EXISTS) {
+								return false;
+							}
+							yokoWall[yIndex][xIndex] = Wall.EXISTS;
+						}
+					}
+					if (wallDown == Wall.NOT_EXISTS) {
+						if (wallLeft == Wall.EXISTS) {
+							if (wallRight == Wall.EXISTS) {
+								// OK
+							}
+							if (wallRight == Wall.NOT_EXISTS) {
+								return false;
+							}
+							tateWall[yIndex][xIndex + 1] = Wall.EXISTS;
+						}
+						if (wallLeft == Wall.NOT_EXISTS) {
+							if (wallUp == Wall.EXISTS) {
+								return false;
+							}
+							if (wallRight == Wall.EXISTS) {
+								return false;
+							}
+							yokoWall[yIndex][xIndex] = Wall.NOT_EXISTS;
+							tateWall[yIndex][xIndex + 1] = Wall.NOT_EXISTS;
+						}
+					}
+					if (wallLeft == Wall.EXISTS) {
+						if (wallUp == Wall.EXISTS) {
+							if (wallRight == Wall.EXISTS) {
+								// OK
+							}
+							if (wallRight == Wall.NOT_EXISTS) {
+								if (wallDown == Wall.NOT_EXISTS) {
+									return false;
+								}
+								yokoWall[yIndex + 1][xIndex] = Wall.EXISTS;
+							}
+							if (wallDown == Wall.EXISTS) {
+								// OK
+							}
+							if (wallDown == Wall.NOT_EXISTS) {
+								if (wallRight == Wall.NOT_EXISTS) {
+									return false;
+								}
+								tateWall[yIndex][xIndex + 1] = Wall.EXISTS;
+							}
+						}
+						if (wallUp == Wall.NOT_EXISTS) {
+							if (wallRight == Wall.EXISTS) {
+								// OK
+							}
+							if (wallRight == Wall.NOT_EXISTS) {
+								return false;
+							}
+							tateWall[yIndex][xIndex + 1] = Wall.EXISTS;
+						}
+					}
+					if (wallLeft == Wall.NOT_EXISTS) {
+						if (wallUp == Wall.EXISTS) {
+							if (wallDown == Wall.EXISTS) {
+								// OK
+							}
+							if (wallDown == Wall.NOT_EXISTS) {
+								return false;
+							}
+							yokoWall[yIndex + 1][xIndex] = Wall.EXISTS;
+						}
+						if (wallUp == Wall.NOT_EXISTS) {
+							if (wallRight == Wall.EXISTS) {
+								return false;
+							}
+							if (wallDown == Wall.EXISTS) {
+								return false;
+							}
+							tateWall[yIndex][xIndex + 1] = Wall.NOT_EXISTS;
 							yokoWall[yIndex + 1][xIndex] = Wall.NOT_EXISTS;
-						}
-					}
-					if (notExists == 2 && exists == 2) {
-						if (wall1 == Wall.EXISTS && wall2 == Wall.EXISTS) {
-							return false;
-						}
-						if (wall1 == Wall.EXISTS && wall4 == Wall.EXISTS) {
-							return false;
-						}
-						if (wall2 == Wall.EXISTS && wall3 == Wall.EXISTS) {
-							return false;
-						}
-						if (wall3 == Wall.EXISTS && wall4 == Wall.EXISTS) {
-							return false;
-						}
-					}
-					if (notExists == 1 && exists == 2) {
-						if (wall1 == Wall.EXISTS && wall2 == Wall.EXISTS) {
-							if (wall3 == Wall.SPACE) {
-								yokoWall[yIndex][xIndex] = Wall.EXISTS;
-							}
-							if (wall4 == Wall.SPACE) {
-								yokoWall[yIndex + 1][xIndex] = Wall.EXISTS;
-							}
-						}
-						if (wall1 == Wall.EXISTS && wall4 == Wall.EXISTS) {
-							if (wall2 == Wall.SPACE) {
-								tateWall[yIndex][xIndex + 1] = Wall.EXISTS;
-							}
-							if (wall3 == Wall.SPACE) {
-								yokoWall[yIndex][xIndex] = Wall.EXISTS;
-							}
-						}
-						if (wall2 == Wall.EXISTS && wall3 == Wall.EXISTS) {
-							if (wall1 == Wall.SPACE) {
-								tateWall[yIndex][xIndex] = Wall.EXISTS;
-							}
-							if (wall4 == Wall.SPACE) {
-								yokoWall[yIndex + 1][xIndex] = Wall.EXISTS;
-							}
-						}
-						if (wall3 == Wall.EXISTS && wall4 == Wall.EXISTS) {
-							if (wall1 == Wall.SPACE) {
-								tateWall[yIndex][xIndex] = Wall.EXISTS;
-							}
-							if (wall2 == Wall.SPACE) {
-								tateWall[yIndex][xIndex + 1] = Wall.EXISTS;
-							}
 						}
 					}
 				}
@@ -253,7 +517,7 @@ public class RoomMaker {
 	public static void main(String[] args) {
 		//		List<Set<Position>> rooms = RoomMaker.roomMake(10, 10);
 		//		System.out.println(getString(10, 10, rooms));
-		System.out.println(new RoomMaker2(10, 10));
+		System.out.println(new RoomMaker2(10, 10, 2, 5));
 	}
 
 	public static String getString(int height, int width, List<Set<Position>> rooms) {
