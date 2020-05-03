@@ -27,6 +27,7 @@ var ruleMap = {
 	simpleloop : {name: "シンプルループ", url:"",source:""},
 	yinyang : {name: "しろまるくろまる", url:"",source:""},
 	heyawake : {name: "へやわけ", url:"https://www.nikoli.co.jp/ja/puzzles/heyawake/",source:"ニコリ公式"},
+	pipelink : {name: "パイプリンク", url:"https://www.nikoli.co.jp/ja/puzzles/pipe_link/",source:"ニコリ公式"},
 }
 
 var option = {
@@ -191,7 +192,7 @@ $(function() {
             } else {
                	$('#sel_size').val(nowSelSizeVal);
             }
-        } else if (type == 'sashigane' || type == 'barns'){
+        } else if (type == 'sashigane' || type == 'barns' || type == 'pipelink' ){
             $('#sel_size').append(option.size_4);
             $('#sel_size').append(option.size_5);
             $('#sel_size').append(option.size_6);

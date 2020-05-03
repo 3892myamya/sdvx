@@ -205,79 +205,105 @@ public class PipelinkSolver implements Solver {
 			String url = wkField.getPuzPreURL();
 			String link = "<a href=\"" + url + "\" target=\"_blank\">ぱずぷれv3で解く</a>";
 			StringBuilder sb = new StringBuilder();
-			//			int baseSize = 20;
-			//			int margin = 5;
-			//			sb.append(
-			//					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
-			//							+ "height=\"" + (wkField.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
-			//							+ (wkField.getXLength() * baseSize + 2 * baseSize) + "\" >");
-			//			// 横壁描画
-			//			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
-			//				for (int xIndex = -1; xIndex < wkField.getXLength(); xIndex++) {
-			//					sb.append("<line y1=\""
-			//							+ (yIndex * baseSize + baseSize / 2 + margin)
-			//							+ "\" x1=\""
-			//							+ (xIndex * baseSize + baseSize / 2 + 2 * baseSize)
-			//							+ "\" y2=\""
-			//							+ (yIndex * baseSize + baseSize / 2 + baseSize + margin)
-			//							+ "\" x2=\""
-			//							+ (xIndex * baseSize + baseSize / 2 + 2 * baseSize)
-			//							+ "\" stroke-width=\"1\" fill=\"none\"");
-			//					sb.append("stroke=\"#000\" ");
-			//					sb.append(">"
-			//							+ "</line>");
-			//				}
-			//			}
-			//			// 縦壁描画
-			//			for (int yIndex = -1; yIndex < wkField.getYLength(); yIndex++) {
-			//				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
-			//					sb.append("<line y1=\""
-			//							+ (yIndex * baseSize + baseSize + baseSize / 2 + margin)
-			//							+ "\" x1=\""
-			//							+ (xIndex * baseSize + baseSize + baseSize / 2)
-			//							+ "\" y2=\""
-			//							+ (yIndex * baseSize + baseSize + baseSize / 2 + margin)
-			//							+ "\" x2=\""
-			//							+ (xIndex * baseSize + baseSize + baseSize + baseSize / 2)
-			//							+ "\" stroke-width=\"1\" fill=\"none\"");
-			//					sb.append("stroke=\"#000\" ");
-			//					sb.append(">"
-			//							+ "</line>");
-			//				}
-			//			}
-			//			// 数字描画
-			//			for (int yIndex = 0; yIndex < wkField.getYLength() + 1; yIndex++) {
-			//				for (int xIndex = 0; xIndex < wkField.getXLength() + 1; xIndex++) {
-			//					Integer number = wkField.getExtraNumbers()[yIndex][xIndex];
-			//					if (number != null) {
-			//						String numberStr = String.valueOf(number);
-			//						int numIdx = HALF_NUMS.indexOf(numberStr);
-			//						String masuStr = null;
-			//						if (numIdx >= 0) {
-			//							masuStr = FULL_NUMS.substring(numIdx / 2, numIdx / 2 + 1);
-			//						} else {
-			//							masuStr = numberStr;
-			//						}
-			//						sb.append("<circle cy=\"" + (yIndex * baseSize + (baseSize / 2) + margin)
-			//								+ "\" cx=\""
-			//								+ (xIndex * baseSize + baseSize + (baseSize / 2))
-			//								+ "\" r=\""
-			//								+ (baseSize / 2 - 3)
-			//								+ "\" fill=\"white\", stroke=\"black\">"
-			//								+ "</circle>");
-			//						sb.append("<text y=\"" + (yIndex * baseSize + baseSize + margin - 5)
-			//								+ "\" x=\""
-			//								+ (xIndex * baseSize + baseSize + 3)
-			//								+ "\" font-size=\""
-			//								+ (baseSize - 6)
-			//								+ "\" textLength=\""
-			//								+ (baseSize - 6)
-			//								+ "\" lengthAdjust=\"spacingAndGlyphs\">"
-			//								+ masuStr
-			//								+ "</text>");
-			//					}
-			//				}
-			//			}
+			int baseSize = 20;
+			int margin = 5;
+			sb.append(
+					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
+							+ "height=\"" + (wkField.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
+							+ (wkField.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			// 横壁描画
+			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = -1; xIndex < wkField.getXLength(); xIndex++) {
+					boolean oneYokoWall = xIndex == -1 || xIndex == wkField.getXLength() - 1;
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + margin)
+							+ "\" x1=\""
+							+ (xIndex * baseSize + 2 * baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ (xIndex * baseSize + 2 * baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneYokoWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">"
+							+ "</line>");
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = -1; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+					boolean oneTateWall = yIndex == -1 || yIndex == wkField.getYLength() - 1;
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x1=\""
+							+ (xIndex * baseSize + baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ (xIndex * baseSize + baseSize + baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneTateWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">"
+							+ "</line>");
+				}
+			}
+			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+					if (wkField.firstPosSet.contains(new Position(yIndex, xIndex))) {
+						String str = "";
+						Wall up = yIndex == 0 ? Wall.EXISTS
+								: wkField.getTateWall()[yIndex - 1][xIndex];
+						Wall right = xIndex == wkField.getXLength() - 1 ? Wall.EXISTS
+								: wkField.getYokoWall()[yIndex][xIndex];
+						Wall down = yIndex == wkField.getYLength() - 1 ? Wall.EXISTS
+								: wkField.getTateWall()[yIndex][xIndex];
+						Wall left = xIndex == 0 ? Wall.EXISTS
+								: wkField.getYokoWall()[yIndex][xIndex - 1];
+						if (up == Wall.NOT_EXISTS && right == Wall.NOT_EXISTS
+								&& down == Wall.NOT_EXISTS &&
+								left == Wall.NOT_EXISTS) {
+							str = "┼";
+						} else if (up == Wall.NOT_EXISTS && right == Wall.NOT_EXISTS) {
+							str = "└";
+						} else if (up == Wall.NOT_EXISTS && down == Wall.NOT_EXISTS) {
+							str = "│";
+						} else if (up == Wall.NOT_EXISTS && left == Wall.NOT_EXISTS) {
+							str = "┘";
+						} else if (right == Wall.NOT_EXISTS && down == Wall.NOT_EXISTS) {
+							str = "┌";
+						} else if (right == Wall.NOT_EXISTS && left == Wall.NOT_EXISTS) {
+							str = "─";
+						} else if (down == Wall.NOT_EXISTS && left == Wall.NOT_EXISTS) {
+							str = "┐";
+						} else {
+							str = "　";
+						}
+						String fillColor;
+						fillColor = "black";
+						sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 2 + margin)
+								+ "\" x=\""
+								+ (xIndex * baseSize + baseSize)
+								+ "\" font-size=\""
+								+ (baseSize)
+								+ "\" textLength=\""
+								+ (baseSize)
+								+ "\" fill=\""
+								+ fillColor
+								+ "\" stroke=\"" + fillColor + "\" stroke-width=\"1"
+								+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+								+ str
+								+ "</text>");
+					}
+				}
+			}
 
 			sb.append("</svg>");
 			System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
@@ -307,13 +333,80 @@ public class PipelinkSolver implements Solver {
 		}
 
 		public String getPuzPreURL() {
-			// TODO 自動生成されたメソッド・スタブ
-			return null;
+			StringBuilder sb = new StringBuilder();
+			sb.append("http://pzv.jp/p.html?pipelink/" + getXLength() + "/" + getYLength() + "/");
+			int interval = 0;
+			for (int i = 0; i < getYLength() * getXLength(); i++) {
+				int yIndex = i / getXLength();
+				int xIndex = i % getXLength();
+				if (!firstPosSet.contains(new Position(yIndex, xIndex))) {
+					interval++;
+					if (interval == 19) {
+						sb.append("z");
+						interval = 0;
+					}
+				} else {
+					String str = "";
+					Wall wallUp = yIndex == 0 ? Wall.EXISTS : tateWall[yIndex - 1][xIndex];
+					Wall wallRight = xIndex == getXLength() - 1 ? Wall.EXISTS : yokoWall[yIndex][xIndex];
+					Wall wallDown = yIndex == getYLength() - 1 ? Wall.EXISTS : tateWall[yIndex][xIndex];
+					Wall wallLeft = xIndex == 0 ? Wall.EXISTS : yokoWall[yIndex][xIndex - 1];
+					if (wallLeft == Wall.NOT_EXISTS &&
+							wallRight == Wall.NOT_EXISTS &&
+							wallUp == Wall.NOT_EXISTS &&
+							wallDown == Wall.NOT_EXISTS) {
+						str = "a";
+					} else if (wallLeft == Wall.EXISTS &&
+							wallRight == Wall.EXISTS &&
+							wallUp == Wall.NOT_EXISTS &&
+							wallDown == Wall.NOT_EXISTS) {
+						str = "b";
+					} else if (wallLeft == Wall.NOT_EXISTS &&
+							wallRight == Wall.NOT_EXISTS &&
+							wallUp == Wall.EXISTS &&
+							wallDown == Wall.EXISTS) {
+						str = "c";
+					} else if (wallLeft == Wall.EXISTS &&
+							wallRight == Wall.NOT_EXISTS &&
+							wallUp == Wall.NOT_EXISTS &&
+							wallDown == Wall.EXISTS) {
+						str = "d";
+					} else if (wallLeft == Wall.NOT_EXISTS &&
+							wallRight == Wall.EXISTS &&
+							wallUp == Wall.NOT_EXISTS &&
+							wallDown == Wall.EXISTS) {
+						str = "e";
+					} else if (wallLeft == Wall.NOT_EXISTS &&
+							wallRight == Wall.EXISTS &&
+							wallUp == Wall.EXISTS &&
+							wallDown == Wall.NOT_EXISTS) {
+						str = "f";
+					} else if (wallLeft == Wall.EXISTS &&
+							wallRight == Wall.NOT_EXISTS &&
+							wallUp == Wall.EXISTS &&
+							wallDown == Wall.NOT_EXISTS) {
+						str = "g";
+					}
+					if (interval == 0) {
+						sb.append(str);
+					} else {
+						sb.append(ALPHABET_FROM_H.substring(interval - 1, interval));
+						sb.append(str);
+						interval = 0;
+					}
+				}
+			}
+			if (interval != 0) {
+				sb.append(ALPHABET_FROM_H.substring(interval - 1, interval));
+			}
+			if (sb.charAt(sb.length() - 1) == '.') {
+				sb.append("/");
+			}
+			return sb.toString();
 		}
 
 		public String getHintCount() {
-			// TODO 自動生成されたメソッド・スタブ
-			return null;
+			return String.valueOf(firstPosSet.size());
 		}
 
 		public Wall[][] getTateWall() {

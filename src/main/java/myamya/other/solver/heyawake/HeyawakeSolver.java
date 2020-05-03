@@ -71,8 +71,8 @@ public class HeyawakeSolver implements Solver {
 			}
 		}
 
-		private static final int NUM = 1;
-		private static final int DENOM = 2;
+		private static final int NUM = 3;
+		private static final int DENOM = 7;
 
 		private final int height;
 		private final int width;
@@ -107,9 +107,9 @@ public class HeyawakeSolver implements Solver {
 					if (wkField.masu[yIndex][xIndex] == Masu.SPACE) {
 						boolean isOk = false;
 						List<Integer> numIdxList = new ArrayList<>();
-						// 黒マス発生を優先
 						numIdxList.add(1);
 						numIdxList.add(0);
+						Collections.shuffle(numIdxList);
 						for (int masuNum : numIdxList) {
 							HeyawakeSolver.Field virtual = new HeyawakeSolver.Field(wkField);
 							if (masuNum < 1) {
