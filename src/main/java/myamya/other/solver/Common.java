@@ -303,6 +303,16 @@ public class Common {
 			return "[" + leftUp + ", " + rightDown + "]";
 		}
 
+		/**
+		 * 自身の四角内に含まれる位置をランダムで1つ返す。
+		 */
+		public Position getRandomPos() {
+			int yLength = getRightDown().getyIndex() - getLeftUp().getyIndex();
+			int xLength = getRightDown().getxIndex() - getLeftUp().getxIndex();
+			return new Position((int) (getLeftUp().getyIndex() + (Math.random() * yLength)),
+					(int) (getLeftUp().getxIndex() + (Math.random() * xLength)));
+		}
+
 	}
 
 	public static class GeneratorResult {

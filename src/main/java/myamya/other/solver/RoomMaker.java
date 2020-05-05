@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Set;
 
 import myamya.other.solver.Common.Position;
+import myamya.other.solver.Common.Sikaku;
 import myamya.other.solver.Common.Wall;
 
 public class RoomMaker {
@@ -51,7 +52,7 @@ public class RoomMaker {
 		 * オブジェクト生成と同時に部屋作成。
 		 * num / denom が部屋の仕切り数の割合。1:1なら全部サイズ1の部屋になり、0:1なら1部屋になる。
 		 */
-		public RoomMaker2(int height, int width, int num, int denom) {
+		public RoomMaker2(int height, int width, int num, int denom, boolean tatami) {
 			yokoWall = new Wall[height][width - 1];
 			tateWall = new Wall[height - 1][width];
 			init();
@@ -104,6 +105,15 @@ public class RoomMaker {
 						Collections.shuffle(indexList);
 						index = 0;
 						continue;
+					}
+					if (tatami) {
+						if (!tatamiCheck()) {
+							// 破綻したら0から作り直す。
+							init();
+							Collections.shuffle(indexList);
+							index = 0;
+							continue;
+						}
 					}
 				}
 				index++;
@@ -458,6 +468,45 @@ public class RoomMaker {
 			return true;
 		}
 
+		/**
+		 * 柱から見て壁の数が4の場合falseを返す。
+		 */
+		private boolean tatamiCheck() {
+			for (int yIndex = 0; yIndex < getYLength() - 1; yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength() - 1; xIndex++) {
+					Wall wallUp = yokoWall[yIndex][xIndex];
+					Wall wallRight = tateWall[yIndex][xIndex + 1];
+					Wall wallDown = yokoWall[yIndex + 1][xIndex];
+					Wall wallLeft = tateWall[yIndex][xIndex];
+					if (wallUp == Wall.EXISTS && wallRight == Wall.EXISTS && wallDown == Wall.EXISTS) {
+						if (wallLeft == Wall.EXISTS) {
+							return false;
+						}
+						tateWall[yIndex][xIndex] = Wall.NOT_EXISTS;
+					}
+					if (wallRight == Wall.EXISTS && wallDown == Wall.EXISTS && wallLeft == Wall.EXISTS) {
+						if (wallUp == Wall.EXISTS) {
+							return false;
+						}
+						yokoWall[yIndex][xIndex] = Wall.NOT_EXISTS;
+					}
+					if (wallDown == Wall.EXISTS && wallLeft == Wall.EXISTS && wallUp == Wall.EXISTS) {
+						if (wallRight == Wall.EXISTS) {
+							return false;
+						}
+						tateWall[yIndex][xIndex + 1] = Wall.NOT_EXISTS;
+					}
+					if (wallLeft == Wall.EXISTS && wallUp == Wall.EXISTS && wallRight == Wall.EXISTS) {
+						if (wallDown == Wall.EXISTS) {
+							return false;
+						}
+						yokoWall[yIndex + 1][xIndex] = Wall.NOT_EXISTS;
+					}
+				}
+			}
+			return true;
+		}
+
 		private boolean isSolved() {
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength() - 1; xIndex++) {
@@ -512,12 +561,36 @@ public class RoomMaker {
 			return sb.toString();
 		}
 
+		/**
+		 * posに対応したSikakuを返す。
+		 * 部屋が長方形だとあらかじめわかってる時しか使えないので注意。
+		 */
+		public Sikaku getSikaku(Position pos) {
+			int left = pos.getxIndex();
+			int up = pos.getyIndex();
+			int right = pos.getxIndex();
+			int down = pos.getyIndex();
+			while (left != 0 && yokoWall[pos.getyIndex()][left - 1] == Wall.NOT_EXISTS) {
+				left--;
+			}
+			while (up != 0 && tateWall[up - 1][pos.getxIndex()] == Wall.NOT_EXISTS) {
+				up--;
+			}
+			while (right != getXLength() - 1 && yokoWall[pos.getyIndex()][right] == Wall.NOT_EXISTS) {
+				right++;
+			}
+			while (down != getXLength() - 1 && tateWall[down][pos.getxIndex()] == Wall.NOT_EXISTS) {
+				down++;
+			}
+			return new Sikaku(new Position(up, left), new Position(down, right));
+		}
+
 	}
 
 	public static void main(String[] args) {
 		//		List<Set<Position>> rooms = RoomMaker.roomMake(10, 10);
 		//		System.out.println(getString(10, 10, rooms));
-		System.out.println(new RoomMaker2(10, 10, 2, 5));
+		System.out.println(new RoomMaker2(10, 10, 2, 5, true).getSikaku(new Position(5, 5)));
 	}
 
 	public static String getString(int height, int width, List<Set<Position>> rooms) {

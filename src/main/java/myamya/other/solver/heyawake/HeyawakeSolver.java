@@ -88,7 +88,7 @@ public class HeyawakeSolver implements Solver {
 
 		@Override
 		public GeneratorResult generate() {
-			RoomMaker2 roomMaker2 = new RoomMaker2(height, width, NUM, DENOM);
+			RoomMaker2 roomMaker2 = new RoomMaker2(height, width, NUM, DENOM, false);
 			HeyawakeSolver.Field wkField = new HeyawakeSolver.Field(height, width, roomMaker2);
 			int failCnt = 0;
 			List<Integer> indexList = new ArrayList<>();
@@ -129,7 +129,7 @@ public class HeyawakeSolver implements Solver {
 							if (failCnt >= 100) {
 								// 100回以上失敗したら部屋割りが悪いと判断して作り直す
 								failCnt = 0;
-								roomMaker2 = new RoomMaker2(height, width, NUM, DENOM);
+								roomMaker2 = new RoomMaker2(height, width, NUM, DENOM, false);
 							}
 							wkField = new HeyawakeSolver.Field(height, width, roomMaker2);
 							Collections.shuffle(indexList);
@@ -161,7 +161,7 @@ public class HeyawakeSolver implements Solver {
 				level = new HeyawakeSolverForGenerator(new HeyawakeSolver.Field(wkField), 500).solve2();
 				if (level == -1) {
 					// 解けなければやり直し
-					roomMaker2 = new RoomMaker2(height, width, NUM, DENOM);
+					roomMaker2 = new RoomMaker2(height, width, NUM, DENOM, false);
 					Collections.shuffle(indexList);
 					wkField = new HeyawakeSolver.Field(height, width, roomMaker2);
 					index = 0;

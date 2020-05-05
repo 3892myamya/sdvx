@@ -34,10 +34,12 @@ import myamya.other.solver.sashigane.SashiganeSolver.SashiganeGenerator;
 import myamya.other.solver.shakashaka.ShakashakaSolver.ShakashakaGenerator;
 import myamya.other.solver.simpleloop.SimpleloopSolver.SimpleloopGenerator;
 import myamya.other.solver.slither.SlitherSolver.SlitherGenerator;
+import myamya.other.solver.snake.SnakeSolver.SnakeGenerator;
 import myamya.other.solver.sudoku.SudokuSolver.SudokuGenerator;
 import myamya.other.solver.sukoro.SukoroSolver.SukoroGenerator;
 import myamya.other.solver.tapa.TapaSolver.TapaGenerator;
 import myamya.other.solver.tasquare.TasquareSolver.TasquareGenerator;
+import myamya.other.solver.tatamibari.TatamibariSolver.TatamibariGenerator;
 import myamya.other.solver.tents.TentsSolver.TentsGenerator;
 import myamya.other.solver.walllogic.WalllogicSolver.WalllogicGenerator;
 import myamya.other.solver.yinyang.YinyangSolver.YinyangGenerator;
@@ -544,6 +546,38 @@ public class SudokuGachaWeb extends HttpServlet {
 
 	}
 
+	static class SnakeGeneratorThlead extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+
+		SnakeGeneratorThlead(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new SnakeGenerator(height, width);
+		}
+
+	}
+
+	static class TatamibariGeneratorThlead extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+
+		TatamibariGeneratorThlead(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new TatamibariGenerator(height, width);
+		}
+
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -627,6 +661,10 @@ public class SudokuGachaWeb extends HttpServlet {
 				t = new HeyawakeGeneratorThlead(height, width);
 			} else if (type.equals("pipelink")) {
 				t = new PipelinkGeneratorThlead(height, width);
+			} else if (type.equals("snake")) {
+				t = new SnakeGeneratorThlead(height, width);
+			} else if (type.equals("tatamibari")) {
+				t = new TatamibariGeneratorThlead(height, width);
 			} else {
 				throw new IllegalArgumentException();
 			}

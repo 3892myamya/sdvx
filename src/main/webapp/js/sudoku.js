@@ -28,6 +28,8 @@ var ruleMap = {
 	yinyang : {name: "しろまるくろまる", url:"",source:""},
 	heyawake : {name: "へやわけ", url:"https://www.nikoli.co.jp/ja/puzzles/heyawake/",source:"ニコリ公式"},
 	pipelink : {name: "パイプリンク", url:"https://www.nikoli.co.jp/ja/puzzles/pipe_link/",source:"ニコリ公式"},
+	snake : {name: "Snake", url:"",source:""},
+	tatamibari : {name: "タタミバリ", url:"http://indi.s58.xrea.com/tatamibari/",source:"連続発破保管庫さん"},
 }
 
 var option = {
