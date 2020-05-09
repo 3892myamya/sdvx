@@ -30,6 +30,8 @@ var ruleMap = {
 	pipelink : {name: "パイプリンク", url:"https://www.nikoli.co.jp/ja/puzzles/pipe_link/",source:"ニコリ公式"},
 	snake : {name: "Snake", url:"",source:""},
 	tatamibari : {name: "タタミバリ", url:"http://indi.s58.xrea.com/tatamibari/",source:"連続発破保管庫さん"},
+	tateyoko : {name: "タテボーヨコボー", url:"http://indi.s58.xrea.com/tateyoko/",source:"連続発破保管庫さん"},
+	building : {name: "ビルディングパズル", url:"https://ja.wikipedia.org/wiki/%E3%83%93%E3%83%AB%E3%83%87%E3%82%A3%E3%83%B3%E3%82%B0%E3%83%91%E3%82%BA%E3%83%AB",source:"Wikipedia"},
 }
 
 var option = {
@@ -137,7 +139,7 @@ $(function() {
         var type = $('#sel_type').val();
         if (type == 'sudoku' || type == 'akari' || type == 'slither' || type == 'creek'
         	|| type == 'gokigen' || type == 'tapa' || type == 'bag' || type == 'kurodoko'
-        	|| type == 'sukoro' || type == 'walllogic') {
+        	|| type == 'sukoro' || type == 'walllogic' || type == 'tateyoko') {
             $('#lbl_pattern').show();
             $('#sel_pattern').show();
         } else {
@@ -157,6 +159,16 @@ $(function() {
             	$('#sel_size').val(6);
             } else {
             	$('#sel_size').val(9);
+            }
+        } else if (type == 'building'){
+            $('#sel_size').append(option.size_3);
+            $('#sel_size').append(option.size_4);
+            $('#sel_size').append(option.size_5);
+            $('#sel_size').append(option.size_6);
+            if (nowSelSizeVal > 6){
+            	$('#sel_size').val(6);
+            } else {
+               	$('#sel_size').val(nowSelSizeVal);
             }
         } else if (type == 'minarism'){
             $('#sel_size').append(option.size_3);

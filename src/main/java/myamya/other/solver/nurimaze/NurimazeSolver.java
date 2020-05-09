@@ -47,6 +47,8 @@ public class NurimazeSolver implements Solver {
 
 		// マスの情報
 		private Masu[][] masu;
+		// 経路情報 Masu.BLACKなら経路に含まれる。Masu.NOT_BLACKなら含まれない。
+		private Masu[][] route;
 		// マーク情報
 		private Mark[][] mark;
 		// 横をふさぐ壁が存在するか
@@ -60,6 +62,14 @@ public class NurimazeSolver implements Solver {
 
 		public Masu[][] getMasu() {
 			return masu;
+		}
+
+		public Masu[][] getRoute() {
+			return route;
+		}
+
+		public Mark[][] getMark() {
+			return mark;
 		}
 
 		public boolean[][] getYokoWall() {
@@ -84,9 +94,11 @@ public class NurimazeSolver implements Solver {
 
 		public Field(int height, int width, String param) {
 			masu = new Masu[height][width];
+			route = new Masu[height][width];
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
 					masu[yIndex][xIndex] = Masu.SPACE;
+					route[yIndex][xIndex] = Masu.SPACE;
 				}
 			}
 			// パラメータを解釈して壁の有無を入れる
@@ -179,6 +191,13 @@ public class NurimazeSolver implements Solver {
 				} else {
 					Position markPos = new Position(index / getXLength(), index % getXLength());
 					mark[markPos.getyIndex()][markPos.getxIndex()] = Mark.getByVal(Character.getNumericValue(ch));
+					if (mark[markPos.getyIndex()][markPos.getxIndex()] == Mark.START ||
+							mark[markPos.getyIndex()][markPos.getxIndex()] == Mark.OK ||
+							mark[markPos.getyIndex()][markPos.getxIndex()] == Mark.GOAL) {
+						route[markPos.getyIndex()][markPos.getxIndex()] = Masu.BLACK;
+					} else if (mark[markPos.getyIndex()][markPos.getxIndex()] == Mark.NG) {
+						route[markPos.getyIndex()][markPos.getxIndex()] = Masu.NOT_BLACK;
+					}
 					// マークのある島は必ず白
 					for (List<Position> room : rooms) {
 						if (room.contains(markPos)) {
@@ -195,9 +214,11 @@ public class NurimazeSolver implements Solver {
 
 		public Field(Field other) {
 			masu = new Masu[other.getYLength()][other.getXLength()];
+			route = new Masu[other.getYLength()][other.getXLength()];
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
 					masu[yIndex][xIndex] = other.masu[yIndex][xIndex];
+					route[yIndex][xIndex] = other.route[yIndex][xIndex];
 				}
 			}
 			// 壁・部屋は参照渡しで使い回し(一度Fieldができたら変化しないはずなので。)
@@ -256,7 +277,11 @@ public class NurimazeSolver implements Solver {
 					if (mark[yIndex][xIndex] != null) {
 						sb.append(mark[yIndex][xIndex]);
 					} else {
-						sb.append(masu[yIndex][xIndex]);
+						if (route[yIndex][xIndex] == Masu.BLACK) {
+							sb.append("Ｒ");
+						} else {
+							sb.append(masu[yIndex][xIndex]);
+						}
 					}
 					if (xIndex != getXLength() - 1) {
 						sb.append(yokoWall[yIndex][xIndex] == true ? "□" : "　");
@@ -288,6 +313,7 @@ public class NurimazeSolver implements Solver {
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
 					sb.append(masu[yIndex][xIndex]);
+					sb.append(route[yIndex][xIndex]);
 				}
 			}
 			return sb.toString();
@@ -524,119 +550,16 @@ public class NurimazeSolver implements Solver {
 			if (!pondSolve()) {
 				return false;
 			}
-			if (!connectSolve()) {
-				return false;
-			}
 			if (!mazeSolve()) {
 				return false;
 			}
 			if (!getStateDump().equals(str)) {
 				return solveAndCheck();
-			}
-			return true;
-		}
-
-		/**
-		 * SからGのルートを探索する。白マスのみをたどり、ゴール時点で全ての○が入り、
-		 * △が1つも入っていなければ、問題なし。
-		 */
-		private boolean mazeSolve() {
-			Position startPos = null;
-			Position goalPos = null;
-			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
-				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					if (mark[yIndex][xIndex] == Mark.START) {
-						startPos = new Position(yIndex, xIndex);
-					}
-					if (mark[yIndex][xIndex] == Mark.GOAL) {
-						goalPos = new Position(yIndex, xIndex);
-					}
+			} else {
+				if (!connectSolve()) {
+					return false;
 				}
-			}
-			Set<Position> continuePosSet = new HashSet<>();
-			continuePosSet.add(startPos);
-			Set<Position> markPosSet = new HashSet<>();
-			if (mazeSearch(startPos, goalPos, continuePosSet, markPosSet, null)) {
-				for (Position markPos : markPosSet) {
-					if (mark[markPos.getyIndex()][markPos.getxIndex()] == Mark.NG) {
-						return false;
-					}
-				}
-				for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
-					for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-						if (mark[yIndex][xIndex] == Mark.OK) {
-							if (!markPosSet.contains(new Position(yIndex, xIndex))) {
-								return false;
-							}
-						}
-					}
-				}
-			}
-			// TODO ゴールにつながる前の段階で、マークの回収がうまく行くかどうかを判断したい。
-			// ○の先が行き止まり、○の前に分岐、△の通過が必須になった場合は即アウトにするとか。
-//			continuePosSet = new HashSet<>();
-//			continuePosSet.add(startPos);
-//			markPosSet = new HashSet<>();
-//			if (!mazeSearch2(startPos, goalPos, continuePosSet, markPosSet, null)) {
-//				return false;
-//			}
-			return true;
-		}
-
-		/**
-		 * posを起点に上下左右に黒確定でないマスをつなぎ…
-		 */
-		private boolean mazeSearch2(Position nowPos, Position goalPos, Set<Position> continuePosSet,
-				Set<Position> markPosSet, Direction from) {
-			if (nowPos.equals(goalPos)) {
-				return true;
-			}
-			if (mark[nowPos.getyIndex()][nowPos.getxIndex()] != null) {
-				markPosSet.add(nowPos);
-			}
-			if (nowPos.getyIndex() != 0 && from != Direction.UP) {
-				Position nextPos = new Position(nowPos.getyIndex() - 1, nowPos.getxIndex());
-				if (!continuePosSet.contains(nextPos)
-						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.BLACK) {
-					continuePosSet.add(nextPos);
-					if (!mazeSearch2(nextPos, goalPos, continuePosSet, markPosSet, Direction.DOWN)) {
-						return false;
-					}
-
-				}
-			}
-			if (nowPos.getxIndex() != getXLength() - 1 && from != Direction.RIGHT) {
-				Position nextPos = new Position(nowPos.getyIndex(), nowPos.getxIndex() + 1);
-				if (!continuePosSet.contains(nextPos)
-						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.BLACK) {
-					continuePosSet.add(nextPos);
-					if (!mazeSearch2(nextPos, goalPos, continuePosSet, markPosSet, Direction.LEFT)) {
-						return false;
-					}
-				}
-			}
-			if (nowPos.getyIndex() != getYLength() - 1 && from != Direction.DOWN) {
-				Position nextPos = new Position(nowPos.getyIndex() + 1, nowPos.getxIndex());
-				if (!continuePosSet.contains(nextPos)
-						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.BLACK) {
-					continuePosSet.add(nextPos);
-					if (!mazeSearch2(nextPos, goalPos, continuePosSet, markPosSet, Direction.UP)) {
-						return false;
-					}
-				}
-			}
-			if (nowPos.getxIndex() != 0 && from != Direction.LEFT) {
-				Position nextPos = new Position(nowPos.getyIndex(), nowPos.getxIndex() - 1);
-				if (!continuePosSet.contains(nextPos)
-						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.BLACK) {
-					continuePosSet.add(nextPos);
-					if (!mazeSearch2(nextPos, goalPos, continuePosSet, markPosSet, Direction.RIGHT)) {
-						return false;
-					}
-				}
-			}
-			for (Position markPos : markPosSet) {
-				if (mark[markPos.getyIndex()][markPos.getxIndex()] == Mark.OK) {
+				if (!connectRouteSolve()) {
 					return false;
 				}
 			}
@@ -644,68 +567,193 @@ public class NurimazeSolver implements Solver {
 		}
 
 		/**
-		 * posを起点に上下左右に白確定マスをつなぎゴールについたらリターンする。
-		 * ゴールにたどり着くまでに落ちていたマークを拾う。
+		 * 経路には以下の特徴がある。
+		 * ・黒マスは必ず経路外。
+		 * ・白マスで、S、Gに接する経路は必ず1マス。
+		 * ・白マスで、S、G以外の経路内のマスに接する経路は必ず2マス。
 		 */
-		private boolean mazeSearch(Position nowPos, Position goalPos, Set<Position> continuePosSet,
-				Set<Position> markPosSet, Direction from) {
-			if (nowPos.equals(goalPos)) {
-				return true;
-			}
-			if (mark[nowPos.getyIndex()][nowPos.getxIndex()] != null) {
-				markPosSet.add(nowPos);
-			}
-			if (nowPos.getyIndex() != 0 && from != Direction.UP) {
-				Position nextPos = new Position(nowPos.getyIndex() - 1, nowPos.getxIndex());
-				if (!continuePosSet.contains(nextPos)
-						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.NOT_BLACK) {
-					continuePosSet.add(nextPos);
-					if (mazeSearch(nextPos, goalPos, continuePosSet, markPosSet, Direction.DOWN)) {
-						return true;
+		private boolean mazeSolve() {
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					if (masu[yIndex][xIndex] == Masu.NOT_BLACK) {
+						if (route[yIndex][xIndex] == Masu.BLACK) {
+							int blackCnt = 0;
+							int whiteCnt = 0;
+							Masu routeUp = yIndex == 0 ? Masu.NOT_BLACK : route[yIndex - 1][xIndex];
+							Masu routeRight = xIndex == getXLength() - 1 ? Masu.NOT_BLACK : route[yIndex][xIndex + 1];
+							Masu routeDown = yIndex == getYLength() - 1 ? Masu.NOT_BLACK : route[yIndex + 1][xIndex];
+							Masu routeLeft = xIndex == 0 ? Masu.NOT_BLACK : route[yIndex][xIndex - 1];
+							if (routeUp == Masu.BLACK) {
+								blackCnt++;
+							} else if (routeUp == Masu.NOT_BLACK) {
+								whiteCnt++;
+							}
+							if (routeRight == Masu.BLACK) {
+								blackCnt++;
+							} else if (routeRight == Masu.NOT_BLACK) {
+								whiteCnt++;
+							}
+							if (routeDown == Masu.BLACK) {
+								blackCnt++;
+							} else if (routeDown == Masu.NOT_BLACK) {
+								whiteCnt++;
+							}
+							if (routeLeft == Masu.BLACK) {
+								blackCnt++;
+							} else if (routeLeft == Masu.NOT_BLACK) {
+								whiteCnt++;
+							}
+							if (mark[yIndex][xIndex] == Mark.START || mark[yIndex][xIndex] == Mark.GOAL) {
+								if (blackCnt > 1) {
+									return false;
+								}
+								if (whiteCnt > 3) {
+									return false;
+								}
+								if (blackCnt == 1) {
+									if (routeUp == Masu.SPACE) {
+										route[yIndex - 1][xIndex] = Masu.NOT_BLACK;
+									}
+									if (routeRight == Masu.SPACE) {
+										route[yIndex][xIndex + 1] = Masu.NOT_BLACK;
+									}
+									if (routeDown == Masu.SPACE) {
+										route[yIndex + 1][xIndex] = Masu.NOT_BLACK;
+									}
+									if (routeLeft == Masu.SPACE) {
+										route[yIndex][xIndex - 1] = Masu.NOT_BLACK;
+									}
+								}
+								if (whiteCnt == 3) {
+									if (routeUp == Masu.SPACE) {
+										route[yIndex - 1][xIndex] = Masu.BLACK;
+									}
+									if (routeRight == Masu.SPACE) {
+										route[yIndex][xIndex + 1] = Masu.BLACK;
+									}
+									if (routeDown == Masu.SPACE) {
+										route[yIndex + 1][xIndex] = Masu.BLACK;
+									}
+									if (routeLeft == Masu.SPACE) {
+										route[yIndex][xIndex - 1] = Masu.BLACK;
+									}
+								}
+							} else {
+								if (blackCnt > 2) {
+									return false;
+								}
+								if (whiteCnt > 2) {
+									return false;
+								}
+								if (blackCnt == 2) {
+									if (routeUp == Masu.SPACE) {
+										route[yIndex - 1][xIndex] = Masu.NOT_BLACK;
+									}
+									if (routeRight == Masu.SPACE) {
+										route[yIndex][xIndex + 1] = Masu.NOT_BLACK;
+									}
+									if (routeDown == Masu.SPACE) {
+										route[yIndex + 1][xIndex] = Masu.NOT_BLACK;
+									}
+									if (routeLeft == Masu.SPACE) {
+										route[yIndex][xIndex - 1] = Masu.NOT_BLACK;
+									}
+								}
+								if (whiteCnt == 2) {
+									if (routeUp == Masu.SPACE) {
+										route[yIndex - 1][xIndex] = Masu.BLACK;
+									}
+									if (routeRight == Masu.SPACE) {
+										route[yIndex][xIndex + 1] = Masu.BLACK;
+									}
+									if (routeDown == Masu.SPACE) {
+										route[yIndex + 1][xIndex] = Masu.BLACK;
+									}
+									if (routeLeft == Masu.SPACE) {
+										route[yIndex][xIndex - 1] = Masu.BLACK;
+									}
+								}
+							}
+						}
+					} else if (masu[yIndex][xIndex] == Masu.BLACK) {
+						if (route[yIndex][xIndex] == Masu.BLACK) {
+							return false;
+						}
+						route[yIndex][xIndex] = Masu.NOT_BLACK;
 					}
+				}
+			}
+			return true;
+		}
 
-				}
-			}
-			if (nowPos.getxIndex() != getXLength() - 1 && from != Direction.RIGHT) {
-				Position nextPos = new Position(nowPos.getyIndex(), nowPos.getxIndex() + 1);
-				if (!continuePosSet.contains(nextPos)
-						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.NOT_BLACK) {
-					continuePosSet.add(nextPos);
-					if (mazeSearch(nextPos, goalPos, continuePosSet, markPosSet, Direction.LEFT)) {
-						return true;
+		/**
+		 * ルートが1つながりになっていない場合falseを返す。
+		 */
+		public boolean connectRouteSolve() {
+			Set<Position> blackPosSet = new HashSet<>();
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					if (route[yIndex][xIndex] == Masu.BLACK) {
+						Position blackPos = new Position(yIndex, xIndex);
+						if (blackPosSet.size() == 0) {
+							blackPosSet.add(blackPos);
+							setContinueRoutePosSet(blackPos, blackPosSet, null);
+						} else {
+							if (!blackPosSet.contains(blackPos)) {
+								return false;
+							}
+						}
 					}
 				}
 			}
-			if (nowPos.getyIndex() != getYLength() - 1 && from != Direction.DOWN) {
-				Position nextPos = new Position(nowPos.getyIndex() + 1, nowPos.getxIndex());
+			return true;
+		}
+
+		/**
+		 * posを起点に上下左右に白確定でないマスをつなげていく。壁は無視する。
+		 */
+		private void setContinueRoutePosSet(Position pos, Set<Position> continuePosSet, Direction from) {
+			if (pos.getyIndex() != 0 && from != Direction.UP) {
+				Position nextPos = new Position(pos.getyIndex() - 1, pos.getxIndex());
 				if (!continuePosSet.contains(nextPos)
-						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.NOT_BLACK) {
+						&& route[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.NOT_BLACK) {
 					continuePosSet.add(nextPos);
-					if (mazeSearch(nextPos, goalPos, continuePosSet, markPosSet, Direction.UP)) {
-						return true;
-					}
+					setContinueRoutePosSet(nextPos, continuePosSet, Direction.DOWN);
 				}
 			}
-			if (nowPos.getxIndex() != 0 && from != Direction.LEFT) {
-				Position nextPos = new Position(nowPos.getyIndex(), nowPos.getxIndex() - 1);
+			if (pos.getxIndex() != getXLength() - 1 && from != Direction.RIGHT) {
+				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() + 1);
 				if (!continuePosSet.contains(nextPos)
-						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.NOT_BLACK) {
+						&& route[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.NOT_BLACK) {
 					continuePosSet.add(nextPos);
-					if (mazeSearch(nextPos, goalPos, continuePosSet, markPosSet, Direction.RIGHT)) {
-						return true;
-					}
+					setContinueRoutePosSet(nextPos, continuePosSet, Direction.LEFT);
 				}
 			}
-			if (mark[nowPos.getyIndex()][nowPos.getxIndex()] != null) {
-				markPosSet.remove(nowPos);
+			if (pos.getyIndex() != getYLength() - 1 && from != Direction.DOWN) {
+				Position nextPos = new Position(pos.getyIndex() + 1, pos.getxIndex());
+				if (!continuePosSet.contains(nextPos)
+						&& route[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.NOT_BLACK) {
+					continuePosSet.add(nextPos);
+					setContinueRoutePosSet(nextPos, continuePosSet, Direction.UP);
+				}
 			}
-			return false;
+			if (pos.getxIndex() != 0 && from != Direction.LEFT) {
+				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() - 1);
+				if (!continuePosSet.contains(nextPos)
+						&& route[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.NOT_BLACK) {
+					continuePosSet.add(nextPos);
+					setContinueRoutePosSet(nextPos, continuePosSet, Direction.RIGHT);
+				}
+			}
 		}
 
 		public boolean isSolved() {
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
 					if (masu[yIndex][xIndex] == Masu.SPACE) {
+						return false;
+					}
+					if (route[yIndex][xIndex] == Masu.SPACE) {
 						return false;
 					}
 				}
@@ -756,20 +804,19 @@ public class NurimazeSolver implements Solver {
 			}
 		}
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
-		System.out.println("難易度:" + (count / 10));
+		System.out.println("難易度:" + (count));
 		System.out.println(field);
 		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count / 10).toString();
+				+ Difficulty.getByCount(count).toString();
 	}
 
 	/**
 	 * 仮置きして調べる
 	 */
 	private boolean candSolve(Field field, int recursive) {
-		System.out.println(field);
-		String str = field.getStateDump();
+		// System.out.println(field);
 		for (List<Position> room : field.rooms) {
-			// 各部屋1マスずつ調べればよい。
+			// マスは各部屋1マスずつ調べればよい。
 			Position pos = room.get(0);
 			if (field.masu[pos.getyIndex()][pos.getxIndex()] == Masu.SPACE) {
 				count++;
@@ -778,8 +825,15 @@ public class NurimazeSolver implements Solver {
 				}
 			}
 		}
-		if (!field.getStateDump().equals(str)) {
-			return candSolve(field, recursive);
+		for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+			for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+				if (field.masu[yIndex][xIndex] == Masu.NOT_BLACK && field.route[yIndex][xIndex] == Masu.SPACE) {
+					count++;
+					if (!oneCandRouteSolve(field, yIndex, xIndex, recursive)) {
+						return false;
+					}
+				}
+			}
 		}
 		return true;
 	}
@@ -808,19 +862,43 @@ public class NurimazeSolver implements Solver {
 			return false;
 		} else if (!allowBlack) {
 			field.masu = virtual2.masu;
+			field.route = virtual2.route;
 		} else if (!allowNotBlack) {
 			field.masu = virtual.masu;
-		} else {
-			// どちらにしても理論
-			for (int y = 0; y < field.getYLength(); y++) {
-				for (int x = 0; x < field.getXLength(); x++) {
-					if (virtual2.masu[y][x] == virtual.masu[y][x]) {
-						field.masu[y][x] = virtual.masu[y][x];
-					}
-				}
-			}
+			field.route = virtual.route;
 		}
 		return true;
 	}
 
+	/**
+	 * 1つの経路に対する仮置き調査
+	 */
+	private boolean oneCandRouteSolve(Field field, int yIndex, int xIndex, int recursive) {
+		Field virtual = new Field(field);
+		virtual.route[yIndex][xIndex] = Masu.BLACK;
+		boolean allowBlack = virtual.solveAndCheck();
+		if (allowBlack && recursive > 0) {
+			if (!candSolve(virtual, recursive - 1)) {
+				allowBlack = false;
+			}
+		}
+		Field virtual2 = new Field(field);
+		virtual2.route[yIndex][xIndex] = Masu.NOT_BLACK;
+		boolean allowNotBlack = virtual2.solveAndCheck();
+		if (allowNotBlack && recursive > 0) {
+			if (!candSolve(virtual2, recursive - 1)) {
+				allowNotBlack = false;
+			}
+		}
+		if (!allowBlack && !allowNotBlack) {
+			return false;
+		} else if (!allowBlack) {
+			field.masu = virtual2.masu;
+			field.route = virtual2.route;
+		} else if (!allowNotBlack) {
+			field.masu = virtual.masu;
+			field.route = virtual.route;
+		}
+		return true;
+	}
 }
