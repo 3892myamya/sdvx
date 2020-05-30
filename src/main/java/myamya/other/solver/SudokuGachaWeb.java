@@ -44,6 +44,7 @@ import myamya.other.solver.tatamibari.TatamibariSolver.TatamibariGenerator;
 import myamya.other.solver.tateyoko.TateyokoSolver.TateyokoGenerator;
 import myamya.other.solver.tents.TentsSolver.TentsGenerator;
 import myamya.other.solver.walllogic.WalllogicSolver.WalllogicGenerator;
+import myamya.other.solver.yajikazu.YajikazuSolver.YajikazuGenerator;
 import myamya.other.solver.yinyang.YinyangSolver.YinyangGenerator;
 import net.arnx.jsonic.JSON;
 
@@ -614,6 +615,22 @@ public class SudokuGachaWeb extends HttpServlet {
 
 	}
 
+	static class YajikazuGeneratorThlead extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+
+		YajikazuGeneratorThlead(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new YajikazuGenerator(height, width);
+		}
+
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -706,6 +723,8 @@ public class SudokuGachaWeb extends HttpServlet {
 				t = new TateyokoGeneratorThlead(height, width, pattern);
 			} else if (type.equals("building")) {
 				t = new BuildingGeneratorThlead(height, width);
+			} else if (type.equals("yajikazu")) {
+				t = new YajikazuGeneratorThlead(height, width);
 			} else {
 				throw new IllegalArgumentException();
 			}

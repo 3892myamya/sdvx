@@ -1873,16 +1873,61 @@ public class SolverWeb extends HttpServlet {
 			YajikazuSolver.Field field = ((YajikazuSolver) solver).getField();
 			int baseSize = 20;
 			StringBuilder sb = new StringBuilder();
+			int margin = 5;
 			sb.append(
 					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
-							+ "height=\"" + (field.getYLength() * baseSize + baseSize) + "\" width=\""
-							+ (field.getXLength() * baseSize + baseSize) + "\" >");
+							+ "height=\"" + (field.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
+							+ (field.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			// 横壁描画
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = -1; xIndex < field.getXLength(); xIndex++) {
+					boolean oneYokoWall = xIndex == -1 || xIndex == field.getXLength() - 1;
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + margin)
+							+ "\" x1=\""
+							+ (xIndex * baseSize + 2 * baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ (xIndex * baseSize + 2 * baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneYokoWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">"
+							+ "</line>");
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = -1; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					boolean oneTateWall = yIndex == -1 || yIndex == field.getYLength() - 1;
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x1=\""
+							+ (xIndex * baseSize + baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ (xIndex * baseSize + baseSize + baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneTateWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">"
+							+ "</line>");
+				}
+			}
 			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
 					Masu oneMasu = field.getMasu()[yIndex][xIndex];
 					Arrow oneArrow = field.getArrows()[yIndex][xIndex];
 					if (oneMasu.toString().equals("■")) {
-						sb.append("<rect y=\"" + (yIndex * baseSize)
+						sb.append("<rect y=\"" + (yIndex * baseSize + margin)
 								+ "\" x=\""
 								+ (xIndex * baseSize + baseSize)
 								+ "\" width=\""
@@ -1892,7 +1937,7 @@ public class SolverWeb extends HttpServlet {
 								+ "\">"
 								+ "</rect>");
 						if (oneArrow != null) {
-							sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 4)
+							sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 4 + margin)
 									+ "\" x=\""
 									+ (xIndex * baseSize + baseSize)
 									+ "\" font-size=\""
@@ -1908,7 +1953,7 @@ public class SolverWeb extends HttpServlet {
 						}
 					} else {
 						if (oneArrow != null) {
-							sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 4)
+							sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 4 + margin)
 									+ "\" x=\""
 									+ (xIndex * baseSize + baseSize)
 									+ "\" font-size=\""
@@ -1920,7 +1965,7 @@ public class SolverWeb extends HttpServlet {
 									+ "</text>");
 
 						}
-						sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 4)
+						sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 4 + margin)
 								+ "\" x=\""
 								+ (xIndex * baseSize + baseSize)
 								+ "\" font-size=\""

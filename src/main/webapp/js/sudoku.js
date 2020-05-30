@@ -32,6 +32,7 @@ var ruleMap = {
 	tatamibari : {name: "タタミバリ", url:"http://indi.s58.xrea.com/tatamibari/",source:"連続発破保管庫さん"},
 	tateyoko : {name: "タテボーヨコボー", url:"http://indi.s58.xrea.com/tateyoko/",source:"連続発破保管庫さん"},
 	building : {name: "ビルディングパズル", url:"https://ja.wikipedia.org/wiki/%E3%83%93%E3%83%AB%E3%83%87%E3%82%A3%E3%83%B3%E3%82%B0%E3%83%91%E3%82%BA%E3%83%AB",source:"Wikipedia"},
+	yajikazu : {name: "やじさんかずさん", url:"https://www.nikoli.co.jp/ja/puzzles/yajisan_kazusan/",source:"ニコリ公式"},
 }
 
 var option = {

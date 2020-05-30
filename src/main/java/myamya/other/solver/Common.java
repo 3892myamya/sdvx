@@ -156,6 +156,10 @@ public class Common {
 			return str;
 		}
 
+		public int toNum() {
+			return num;
+		}
+
 		public Direction opposite() {
 			if (this == UP) {
 				return DOWN;
@@ -195,6 +199,7 @@ public class Common {
 		public String getTriangle() {
 			return triangle;
 		}
+
 	}
 
 	/**
