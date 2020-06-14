@@ -37,6 +37,7 @@ import myamya.other.solver.shugaku.ShugakuSolver.ShugakuGenerator;
 import myamya.other.solver.simpleloop.SimpleloopSolver.SimpleloopGenerator;
 import myamya.other.solver.slither.SlitherSolver.SlitherGenerator;
 import myamya.other.solver.snake.SnakeSolver.SnakeGenerator;
+import myamya.other.solver.starbattle.StarBattleSolver.StarBattleGenerator;
 import myamya.other.solver.sudoku.SudokuSolver.SudokuGenerator;
 import myamya.other.solver.sukoro.SukoroSolver.SukoroGenerator;
 import myamya.other.solver.tapa.TapaSolver.TapaGenerator;
@@ -648,6 +649,23 @@ public class SudokuGachaWeb extends HttpServlet {
 
 	}
 
+	static class StarbattleGeneratorThlead extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+
+		StarbattleGeneratorThlead(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		@Override
+		Generator getGenerator() {
+			// サイズ8以上なら★2、それ以下なら★1
+			return new StarBattleGenerator(height, width, height >= 8 ? 2 : 1);
+		}
+
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -744,6 +762,8 @@ public class SudokuGachaWeb extends HttpServlet {
 				t = new YajikazuGeneratorThlead(height, width);
 			} else if (type.equals("shugaku")) {
 				t = new ShugakuGeneratorThlead(height, width);
+			} else if (type.equals("starbattle")) {
+				t = new StarbattleGeneratorThlead(height, width);
 			} else {
 				throw new IllegalArgumentException();
 			}

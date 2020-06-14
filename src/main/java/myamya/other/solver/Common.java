@@ -377,4 +377,37 @@ public class Common {
 		// ガチャでカウントオーバーなのにまれにOK判定が出ることがあるらしいので、
 		// 強制的に例外扱いにするためのクラス。
 	}
+
+	public static class AkariBattleResult {
+
+		private final String status;
+		private final String fieldStr;
+		private final boolean end;
+
+		public AkariBattleResult(String status) {
+			this.status = status;
+			fieldStr = "";
+			end = false;
+		}
+
+		public AkariBattleResult(String status, String fieldStr, boolean end) {
+			this.status = status;
+			this.fieldStr = fieldStr;
+			this.end = end;
+		}
+
+		public String getStatus() {
+			return status;
+		}
+
+		public String getFieldStr() {
+			return fieldStr;
+		}
+
+		public boolean isEnd() {
+			return end;
+		}
+
+	}
+
 }

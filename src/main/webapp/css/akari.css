@@ -1,0 +1,24 @@
+body{
+  margin:0px;
+}
+
+#div_title{
+  font-size: 1.5em;
+  font-weight: bold;
+  background: linear-gradient(#554F05, #504F15);
+  color: #ffffff;
+}
+
+div{
+  margin-bottom: 5px;
+}
+
+#btn_submit{
+  height: 45px;
+  width: 120px;
+}
+
+#loading {
+    vertical-align: middle;
+}
+

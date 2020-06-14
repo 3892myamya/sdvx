@@ -5,6 +5,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
+import myamya.other.solver.Common.AkariBattleResult;
+import myamya.other.solver.Common.CountOverException;
 import myamya.other.solver.Common.Difficulty;
 import myamya.other.solver.Common.GeneratorResult;
 import myamya.other.solver.Common.Masu;
@@ -14,6 +16,47 @@ import myamya.other.solver.HintPattern;
 import myamya.other.solver.Solver;
 
 public class AkariSolver implements Solver {
+
+	public static class AkariSolverForBattle extends AkariSolver {
+
+		public AkariSolverForBattle(String fieldStr, int height, int width) {
+			super(fieldStr, height, width);
+		}
+
+		public AkariBattleResult solve3() {
+			try {
+				while (!field.isSolved()) {
+					String befStr = field.getStateDump();
+					if (!field.solveAndCheck()) {
+						return new AkariBattleResult("矛盾発生！", field.getFieldStr(), true);
+					}
+					int recursiveCnt = 0;
+					while (field.getStateDump().equals(befStr) && recursiveCnt < 3) {
+						if (!candSolve(field, recursiveCnt == 2 ? 999 : recursiveCnt)) {
+							return new AkariBattleResult("矛盾発生！", field.getFieldStr(), true);
+						}
+						recursiveCnt++;
+					}
+					if (recursiveCnt == 3 && field.getStateDump().equals(befStr)) {
+						return new AkariBattleResult("OK", field.getFieldStr(), false);
+					}
+				}
+			} catch (CountOverException e) {
+				return new AkariBattleResult("OK", field.getFieldStr(), false);
+			}
+			return new AkariBattleResult("勝負あり！", field.getFieldStr(), true);
+		}
+
+		@Override
+		protected boolean candSolve(Field field, int recursive) {
+			if (this.count >= 5000) {
+				throw new CountOverException();
+			} else {
+				return super.candSolve(field, recursive);
+			}
+		}
+	}
+
 	public static class AkariGenerator implements Generator {
 		static class AkariSolverForGenerator extends AkariSolver {
 
@@ -32,7 +75,7 @@ public class AkariSolver implements Solver {
 					}
 					int recursiveCnt = 0;
 					while (field.getStateDump().equals(befStr) && recursiveCnt < 3) {
-						if (!candSolve(field, recursiveCnt)) {
+						if (!candSolve(field, recursiveCnt == 2 ? 999 : recursiveCnt)) {
 							return -1;
 						}
 						recursiveCnt++;
@@ -504,6 +547,79 @@ public class AkariSolver implements Solver {
 			}
 		}
 
+		/**
+		 * 美術館バトル用
+		 */
+		public Field(String fieldStr, int height, int width) {
+			masu = new Masu[height][width];
+			numbers = new Integer[height][width];
+			for (int i = 0; i < fieldStr.length(); i++) {
+				char fieldChar = fieldStr.charAt(i);
+				int yIndex = i / width;
+				int xIndex = i % width;
+				if (fieldChar == 0) {
+					// 未確定マス
+					masu[yIndex][xIndex] = Masu.SPACE;
+					numbers[yIndex][xIndex] = null;
+				} else if (fieldChar == 1) {
+					// 明かりじゃないことが確定したマス(再度チェックするので未確定と同じ扱い)
+					masu[yIndex][xIndex] = Masu.SPACE;
+					numbers[yIndex][xIndex] = null;
+				} else if (fieldChar == 2) {
+					// 明かりマス(再度チェックするので未確定と同じ扱い)
+					masu[yIndex][xIndex] = Masu.SPACE;
+					numbers[yIndex][xIndex] = null;
+				} else if (fieldChar == 3) {
+					// 数字なし黒マス
+					masu[yIndex][xIndex] = Masu.SPACE;
+					numbers[yIndex][xIndex] = -1;
+				} else if (fieldChar == 4) {
+					// 数字0
+					masu[yIndex][xIndex] = Masu.SPACE;
+					numbers[yIndex][xIndex] = 0;
+				} else if (fieldChar == 5) {
+					// 数字1
+					masu[yIndex][xIndex] = Masu.SPACE;
+					numbers[yIndex][xIndex] = 1;
+				} else if (fieldChar == 6) {
+					// 数字2
+					masu[yIndex][xIndex] = Masu.SPACE;
+					numbers[yIndex][xIndex] = 2;
+				} else if (fieldChar == 7) {
+					// 数字3
+					masu[yIndex][xIndex] = Masu.SPACE;
+					numbers[yIndex][xIndex] = 3;
+				} else if (fieldChar == 8) {
+					// 数字4
+					masu[yIndex][xIndex] = Masu.SPACE;
+					numbers[yIndex][xIndex] = 4;
+				}
+			}
+		}
+
+		/**
+		 * 美術館バトル用
+		 */
+		public String getFieldStr() {
+			StringBuilder sb = new StringBuilder();
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					if (numbers[yIndex][xIndex] != null) {
+						sb.append(numbers[yIndex][xIndex] + 5);
+					} else {
+						if (masu[yIndex][xIndex] == Masu.SPACE) {
+							sb.append("0");
+						} else if (masu[yIndex][xIndex] == Masu.NOT_BLACK) {
+							sb.append("1");
+						} else if (masu[yIndex][xIndex] == Masu.BLACK) {
+							sb.append("2");
+						}
+					}
+				}
+			}
+			return sb.toString();
+		}
+
 		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
 		private static final String FULL_NUMS = "０１２３４５６７８９";
 
@@ -779,6 +895,13 @@ public class AkariSolver implements Solver {
 		field = new Field(height, width, param);
 	}
 
+	/**
+	 * 美術館バトル用
+	 */
+	public AkariSolver(String fieldStr, int height, int width) {
+		field = new Field(fieldStr, height, width);
+	}
+
 	public AkariSolver(Field field) {
 		this.field = new Field(field);
 	}
@@ -807,7 +930,7 @@ public class AkariSolver implements Solver {
 			}
 			int recursiveCnt = 0;
 			while (field.getStateDump().equals(befStr) && recursiveCnt < 3) {
-				if (!candSolve(field, recursiveCnt)) {
+				if (!candSolve(field, recursiveCnt == 2 ? 999 : recursiveCnt)) {
 					return "問題に矛盾がある可能性があります。途中経過を返します。";
 				}
 				recursiveCnt++;

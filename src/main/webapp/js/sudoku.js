@@ -34,6 +34,7 @@ var ruleMap = {
 	building : {name: "ビルディングパズル", url:"https://ja.wikipedia.org/wiki/%E3%83%93%E3%83%AB%E3%83%87%E3%82%A3%E3%83%B3%E3%82%B0%E3%83%91%E3%82%BA%E3%83%AB",source:"Wikipedia"},
 	yajikazu : {name: "やじさんかずさん", url:"https://www.nikoli.co.jp/ja/puzzles/yajisan_kazusan/",source:"ニコリ公式"},
 	shugaku : {name: "修学旅行の夜", url:"http://indi.s58.xrea.com/shugaku/",source:"連続発破保管庫さん"},
+	starbattle : {name: "スターバトル", url:"",source:""},
 }
 
 var option = {
@@ -218,6 +219,18 @@ $(function() {
             $('#sel_size').append(option.size_10);
             if (nowSelSizeVal == 3){
             	$('#sel_size').val(4);
+            } else {
+               	$('#sel_size').val(nowSelSizeVal);
+            }
+        } else if (type == 'starbattle'){
+            $('#sel_size').append(option.size_5);
+            $('#sel_size').append(option.size_9);
+            if (nowSelSizeVal == 3 || nowSelSizeVal == 4) {
+            	$('#sel_size').val(5);
+            } else if (nowSelSizeVal == 6 || nowSelSizeVal == 7 || nowSelSizeVal == 8){
+            	$('#sel_size').val(5);
+            } else if (nowSelSizeVal > 9){
+            	$('#sel_size').val(9);
             } else {
                	$('#sel_size').val(nowSelSizeVal);
             }
