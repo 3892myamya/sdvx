@@ -70,12 +70,12 @@ public class LitsSolver implements Solver {
 		}
 
 		public static void main(String[] args) {
-			new LitsGenerator(8, 8).generate();
+			new LitsGenerator(7, 7).generate();
 		}
 
 		@Override
 		public GeneratorResult generate() {
-			LitsSolver.Field wkField = new LitsSolver.Field(height, width, RoomMaker.roomMake(height, width));
+			LitsSolver.Field wkField = new LitsSolver.Field(height, width, RoomMaker.roomMake(height, width, 4));
 			int level = 0;
 			long start = System.nanoTime();
 			while (true) {
@@ -84,7 +84,7 @@ public class LitsSolver implements Solver {
 				level = new LitsSolverForGenerator(wkField, 1000).solve2();
 				if (level == -1) {
 					// 解けなければやり直し
-					wkField = new LitsSolver.Field(height, width, RoomMaker.roomMake(height, width));
+					wkField = new LitsSolver.Field(height, width, RoomMaker.roomMake(height, width, 4));
 				} else {
 					break;
 				}

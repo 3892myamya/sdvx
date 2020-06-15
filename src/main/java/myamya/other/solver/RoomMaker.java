@@ -654,50 +654,84 @@ public class RoomMaker {
 		return true;
 	}
 
-	public static List<Set<Position>> roomMake(int height, int width) {
+	public static List<Set<Position>> roomMake(int height, int width, int minSize) {
 		List<Set<Position>> rooms = new ArrayList<>();
-		while (true) {
-			List<Integer> indexList = new ArrayList<>();
-			for (int i = 0; i < height * width; i++) {
-				indexList.add(i);
-			}
-			Collections.shuffle(indexList);
-			for (int index : indexList) {
-				int yIndex = indexList.get(index) / width;
-				int xIndex = indexList.get(index) % width;
-				Position pos = new Position(yIndex, xIndex);
-				Collections.shuffle(rooms);
-				boolean roomed = false;
-				for (Set<Position> room : rooms) {
-					Position upPos = new Position(yIndex - 1, xIndex);
-					Position rightPos = new Position(yIndex, xIndex + 1);
-					Position downPos = new Position(yIndex + 1, xIndex);
-					Position leftPos = new Position(yIndex, xIndex - 1);
-					if (room.contains(upPos) || room.contains(rightPos) || room.contains(downPos)
-							|| room.contains(leftPos)) {
-						room.add(pos);
-						roomed = true;
-						break;
-					}
-				}
-				if (!roomed) {
-					Set<Position> newRoom = new HashSet<>();
-					newRoom.add(pos);
-					rooms.add(newRoom);
-				}
-			}
-			boolean isOk = true;
+		List<Integer> indexList = new ArrayList<>();
+		for (int i = 0; i < height * width; i++) {
+			indexList.add(i);
+		}
+		Collections.shuffle(indexList);
+		for (int index : indexList) {
+			// まず適当に部屋割り
+			int yIndex = indexList.get(index) / width;
+			int xIndex = indexList.get(index) % width;
+			Position pos = new Position(yIndex, xIndex);
+			Collections.shuffle(rooms);
+			boolean roomed = false;
 			for (Set<Position> room : rooms) {
-				// ここを変えれば部屋のサイズを調整できる
-				if (room.size() < 2) {
-					isOk = false;
+				Position upPos = new Position(yIndex - 1, xIndex);
+				Position rightPos = new Position(yIndex, xIndex + 1);
+				Position downPos = new Position(yIndex + 1, xIndex);
+				Position leftPos = new Position(yIndex, xIndex - 1);
+				if (room.contains(upPos) || room.contains(rightPos) || room.contains(downPos)
+						|| room.contains(leftPos)) {
+					room.add(pos);
+					roomed = true;
 					break;
 				}
 			}
-			if (!isOk) {
-				rooms.clear();
-			} else {
+			if (!roomed) {
+				Set<Position> newRoom = new HashSet<>();
+				newRoom.add(pos);
+				rooms.add(newRoom);
+			}
+		}
+		while (true) {
+			// 最小サイズ以下の部屋がなくなるまで結合
+			List<Set<Position>> invalidRoomList = new ArrayList<>();
+			for (Set<Position> room : rooms) {
+				if (room.size() < minSize) {
+					invalidRoomList.add(room);
+				}
+			}
+			if (invalidRoomList.isEmpty()) {
 				break;
+			}
+			Set<Position> room = new ArrayList<>(invalidRoomList)
+					.get((int) (Math.random() * invalidRoomList.size()));
+			Position candPos;
+			while (true) {
+				Position pivot = new ArrayList<>(room)
+						.get((int) (Math.random() * room.size()));
+				Position upPos = new Position(pivot.getyIndex() - 1, pivot.getxIndex());
+				Position rightPos = new Position(pivot.getyIndex(), pivot.getxIndex() + 1);
+				Position downPos = new Position(pivot.getyIndex() + 1, pivot.getxIndex());
+				Position leftPos = new Position(pivot.getyIndex(), pivot.getxIndex() - 1);
+				Set<Position> candPosSet = new HashSet<>();
+				if (!room.contains(upPos)) {
+					candPosSet.add(upPos);
+				}
+				if (!room.contains(rightPos)) {
+					candPosSet.add(rightPos);
+				}
+				if (!room.contains(downPos)) {
+					candPosSet.add(downPos);
+				}
+				if (!room.contains(leftPos)) {
+					candPosSet.add(leftPos);
+				}
+				if (!candPosSet.isEmpty()) {
+					candPos = new ArrayList<Position>(candPosSet)
+							.get((int) (Math.random() * candPosSet.size()));
+					break;
+				}
+			}
+			for (Set<Position> otherRoom : rooms) {
+				if (otherRoom.contains(candPos)) {
+					otherRoom.addAll(room);
+					rooms.remove(room);
+					break;
+				}
 			}
 		}
 		return rooms;

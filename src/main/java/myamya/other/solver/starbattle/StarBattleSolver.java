@@ -328,6 +328,9 @@ public class StarBattleSolver implements Solver {
 				// ここまで来たら部屋割りはうまくいっている
 				// 余ったマスを適当に部屋につなげる。
 				while (true) {
+					if (yetPosList.isEmpty()) {
+						break;
+					}
 					// 基準部屋をランダムで選ぶ
 					Set<Position> room = rooms.get((int) (Math.random() * rooms.size()));
 					// 基準マスをランダムで選ぶ
@@ -365,9 +368,6 @@ public class StarBattleSolver implements Solver {
 					Position nextPos = candPosList.get((int) (Math.random() * candPosList.size()));
 					room.add(nextPos);
 					yetPosList.remove(nextPos);
-					if (yetPosList.isEmpty()) {
-						break;
-					}
 				}
 				wkField.rooms = rooms;
 				// マスを戻す

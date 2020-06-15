@@ -68,131 +68,97 @@ public class NorinoriSolver implements Solver {
 		}
 
 		public static void main(String[] args) {
-			new NorinoriGenerator(8, 8).generate();
+			new NorinoriGenerator(7, 7).generate();
 		}
 
 		@Override
 		public GeneratorResult generate() {
-			NorinoriSolver.Field wkField = new NorinoriSolver.Field(height, width, RoomMaker.roomMake(height, width));
+			NorinoriSolver.Field wkField = new NorinoriSolver.Field(height, width,
+					RoomMaker.roomMake(height, width, 2));
 			int level = 0;
 			long start = System.nanoTime();
 			while (true) {
 				// 解けるかな？
-				System.out.println(wkField);
 				level = new NorinoriSolverForGenerator(wkField, 1000).solve2();
 				if (level == -1) {
 					// 解けなければやり直し
-					wkField = new NorinoriSolver.Field(height, width, RoomMaker.roomMake(height, width));
+					wkField = new NorinoriSolver.Field(height, width, RoomMaker.roomMake(height, width, 2));
 				} else {
 					break;
 				}
 			}
 			level = (int) Math.sqrt(level * 5 / 3);
-			String status = "Lv:" + level + "の問題を獲得！(数字/四角：" + wkField.getHintCount().split("/")[0] + "/"
-					+ wkField.getHintCount().split("/")[1] + ")";
+			String status = "Lv:" + level + "の問題を獲得！(部屋：" + wkField.getHintCount() + ")";
 			String url = wkField.getPuzPreURL();
 			String link = "<a href=\"" + url + "\" target=\"_blank\">ぱずぷれv3で解く</a>";
 			StringBuilder sb = new StringBuilder();
-			//			int baseSize = 20;
-			//			int margin = 5;
-			//			sb.append(
-			//					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
-			//							+ "height=\"" + (wkField.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
-			//							+ (wkField.getXLength() * baseSize + 2 * baseSize) + "\" >");
-			//			// 数字描画
-			//			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
-			//				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
-			//					if (wkField.getNumbers()[yIndex][xIndex] != null) {
-			//						sb.append("<rect y=\"" + (yIndex * baseSize + 2 + margin)
-			//								+ "\" x=\""
-			//								+ (xIndex * baseSize + baseSize + 2)
-			//								+ "\" width=\""
-			//								+ (baseSize - 4)
-			//								+ "\" height=\""
-			//								+ (baseSize - 4)
-			//								+ "\" fill=\"white\" stroke-width=\"1\" stroke=\"black\">"
-			//								+ "\">"
-			//								+ "</rect>");
-			//						if (wkField.getNumbers()[yIndex][xIndex] != -1) {
-			//							String numberStr = String.valueOf(wkField.getNumbers()[yIndex][xIndex]);
-			//							int numIdx = HALF_NUMS.indexOf(numberStr);
-			//							String masuStr = null;
-			//							if (numIdx >= 0) {
-			//								masuStr = FULL_NUMS.substring(numIdx / 2, numIdx / 2 + 1);
-			//							} else {
-			//								masuStr = numberStr;
-			//							}
-			//							sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 4 + margin)
-			//									+ "\" x=\""
-			//									+ (xIndex * baseSize + baseSize + 2)
-			//									+ "\" font-size=\""
-			//									+ (baseSize - 5)
-			//									+ "\" textLength=\""
-			//									+ (baseSize - 5)
-			//									+ "\" lengthAdjust=\"spacingAndGlyphs\">"
-			//									+ masuStr
-			//									+ "</text>");
-			//						}
-			//					}
-			//				}
-			//			}
-			//			// 横壁描画
-			//			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
-			//				for (int xIndex = -1; xIndex < wkField.getXLength(); xIndex++) {
-			//					boolean oneYokoWall = xIndex == -1 || xIndex == wkField.getXLength() - 1;
-			//					sb.append("<line y1=\""
-			//							+ (yIndex * baseSize + margin)
-			//							+ "\" x1=\""
-			//							+ (xIndex * baseSize + 2 * baseSize)
-			//							+ "\" y2=\""
-			//							+ (yIndex * baseSize + baseSize + margin)
-			//							+ "\" x2=\""
-			//							+ (xIndex * baseSize + 2 * baseSize)
-			//							+ "\" stroke-width=\"1\" fill=\"none\"");
-			//					if (oneYokoWall) {
-			//						sb.append("stroke=\"#000\" ");
-			//					} else {
-			//						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
-			//					}
-			//					sb.append(">"
-			//							+ "</line>");
-			//				}
-			//			}
-			//			// 縦壁描画
-			//			for (int yIndex = -1; yIndex < wkField.getYLength(); yIndex++) {
-			//				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
-			//					boolean oneTateWall = yIndex == -1 || yIndex == wkField.getYLength() - 1;
-			//					sb.append("<line y1=\""
-			//							+ (yIndex * baseSize + baseSize + margin)
-			//							+ "\" x1=\""
-			//							+ (xIndex * baseSize + baseSize)
-			//							+ "\" y2=\""
-			//							+ (yIndex * baseSize + baseSize + margin)
-			//							+ "\" x2=\""
-			//							+ (xIndex * baseSize + baseSize + baseSize)
-			//							+ "\" stroke-width=\"1\" fill=\"none\"");
-			//					if (oneTateWall) {
-			//						sb.append("stroke=\"#000\" ");
-			//					} else {
-			//						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
-			//					}
-			//					sb.append(">"
-			//							+ "</line>");
-			//				}
-			//			}
-			//			sb.append("</svg>");
+			int baseSize = 20;
+			int margin = 5;
+			sb.append(
+					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
+							+ "height=\"" + (wkField.getYLength() * baseSize + 2 * baseSize + margin)
+							+ "\" width=\""
+							+ (wkField.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			// 横壁描画
+			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = -1; xIndex < wkField.getXLength(); xIndex++) {
+					boolean oneYokoWall = xIndex == -1 || xIndex == wkField.getXLength() - 1
+							|| wkField.isExistYokoWall(yIndex, xIndex);
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + margin)
+							+ "\" x1=\""
+							+ (xIndex * baseSize + 2 * baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ (xIndex * baseSize + 2 * baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneYokoWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">"
+							+ "</line>");
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = -1; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+					boolean oneTateWall = yIndex == -1 || yIndex == wkField.getYLength() - 1
+							|| wkField.isExistTateWall(yIndex, xIndex);
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x1=\""
+							+ (xIndex * baseSize + baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ (xIndex * baseSize + baseSize + baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneTateWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">"
+							+ "</line>");
+				}
+			}
+			sb.append("</svg>");
 			System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
 			System.out.println(level);
 			System.out.println(wkField.getHintCount());
 			System.out.println(wkField);
+			System.out.println(url);
 			return new GeneratorResult(status, sb.toString(), link, url, level, "");
-
 		}
 
 	}
 
 	public static class Field {
 		static final String ALPHABET_FROM_G = "ghijklmnopqrstuvwxyz";
+		static final String ALPHABET_AND_NUMBER = "0123456789abcdefghijklmnopqrstuvwxyz";
 		static final int BLACK_CNT = 2;
 
 		// マスの情報
@@ -205,13 +171,111 @@ public class NorinoriSolver implements Solver {
 		}
 
 		public String getPuzPreURL() {
-			// TODO 自動生成されたメソッド・スタブ
-			return null;
+			StringBuilder sb = new StringBuilder();
+			sb.append("http://pzv.jp/p.html?norinori/" + getXLength() + "/" + getYLength() + "/");
+			for (int i = 0; i < getYLength() * (getXLength() - 1); i++) {
+				int yIndex1 = i / (getXLength() - 1);
+				int xIndex1 = i % (getXLength() - 1);
+				i++;
+				int yIndex2 = -1;
+				int xIndex2 = -1;
+				if (i < getYLength() * (getXLength() - 1)) {
+					yIndex2 = i / (getXLength() - 1);
+					xIndex2 = i % (getXLength() - 1);
+				}
+				i++;
+				int yIndex3 = -1;
+				int xIndex3 = -1;
+				if (i < getYLength() * (getXLength() - 1)) {
+					yIndex3 = i / (getXLength() - 1);
+					xIndex3 = i % (getXLength() - 1);
+				}
+				i++;
+				int yIndex4 = -1;
+				int xIndex4 = -1;
+				if (i < getYLength() * (getXLength() - 1)) {
+					yIndex4 = i / (getXLength() - 1);
+					xIndex4 = i % (getXLength() - 1);
+				}
+				i++;
+				int yIndex5 = -1;
+				int xIndex5 = -1;
+				if (i < getYLength() * (getXLength() - 1)) {
+					yIndex5 = i / (getXLength() - 1);
+					xIndex5 = i % (getXLength() - 1);
+				}
+				int num = 0;
+				if (yIndex1 != -1 && xIndex1 != -1 && isExistYokoWall(yIndex1, xIndex1)) {
+					num = num + 16;
+				}
+				if (yIndex2 != -1 && xIndex2 != -1 && isExistYokoWall(yIndex2, xIndex2)) {
+					num = num + 8;
+				}
+				if (yIndex3 != -1 && xIndex3 != -1 && isExistYokoWall(yIndex3, xIndex3)) {
+					num = num + 4;
+				}
+				if (yIndex4 != -1 && xIndex4 != -1 && isExistYokoWall(yIndex4, xIndex4)) {
+					num = num + 2;
+				}
+				if (yIndex5 != -1 && xIndex5 != -1 && isExistYokoWall(yIndex5, xIndex5)) {
+					num = num + 1;
+				}
+				sb.append(ALPHABET_AND_NUMBER.substring(num, num + 1));
+			}
+			for (int i = 0; i < (getYLength() - 1) * getXLength(); i++) {
+				int yIndex1 = i / getXLength();
+				int xIndex1 = i % getXLength();
+				i++;
+				int yIndex2 = -1;
+				int xIndex2 = -1;
+				if (i < (getYLength() - 1) * getXLength()) {
+					yIndex2 = i / getXLength();
+					xIndex2 = i % getXLength();
+				}
+				i++;
+				int yIndex3 = -1;
+				int xIndex3 = -1;
+				if (i < (getYLength() - 1) * getXLength()) {
+					yIndex3 = i / getXLength();
+					xIndex3 = i % getXLength();
+				}
+				i++;
+				int yIndex4 = -1;
+				int xIndex4 = -1;
+				if (i < (getYLength() - 1) * getXLength()) {
+					yIndex4 = i / getXLength();
+					xIndex4 = i % getXLength();
+				}
+				i++;
+				int yIndex5 = -1;
+				int xIndex5 = -1;
+				if (i < (getYLength() - 1) * getXLength()) {
+					yIndex5 = i / getXLength();
+					xIndex5 = i % getXLength();
+				}
+				int num = 0;
+				if (yIndex1 != -1 && xIndex1 != -1 && isExistTateWall(yIndex1, xIndex1)) {
+					num = num + 16;
+				}
+				if (yIndex2 != -1 && xIndex2 != -1 && isExistTateWall(yIndex2, xIndex2)) {
+					num = num + 8;
+				}
+				if (yIndex3 != -1 && xIndex3 != -1 && isExistTateWall(yIndex3, xIndex3)) {
+					num = num + 4;
+				}
+				if (yIndex4 != -1 && xIndex4 != -1 && isExistTateWall(yIndex4, xIndex4)) {
+					num = num + 2;
+				}
+				if (yIndex5 != -1 && xIndex5 != -1 && isExistTateWall(yIndex5, xIndex5)) {
+					num = num + 1;
+				}
+				sb.append(ALPHABET_AND_NUMBER.substring(num, num + 1));
+			}
+			return sb.toString();
 		}
 
 		public String getHintCount() {
-			// TODO 自動生成されたメソッド・スタブ
-			return "0/0";
+			return String.valueOf(rooms.size());
 		}
 
 		public int getYLength() {
@@ -665,7 +729,6 @@ public class NorinoriSolver implements Solver {
 			}
 			return solveAndCheck();
 		}
-
 
 	}
 
