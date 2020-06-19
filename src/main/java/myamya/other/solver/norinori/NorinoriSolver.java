@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import myamya.other.solver.Common.CountOverException;
 import myamya.other.solver.Common.Difficulty;
 import myamya.other.solver.Common.GeneratorResult;
 import myamya.other.solver.Common.Masu;
@@ -16,9 +17,6 @@ import myamya.other.solver.Solver;
 public class NorinoriSolver implements Solver {
 	public static class NorinoriGenerator implements Generator {
 
-		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
-		private static final String FULL_NUMS = "０１２３４５６７８９";
-
 		static class NorinoriSolverForGenerator extends NorinoriSolver {
 			private final int limit;
 
@@ -28,23 +26,25 @@ public class NorinoriSolver implements Solver {
 			}
 
 			public int solve2() {
-				while (!field.isSolved()) {
-					String befStr = field.getStateDump();
-					if (!field.solveAndCheck()) {
-						return -1;
-					}
-					int recursiveCnt = 0;
-					while (field.getStateDump().equals(befStr) && recursiveCnt < 3) {
-						if (!candSolve(field, recursiveCnt == 2 ? 999 : recursiveCnt)) {
+				try {
+					while (!field.isSolved()) {
+						String befStr = field.getStateDump();
+						if (!field.solveAndCheck()) {
 							return -1;
-
 						}
-						recursiveCnt++;
+						int recursiveCnt = 0;
+						while (field.getStateDump().equals(befStr) && recursiveCnt < 3) {
+							if (!candSolve(field, recursiveCnt == 2 ? 999 : recursiveCnt)) {
+								return -1;
+							}
+							recursiveCnt++;
+						}
+						if (recursiveCnt == 3 && field.getStateDump().equals(befStr)) {
+							return -1;
+						}
 					}
-					if (recursiveCnt == 3 && field.getStateDump().equals(befStr)) {
-						return -1;
-
-					}
+				} catch (CountOverException e) {
+					return -1;
 				}
 				return count;
 			}
@@ -52,7 +52,7 @@ public class NorinoriSolver implements Solver {
 			@Override
 			protected boolean candSolve(Field field, int recursive) {
 				if (this.count >= limit) {
-					return false;
+					throw new CountOverException();
 				} else {
 					return super.candSolve(field, recursive);
 				}
@@ -68,13 +68,13 @@ public class NorinoriSolver implements Solver {
 		}
 
 		public static void main(String[] args) {
-			new NorinoriGenerator(7, 7).generate();
+			new NorinoriGenerator(8, 8).generate();
 		}
 
 		@Override
 		public GeneratorResult generate() {
 			NorinoriSolver.Field wkField = new NorinoriSolver.Field(height, width,
-					RoomMaker.roomMake(height, width, 2));
+					RoomMaker.roomMake(height, width, 2, 6));
 			int level = 0;
 			long start = System.nanoTime();
 			while (true) {
@@ -82,7 +82,7 @@ public class NorinoriSolver implements Solver {
 				level = new NorinoriSolverForGenerator(wkField, 1000).solve2();
 				if (level == -1) {
 					// 解けなければやり直し
-					wkField = new NorinoriSolver.Field(height, width, RoomMaker.roomMake(height, width, 2));
+					wkField = new NorinoriSolver.Field(height, width, RoomMaker.roomMake(height, width, 2, 6));
 				} else {
 					break;
 				}
@@ -779,8 +779,9 @@ public class NorinoriSolver implements Solver {
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
 		System.out.println("難易度:" + (count * 5));
 		System.out.println(field);
+		int level = (int) Math.sqrt(count * 5 / 3) + 1;
 		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count * 5).toString();
+				+ Difficulty.getByCount(count * 5).toString() + "(Lv:" + level + ")";
 	}
 
 	/**

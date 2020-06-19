@@ -30,6 +30,7 @@ import myamya.other.solver.minarism.MinarismSolver.MinarismGenerator;
 import myamya.other.solver.nurikabe.NurikabeSolver.NurikabeGenerator;
 import myamya.other.solver.nurimisaki.NurimisakiSolver.NurimisakiGenerator;
 import myamya.other.solver.pipelink.PipelinkSolver.PipelinkGenerator;
+import myamya.other.solver.putteria.PutteriaSolver.PutteriaGenerator;
 import myamya.other.solver.reflect.ReflectSolver.ReflectGenerator;
 import myamya.other.solver.sashigane.SashiganeSolver.SashiganeGenerator;
 import myamya.other.solver.shakashaka.ShakashakaSolver.ShakashakaGenerator;
@@ -666,6 +667,22 @@ public class SudokuGachaWeb extends HttpServlet {
 
 	}
 
+	static class PutteriaGeneratorThlead extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+
+		PutteriaGeneratorThlead(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new PutteriaGenerator(height, width);
+		}
+
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -764,6 +781,8 @@ public class SudokuGachaWeb extends HttpServlet {
 				t = new ShugakuGeneratorThlead(height, width);
 			} else if (type.equals("starbattle")) {
 				t = new StarbattleGeneratorThlead(height, width);
+			} else if (type.equals("putteria")) {
+				t = new PutteriaGeneratorThlead(height, width);
 			} else {
 				throw new IllegalArgumentException();
 			}

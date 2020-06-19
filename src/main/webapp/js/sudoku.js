@@ -35,6 +35,7 @@ var ruleMap = {
 	yajikazu : {name: "やじさんかずさん", url:"https://www.nikoli.co.jp/ja/puzzles/yajisan_kazusan/",source:"ニコリ公式"},
 	shugaku : {name: "修学旅行の夜", url:"http://indi.s58.xrea.com/shugaku/",source:"連続発破保管庫さん"},
 	starbattle : {name: "スターバトル", url:"",source:""},
+	putteria : {name: "プッテリア", url:"",source:""},
 }
 
 var option = {

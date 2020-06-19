@@ -1,25 +1,205 @@
 package myamya.other.solver.lits;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeMap;
 
+import myamya.other.solver.Common.CountOverException;
 import myamya.other.solver.Common.Difficulty;
 import myamya.other.solver.Common.Direction;
 import myamya.other.solver.Common.GeneratorResult;
 import myamya.other.solver.Common.Masu;
 import myamya.other.solver.Common.Position;
 import myamya.other.solver.Generator;
-import myamya.other.solver.RoomMaker;
 import myamya.other.solver.Solver;
 
 public class LitsSolver implements Solver {
-	public static class LitsGenerator implements Generator {
 
-		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
-		private static final String FULL_NUMS = "０１２３４５６７８９";
+	enum LITS {
+		/**
+		 * ■
+		 * ■■■
+		 */
+		L1(Arrays.asList(
+				new Position[] { new Position(0, 0), new Position(1, 0), new Position(1, 1), new Position(1, 2) }), 1,
+				2),
+		/**
+		 * ■■
+		 * ■
+		 * ■
+		 */
+		L2(Arrays.asList(
+				new Position[] { new Position(0, 0), new Position(0, 1), new Position(1, 0), new Position(2, 0) }), 2,
+				1),
+		/**
+		 * ■■■
+		 * 　　■
+		 */
+		L3(Arrays.asList(
+				new Position[] { new Position(0, 0), new Position(0, 1), new Position(0, 2), new Position(1, 2) }), 1,
+				2),
+		/**
+		 * 　■
+		 * 　■
+		 * ■■
+		 */
+		L4(Arrays.asList(
+				new Position[] { new Position(0, 1), new Position(1, 1), new Position(2, 1), new Position(2, 0) }), 2,
+				1),
+		/**
+		 * 　　■
+		 * ■■■
+		 */
+		L5(Arrays.asList(
+				new Position[] { new Position(0, 2), new Position(1, 2), new Position(1, 1), new Position(1, 0) }), 1,
+				2),
+		/**
+		 * ■
+		 * ■
+		 * ■■
+		 */
+		L6(Arrays.asList(
+				new Position[] { new Position(0, 0), new Position(1, 0), new Position(2, 0), new Position(2, 1) }), 2,
+				1),
+		/**
+		 * ■■■
+		 * ■
+		 */
+		L7(Arrays.asList(
+				new Position[] { new Position(0, 0), new Position(0, 1), new Position(0, 2), new Position(1, 0) }), 1,
+				2),
+		/**
+		 * ■■
+		 * 　■
+		 * 　■
+		 */
+		L8(Arrays.asList(
+				new Position[] { new Position(0, 0), new Position(0, 1), new Position(1, 1), new Position(2, 1) }), 2,
+				1),
+
+		/**
+		 * ■
+		 * ■
+		 * ■
+		 * ■
+		 */
+		I1(Arrays.asList(
+				new Position[] { new Position(0, 0), new Position(1, 0), new Position(2, 0), new Position(3, 0) }), 3,
+				0),
+
+		/**
+		 * ■■■■
+		 */
+		I2(Arrays.asList(
+				new Position[] { new Position(0, 0), new Position(0, 1), new Position(0, 2), new Position(0, 3) }), 0,
+				3),
+
+		/**
+		 * ■■■
+		 * 　■
+		 */
+		T1(Arrays.asList(
+				new Position[] { new Position(0, 0), new Position(0, 1), new Position(0, 2), new Position(1, 1) }), 1,
+				2),
+
+		/**
+		 * 　■
+		 * ■■
+		 * 　■
+		 */
+		T2(Arrays.asList(
+				new Position[] { new Position(0, 1), new Position(1, 0), new Position(1, 1), new Position(2, 1) }), 2,
+				1),
+
+		/**
+		 * 　■
+		 * ■■■
+		 */
+		T3(Arrays.asList(
+				new Position[] { new Position(0, 1), new Position(1, 0), new Position(1, 1), new Position(1, 2) }), 1,
+				2),
+
+		/**
+		 * ■
+		 * ■■
+		 * ■
+		 */
+		T4(Arrays.asList(
+				new Position[] { new Position(0, 0), new Position(1, 0), new Position(1, 1), new Position(2, 0) }), 2,
+				1),
+		/**
+		 * ■■
+		 * 　■■
+		 */
+		S1(Arrays.asList(
+				new Position[] { new Position(0, 0), new Position(0, 1), new Position(1, 1), new Position(1, 2) }), 1,
+				2),
+
+		/**
+		 * 　■
+		 * ■■
+		 * ■　
+		 */
+		S2(Arrays.asList(
+				new Position[] { new Position(0, 1), new Position(1, 1), new Position(1, 0), new Position(2, 0) }), 2,
+				1),
+
+		/**
+		 * 　■■
+		 * ■■
+		 */
+		S3(Arrays.asList(
+				new Position[] { new Position(0, 2), new Position(0, 1), new Position(1, 1), new Position(1, 0) }), 1,
+				2),
+
+		/**
+		 * ■　
+		 * ■■
+		 * 　■
+		 */
+		S4(Arrays.asList(
+				new Position[] { new Position(0, 1), new Position(1, 1), new Position(1, 0), new Position(2, 0) }), 2,
+				1),;
+
+		List<Position> positionList; //基準点から見た位置リスト
+		int plusY; // 基準点から見てY方向に何マス必要か
+		int plusX; // 基準点から見てX方向に何マス必要か
+
+		LITS(List<Position> positionList, int plusY, int plusX) {
+			this.positionList = positionList;
+			this.plusY = plusY;
+			this.plusX = plusX;
+		}
+	}
+
+	static class ExtendedField extends LitsSolver.Field {
+		public ExtendedField(Field other) {
+			super(other, true);
+		}
+
+		public ExtendedField(int height, int width) {
+			super(height, width);
+		}
+
+		/**
+		 * 作問段階では2x2チェック、同一形隣接チェックのみする
+		 */
+		protected boolean solveAndCheck() {
+			if (!pondSolve()) {
+				return false;
+			}
+			if (!nextSolve()) {
+				return false;
+			}
+			return true;
+		}
+	}
+
+	public static class LitsGenerator implements Generator {
 
 		static class LitsSolverForGenerator extends LitsSolver {
 			private final int limit;
@@ -30,23 +210,25 @@ public class LitsSolver implements Solver {
 			}
 
 			public int solve2() {
-				while (!field.isSolved()) {
-					String befStr = field.getStateDump();
-					if (!field.solveAndCheck()) {
-						return -1;
-					}
-					int recursiveCnt = 0;
-					while (field.getStateDump().equals(befStr) && recursiveCnt < 3) {
-						if (!candSolve(field, recursiveCnt == 2 ? 999 : recursiveCnt)) {
+				try {
+					while (!field.isSolved()) {
+						String befStr = field.getStateDump();
+						if (!field.solveAndCheck()) {
 							return -1;
-
 						}
-						recursiveCnt++;
+						int recursiveCnt = 0;
+						while (field.getStateDump().equals(befStr) && recursiveCnt < 3) {
+							if (!candSolve(field, recursiveCnt == 2 ? 999 : recursiveCnt)) {
+								return -1;
+							}
+							recursiveCnt++;
+						}
+						if (recursiveCnt == 3 && field.getStateDump().equals(befStr)) {
+							return -1;
+						}
 					}
-					if (recursiveCnt == 3 && field.getStateDump().equals(befStr)) {
-						return -1;
-
-					}
+				} catch (CountOverException e) {
+					return -1;
 				}
 				return count;
 			}
@@ -54,7 +236,7 @@ public class LitsSolver implements Solver {
 			@Override
 			protected boolean candSolve(Field field, int recursive) {
 				if (this.count >= limit) {
-					return false;
+					throw new CountOverException();
 				} else {
 					return super.candSolve(field, recursive);
 				}
@@ -70,28 +252,178 @@ public class LitsSolver implements Solver {
 		}
 
 		public static void main(String[] args) {
-			new LitsGenerator(7, 7).generate();
+			new LitsGenerator(8, 8).generate();
 		}
 
 		@Override
 		public GeneratorResult generate() {
-			LitsSolver.Field wkField = new LitsSolver.Field(height, width, RoomMaker.roomMake(height, width, 4));
+			ExtendedField wkField = new ExtendedField(height, width);
+			// Litsの一覧作成
+			List<Set<Position>> litsList = new ArrayList<>();
+			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+					for (LITS lits : LITS.values()) {
+						if (yIndex + lits.plusY < wkField.getYLength() && xIndex + lits.plusX < wkField.getXLength()) {
+							Set<Position> wkSet = new HashSet<>();
+							for (Position pos : lits.positionList) {
+								wkSet.add(new Position(yIndex + pos.getyIndex(), xIndex + pos.getxIndex()));
+							}
+							litsList.add(wkSet);
+						}
+					}
+				}
+			}
 			int level = 0;
 			long start = System.nanoTime();
 			while (true) {
+				// 問題生成部
+				while (true) {
+					boolean isOk = false;
+					Collections.shuffle(litsList);
+					for (Set<Position> lits : litsList) {
+						// ランダムにLITS配置
+						//	if (Math.random() * 2 < 1) {
+						isOk = true;
+						for (Set<Position> room : wkField.rooms) {
+							Set<Position> wkLits = new HashSet<>(lits);
+							wkLits.retainAll(room);
+							if (!wkLits.isEmpty()) {
+								// 部屋ががかぶっている場合は置かない
+								isOk = false;
+								break;
+							}
+						}
+						if (isOk) {
+							ExtendedField virtual = new ExtendedField(wkField);
+							virtual.rooms.add(new HashSet<>(lits));
+							for (Position pos : lits) {
+								virtual.masu[pos.getyIndex()][pos.getxIndex()] = Masu.BLACK;
+							}
+							// 置いて矛盾がなければ、その部屋を確定
+							if (virtual.solveAndCheck()) {
+								wkField.masu = virtual.masu;
+								wkField.rooms = virtual.rooms;
+							}
+						}
+						//}
+
+					}
+					for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+						for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+							if (wkField.masu[yIndex][xIndex] != Masu.BLACK) {
+								wkField.masu[yIndex][xIndex] = Masu.NOT_BLACK;
+							}
+						}
+					}
+					if (!wkField.connectSolve()) {
+						// Lits置きが終わったら接続チェック。falseなら作りなおし
+						wkField = new ExtendedField(height, width);
+					} else {
+						break;
+					}
+				}
+				// 部屋拡張部
+				List<Position> yetPosList = new ArrayList<>();
+				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+						if (wkField.masu[yIndex][xIndex] != Masu.BLACK) {
+							yetPosList.add(new Position(yIndex, xIndex));
+						}
+					}
+				}
+				while (true) {
+					if (yetPosList.isEmpty()) {
+						break;
+					}
+					// 基準部屋をランダムで選ぶ
+					Set<Position> room = wkField.rooms.get((int) (Math.random() * wkField.rooms.size()));
+					// 基準マスをランダムで選ぶ
+					Position targetPos = new ArrayList<Position>(room).get((int) (Math.random() * room.size()));
+					// 基準マスからランダムで1マス伸ばす
+					List<Position> candPosList = new ArrayList<>();
+					if (targetPos.getyIndex() != 0) {
+						Position nextPos = new Position(targetPos.getyIndex() - 1, targetPos.getxIndex());
+						if (yetPosList.contains(nextPos)) {
+							candPosList.add(nextPos);
+						}
+					}
+					if (targetPos.getxIndex() != wkField.getXLength() - 1) {
+						Position nextPos = new Position(targetPos.getyIndex(), targetPos.getxIndex() + 1);
+						if (yetPosList.contains(nextPos)) {
+							candPosList.add(nextPos);
+						}
+					}
+					if (targetPos.getyIndex() != wkField.getYLength() - 1) {
+						Position nextPos = new Position(targetPos.getyIndex() + 1, targetPos.getxIndex());
+						if (yetPosList.contains(nextPos)) {
+							candPosList.add(nextPos);
+						}
+					}
+					if (targetPos.getxIndex() != 0) {
+						Position nextPos = new Position(targetPos.getyIndex(), targetPos.getxIndex() - 1);
+						if (yetPosList.contains(nextPos)) {
+							candPosList.add(nextPos);
+						}
+					}
+					// どの方向にも伸ばせなかったら基準マス選び直し。
+					if (candPosList.isEmpty()) {
+						continue;
+					}
+					Position nextPos = candPosList.get((int) (Math.random() * candPosList.size()));
+					room.add(nextPos);
+					yetPosList.remove(nextPos);
+				}
+				// 壁セット(問題を解くのに壁の情報も使ってるため)
+				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+					for (int xIndex = 0; xIndex < wkField.getXLength() - 1; xIndex++) {
+						Position pos = new Position(yIndex, xIndex);
+						boolean isWall = true;
+						for (Set<Position> room : wkField.rooms) {
+							if (room.contains(pos)) {
+								Position rightPos = new Position(yIndex, xIndex + 1);
+								if (room.contains(rightPos)) {
+									isWall = false;
+									break;
+								}
+							}
+						}
+						wkField.yokoWall[yIndex][xIndex] = isWall;
+					}
+				}
+				for (int yIndex = 0; yIndex < wkField.getYLength() - 1; yIndex++) {
+					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+						Position pos = new Position(yIndex, xIndex);
+						boolean isWall = true;
+						for (Set<Position> room : wkField.rooms) {
+							if (room.contains(pos)) {
+								Position downPos = new Position(yIndex + 1, xIndex);
+								if (room.contains(downPos)) {
+									isWall = false;
+									break;
+								}
+							}
+						}
+						wkField.tateWall[yIndex][xIndex] = isWall;
+					}
+				}
 				System.out.println(wkField);
+				// マス戻す
+				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+						wkField.masu[yIndex][xIndex] = Masu.SPACE;
+					}
+				}
 				// 解けるかな？
 				level = new LitsSolverForGenerator(wkField, 1000).solve2();
 				if (level == -1) {
 					// 解けなければやり直し
-					wkField = new LitsSolver.Field(height, width, RoomMaker.roomMake(height, width, 4));
+					wkField = new ExtendedField(height, width);
 				} else {
 					break;
 				}
 			}
 			level = (int) Math.sqrt(level * 5 / 3);
-			String status = "Lv:" + level + "の問題を獲得！(数字/四角：" + wkField.getHintCount().split("/")[0] + "/"
-					+ wkField.getHintCount().split("/")[1] + ")";
+			String status = "Lv:" + level + "の問題を獲得！(部屋数：" + wkField.getHintCount() + ")";
 			String url = wkField.getPuzPreURL();
 			String link = "<a href=\"" + url + "\" target=\"_blank\">ぱずぷれv3で解く</a>";
 			StringBuilder sb = new StringBuilder();
@@ -187,6 +519,7 @@ public class LitsSolver implements Solver {
 			System.out.println(level);
 			System.out.println(wkField.getHintCount());
 			System.out.println(wkField);
+			System.out.println(url);
 			return new GeneratorResult(status, sb.toString(), link, url, level, "");
 
 		}
@@ -259,31 +592,130 @@ public class LitsSolver implements Solver {
 
 	public static class Field {
 		static final String ALPHABET_FROM_G = "ghijklmnopqrstuvwxyz";
+		static final String ALPHABET_AND_NUMBER = "0123456789abcdefghijklmnopqrstuvwxyz";
 		static final int BLACK_CNT = 4;
 
 		// マスの情報
-		private Masu[][] masu;
+		protected Masu[][] masu;
 		// 横をふさぐ壁が存在するか
 		// 0,0 = trueなら、0,0と0,1の間に壁があるという意味
-		private final boolean[][] yokoWall;
+		protected final boolean[][] yokoWall;
 		// 縦をふさぐ壁が存在するか
 		// 0,0 = trueなら、0,0と1,0の間に壁があるという意味
-		private final boolean[][] tateWall;
+		protected final boolean[][] tateWall;
 		// 同一グループに属するマスの情報
-		private final List<Set<Position>> rooms;
+		protected List<Set<Position>> rooms;
 
 		public Masu[][] getMasu() {
 			return masu;
 		}
 
 		public String getPuzPreURL() {
-			// TODO 自動生成されたメソッド・スタブ
-			return null;
+			StringBuilder sb = new StringBuilder();
+			sb.append("http://pzv.jp/p.html?lits/" + getXLength() + "/" + getYLength() + "/");
+			for (int i = 0; i < getYLength() * (getXLength() - 1); i++) {
+				int yIndex1 = i / (getXLength() - 1);
+				int xIndex1 = i % (getXLength() - 1);
+				i++;
+				int yIndex2 = -1;
+				int xIndex2 = -1;
+				if (i < getYLength() * (getXLength() - 1)) {
+					yIndex2 = i / (getXLength() - 1);
+					xIndex2 = i % (getXLength() - 1);
+				}
+				i++;
+				int yIndex3 = -1;
+				int xIndex3 = -1;
+				if (i < getYLength() * (getXLength() - 1)) {
+					yIndex3 = i / (getXLength() - 1);
+					xIndex3 = i % (getXLength() - 1);
+				}
+				i++;
+				int yIndex4 = -1;
+				int xIndex4 = -1;
+				if (i < getYLength() * (getXLength() - 1)) {
+					yIndex4 = i / (getXLength() - 1);
+					xIndex4 = i % (getXLength() - 1);
+				}
+				i++;
+				int yIndex5 = -1;
+				int xIndex5 = -1;
+				if (i < getYLength() * (getXLength() - 1)) {
+					yIndex5 = i / (getXLength() - 1);
+					xIndex5 = i % (getXLength() - 1);
+				}
+				int num = 0;
+				if (yIndex1 != -1 && xIndex1 != -1 && isExistYokoWall(yIndex1, xIndex1)) {
+					num = num + 16;
+				}
+				if (yIndex2 != -1 && xIndex2 != -1 && isExistYokoWall(yIndex2, xIndex2)) {
+					num = num + 8;
+				}
+				if (yIndex3 != -1 && xIndex3 != -1 && isExistYokoWall(yIndex3, xIndex3)) {
+					num = num + 4;
+				}
+				if (yIndex4 != -1 && xIndex4 != -1 && isExistYokoWall(yIndex4, xIndex4)) {
+					num = num + 2;
+				}
+				if (yIndex5 != -1 && xIndex5 != -1 && isExistYokoWall(yIndex5, xIndex5)) {
+					num = num + 1;
+				}
+				sb.append(ALPHABET_AND_NUMBER.substring(num, num + 1));
+			}
+			for (int i = 0; i < (getYLength() - 1) * getXLength(); i++) {
+				int yIndex1 = i / getXLength();
+				int xIndex1 = i % getXLength();
+				i++;
+				int yIndex2 = -1;
+				int xIndex2 = -1;
+				if (i < (getYLength() - 1) * getXLength()) {
+					yIndex2 = i / getXLength();
+					xIndex2 = i % getXLength();
+				}
+				i++;
+				int yIndex3 = -1;
+				int xIndex3 = -1;
+				if (i < (getYLength() - 1) * getXLength()) {
+					yIndex3 = i / getXLength();
+					xIndex3 = i % getXLength();
+				}
+				i++;
+				int yIndex4 = -1;
+				int xIndex4 = -1;
+				if (i < (getYLength() - 1) * getXLength()) {
+					yIndex4 = i / getXLength();
+					xIndex4 = i % getXLength();
+				}
+				i++;
+				int yIndex5 = -1;
+				int xIndex5 = -1;
+				if (i < (getYLength() - 1) * getXLength()) {
+					yIndex5 = i / getXLength();
+					xIndex5 = i % getXLength();
+				}
+				int num = 0;
+				if (yIndex1 != -1 && xIndex1 != -1 && isExistTateWall(yIndex1, xIndex1)) {
+					num = num + 16;
+				}
+				if (yIndex2 != -1 && xIndex2 != -1 && isExistTateWall(yIndex2, xIndex2)) {
+					num = num + 8;
+				}
+				if (yIndex3 != -1 && xIndex3 != -1 && isExistTateWall(yIndex3, xIndex3)) {
+					num = num + 4;
+				}
+				if (yIndex4 != -1 && xIndex4 != -1 && isExistTateWall(yIndex4, xIndex4)) {
+					num = num + 2;
+				}
+				if (yIndex5 != -1 && xIndex5 != -1 && isExistTateWall(yIndex5, xIndex5)) {
+					num = num + 1;
+				}
+				sb.append(ALPHABET_AND_NUMBER.substring(num, num + 1));
+			}
+			return sb.toString();
 		}
 
 		public String getHintCount() {
-			// TODO 自動生成されたメソッド・スタブ
-			return "0/0";
+			return String.valueOf(rooms.size());
 		}
 
 		public boolean[][] getYokoWall() {
@@ -448,6 +880,37 @@ public class LitsSolver implements Solver {
 			yokoWall = other.yokoWall;
 			tateWall = other.tateWall;
 			rooms = other.rooms;
+		}
+
+		/**
+		 * プレーンなフィールド生成
+		 */
+		public Field(int height, int width) {
+			masu = new Masu[height][width];
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					masu[yIndex][xIndex] = Masu.SPACE;
+				}
+			}
+			yokoWall = new boolean[height][width - 1];
+			tateWall = new boolean[height - 1][width];
+			rooms = new ArrayList<>();
+		}
+
+		/**
+		 * ジェネレータ用 roomsをイミュータブルに
+		 */
+		public Field(Field other, boolean flag) {
+			masu = new Masu[other.getYLength()][other.getXLength()];
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					masu[yIndex][xIndex] = other.masu[yIndex][xIndex];
+				}
+			}
+			// 壁・部屋は参照渡しで使い回し(一度Fieldができたら変化しないはずなので。)
+			yokoWall = other.yokoWall;
+			tateWall = other.tateWall;
+			rooms = new ArrayList<>(other.rooms);
 		}
 
 		// posを起点に上下左右に壁または白確定でないマスを無制限につなげていく。
@@ -806,7 +1269,7 @@ public class LitsSolver implements Solver {
 		/**
 		 * 各種チェックを1セット実行
 		 */
-		private boolean solveAndCheck() {
+		protected boolean solveAndCheck() {
 			String str = getStateDump();
 			if (!roomSolve()) {
 				return false;

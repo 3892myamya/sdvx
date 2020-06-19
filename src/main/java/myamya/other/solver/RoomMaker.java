@@ -654,7 +654,7 @@ public class RoomMaker {
 		return true;
 	}
 
-	public static List<Set<Position>> roomMake(int height, int width, int minSize) {
+	public static List<Set<Position>> roomMake(int height, int width, int minSize, int maxSize) {
 		List<Set<Position>> rooms = new ArrayList<>();
 		List<Integer> indexList = new ArrayList<>();
 		for (int i = 0; i < height * width; i++) {
@@ -675,9 +675,11 @@ public class RoomMaker {
 				Position leftPos = new Position(yIndex, xIndex - 1);
 				if (room.contains(upPos) || room.contains(rightPos) || room.contains(downPos)
 						|| room.contains(leftPos)) {
-					room.add(pos);
-					roomed = true;
-					break;
+					if (maxSize > 0 && room.size() < maxSize) {
+						room.add(pos);
+						roomed = true;
+						break;
+					}
 				}
 			}
 			if (!roomed) {
@@ -686,51 +688,53 @@ public class RoomMaker {
 				rooms.add(newRoom);
 			}
 		}
-		while (true) {
-			// 最小サイズ以下の部屋がなくなるまで結合
-			List<Set<Position>> invalidRoomList = new ArrayList<>();
-			for (Set<Position> room : rooms) {
-				if (room.size() < minSize) {
-					invalidRoomList.add(room);
-				}
-			}
-			if (invalidRoomList.isEmpty()) {
-				break;
-			}
-			Set<Position> room = new ArrayList<>(invalidRoomList)
-					.get((int) (Math.random() * invalidRoomList.size()));
-			Position candPos;
+		if (minSize > 0) {
 			while (true) {
-				Position pivot = new ArrayList<>(room)
-						.get((int) (Math.random() * room.size()));
-				Position upPos = new Position(pivot.getyIndex() - 1, pivot.getxIndex());
-				Position rightPos = new Position(pivot.getyIndex(), pivot.getxIndex() + 1);
-				Position downPos = new Position(pivot.getyIndex() + 1, pivot.getxIndex());
-				Position leftPos = new Position(pivot.getyIndex(), pivot.getxIndex() - 1);
-				Set<Position> candPosSet = new HashSet<>();
-				if (!room.contains(upPos)) {
-					candPosSet.add(upPos);
+				// 最小サイズより小さい部屋がなくなるまで結合
+				List<Set<Position>> invalidRoomList = new ArrayList<>();
+				for (Set<Position> room : rooms) {
+					if (room.size() < minSize) {
+						invalidRoomList.add(room);
+					}
 				}
-				if (!room.contains(rightPos)) {
-					candPosSet.add(rightPos);
-				}
-				if (!room.contains(downPos)) {
-					candPosSet.add(downPos);
-				}
-				if (!room.contains(leftPos)) {
-					candPosSet.add(leftPos);
-				}
-				if (!candPosSet.isEmpty()) {
-					candPos = new ArrayList<Position>(candPosSet)
-							.get((int) (Math.random() * candPosSet.size()));
+				if (invalidRoomList.isEmpty()) {
 					break;
 				}
-			}
-			for (Set<Position> otherRoom : rooms) {
-				if (otherRoom.contains(candPos)) {
-					otherRoom.addAll(room);
-					rooms.remove(room);
-					break;
+				Set<Position> room = new ArrayList<>(invalidRoomList)
+						.get((int) (Math.random() * invalidRoomList.size()));
+				Position candPos;
+				while (true) {
+					Position pivot = new ArrayList<>(room)
+							.get((int) (Math.random() * room.size()));
+					Position upPos = new Position(pivot.getyIndex() - 1, pivot.getxIndex());
+					Position rightPos = new Position(pivot.getyIndex(), pivot.getxIndex() + 1);
+					Position downPos = new Position(pivot.getyIndex() + 1, pivot.getxIndex());
+					Position leftPos = new Position(pivot.getyIndex(), pivot.getxIndex() - 1);
+					Set<Position> candPosSet = new HashSet<>();
+					if (!room.contains(upPos)) {
+						candPosSet.add(upPos);
+					}
+					if (!room.contains(rightPos)) {
+						candPosSet.add(rightPos);
+					}
+					if (!room.contains(downPos)) {
+						candPosSet.add(downPos);
+					}
+					if (!room.contains(leftPos)) {
+						candPosSet.add(leftPos);
+					}
+					if (!candPosSet.isEmpty()) {
+						candPos = new ArrayList<Position>(candPosSet)
+								.get((int) (Math.random() * candPosSet.size()));
+						break;
+					}
+				}
+				for (Set<Position> otherRoom : rooms) {
+					if (otherRoom.contains(candPos)) {
+						otherRoom.addAll(room);
+						rooms.remove(room);
+						break;
+					}
 				}
 			}
 		}
