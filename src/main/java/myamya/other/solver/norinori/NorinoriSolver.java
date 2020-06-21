@@ -74,20 +74,21 @@ public class NorinoriSolver implements Solver {
 		@Override
 		public GeneratorResult generate() {
 			NorinoriSolver.Field wkField = new NorinoriSolver.Field(height, width,
-					RoomMaker.roomMake(height, width, 2, 6));
+					RoomMaker.roomMake(height, width, 2, 7));
 			int level = 0;
 			long start = System.nanoTime();
 			while (true) {
 				// 解けるかな？
-				level = new NorinoriSolverForGenerator(wkField, 1000).solve2();
+				level = new NorinoriSolverForGenerator(wkField, 2000).solve2();
 				if (level == -1) {
 					// 解けなければやり直し
-					wkField = new NorinoriSolver.Field(height, width, RoomMaker.roomMake(height, width, 2, 6));
+					wkField = new NorinoriSolver.Field(height, width, RoomMaker.roomMake(height, width, 2, 7));
 				} else {
 					break;
 				}
 			}
-			level = (int) Math.sqrt(level * 5 / 3);
+			System.out.println(level);
+			level = (int) Math.sqrt(level * 5 / 3) + 1;
 			String status = "Lv:" + level + "の問題を獲得！(部屋：" + wkField.getHintCount() + ")";
 			String url = wkField.getPuzPreURL();
 			String link = "<a href=\"" + url + "\" target=\"_blank\">ぱずぷれv3で解く</a>";
@@ -150,7 +151,6 @@ public class NorinoriSolver implements Solver {
 			System.out.println(level);
 			System.out.println(wkField.getHintCount());
 			System.out.println(wkField);
-			System.out.println(url);
 			return new GeneratorResult(status, sb.toString(), link, url, level, "");
 		}
 

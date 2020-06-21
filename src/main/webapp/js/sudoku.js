@@ -36,6 +36,7 @@ var ruleMap = {
 	shugaku : {name: "修学旅行の夜", url:"http://indi.s58.xrea.com/shugaku/",source:"連続発破保管庫さん"},
 	starbattle : {name: "スターバトル", url:"",source:""},
 	putteria : {name: "プッテリア", url:"",source:""},
+	norinori : {name: "のりのり", url:"https://www.nikoli.co.jp/ja/puzzles/norinori/",source:"ニコリ公式"},
 }
 
 var option = {
@@ -220,6 +221,19 @@ $(function() {
             $('#sel_size').append(option.size_10);
             if (nowSelSizeVal == 3){
             	$('#sel_size').val(4);
+            } else {
+               	$('#sel_size').val(nowSelSizeVal);
+            }
+        } else if (type == 'norinori'){
+            $('#sel_size').append(option.size_4);
+            $('#sel_size').append(option.size_5);
+            $('#sel_size').append(option.size_6);
+            $('#sel_size').append(option.size_7);
+            $('#sel_size').append(option.size_8);
+            if (nowSelSizeVal == 3){
+            	$('#sel_size').val(4);
+            } else if (nowSelSizeVal > 8){
+            	$('#sel_size').val(8);
             } else {
                	$('#sel_size').val(nowSelSizeVal);
             }

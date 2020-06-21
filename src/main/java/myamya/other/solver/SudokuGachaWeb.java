@@ -27,6 +27,7 @@ import myamya.other.solver.kurotto.KurottoSolver.KurottoGenerator;
 import myamya.other.solver.masyu.MasyuSolver.MasyuGenerator;
 import myamya.other.solver.midloop.MidloopSolver.MidloopGenerator;
 import myamya.other.solver.minarism.MinarismSolver.MinarismGenerator;
+import myamya.other.solver.norinori.NorinoriSolver.NorinoriGenerator;
 import myamya.other.solver.nurikabe.NurikabeSolver.NurikabeGenerator;
 import myamya.other.solver.nurimisaki.NurimisakiSolver.NurimisakiGenerator;
 import myamya.other.solver.pipelink.PipelinkSolver.PipelinkGenerator;
@@ -683,6 +684,22 @@ public class SudokuGachaWeb extends HttpServlet {
 
 	}
 
+	static class NorinoriGeneratorThlead extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+
+		NorinoriGeneratorThlead(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new NorinoriGenerator(height, width);
+		}
+
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -783,6 +800,8 @@ public class SudokuGachaWeb extends HttpServlet {
 				t = new StarbattleGeneratorThlead(height, width);
 			} else if (type.equals("putteria")) {
 				t = new PutteriaGeneratorThlead(height, width);
+			} else if (type.equals("norinori")) {
+				t = new NorinoriGeneratorThlead(height, width);
 			} else {
 				throw new IllegalArgumentException();
 			}

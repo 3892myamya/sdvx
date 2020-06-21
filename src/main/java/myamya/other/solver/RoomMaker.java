@@ -675,7 +675,8 @@ public class RoomMaker {
 				Position leftPos = new Position(yIndex, xIndex - 1);
 				if (room.contains(upPos) || room.contains(rightPos) || room.contains(downPos)
 						|| room.contains(leftPos)) {
-					if (maxSize > 0 && room.size() < maxSize) {
+					// 上限近くの部屋ができやすくなるため、ランダム補正をする。
+					if (maxSize > 0 && room.size() + Math.random() * maxSize / 1.25 < maxSize) {
 						room.add(pos);
 						roomed = true;
 						break;
