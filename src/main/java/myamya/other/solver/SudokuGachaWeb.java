@@ -46,9 +46,11 @@ import myamya.other.solver.tapa.TapaSolver.TapaGenerator;
 import myamya.other.solver.tasquare.TasquareSolver.TasquareGenerator;
 import myamya.other.solver.tatamibari.TatamibariSolver.TatamibariGenerator;
 import myamya.other.solver.tateyoko.TateyokoSolver.TateyokoGenerator;
+import myamya.other.solver.tentaisho.TentaishoSolver.TentaishoGenerator;
 import myamya.other.solver.tents.TentsSolver.TentsGenerator;
 import myamya.other.solver.walllogic.WalllogicSolver.WalllogicGenerator;
 import myamya.other.solver.yajikazu.YajikazuSolver.YajikazuGenerator;
+import myamya.other.solver.yajilin.YajilinSolver.YajilinGenerator;
 import myamya.other.solver.yinyang.YinyangSolver.YinyangGenerator;
 import net.arnx.jsonic.JSON;
 
@@ -700,6 +702,38 @@ public class SudokuGachaWeb extends HttpServlet {
 
 	}
 
+	static class TentaishoGeneratorThlead extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+
+		TentaishoGeneratorThlead(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new TentaishoGenerator(height, width);
+		}
+
+	}
+
+	static class YajilinGeneratorThlead extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+
+		YajilinGeneratorThlead(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new YajilinGenerator(height, width);
+		}
+
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -802,6 +836,10 @@ public class SudokuGachaWeb extends HttpServlet {
 				t = new PutteriaGeneratorThlead(height, width);
 			} else if (type.equals("norinori")) {
 				t = new NorinoriGeneratorThlead(height, width);
+			} else if (type.equals("tentaisho")) {
+				t = new TentaishoGeneratorThlead(height, width);
+			} else if (type.equals("yajilin")) {
+				t = new YajilinGeneratorThlead(height, width);
 			} else {
 				throw new IllegalArgumentException();
 			}

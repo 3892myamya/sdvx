@@ -9,14 +9,350 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import myamya.other.solver.Common.CountOverException;
 import myamya.other.solver.Common.Difficulty;
 import myamya.other.solver.Common.Direction;
+import myamya.other.solver.Common.GeneratorResult;
 import myamya.other.solver.Common.Masu;
 import myamya.other.solver.Common.Position;
 import myamya.other.solver.Common.Wall;
+import myamya.other.solver.Generator;
 import myamya.other.solver.Solver;
 
 public class YajilinSolver implements Solver {
+	public static class YajilinGenerator implements Generator {
+
+		static class YajilinSolverForGenerator extends YajilinSolver {
+
+			private final int limit;
+
+			public YajilinSolverForGenerator(Field field, int limit) {
+				super(field);
+				this.limit = limit;
+			}
+
+			/**
+			 * -2:解なし
+			 * -1:limit(多くの場合複数解)
+			 * 0 >= 唯一解
+			 */
+			public int solve2() {
+				try {
+					while (!field.isSolved()) {
+						String befStr = field.getStateDump();
+						if (!field.solveAndCheck()) {
+							return -2;
+						}
+						int recursiveCnt = 0;
+						while (field.getStateDump().equals(befStr) && recursiveCnt < 3) {
+							if (!candSolve(field, recursiveCnt)) {
+								return -2;
+							}
+							recursiveCnt++;
+						}
+						if (recursiveCnt == 3 && field.getStateDump().equals(befStr)) {
+							return -1;
+						}
+					}
+				} catch (CountOverException e) {
+					return -1;
+				}
+				return count;
+			}
+
+			@Override
+			protected boolean candSolve(Field field, int recursive) {
+				if (this.count >= limit) {
+					throw new CountOverException();
+				} else {
+					return super.candSolve(field, recursive);
+				}
+			}
+		}
+
+		private final int height;
+		private final int width;
+
+		public YajilinGenerator(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		public static void main(String[] args) {
+			new YajilinGenerator(10, 10).generate();
+		}
+
+		@Override
+		public GeneratorResult generate() {
+			YajilinSolver.Field wkField = new YajilinSolver.Field(height, width);
+			int level = 0;
+			int failCnt = 0;
+			Map<Position, List<String>> wkArrowsInfo = new HashMap<>();
+			long start = System.nanoTime();
+			// 問題生成部
+			while (true) {
+				// 矢印を置く場所をランダムで決定する
+				List<Position> candPosList = new ArrayList<>();
+				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+						if (wkField.arrows[yIndex][xIndex] == null) {
+							// 矢印を置くことにより、孤立するマスや3方向が囲まれるマス、
+							// 矢印の固まりができるような置き方は起こりにくくする。
+							int aroundArrow = 0;
+							if (yIndex != 0) {
+								int cnt = 0;
+								Position pivot = new Position(yIndex - 1, xIndex);
+								if (wkField.arrows[pivot.getyIndex()][pivot.getxIndex()] != null) {
+									aroundArrow++;
+								} else {
+									if (pivot.getyIndex() == 0
+											|| wkField.arrows[pivot.getyIndex() - 1][pivot.getxIndex()] != null) {
+										cnt++;
+									}
+									if (pivot.getxIndex() == wkField.getXLength() - 1
+											|| wkField.arrows[pivot.getyIndex()][pivot.getxIndex() + 1] != null) {
+										cnt++;
+									}
+									if (pivot.getxIndex() == 0
+											|| wkField.arrows[pivot.getyIndex()][pivot.getxIndex() - 1] != null) {
+										cnt++;
+									}
+									if (cnt >= 2 && Math.random() < 0.8) {
+										continue;
+									}
+								}
+							}
+							if (xIndex != wkField.getXLength() - 1) {
+								int cnt = 0;
+								Position pivot = new Position(yIndex, xIndex + 1);
+								if (wkField.arrows[pivot.getyIndex()][pivot.getxIndex()] != null) {
+									aroundArrow++;
+								} else {
+									if (pivot.getyIndex() == 0
+											|| wkField.arrows[pivot.getyIndex() - 1][pivot.getxIndex()] != null) {
+										cnt++;
+									}
+									if (pivot.getxIndex() == wkField.getXLength() - 1
+											|| wkField.arrows[pivot.getyIndex()][pivot.getxIndex() + 1] != null) {
+										cnt++;
+									}
+									if (pivot.getyIndex() == wkField.getYLength() - 1
+											|| wkField.arrows[pivot.getyIndex() + 1][pivot.getxIndex()] != null) {
+										cnt++;
+									}
+									if (cnt >= 2 && Math.random() < 0.8) {
+										continue;
+									}
+								}
+							}
+							if (yIndex != wkField.getYLength() - 1) {
+								int cnt = 0;
+								Position pivot = new Position(yIndex + 1, xIndex);
+								if (wkField.arrows[pivot.getyIndex()][pivot.getxIndex()] != null) {
+									aroundArrow++;
+								} else {
+									if (pivot.getxIndex() == wkField.getXLength() - 1
+											|| wkField.arrows[pivot.getyIndex()][pivot.getxIndex() + 1] != null) {
+										cnt++;
+									}
+									if (pivot.getyIndex() == wkField.getYLength() - 1
+											|| wkField.arrows[pivot.getyIndex() + 1][pivot.getxIndex()] != null) {
+										cnt++;
+									}
+									if (pivot.getxIndex() == 0
+											|| wkField.arrows[pivot.getyIndex()][pivot.getxIndex() - 1] != null) {
+										cnt++;
+									}
+									if (cnt >= 2 && Math.random() < 0.8) {
+										continue;
+									}
+								}
+							}
+							if (xIndex != 0) {
+								int cnt = 0;
+								Position pivot = new Position(yIndex, xIndex - 1);
+								if (wkField.arrows[pivot.getyIndex()][pivot.getxIndex()] != null) {
+									aroundArrow++;
+								} else {
+									if (pivot.getyIndex() == 0
+											|| wkField.arrows[pivot.getyIndex() - 1][pivot.getxIndex()] != null) {
+										cnt++;
+									}
+									if (pivot.getyIndex() == wkField.getYLength() - 1
+											|| wkField.arrows[pivot.getyIndex() + 1][pivot.getxIndex()] != null) {
+										cnt++;
+									}
+									if (pivot.getxIndex() == 0
+											|| wkField.arrows[pivot.getyIndex()][pivot.getxIndex() - 1] != null) {
+										cnt++;
+									}
+									if (cnt >= 2 && Math.random() < 0.8) {
+										continue;
+									}
+								}
+							}
+							if (aroundArrow >= 1 && Math.random() < 0.95) {
+								continue;
+							}
+							candPosList.add(new Position(yIndex, xIndex));
+						}
+					}
+				}
+				if (candPosList.isEmpty()) {
+					// 置ける場所がないのに解けない→作り直し
+					wkField = new YajilinSolver.Field(height, width);
+					failCnt = 0;
+					wkArrowsInfo.clear();
+					continue;
+				}
+				Position arrowPos = candPosList.get((int) (Math.random() * candPosList.size()));
+				// 矢印の向きと数をランダムで決定する
+				// 外周が近い場合はできるだけ内向きにする
+				List<Direction> candDirection = new ArrayList<>();
+				if (arrowPos.getyIndex() != 0 && (arrowPos.getyIndex() != 1 || Math.random() < 0.5)) {
+					candDirection.add(Direction.UP);
+				}
+				if (arrowPos.getxIndex() != wkField.getXLength() - 1
+						&& (arrowPos.getxIndex() != wkField.getXLength() - 2 || Math.random() < 0.5)) {
+					candDirection.add(Direction.RIGHT);
+				}
+				if (arrowPos.getyIndex() != wkField.getYLength() - 1
+						&& (arrowPos.getyIndex() != wkField.getYLength() - 2 || Math.random() < 0.5)) {
+					candDirection.add(Direction.DOWN);
+				}
+				if (arrowPos.getxIndex() != 0 && (arrowPos.getxIndex() != 1 || Math.random() < 0.5)) {
+					candDirection.add(Direction.LEFT);
+				}
+				if (candDirection.isEmpty()) {
+					continue;
+				}
+				Direction direction = candDirection.get((int) (Math.random() * candDirection.size()));
+				int maxBlack = 0;
+				if (direction == Direction.UP) {
+					maxBlack = (arrowPos.getyIndex() + 1) / 2;
+				}
+				if (direction == Direction.RIGHT) {
+					maxBlack = (wkField.getXLength() - arrowPos.getxIndex()) / 2;
+				}
+				if (direction == Direction.DOWN) {
+					maxBlack = (wkField.getYLength() - arrowPos.getyIndex()) / 2;
+				}
+				if (direction == Direction.LEFT) {
+					maxBlack = (arrowPos.getxIndex() + 1) / 2;
+				}
+				// 0はできにくくする。
+				int count = (int) (Math.random() * (maxBlack + 0.25) + 0.75);
+				// 解きチェック
+				YajilinSolver.Field virtual = new YajilinSolver.Field(wkField, true);
+				Arrow arrow = new Arrow(direction, count);
+				virtual.setArrow(arrowPos, arrow);
+				wkArrowsInfo.put(arrowPos,
+						new ArrowSolver(virtual.getYLength(), virtual.getXLength(), arrowPos, arrow).solve());
+				virtual.arrowsInfo = new HashMap<>(wkArrowsInfo);
+				level = new YajilinSolverForGenerator(new YajilinSolver.Field(virtual), 450).solve2();
+				if (level == -2) {
+					// 解なしになった。矢印は破棄する
+					failCnt++;
+					if (failCnt == 100) {
+						// 失敗回数がかさんだら作りなおし
+						wkField = new YajilinSolver.Field(height, width);
+						failCnt = 0;
+						wkArrowsInfo.clear();
+						continue;
+					}
+				} else if (level == -1) {
+					// 解なしになってないが解けず。矢印は残す
+					wkField.setArrow(arrowPos, new Arrow(direction, count));
+				} else {
+					// 唯一解になった！
+					wkField.setArrow(arrowPos, new Arrow(direction, count));
+					if (Math.random() < 0.9) {
+						// 基本抜けるようにするが、低確率でそれ以上矢印が置けるかも試すようにする
+						break;
+					}
+				}
+			}
+			level = (int) Math.sqrt(level * 6 / 3) + 1;
+			String status = "Lv:" + level + "の問題を獲得！(矢印：" + wkField.getHintCount() + ")";
+			String url = wkField.getPuzPreURL();
+			String link = "<a href=\"" + url + "\" target=\"_blank\">puzz.linkで解く</a>";
+			StringBuilder sb = new StringBuilder();
+			int baseSize = 20;
+			int margin = 5;
+			sb.append(
+					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
+							+ "height=\"" + (wkField.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
+							+ (wkField.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			// 横壁描画
+			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = -1; xIndex < wkField.getXLength(); xIndex++) {
+					boolean oneYokoWall = xIndex == -1 || xIndex == wkField.getXLength() - 1;
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + margin)
+							+ "\" x1=\""
+							+ (xIndex * baseSize + 2 * baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ (xIndex * baseSize + 2 * baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneYokoWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">"
+							+ "</line>");
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = -1; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+					boolean oneTateWall = yIndex == -1 || yIndex == wkField.getYLength() - 1;
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x1=\""
+							+ (xIndex * baseSize + baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ (xIndex * baseSize + baseSize + baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneTateWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">"
+							+ "</line>");
+				}
+			}
+			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+					Arrow oneArrow = wkField.getArrows()[yIndex][xIndex];
+					if (oneArrow != null) {
+						sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 4 + margin)
+								+ "\" x=\""
+								+ (xIndex * baseSize + baseSize)
+								+ "\" font-size=\""
+								+ (baseSize - 2)
+								+ "\" textLength=\""
+								+ (baseSize - 2)
+								+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+								+ oneArrow.toStringWeb()
+								+ "</text>");
+
+					}
+				}
+			}
+			sb.append("</svg>");
+			System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
+			System.out.println(level);
+			System.out.println(wkField.getHintCount());
+			System.out.println(wkField);
+			return new GeneratorResult(status, sb.toString(), link, url, level, "");
+		}
+	}
 
 	/**
 	 * 矢印を候補を列挙して解くためのサブソルバー
@@ -221,12 +557,66 @@ public class YajilinSolver implements Solver {
 		// 0,0 = trueなら、0,0と1,0の間に壁があるという意味
 		private Wall[][] tateWall;
 		// 矢印の候補情報
-		private final Map<Arrow, List<String>> arrowsInfo;
+		private Map<Position, List<String>> arrowsInfo;
 		// バリアントルール-ループ内黒ます禁止
 		private final boolean out;
 
 		public Masu[][] getMasu() {
 			return masu;
+		}
+
+		public String getPuzPreURL() {
+			StringBuilder sb = new StringBuilder();
+			sb.append("http://puzz.link/p?yajilin/" + getXLength() + "/" + getYLength() + "/");
+			int interval = 0;
+			for (int i = 0; i < getYLength() * getXLength(); i++) {
+				int yIndex = i / getXLength();
+				int xIndex = i % getXLength();
+				if (arrows[yIndex][xIndex] == null) {
+					interval++;
+					if (interval == 26) {
+						sb.append("z");
+						interval = 0;
+					}
+				} else {
+					String numStr = null;
+					int numTop;
+					Arrow arrow = arrows[yIndex][xIndex];
+					if (arrow != null) {
+						numTop = arrow.getDirection().toNum();
+						if (arrow.count >= 16) {
+							numTop = numTop + 5;
+						}
+						numStr = numTop + Integer.toHexString(arrow.getCount());
+					}
+					if (interval == 0) {
+						sb.append(numStr);
+					} else {
+						sb.append(ALPHABET.substring(interval - 1, interval));
+						sb.append(numStr);
+						interval = 0;
+					}
+				}
+			}
+			if (interval != 0) {
+				sb.append(ALPHABET.substring(interval - 1, interval));
+			}
+			if (sb.charAt(sb.length() - 1) == '.') {
+				sb.append("/");
+			}
+			return sb.toString();
+		}
+
+		public String getHintCount() {
+			int cnt = 0;
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					if (arrows[yIndex][xIndex] != null) {
+						cnt++;
+					}
+				}
+			}
+			return String.valueOf(cnt);
 		}
 
 		public Arrow[][] getArrows() {
@@ -323,28 +713,36 @@ public class YajilinSolver implements Solver {
 					} else {
 						arrow = new Arrow(direction, Character.getNumericValue(ch));
 					}
-					masu[arrowPos.getyIndex()][arrowPos.getxIndex()] = Masu.NOT_BLACK;
-					arrows[arrowPos.getyIndex()][arrowPos.getxIndex()] = arrow;
-					arrowsInfo.put(arrow,
+					setArrow(arrowPos, arrow);
+					arrowsInfo.put(arrowPos,
 							new ArrowSolver(getYLength(), getXLength(), arrowPos, arrow)
 									.solve());
-					// 周囲の壁を閉鎖
-					if (arrowPos.getyIndex() != 0) {
-						tateWall[arrowPos.getyIndex() - 1][arrowPos.getxIndex()] = Wall.EXISTS;
-					}
-					if (arrowPos.getxIndex() != getXLength() - 1) {
-						yokoWall[arrowPos.getyIndex()][arrowPos.getxIndex()] = Wall.EXISTS;
-					}
-					if (arrowPos.getyIndex() != getYLength() - 1) {
-						tateWall[arrowPos.getyIndex()][arrowPos.getxIndex()] = Wall.EXISTS;
-					}
-					if (arrowPos.getxIndex() != 0) {
-						yokoWall[arrowPos.getyIndex()][arrowPos.getxIndex() - 1] = Wall.EXISTS;
-					}
 					adjust = false;
 					index++;
 					direction = null;
 				}
+			}
+		}
+
+		/**
+		 * 付随処理も含めた矢印セット処理
+		 * ジェネレータでも使う
+		 */
+		protected void setArrow(Position arrowPos, Arrow arrow) {
+			masu[arrowPos.getyIndex()][arrowPos.getxIndex()] = Masu.NOT_BLACK;
+			arrows[arrowPos.getyIndex()][arrowPos.getxIndex()] = arrow;
+			// 周囲の壁を閉鎖
+			if (arrowPos.getyIndex() != 0) {
+				tateWall[arrowPos.getyIndex() - 1][arrowPos.getxIndex()] = Wall.EXISTS;
+			}
+			if (arrowPos.getxIndex() != getXLength() - 1) {
+				yokoWall[arrowPos.getyIndex()][arrowPos.getxIndex()] = Wall.EXISTS;
+			}
+			if (arrowPos.getyIndex() != getYLength() - 1) {
+				tateWall[arrowPos.getyIndex()][arrowPos.getxIndex()] = Wall.EXISTS;
+			}
+			if (arrowPos.getxIndex() != 0) {
+				yokoWall[arrowPos.getyIndex()][arrowPos.getxIndex() - 1] = Wall.EXISTS;
 			}
 		}
 
@@ -370,8 +768,63 @@ public class YajilinSolver implements Solver {
 					tateWall[yIndex][xIndex] = other.tateWall[yIndex][xIndex];
 				}
 			}
-			for (Entry<Arrow, List<String>> entry : other.arrowsInfo.entrySet()) {
+			for (Entry<Position, List<String>> entry : other.arrowsInfo.entrySet()) {
 				arrowsInfo.put(entry.getKey(), entry.getValue() == null ? null : new ArrayList<>(entry.getValue()));
+			}
+		}
+
+		/**
+		 * プレーンなフィールド生成
+		 */
+		public Field(int height, int width) {
+			masu = new Masu[height][width];
+			arrows = new Arrow[height][width];
+			yokoWall = new Wall[height][width - 1];
+			tateWall = new Wall[height - 1][width];
+			arrowsInfo = new HashMap<>();
+			this.out = false;
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					masu[yIndex][xIndex] = Masu.SPACE;
+				}
+			}
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength() - 1; xIndex++) {
+					yokoWall[yIndex][xIndex] = Wall.SPACE;
+				}
+			}
+			for (int yIndex = 0; yIndex < getYLength() - 1; yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					tateWall[yIndex][xIndex] = Wall.SPACE;
+				}
+			}
+		}
+
+		/**
+		 * イミュータブルにするやつ。ジェネレータ用
+		 */
+		public Field(Field other, boolean flag) {
+			masu = new Masu[other.getYLength()][other.getXLength()];
+			arrows = new Arrow[other.getYLength()][other.getXLength()];
+			yokoWall = new Wall[other.getYLength()][other.getXLength() - 1];
+			tateWall = new Wall[other.getYLength() - 1][other.getXLength()];
+			arrowsInfo = new HashMap<>();
+			out = other.out;
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					masu[yIndex][xIndex] = other.masu[yIndex][xIndex];
+					arrows[yIndex][xIndex] = other.arrows[yIndex][xIndex];
+				}
+			}
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength() - 1; xIndex++) {
+					yokoWall[yIndex][xIndex] = other.yokoWall[yIndex][xIndex];
+				}
+			}
+			for (int yIndex = 0; yIndex < getYLength() - 1; yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					tateWall[yIndex][xIndex] = other.tateWall[yIndex][xIndex];
+				}
 			}
 		}
 
@@ -494,8 +947,8 @@ public class YajilinSolver implements Solver {
 						//													}
 						//													adjust++;
 						//												}
-						if (arrowsInfo.get(arrow) != null) {
-							List<String> candList = arrowsInfo.get(arrow);
+						List<String> candList = arrowsInfo.get(new Position(yIndex, xIndex));
+						if (candList != null) {
 							for (Iterator<String> iterator = candList.iterator(); iterator.hasNext();) {
 								String state = iterator.next();
 								for (int idx = 0; idx < state.length(); idx++) {
@@ -1238,11 +1691,15 @@ public class YajilinSolver implements Solver {
 
 	}
 
-	private final Field field;
-	private int count = 0;
+	protected final Field field;
+	protected int count = 0;
 
 	public YajilinSolver(int height, int width, String param, boolean out) {
 		field = new Field(height, width, param, out);
+	}
+
+	public YajilinSolver(Field field) {
+		this.field = new Field(field);
 	}
 
 	public Field getField() {
@@ -1279,17 +1736,18 @@ public class YajilinSolver implements Solver {
 			}
 		}
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
-		System.out.println("難易度:" + (count * 5));
+		System.out.println("難易度:" + (count * 6));
 		System.out.println(field);
+		int level = (int) Math.sqrt(count * 6 / 3) + 1;
 		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count * 5).toString();
+				+ Difficulty.getByCount(count * 6).toString() + "(Lv:" + level + ")";
 	}
 
 	/**
 	 * 仮置きして調べる
 	 * @param posSet
 	 */
-	private boolean candSolve(Field field, int recursive) {
+	protected boolean candSolve(Field field, int recursive) {
 		String str = field.getStateDump();
 		for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 			for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
