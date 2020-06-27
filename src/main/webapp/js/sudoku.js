@@ -39,6 +39,7 @@ var ruleMap = {
 	norinori : {name: "のりのり", url:"https://www.nikoli.co.jp/ja/puzzles/norinori/",source:"ニコリ公式"},
 	tentaisho : {name: "天体ショー", url:"https://www.nikoli.co.jp/ja/puzzles/astronomical_show/",source:"ニコリ公式"},
 	yajilin : {name: "ヤジリン", url:"https://www.nikoli.co.jp/ja/puzzles/yajilin/",source:"ニコリ公式"},
+	herugolf : {name: "ヘルゴルフ", url:"https://www.nikoli.co.jp/ja/puzzles/herugolf/",source:"ニコリ公式"},
 }
 
 var option = {
