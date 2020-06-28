@@ -14,13 +14,22 @@
     <meta name="description" content="ペンシルパズルガチャ(ペンパガチャ)は自動生成されたペンシルパズルの問題がゲットできるガチャです。引いた問題はぱずぷれv3さんで解いたりTwitterでシェア可能です。あなたは高レベルのレア問をゲットできるか？"/>
     <link rel="stylesheet" href="css/jsgrid.min.css"/>
     <link rel="stylesheet" href="css/jsgrid-theme.min.css"/>
-    <link rel="stylesheet" href="css/sudoku.css?ver=20200411"/>
+    <link rel="stylesheet" href="css/sudoku.css?ver=20200626"/>
     <script src="js/jquery-3.3.1.min.js"></script>
     <script src="js/jsgrid.min.js"></script>
-    <script src="js/sudoku.js?ver=20200625"></script>
+    <script src="js/sudoku.js?ver=20200626"></script>
 </head>
 <body>
 <div id="div_title">ペンシルパズルガチャ<span style="font-size: xx-small;">(旧：数独ガチャ)</span></div>
+
+<div>
+<label id="lbl_mode" for="sel_mode">モード</label>
+<select id="sel_mode" name="sel_type">
+	<option value="normal">通常モード</option>
+	<option value="rta">RTAモード</option>
+</select>
+</div>
+
 <div>
 <label id="lbl_type" for="sel_type">ガチャの種類</label>
 <select id="sel_type" name="sel_type">
@@ -66,6 +75,15 @@
 	<option value="yajilin">ヤジリンガチャ</option>
 	<option value="reflect">リフレクトリンクガチャ</option>
 </select>
+
+<label id="lbl_reg" for="sel_reg">コース</label>
+<select id="sel_reg" name="sel_reg">
+	<option value="allloop">10x10ループパズル10連ガチャ</option>
+	<option value="nurimisaki">ぬりみさき10連ガチャ</option>
+	<option value="herugolf">ヘルゴルフ10連ガチャ</option>
+	<option value="yajilin">ヤジリン10連ガチャ</option>
+</select>
+
 </div>
 <div>
 <label id="lbl_size" for="sel_size">サイズ</label>
@@ -94,14 +112,16 @@
 <hr>
 <div>
 <button type="button" id="btn_submit">ガチャを回す！</button>
+<button type="button" id="btn_submit_rta">抽選を開始する</button>
+<button type="button" id="btn_start_rta">RTAを開始する</button>
 <label id="caption"></label>
 <img id="loading" src="icon_loader_a_ww_02_s1.gif" width="22" height="22" border="0" alt="">
 </div>
-
 <div id="div_result">
 </div>
 <div id="div_link" style="font-size: large;">
 </div>
+<button type="button" id="btn_next_rta">解けました！</button>
 <div id="div_tweet">
 <a id="tweetbtn" href="https://twitter.com/intent/tweet?hashtags=ペンパガチャ&text=ペンシルパズルの問題がゲットできるガチャです。&tw_p=tweetbutton&url=https%3a%2f%2ft%2eco%2fGg5hFCjLwP" target="_blank" rel="nofollow">
 <img id="tweetpng" src="tweetbtn.png" width="80" height="20">
@@ -115,7 +135,10 @@
 <div id="div_history" style="font-size: small;">
 <label id="lbl_history">あなたのガチャ履歴(最大20回分)</label>
 <button type="button" id="btn_clear">履歴をクリア</button>
+<label id="lbl_rta_history">解答状況</label>
+<button type="button" id="btn_rta_clear">リセット</button>
 <div id="grid"></div>
+<div id="grid_rta"></div>
 </div>
 <hr>
 <div>

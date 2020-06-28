@@ -18,6 +18,27 @@ div{
   width: 120px;
 }
 
+#btn_submit{
+  height: 45px;
+  width: 120px;
+}
+
+#btn_submit_rta{
+  height: 45px;
+  width: 120px;
+}
+
+#btn_start_rta{
+  height: 45px;
+  width: 120px;
+}
+
+#btn_next_rta{
+  height: 45px;
+  width: 120px;
+}
+
+
 #loading {
     vertical-align: middle;
 }
@@ -35,6 +56,11 @@ div{
 }
 
 #grid {
+	margin-top: 2px;
+    max-width: 500px;
+}
+
+#grid_rta {
 	margin-top: 2px;
     max-width: 500px;
 }
