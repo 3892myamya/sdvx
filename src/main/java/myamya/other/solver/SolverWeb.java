@@ -13753,7 +13753,7 @@ public class SolverWeb extends HttpServlet {
 
 	private List<String> getURLparts(String urlStr) throws ProtocolException, IOException {
 		List<String> parts = Arrays.asList(urlStr.split("/"));
-		if (parts.get(2).equals("puzsq.sakura.ne.jp")) {
+		if (parts.get(2).equals("puzsq.jp")) {
 			// URLがパズルスクエアだったら、スクレイピングしてぱずぷれのURLを抽出
 			URL url = new URL(urlStr);
 			try (BufferedReader reader = getReader(url)) {

@@ -1,17 +1,275 @@
 package myamya.other.solver.nanro;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import myamya.other.solver.Common.CountOverException;
 import myamya.other.solver.Common.Difficulty;
 import myamya.other.solver.Common.Direction;
+import myamya.other.solver.Common.GeneratorResult;
 import myamya.other.solver.Common.Position;
+import myamya.other.solver.Generator;
+import myamya.other.solver.RoomMaker;
 import myamya.other.solver.Solver;
 
 public class NanroSolver implements Solver {
+	public static class NanroGenerator implements Generator {
+
+		static class NanroSolverForGenerator extends NanroSolver {
+			private final int limit;
+
+			public NanroSolverForGenerator(Field field, int limit) {
+				super(field);
+				this.limit = limit;
+			}
+
+			public int solve2() {
+				try {
+					while (!field.isSolved()) {
+						String befStr = field.getStateDump();
+						if (!field.solveAndCheck()) {
+							return -2;
+						}
+						if (field.getStateDump().equals(befStr)) {
+							if (!candSolve(field, 0)) {
+								return -2;
+							}
+							if (field.getStateDump().equals(befStr)) {
+								if (!candSolve(field, 1)) {
+									return -2;
+								}
+								if (field.getStateDump().equals(befStr)) {
+									if (!candSolve(field, 2)) {
+										return -2;
+									}
+									if (field.getStateDump().equals(befStr)) {
+										return -1;
+									}
+								}
+							}
+						}
+					}
+				} catch (CountOverException e) {
+					return -1;
+				}
+				return count;
+			}
+
+			@Override
+			protected boolean candSolve(Field field, int recursive) {
+				if (this.count >= limit) {
+					throw new CountOverException();
+				} else {
+					return super.candSolve(field, recursive);
+				}
+			}
+		}
+
+		private final int height;
+		private final int width;
+
+		public NanroGenerator(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		public static void main(String[] args) {
+			new NanroGenerator(10, 10).generate();
+		}
+
+		@Override
+		public GeneratorResult generate() {
+			NanroSolver.Field wkField = new NanroSolver.Field(height, width,
+					RoomMaker.roomMake(height, width, -1, (int) (Math.sqrt(height) * 2) + 2));
+			List<Position> indexList = new ArrayList<>();
+			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+					indexList.add(new Position(yIndex, xIndex));
+				}
+			}
+			int level = 0;
+			long start = System.nanoTime();
+			while (true) {
+				// 問題生成部
+				// 数字を配置
+				Collections.shuffle(indexList);
+				boolean isOk = false;
+				for (Position pos : indexList) {
+					if (wkField.numbersCand[pos.getyIndex()][pos.getxIndex()].size() != 1) {
+						isOk = false;
+						List<Integer> numIdxList = new ArrayList<>();
+						for (Set<Position> room : wkField.rooms) {
+							if (room.contains(pos)) {
+								for (int number = 0; number <= room.size(); number++) {
+									numIdxList.add(number);
+								}
+								break;
+							}
+						}
+						Collections.shuffle(numIdxList);
+						for (int masuNum : numIdxList) {
+							Field virtual = new Field(wkField);
+							virtual.numbersCand[pos.getyIndex()][pos.getxIndex()].clear();
+							virtual.numbersCand[pos.getyIndex()][pos.getxIndex()].add(masuNum);
+							if (virtual.solveAndCheck()) {
+								isOk = true;
+								wkField.numbersCand[pos.getyIndex()][pos
+										.getxIndex()] = virtual.numbersCand[pos.getyIndex()][pos.getxIndex()];
+								break;
+							}
+						}
+						if (!isOk) {
+							break;
+						}
+					}
+				}
+				if (!isOk) {
+					// 破綻したら0から作り直す。
+					wkField = new Field(height, width,
+							RoomMaker.roomMake(height, width, -1, (int) (Math.sqrt(height) * 2) + 2));
+					Collections.shuffle(indexList);
+					continue;
+				}
+
+				System.out.println(wkField);
+				// マスを戻す
+				List<Position> fixedMasuList = new ArrayList<>();
+				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+						if (wkField.numbersCand[yIndex][xIndex].get(0) != 0) {
+							fixedMasuList.add(new Position(yIndex, xIndex));
+							wkField.numbers[yIndex][xIndex] = wkField.numbersCand[yIndex][xIndex].get(0);
+						} else {
+							wkField.numbers[yIndex][xIndex] = null;
+							wkField.numbersCand[yIndex][xIndex] = new ArrayList<>();
+							for (Set<Position> room : wkField.rooms) {
+								if (room.contains(new Position(yIndex, xIndex))) {
+									for (int number = 0; number <= room.size(); number++) {
+										wkField.numbersCand[yIndex][xIndex].add(number);
+									}
+									break;
+								}
+							}
+						}
+					}
+				}
+				// 解けるかな？
+				level = new NanroSolverForGenerator(wkField, 100).solve2();
+				if (level < 0) {
+					// 解けなければやり直し
+					wkField = new NanroSolver.Field(height, width,
+							RoomMaker.roomMake(height, width, -1, (int) (Math.sqrt(height) * 2) + 2));
+				} else {
+					Collections.shuffle(fixedMasuList);
+					for (Position pos : fixedMasuList) {
+						NanroSolver.Field virtual = new NanroSolver.Field(wkField, true);
+						virtual.numbers[pos.getyIndex()][pos.getxIndex()] = null;
+						virtual.numbersCand[pos.getyIndex()][pos.getxIndex()] = new ArrayList<>();
+						for (Set<Position> room : virtual.rooms) {
+							if (room.contains(pos)) {
+								for (int number = 0; number <= room.size(); number++) {
+									virtual.numbersCand[pos.getyIndex()][pos.getxIndex()].add(number);
+								}
+								break;
+							}
+						}
+						int solveResult = new NanroSolverForGenerator(virtual, 10000).solve2();
+						if (solveResult >= 0) {
+							wkField.numbers[pos.getyIndex()][pos.getxIndex()] = null;
+							wkField.numbersCand[pos.getyIndex()][pos.getxIndex()] = new ArrayList<>();
+							for (Set<Position> room : wkField.rooms) {
+								if (room.contains(pos)) {
+									for (int number = 0; number <= room.size(); number++) {
+										wkField.numbersCand[pos.getyIndex()][pos.getxIndex()].add(number);
+									}
+									break;
+								}
+							}
+							level = solveResult;
+						}
+					}
+					break;
+				}
+			}
+			level = (int) Math.sqrt(level / 3) + 1;
+			String status = "Lv:" + level + "の問題を獲得！(部屋/×：" + wkField.getHintCount() + ")";
+			String url = wkField.getPuzPreURL();
+			String link = "<a href=\"" + url + "\" target=\"_blank\">puzz.linkで解く</a>";
+			StringBuilder sb = new StringBuilder();
+			int baseSize = 20;
+			int margin = 5;
+			sb.append(
+					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
+							+ "height=\"" + (wkField.getYLength() * baseSize + 2 * baseSize + margin)
+							+ "\" width=\""
+							+ (wkField.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+					Position pos = new Position(yIndex, xIndex);
+
+					// TODO 数字描画
+				}
+			}
+			// 横壁描画
+			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = -1; xIndex < wkField.getXLength(); xIndex++) {
+					boolean oneYokoWall = xIndex == -1 || xIndex == wkField.getXLength() - 1
+							|| wkField.getYokoWall()[yIndex][xIndex];
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + margin)
+							+ "\" x1=\""
+							+ (xIndex * baseSize + 2 * baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ (xIndex * baseSize + 2 * baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneYokoWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">"
+							+ "</line>");
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = -1; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+					boolean oneTateWall = yIndex == -1 || yIndex == wkField.getYLength() - 1
+							|| wkField.getTateWall()[yIndex][xIndex];
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x1=\""
+							+ (xIndex * baseSize + baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ (xIndex * baseSize + baseSize + baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneTateWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">"
+							+ "</line>");
+				}
+			}
+			sb.append("</svg>");
+			System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
+			System.out.println(level);
+			System.out.println(wkField.getHintCount());
+			System.out.println(wkField);
+			System.out.println(url);
+			return new GeneratorResult(status, sb.toString(), link, url, level, "");
+		}
+
+	}
 
 	public static class Field {
 		static final String ALPHABET_FROM_G = "ghijklmnopqrstuvwxyz";
@@ -31,6 +289,16 @@ public class NanroSolver implements Solver {
 
 		public List<Integer>[][] getNumbersCand() {
 			return numbersCand;
+		}
+
+		public String getHintCount() {
+			// TODO 自動生成されたメソッド・スタブ
+			return null;
+		}
+
+		public String getPuzPreURL() {
+			// TODO 自動生成されたメソッド・スタブ
+			return null;
 		}
 
 		public Integer[][] getNumbers() {
@@ -189,6 +457,78 @@ public class NanroSolver implements Solver {
 			numbersCand = new ArrayList[other.getYLength()][other.getXLength()];
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					numbersCand[yIndex][xIndex] = new ArrayList<>(other.numbersCand[yIndex][xIndex]);
+				}
+			}
+			yokoWall = other.yokoWall;
+			tateWall = other.tateWall;
+			rooms = other.rooms;
+		}
+
+		/**
+		 * プレーンなフィールド生成。ジェネレータ用
+		 */
+		@SuppressWarnings("unchecked")
+		public Field(int height, int width, List<Set<Position>> rooms) {
+			numbers = new Integer[height][width];
+			numbersCand = new ArrayList[height][width];
+			yokoWall = new boolean[height][width - 1];
+			tateWall = new boolean[height - 1][width];
+			this.rooms = rooms;
+			// 壁セット(問題を解くのに壁の情報も使ってるため)
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength() - 1; xIndex++) {
+					Position pos = new Position(yIndex, xIndex);
+					boolean isWall = true;
+					for (Set<Position> room : rooms) {
+						if (room.contains(pos)) {
+							Position rightPos = new Position(yIndex, xIndex + 1);
+							if (room.contains(rightPos)) {
+								isWall = false;
+								break;
+							}
+						}
+					}
+					yokoWall[yIndex][xIndex] = isWall;
+				}
+			}
+			for (int yIndex = 0; yIndex < getYLength() - 1; yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					Position pos = new Position(yIndex, xIndex);
+					boolean isWall = true;
+					for (Set<Position> room : rooms) {
+						if (room.contains(pos)) {
+							Position downPos = new Position(yIndex + 1, xIndex);
+							if (room.contains(downPos)) {
+								isWall = false;
+								break;
+							}
+						}
+					}
+					tateWall[yIndex][xIndex] = isWall;
+				}
+			}
+			// 部屋の大きさにより、初期候補数字を決定
+			for (Set<Position> room : rooms) {
+				for (Position pos : room) {
+					numbersCand[pos.getyIndex()][pos.getxIndex()] = new ArrayList<>();
+					for (int number = 0; number <= room.size(); number++) {
+						numbersCand[pos.getyIndex()][pos.getxIndex()].add(number);
+					}
+				}
+			}
+		}
+
+		/**
+		 * イミュータブル。ジェネれーたよう
+		 */
+		@SuppressWarnings("unchecked")
+		public Field(Field other, boolean flag) {
+			numbers = new Integer[other.getYLength()][other.getXLength()];
+			numbersCand = new ArrayList[other.getYLength()][other.getXLength()];
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					numbersCand[yIndex][xIndex] = other.numbersCand[yIndex][xIndex];
 					numbersCand[yIndex][xIndex] = new ArrayList<>(other.numbersCand[yIndex][xIndex]);
 				}
 			}
@@ -587,11 +927,15 @@ public class NanroSolver implements Solver {
 
 	}
 
-	private final Field field;
-	private int count = 0;
+	protected final Field field;
+	protected int count = 0;
 
 	public NanroSolver(int height, int width, String param) {
 		field = new Field(height, width, param);
+	}
+
+	public NanroSolver(Field field) {
+		this.field = new Field(field);
 	}
 
 	public Field getField() {
@@ -651,7 +995,7 @@ public class NanroSolver implements Solver {
 	 * 仮置きして調べる
 	 * @param posSet
 	 */
-	private boolean candSolve(Field field, int recursive) {
+	protected boolean candSolve(Field field, int recursive) {
 		while (true) {
 			String befStr = field.getStateDump();
 			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
