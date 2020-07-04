@@ -19,6 +19,9 @@ import myamya.other.solver.Solver;
 public class NanroSolver implements Solver {
 	public static class NanroGenerator implements Generator {
 
+		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
+		private static final String FULL_NUMS = "０１２３４５６７８９";
+
 		static class NanroSolverForGenerator extends NanroSolver {
 			private final int limit;
 
@@ -99,43 +102,34 @@ public class NanroSolver implements Solver {
 				Collections.shuffle(indexList);
 				boolean isOk = false;
 				for (Position pos : indexList) {
-					if (wkField.numbersCand[pos.getyIndex()][pos.getxIndex()].size() != 1) {
-						isOk = false;
-						List<Integer> numIdxList = new ArrayList<>();
-						for (Set<Position> room : wkField.rooms) {
-							if (room.contains(pos)) {
-								for (int number = 0; number <= room.size(); number++) {
-									numIdxList.add(number);
-								}
-								break;
-							}
-						}
-						Collections.shuffle(numIdxList);
-						for (int masuNum : numIdxList) {
-							Field virtual = new Field(wkField);
-							virtual.numbersCand[pos.getyIndex()][pos.getxIndex()].clear();
-							virtual.numbersCand[pos.getyIndex()][pos.getxIndex()].add(masuNum);
-							if (virtual.solveAndCheck()) {
-								isOk = true;
-								wkField.numbersCand[pos.getyIndex()][pos
-										.getxIndex()] = virtual.numbersCand[pos.getyIndex()][pos.getxIndex()];
-								break;
-							}
-						}
-						if (!isOk) {
+					isOk = false;
+					List<Integer> numIdxList = new ArrayList<>();
+					for (int number : wkField.numbersCand[pos.getyIndex()][pos
+							.getxIndex()]) {
+						numIdxList.add(number);
+					}
+					Collections.shuffle(numIdxList);
+					for (int masuNum : numIdxList) {
+						Field virtual = new Field(wkField);
+						virtual.numbersCand[pos.getyIndex()][pos.getxIndex()].clear();
+						virtual.numbersCand[pos.getyIndex()][pos.getxIndex()].add(masuNum);
+						if (-2 != new NanroSolverForGenerator(virtual, 5).solve2()) {
+							isOk = true;
+							wkField.numbersCand[pos.getyIndex()][pos
+									.getxIndex()] = virtual.numbersCand[pos.getyIndex()][pos.getxIndex()];
 							break;
 						}
+					}
+					if (!isOk) {
+						break;
 					}
 				}
 				if (!isOk) {
 					// 破綻したら0から作り直す。
 					wkField = new Field(height, width,
 							RoomMaker.roomMake(height, width, -1, (int) (Math.sqrt(height) * 2) + 2));
-					Collections.shuffle(indexList);
 					continue;
 				}
-
-				System.out.println(wkField);
 				// マスを戻す
 				List<Position> fixedMasuList = new ArrayList<>();
 				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
@@ -177,7 +171,7 @@ public class NanroSolver implements Solver {
 								break;
 							}
 						}
-						int solveResult = new NanroSolverForGenerator(virtual, 10000).solve2();
+						int solveResult = new NanroSolverForGenerator(virtual, 12000).solve2();
 						if (solveResult >= 0) {
 							wkField.numbers[pos.getyIndex()][pos.getxIndex()] = null;
 							wkField.numbersCand[pos.getyIndex()][pos.getxIndex()] = new ArrayList<>();
@@ -196,22 +190,37 @@ public class NanroSolver implements Solver {
 				}
 			}
 			level = (int) Math.sqrt(level / 3) + 1;
-			String status = "Lv:" + level + "の問題を獲得！(部屋/×：" + wkField.getHintCount() + ")";
+			String status = "Lv:" + level + "の問題を獲得！(部屋/数字：" + wkField.getHintCount() + ")";
 			String url = wkField.getPuzPreURL();
 			String link = "<a href=\"" + url + "\" target=\"_blank\">puzz.linkで解く</a>";
 			StringBuilder sb = new StringBuilder();
 			int baseSize = 20;
 			int margin = 5;
-			sb.append(
-					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
-							+ "height=\"" + (wkField.getYLength() * baseSize + 2 * baseSize + margin)
-							+ "\" width=\""
-							+ (wkField.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			sb.append("<svg xmlns=\"http://www.w3.org/2000/svg\" " + "height=\""
+					+ (wkField.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
+					+ (wkField.getXLength() * baseSize + 2 * baseSize) + "\" >");
 			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
-					Position pos = new Position(yIndex, xIndex);
-
-					// TODO 数字描画
+					if (wkField.getNumbers()[yIndex][xIndex] != null) {
+						String numberStr = String.valueOf(wkField.getNumbersCand()[yIndex][xIndex].get(0));
+						String masuStr;
+						int idx = HALF_NUMS.indexOf(numberStr);
+						if (idx >= 0) {
+							masuStr = FULL_NUMS.substring(idx / 2, idx / 2 + 1);
+						} else {
+							masuStr = numberStr;
+						}
+						sb.append("<text y=\"" + (yIndex * baseSize + baseSize + margin - 4)
+								+ "\" x=\""
+								+ (xIndex * baseSize + baseSize + 2)
+								+ "\" font-size=\""
+								+ (baseSize - 5)
+								+ "\" textLength=\""
+								+ (baseSize - 5)
+								+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+								+ masuStr
+								+ "</text>");
+					}
 				}
 			}
 			// 横壁描画
@@ -265,7 +274,6 @@ public class NanroSolver implements Solver {
 			System.out.println(level);
 			System.out.println(wkField.getHintCount());
 			System.out.println(wkField);
-			System.out.println(url);
 			return new GeneratorResult(status, sb.toString(), link, url, level, "");
 		}
 
@@ -273,7 +281,7 @@ public class NanroSolver implements Solver {
 
 	public static class Field {
 		static final String ALPHABET_FROM_G = "ghijklmnopqrstuvwxyz";
-
+		static final String ALPHABET_AND_NUMBER = "0123456789abcdefghijklmnopqrstuvwxyz";
 		// 固定数字(表示用)
 		private final Integer[][] numbers;
 		// 数字の候補情報
@@ -292,13 +300,152 @@ public class NanroSolver implements Solver {
 		}
 
 		public String getHintCount() {
-			// TODO 自動生成されたメソッド・スタブ
-			return null;
+			int numCnt = 0;
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					if (numbers[yIndex][xIndex] != null) {
+						numCnt++;
+					}
+				}
+			}
+			return rooms.size() + "/" + numCnt;
 		}
 
 		public String getPuzPreURL() {
-			// TODO 自動生成されたメソッド・スタブ
-			return null;
+			StringBuilder sb = new StringBuilder();
+			sb.append("http://pzv.jp/p.html?nanro/" + getXLength() + "/" + getYLength() + "/");
+			for (int i = 0; i < getYLength() * (getXLength() - 1); i++) {
+				int yIndex1 = i / (getXLength() - 1);
+				int xIndex1 = i % (getXLength() - 1);
+				i++;
+				int yIndex2 = -1;
+				int xIndex2 = -1;
+				if (i < getYLength() * (getXLength() - 1)) {
+					yIndex2 = i / (getXLength() - 1);
+					xIndex2 = i % (getXLength() - 1);
+				}
+				i++;
+				int yIndex3 = -1;
+				int xIndex3 = -1;
+				if (i < getYLength() * (getXLength() - 1)) {
+					yIndex3 = i / (getXLength() - 1);
+					xIndex3 = i % (getXLength() - 1);
+				}
+				i++;
+				int yIndex4 = -1;
+				int xIndex4 = -1;
+				if (i < getYLength() * (getXLength() - 1)) {
+					yIndex4 = i / (getXLength() - 1);
+					xIndex4 = i % (getXLength() - 1);
+				}
+				i++;
+				int yIndex5 = -1;
+				int xIndex5 = -1;
+				if (i < getYLength() * (getXLength() - 1)) {
+					yIndex5 = i / (getXLength() - 1);
+					xIndex5 = i % (getXLength() - 1);
+				}
+				int num = 0;
+				if (yIndex1 != -1 && xIndex1 != -1 && yokoWall[yIndex1][xIndex1]) {
+					num = num + 16;
+				}
+				if (yIndex2 != -1 && xIndex2 != -1 && yokoWall[yIndex2][xIndex2]) {
+					num = num + 8;
+				}
+				if (yIndex3 != -1 && xIndex3 != -1 && yokoWall[yIndex3][xIndex3]) {
+					num = num + 4;
+				}
+				if (yIndex4 != -1 && xIndex4 != -1 && yokoWall[yIndex4][xIndex4]) {
+					num = num + 2;
+				}
+				if (yIndex5 != -1 && xIndex5 != -1 && yokoWall[yIndex5][xIndex5]) {
+					num = num + 1;
+				}
+				sb.append(ALPHABET_AND_NUMBER.substring(num, num + 1));
+			}
+			for (int i = 0; i < (getYLength() - 1) * getXLength(); i++) {
+				int yIndex1 = i / getXLength();
+				int xIndex1 = i % getXLength();
+				i++;
+				int yIndex2 = -1;
+				int xIndex2 = -1;
+				if (i < (getYLength() - 1) * getXLength()) {
+					yIndex2 = i / getXLength();
+					xIndex2 = i % getXLength();
+				}
+				i++;
+				int yIndex3 = -1;
+				int xIndex3 = -1;
+				if (i < (getYLength() - 1) * getXLength()) {
+					yIndex3 = i / getXLength();
+					xIndex3 = i % getXLength();
+				}
+				i++;
+				int yIndex4 = -1;
+				int xIndex4 = -1;
+				if (i < (getYLength() - 1) * getXLength()) {
+					yIndex4 = i / getXLength();
+					xIndex4 = i % getXLength();
+				}
+				i++;
+				int yIndex5 = -1;
+				int xIndex5 = -1;
+				if (i < (getYLength() - 1) * getXLength()) {
+					yIndex5 = i / getXLength();
+					xIndex5 = i % getXLength();
+				}
+				int num = 0;
+				if (yIndex1 != -1 && xIndex1 != -1 && tateWall[yIndex1][xIndex1]) {
+					num = num + 16;
+				}
+				if (yIndex2 != -1 && xIndex2 != -1 && tateWall[yIndex2][xIndex2]) {
+					num = num + 8;
+				}
+				if (yIndex3 != -1 && xIndex3 != -1 && tateWall[yIndex3][xIndex3]) {
+					num = num + 4;
+				}
+				if (yIndex4 != -1 && xIndex4 != -1 && tateWall[yIndex4][xIndex4]) {
+					num = num + 2;
+				}
+				if (yIndex5 != -1 && xIndex5 != -1 && tateWall[yIndex5][xIndex5]) {
+					num = num + 1;
+				}
+				sb.append(ALPHABET_AND_NUMBER.substring(num, num + 1));
+			}
+			int interval = 0;
+			for (int i = 0; i < getYLength() * getXLength(); i++) {
+				int yIndex = i / getXLength();
+				int xIndex = i % getXLength();
+				if (numbers[yIndex][xIndex] == null) {
+					interval++;
+					if (interval == 20) {
+						sb.append("z");
+						interval = 0;
+					}
+				} else {
+					Integer num = numbers[yIndex][xIndex];
+					String numStr = Integer.toHexString(num);
+					if (numStr.length() == 2) {
+						numStr = "-" + numStr;
+					} else if (numStr.length() == 3) {
+						numStr = "+" + numStr;
+					}
+					if (interval == 0) {
+						sb.append(numStr);
+					} else {
+						sb.append(ALPHABET_FROM_G.substring(interval - 1, interval));
+						sb.append(numStr);
+						interval = 0;
+					}
+				}
+			}
+			if (interval != 0) {
+				sb.append(ALPHABET_FROM_G.substring(interval - 1, interval));
+			}
+			if (sb.charAt(sb.length() - 1) == '.') {
+				sb.append("/");
+			}
+			return sb.toString();
 		}
 
 		public Integer[][] getNumbers() {
@@ -987,8 +1134,9 @@ public class NanroSolver implements Solver {
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
 		System.out.println("難易度:" + (count));
 		System.out.println(field);
+		int level = (int) Math.sqrt(count / 3) + 1;
 		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count).toString();
+				+ Difficulty.getByCount(count).toString() + "(Lv:" + level + ")";
 	}
 
 	/**

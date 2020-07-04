@@ -204,12 +204,28 @@ var ruleMap = {
 		url : "https://www.nikoli.co.jp/ja/puzzles/herugolf/",
 		source : "ニコリ公式"
 	},
+	nanro : {
+		name : "ナンロー",
+		url : "",
+		source : ""
+	},
+	hakoiri : {
+		name : "はこいり○△□",
+		url : "http://indi.s58.xrea.com/hakoiri/",
+		source : "連続発破保管庫さん"
+	},
+	ripple : {
+		name : "波及効果",
+		url : "https://www.nikoli.co.jp/ja/puzzles/ripple_effect/",
+		source : "ニコリ公式"
+	},
 }
 var regMap = {
 		yajilin:['yajilin','yajilin','yajilin','yajilin','yajilin','yajilin','yajilin','yajilin','yajilin','yajilin'],
 		herugolf:['herugolf','herugolf','herugolf','herugolf','herugolf','herugolf','herugolf','herugolf','herugolf','herugolf'],
 		nurimisaki:['nurimisaki','nurimisaki','nurimisaki','nurimisaki','nurimisaki','nurimisaki','nurimisaki','nurimisaki','nurimisaki','nurimisaki'],
 		allloop:['geradeweg','simpleloop','slither','barns','pipelink','bag','masyu','midloop','yajilin','reflect'],
+		shakashaka:['shakashaka','shakashaka','shakashaka','shakashaka','shakashaka','shakashaka','shakashaka','shakashaka','shakashaka','shakashaka'],
 }
 
 var option = {
@@ -350,7 +366,6 @@ $(function() {
 	var resultList = [];
 	var linkList = [];
 	var levelList = [];
-	var typeList = [];
 	var rtaGridInfo = [];
 	var nowIndex = 0;
 	$('#btn_submit_rta').on('click', function(event) {
@@ -362,8 +377,7 @@ $(function() {
 		linkList.splice(0)
 		resultList.splice(0)
 		levelList.splice(0)
-		typeList.splice(0)
-		rtaGridInfo.splice(0)
+		initRtaGridInfo();
 		showRtaGrid();
 		$('#tweetbtn').hide();
 		$('#edt_if').hide();
@@ -419,7 +433,6 @@ $(function() {
 						resultList.push(resultObj.result);
 						linkList.push(resultObj.link);
 						levelList.push(resultObj.level);
-						typeList.push(ruleMap[param.type].name);
 						startSubmit(++cnt);
 					}
 				}).fail(function() {
@@ -438,18 +451,13 @@ $(function() {
 		nowIndex = 0;
 		$('#div_result').html(resultList[nowIndex]);
 		$('#div_link').html(linkList[nowIndex]);
-		$('#caption').text((nowIndex+1) + "問目：" + typeList[nowIndex] +  "：Lv" + levelList[nowIndex]);
+		$('#caption').text((nowIndex+1) + "問目：" + rtaGridInfo[nowIndex].type +  "：Lv" + levelList[nowIndex]);
 		$('#btn_start_rta').hide();
 		$('#btn_next_rta').show();
 		$('#btn_next_rta').prop("disabled", true);
 		$('#btn_rta_clear').show();
-		rtaGridInfo.push({
-			no : nowIndex + 1,
-			type : typeList[nowIndex],
-			level : levelList[nowIndex],
-			link : "",
-			time : "",
-		});
+		$('#lbl_rta_status').text("");
+		rtaGridInfo[nowIndex].level = levelList[nowIndex];
 		var now = new Date().getTime();
 		firstTime = now;
 		befTime = now;
@@ -459,11 +467,12 @@ $(function() {
 		$('#btn_next_rta').prop("disabled", false);
 	});
 	$('#btn_next_rta').on('click', function(event) {
+		var now = new Date().getTime();
+		rtaGridInfo[nowIndex].link = linkList[nowIndex].replace('puzz\.linkで', '').replace('ぱずぷれv3で','');
+		rtaGridInfo[nowIndex].time = ((now - befTime) / 1000).toFixed(3);
+		rtaGridInfo[nowIndex].totaltime = ((now - firstTime) / 1000).toFixed(3);
 		if (nowIndex == 9) {
-			var now = new Date().getTime();
-			rtaGridInfo[nowIndex].link = linkList[nowIndex].replace('puzz\.linkで', '').replace('ぱずぷれv3で','');
-			rtaGridInfo[nowIndex].time = ((now - befTime) / 1000).toFixed(3);
-			rtaGridInfo[nowIndex].totaltime = ((now - firstTime) / 1000).toFixed(3);
+			$('#lbl_rta_status').text("完走済");
 			showRtaGrid();
 			var totalTime = rtaGridInfo[nowIndex].totaltime;
 			var minute = Math.floor(totalTime / 60);
@@ -489,22 +498,13 @@ $(function() {
 			$('#div_link').html('');
 			$('#btn_next_rta').hide();
 		} else {
-			var now = new Date().getTime();
-			rtaGridInfo[nowIndex].link = linkList[nowIndex].replace('puzz\.linkで', '').replace('ぱずぷれv3で','');
-			rtaGridInfo[nowIndex].time = ((now - befTime) / 1000).toFixed(3);
-			rtaGridInfo[nowIndex].totaltime = ((now - firstTime) / 1000).toFixed(3);
 			nowIndex++;
+			$('#lbl_rta_status').text(nowIndex + "問目まで解答完了");
 			$('#div_result').html(resultList[nowIndex]);
 			$('#div_link').html(linkList[nowIndex]);
-			$('#caption').text((nowIndex+1) + "問目：" + typeList[nowIndex] +  "：Lv" + levelList[nowIndex]);
+			$('#caption').text((nowIndex+1) + "問目：" + rtaGridInfo[nowIndex].type +  "：Lv" + levelList[nowIndex]);
 			$('#btn_next_rta').prop("disabled", true);
-			rtaGridInfo.push({
-				no : nowIndex + 1,
-				type : typeList[nowIndex],
-				level : levelList[nowIndex],
-				link : "",
-				time : "",
-			});
+			rtaGridInfo[nowIndex].level = levelList[nowIndex];
 			befTime = now;
 			showRtaGrid();
 		}
@@ -539,6 +539,7 @@ $(function() {
 			$('#lbl_history').show();
 			$('#btn_clear').show();
 			$('#lbl_rta_history').hide();
+			$('#lbl_rta_status').hide();
 			$('#btn_rta_clear').hide();
 			$('#grid').show();
 			$('#grid_rta').hide();
@@ -742,6 +743,7 @@ $(function() {
 			$('#lbl_history').hide();
 			$('#btn_clear').hide();
 			$('#lbl_rta_history').show();
+			$('#lbl_rta_status').show();
 			$('#btn_rta_clear').hide();
 			$('#grid').hide();
 			$('#grid_rta').show();
@@ -751,7 +753,7 @@ $(function() {
 			$('#div_result').text('');
 			$('#div_link').text('');
 			$('#loading').hide();
-			rtaGridInfo.splice(0)
+			initRtaGridInfo();
 			showRtaGrid();
 			$('#div_rule').hide();
 		}
@@ -808,6 +810,20 @@ $(function() {
 			}, ]
 		});
 	}
+	var initRtaGridInfo = function() {
+		rtaGridInfo.splice(0)
+		$('#lbl_rta_status').text("まだ開始していません");
+		for(var i = 0; i < 10; i++) {
+			rtaGridInfo.push({
+				no : i + 1,
+				type : ruleMap[regMap[$('#sel_reg').val()][i]].name ,
+				level : "",
+				link : "",
+				time : "",
+			});
+		}
+	}
+
 	var showRtaGrid = function() {
 		$('#grid_rta').jsGrid({
 			width : '100%',

@@ -11,13 +11,13 @@
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ペンシルパズルガチャ(ペンパガチャ)</title>
-    <meta name="description" content="ペンシルパズルガチャ(ペンパガチャ)は自動生成されたペンシルパズルの問題がゲットできるガチャです。引いた問題はぱずぷれv3さんで解いたりTwitterでシェア可能です。あなたは高レベルのレア問をゲットできるか？"/>
+    <meta name="description" content="ペンシルパズルガチャ(ペンパガチャ)は自動生成されたペンシルパズルの問題がゲットできるガチャです。引いた問題はその場で解いたりTwitterでシェア可能です。RTAモードで記録にも挑戦しましょう！"/>
     <link rel="stylesheet" href="css/jsgrid.min.css"/>
     <link rel="stylesheet" href="css/jsgrid-theme.min.css"/>
-    <link rel="stylesheet" href="css/sudoku.css?ver=20200626"/>
+    <link rel="stylesheet" href="css/sudoku.css?ver=20200704"/>
     <script src="js/jquery-3.3.1.min.js"></script>
     <script src="js/jsgrid.min.js"></script>
-    <script src="js/sudoku.js?ver=20200626"></script>
+    <script src="js/sudoku.js?ver=20200704"></script>
 </head>
 <body>
 <div id="div_title">ペンシルパズルガチャ<span style="font-size: xx-small;">(旧：数独ガチャ)</span></div>
@@ -55,11 +55,14 @@
 	<option value="tateyoko">タテボーヨコボーガチャ</option>
 	<option value="tentaisho">天体ショーガチャ</option>
 	<option value="tents">Tentsガチャ</option>
+	<option value="nanro">ナンローガチャ</option>
 	<option value="nurikabe">ぬりかべガチャ</option>
 	<option value="nurimisaki">ぬりみさきガチャ</option>
 	<option value="norinori">のりのりガチャ</option>
 	<option value="barns">バーンズガチャ</option>
 	<option value="pipelink">パイプリンクガチャ</option>
+	<option value="ripple">波及効果ガチャ</option>
+	<option value="hakoiri">はこいり○△□ガチャ</option>
 	<option value="bag">バッグガチャ</option>
 	<option value="balance">バランスループガチャ</option>
 	<option value="akari">美術館ガチャ</option>
@@ -79,6 +82,7 @@
 <label id="lbl_reg" for="sel_reg">コース</label>
 <select id="sel_reg" name="sel_reg">
 	<option value="allloop">10x10ループパズル10連ガチャ</option>
+	<option value="shakashaka">シャカシャカ10連ガチャ</option>
 	<option value="nurimisaki">ぬりみさき10連ガチャ</option>
 	<option value="herugolf">ヘルゴルフ10連ガチャ</option>
 	<option value="yajilin">ヤジリン10連ガチャ</option>
@@ -135,7 +139,8 @@
 <div id="div_history" style="font-size: small;">
 <label id="lbl_history">あなたのガチャ履歴(最大20回分)</label>
 <button type="button" id="btn_clear">履歴をクリア</button>
-<label id="lbl_rta_history">解答状況</label>
+<label id="lbl_rta_history">解答状況：</label>
+<label id="lbl_rta_status">まだ開始していません</label>
 <button type="button" id="btn_rta_clear">リセット</button>
 <div id="grid"></div>
 <div id="grid_rta"></div>

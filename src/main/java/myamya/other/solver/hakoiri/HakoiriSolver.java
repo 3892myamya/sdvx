@@ -99,45 +99,33 @@ public class HakoiriSolver implements Solver {
 				Collections.shuffle(indexList);
 				boolean isOk = false;
 				for (Position pos : indexList) {
-					System.out.println(wkField);
-					if (wkField.numbersCand[pos.getyIndex()][pos.getxIndex()].size() != 1) {
-						isOk = false;
-						List<Integer> numIdxList = new ArrayList<>();
-						for (int number = 0; number <= 3; number++) {
-							numIdxList.add(number);
-						}
-						for (Set<Position> room : wkField.rooms) {
-							if (room.contains(pos) && room.size() == 3) {
-								numIdxList.remove(new Integer(0));
-								break;
-							}
-						}
-						Collections.shuffle(numIdxList);
-						for (int masuNum : numIdxList) {
-							Field virtual = new Field(wkField);
-							virtual.numbersCand[pos.getyIndex()][pos.getxIndex()].clear();
-							virtual.numbersCand[pos.getyIndex()][pos.getxIndex()].add(masuNum);
-							if (virtual.solveAndCheck()) {
-								isOk = true;
-								wkField.numbersCand[pos.getyIndex()][pos
-										.getxIndex()] = virtual.numbersCand[pos.getyIndex()][pos.getxIndex()];
-								break;
-							}
-						}
-						if (!isOk) {
+					isOk = false;
+					List<Integer> numIdxList = new ArrayList<>();
+					for (int number : wkField.numbersCand[pos.getyIndex()][pos.getxIndex()]) {
+						numIdxList.add(number);
+					}
+					Collections.shuffle(numIdxList);
+					for (int masuNum : numIdxList) {
+						Field virtual = new Field(wkField);
+						virtual.numbersCand[pos.getyIndex()][pos.getxIndex()].clear();
+						virtual.numbersCand[pos.getyIndex()][pos.getxIndex()].add(masuNum);
+						if (-2 != new HakoiriSolverForGenerator(virtual, 5).solve2()) {
+							isOk = true;
+							wkField.numbersCand[pos.getyIndex()][pos
+									.getxIndex()] = virtual.numbersCand[pos.getyIndex()][pos.getxIndex()];
 							break;
 						}
+					}
+					if (!isOk) {
+						break;
 					}
 				}
 				if (!isOk) {
 					// 破綻したら0から作り直す。
 					wkField = new Field(height, width,
 							RoomMaker.roomMake(height, width, 3, (int) (Math.sqrt(height) * 2) + 2));
-					Collections.shuffle(indexList);
 					continue;
 				}
-
-				System.out.println(wkField);
 				// マスを戻す
 				List<Position> fixedMasuList = new ArrayList<>();
 				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
@@ -168,6 +156,7 @@ public class HakoiriSolver implements Solver {
 							RoomMaker.roomMake(height, width, 3, (int) (Math.sqrt(height) * 2) + 2));
 				} else {
 					Collections.shuffle(fixedMasuList);
+					boolean isDeleted = false;
 					for (Position pos : fixedMasuList) {
 						HakoiriSolver.Field virtual = new HakoiriSolver.Field(wkField, true);
 						virtual.numbers[pos.getyIndex()][pos.getxIndex()] = null;
@@ -175,33 +164,62 @@ public class HakoiriSolver implements Solver {
 						for (int number = 0; number <= 3; number++) {
 							virtual.numbersCand[pos.getyIndex()][pos.getxIndex()].add(number);
 						}
-						for (Set<Position> room : wkField.rooms) {
-							if (room.contains(pos) && room.size() == 3) {
-								virtual.numbersCand[pos.getyIndex()][pos.getxIndex()].remove(new Integer(0));
-								break;
-							}
-						}
-						int solveResult = new HakoiriSolverForGenerator(virtual, 10000).solve2();
+						int solveResult = new HakoiriSolverForGenerator(virtual, 4000).solve2();
 						if (solveResult >= 0) {
+							isDeleted = true;
 							wkField.numbers[pos.getyIndex()][pos.getxIndex()] = null;
 							wkField.numbersCand[pos.getyIndex()][pos.getxIndex()] = new ArrayList<>();
 							for (int number = 0; number <= 3; number++) {
 								wkField.numbersCand[pos.getyIndex()][pos.getxIndex()].add(number);
 							}
-							for (Set<Position> room : wkField.rooms) {
-								if (room.contains(pos) && room.size() == 3) {
-									wkField.numbersCand[pos.getyIndex()][pos.getxIndex()].remove(new Integer(0));
-									break;
-								}
-							}
 							level = solveResult;
 						}
 					}
-					break;
+					if (!isDeleted) {
+						// 1マスも消せないはアウト
+						wkField = new HakoiriSolver.Field(height, width,
+								RoomMaker.roomMake(height, width, 3, (int) (Math.sqrt(height) * 2) + 2));
+					} else {
+						break;
+					}
+				}
+			}
+			// 横壁設定
+			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < wkField.getXLength() - 1; xIndex++) {
+					boolean isWall = true;
+					Position pos = new Position(yIndex, xIndex);
+					for (Set<Position> room : wkField.rooms) {
+						if (room.contains(pos)) {
+							Position rightPos = new Position(yIndex, xIndex + 1);
+							if (room.contains(rightPos)) {
+								isWall = false;
+								break;
+							}
+						}
+					}
+					wkField.yokoWall[yIndex][xIndex] = isWall;
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = 0; yIndex < wkField.getYLength() - 1; yIndex++) {
+				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+					boolean isWall = true;
+					Position pos = new Position(yIndex, xIndex);
+					for (Set<Position> room : wkField.rooms) {
+						if (room.contains(pos)) {
+							Position downPos = new Position(yIndex + 1, xIndex);
+							if (room.contains(downPos)) {
+								isWall = false;
+								break;
+							}
+						}
+					}
+					wkField.tateWall[yIndex][xIndex] = isWall;
 				}
 			}
 			level = (int) Math.sqrt(level * 5 / 3) + 1;
-			String status = "Lv:" + level + "の問題を獲得！(部屋/×：" + wkField.getHintCount() + ")";
+			String status = "Lv:" + level + "の問題を獲得！(部屋/記号：" + wkField.getHintCount() + ")";
 			String url = wkField.getPuzPreURL();
 			String link = "<a href=\"" + url + "\" target=\"_blank\">puzz.linkで解く</a>";
 			StringBuilder sb = new StringBuilder();
@@ -214,9 +232,44 @@ public class HakoiriSolver implements Solver {
 							+ (wkField.getXLength() * baseSize + 2 * baseSize) + "\" >");
 			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
-					Position pos = new Position(yIndex, xIndex);
-
-					// TODO 数字描画
+					if (wkField.getNumbers()[yIndex][xIndex] != null) {
+						int number = wkField.getNumbers()[yIndex][xIndex];
+						if (number == 1) {
+							sb.append("<circle cy=\"" + (yIndex * baseSize + (baseSize / 2) + margin)
+									+ "\" cx=\""
+									+ (xIndex * baseSize + baseSize + (baseSize / 2))
+									+ "\" r=\""
+									+ (baseSize / 2 - 3)
+									+ "\" fill=\"white\", stroke=\"black\">"
+									+ "</circle>");
+						} else if (number == 2) {
+							sb.append("<path d=\"M "
+									+ (xIndex * baseSize + baseSize + baseSize / 2)
+									+ " "
+									+ (yIndex * baseSize + 4 + margin)
+									+ " L"
+									+ (xIndex * baseSize + baseSize + 3)
+									+ " "
+									+ (yIndex * baseSize + baseSize - 3 + margin)
+									+ " L"
+									+ (xIndex * baseSize + baseSize + baseSize - 3)
+									+ " "
+									+ (yIndex * baseSize + baseSize - 3 + margin)
+									+ " Z\" "
+									+ "\" fill=\"white\", stroke=\"black\">"
+									+ "</path>");
+						} else if (number == 3) {
+							sb.append("<rect y=\"" + (yIndex * baseSize + (baseSize / 2) - 6 + margin)
+									+ "\" x=\""
+									+ (xIndex * baseSize + baseSize + (baseSize / 2) - 6)
+									+ "\" width=\""
+									+ (baseSize - 7)
+									+ "\" height=\""
+									+ (baseSize - 7)
+									+ "\" fill=\"white\" stroke-width=\"1\" stroke=\"black\">"
+									+ "</rect>");
+						}
+					}
 				}
 			}
 			// 横壁描画
@@ -270,7 +323,6 @@ public class HakoiriSolver implements Solver {
 			System.out.println(level);
 			System.out.println(wkField.getHintCount());
 			System.out.println(wkField);
-			System.out.println(url);
 			return new GeneratorResult(status, sb.toString(), link, url, level, "");
 		}
 
@@ -278,6 +330,7 @@ public class HakoiriSolver implements Solver {
 
 	public static class Field {
 		static final String ALPHABET = "abcdefghijklmnopqrstuvwxyz";
+		static final String ALPHABET_AND_NUMBER = "0123456789abcdefghijklmnopqrstuvwxyz";
 
 		// 表出数字。1は○、2は△、3は□
 		private final Integer[][] numbers;
@@ -297,13 +350,152 @@ public class HakoiriSolver implements Solver {
 		}
 
 		public String getPuzPreURL() {
-			// TODO 自動生成されたメソッド・スタブ
-			return null;
+			StringBuilder sb = new StringBuilder();
+			sb.append("http://pzv.jp/p.html?hakoiri/" + getXLength() + "/" + getYLength() + "/");
+			for (int i = 0; i < getYLength() * (getXLength() - 1); i++) {
+				int yIndex1 = i / (getXLength() - 1);
+				int xIndex1 = i % (getXLength() - 1);
+				i++;
+				int yIndex2 = -1;
+				int xIndex2 = -1;
+				if (i < getYLength() * (getXLength() - 1)) {
+					yIndex2 = i / (getXLength() - 1);
+					xIndex2 = i % (getXLength() - 1);
+				}
+				i++;
+				int yIndex3 = -1;
+				int xIndex3 = -1;
+				if (i < getYLength() * (getXLength() - 1)) {
+					yIndex3 = i / (getXLength() - 1);
+					xIndex3 = i % (getXLength() - 1);
+				}
+				i++;
+				int yIndex4 = -1;
+				int xIndex4 = -1;
+				if (i < getYLength() * (getXLength() - 1)) {
+					yIndex4 = i / (getXLength() - 1);
+					xIndex4 = i % (getXLength() - 1);
+				}
+				i++;
+				int yIndex5 = -1;
+				int xIndex5 = -1;
+				if (i < getYLength() * (getXLength() - 1)) {
+					yIndex5 = i / (getXLength() - 1);
+					xIndex5 = i % (getXLength() - 1);
+				}
+				int num = 0;
+				if (yIndex1 != -1 && xIndex1 != -1 && yokoWall[yIndex1][xIndex1]) {
+					num = num + 16;
+				}
+				if (yIndex2 != -1 && xIndex2 != -1 && yokoWall[yIndex2][xIndex2]) {
+					num = num + 8;
+				}
+				if (yIndex3 != -1 && xIndex3 != -1 && yokoWall[yIndex3][xIndex3]) {
+					num = num + 4;
+				}
+				if (yIndex4 != -1 && xIndex4 != -1 && yokoWall[yIndex4][xIndex4]) {
+					num = num + 2;
+				}
+				if (yIndex5 != -1 && xIndex5 != -1 && yokoWall[yIndex5][xIndex5]) {
+					num = num + 1;
+				}
+				sb.append(ALPHABET_AND_NUMBER.substring(num, num + 1));
+			}
+			for (int i = 0; i < (getYLength() - 1) * getXLength(); i++) {
+				int yIndex1 = i / getXLength();
+				int xIndex1 = i % getXLength();
+				i++;
+				int yIndex2 = -1;
+				int xIndex2 = -1;
+				if (i < (getYLength() - 1) * getXLength()) {
+					yIndex2 = i / getXLength();
+					xIndex2 = i % getXLength();
+				}
+				i++;
+				int yIndex3 = -1;
+				int xIndex3 = -1;
+				if (i < (getYLength() - 1) * getXLength()) {
+					yIndex3 = i / getXLength();
+					xIndex3 = i % getXLength();
+				}
+				i++;
+				int yIndex4 = -1;
+				int xIndex4 = -1;
+				if (i < (getYLength() - 1) * getXLength()) {
+					yIndex4 = i / getXLength();
+					xIndex4 = i % getXLength();
+				}
+				i++;
+				int yIndex5 = -1;
+				int xIndex5 = -1;
+				if (i < (getYLength() - 1) * getXLength()) {
+					yIndex5 = i / getXLength();
+					xIndex5 = i % getXLength();
+				}
+				int num = 0;
+				if (yIndex1 != -1 && xIndex1 != -1 && tateWall[yIndex1][xIndex1]) {
+					num = num + 16;
+				}
+				if (yIndex2 != -1 && xIndex2 != -1 && tateWall[yIndex2][xIndex2]) {
+					num = num + 8;
+				}
+				if (yIndex3 != -1 && xIndex3 != -1 && tateWall[yIndex3][xIndex3]) {
+					num = num + 4;
+				}
+				if (yIndex4 != -1 && xIndex4 != -1 && tateWall[yIndex4][xIndex4]) {
+					num = num + 2;
+				}
+				if (yIndex5 != -1 && xIndex5 != -1 && tateWall[yIndex5][xIndex5]) {
+					num = num + 1;
+				}
+				sb.append(ALPHABET_AND_NUMBER.substring(num, num + 1));
+			}
+			int interval = 0;
+			for (int i = 0; i < getYLength() * getXLength(); i++) {
+				int yIndex = i / getXLength();
+				int xIndex = i % getXLength();
+				if (numbers[yIndex][xIndex] == null) {
+					interval++;
+					if (interval == 26) {
+						sb.append("z");
+						interval = 0;
+					}
+				} else {
+					Integer num = numbers[yIndex][xIndex];
+					String numStr = Integer.toHexString(num);
+					if (numStr.length() == 2) {
+						numStr = "-" + numStr;
+					} else if (numStr.length() == 3) {
+						numStr = "+" + numStr;
+					}
+					if (interval == 0) {
+						sb.append(numStr);
+					} else {
+						sb.append(ALPHABET.substring(interval - 1, interval));
+						sb.append(numStr);
+						interval = 0;
+					}
+				}
+			}
+			if (interval != 0) {
+				sb.append(ALPHABET.substring(interval - 1, interval));
+			}
+			if (sb.charAt(sb.length() - 1) == '.') {
+				sb.append("/");
+			}
+			return sb.toString();
 		}
 
 		public String getHintCount() {
-			// TODO 自動生成されたメソッド・スタブ
-			return null;
+			int numCnt = 0;
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					if (numbers[yIndex][xIndex] != null) {
+						numCnt++;
+					}
+				}
+			}
+			return rooms.size() + "/" + numCnt;
 		}
 
 		public Integer[][] getNumbers() {
@@ -488,39 +680,6 @@ public class HakoiriSolver implements Solver {
 			yokoWall = new boolean[height][width - 1];
 			tateWall = new boolean[height - 1][width];
 			this.rooms = rooms;
-			// 壁セット(問題を解くのに壁の情報も使ってるため)
-			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
-				for (int xIndex = 0; xIndex < getXLength() - 1; xIndex++) {
-					Position pos = new Position(yIndex, xIndex);
-					boolean isWall = true;
-					for (Set<Position> room : rooms) {
-						if (room.contains(pos)) {
-							Position rightPos = new Position(yIndex, xIndex + 1);
-							if (room.contains(rightPos)) {
-								isWall = false;
-								break;
-							}
-						}
-					}
-					yokoWall[yIndex][xIndex] = isWall;
-				}
-			}
-			for (int yIndex = 0; yIndex < getYLength() - 1; yIndex++) {
-				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					Position pos = new Position(yIndex, xIndex);
-					boolean isWall = true;
-					for (Set<Position> room : rooms) {
-						if (room.contains(pos)) {
-							Position downPos = new Position(yIndex + 1, xIndex);
-							if (room.contains(downPos)) {
-								isWall = false;
-								break;
-							}
-						}
-					}
-					tateWall[yIndex][xIndex] = isWall;
-				}
-			}
 			// 初期候補数字を決定。0-3まで
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
@@ -939,8 +1098,9 @@ public class HakoiriSolver implements Solver {
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
 		System.out.println("難易度:" + (count * 5));
 		System.out.println(field);
+		int level = (int) Math.sqrt(count * 5 / 3) + 1;
 		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count * 5).toString();
+				+ Difficulty.getByCount(count * 5).toString() + "(Lv:" + level + ")";
 	}
 
 	/**

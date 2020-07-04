@@ -21,6 +21,7 @@ import myamya.other.solver.building.BuildingSolver.BuildingGenerator;
 import myamya.other.solver.creek.CreekSolver.CreekGenerator;
 import myamya.other.solver.geradeweg.GeradewegSolver.GeradewegGenerator;
 import myamya.other.solver.gokigen.GokigenSolver.GokigenGenerator;
+import myamya.other.solver.hakoiri.HakoiriSolver.HakoiriGenerator;
 import myamya.other.solver.herugolf.HerugolfSolver.HerugolfGenerator;
 import myamya.other.solver.heyawake.HeyawakeSolver.HeyawakeGenerator;
 import myamya.other.solver.kurodoko.KurodokoSolver.KurodokoGenerator;
@@ -28,12 +29,14 @@ import myamya.other.solver.kurotto.KurottoSolver.KurottoGenerator;
 import myamya.other.solver.masyu.MasyuSolver.MasyuGenerator;
 import myamya.other.solver.midloop.MidloopSolver.MidloopGenerator;
 import myamya.other.solver.minarism.MinarismSolver.MinarismGenerator;
+import myamya.other.solver.nanro.NanroSolver.NanroGenerator;
 import myamya.other.solver.norinori.NorinoriSolver.NorinoriGenerator;
 import myamya.other.solver.nurikabe.NurikabeSolver.NurikabeGenerator;
 import myamya.other.solver.nurimisaki.NurimisakiSolver.NurimisakiGenerator;
 import myamya.other.solver.pipelink.PipelinkSolver.PipelinkGenerator;
 import myamya.other.solver.putteria.PutteriaSolver.PutteriaGenerator;
 import myamya.other.solver.reflect.ReflectSolver.ReflectGenerator;
+import myamya.other.solver.ripple.RippleSolver.RippleGenerator;
 import myamya.other.solver.sashigane.SashiganeSolver.SashiganeGenerator;
 import myamya.other.solver.shakashaka.ShakashakaSolver.ShakashakaGenerator;
 import myamya.other.solver.shugaku.ShugakuSolver.ShugakuGenerator;
@@ -751,6 +754,54 @@ public class SudokuGachaWeb extends HttpServlet {
 
 	}
 
+	static class NanroGeneratorThlead extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+
+		NanroGeneratorThlead(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new NanroGenerator(height, width);
+		}
+
+	}
+
+	static class HakoiriGeneratorThlead extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+
+		HakoiriGeneratorThlead(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new HakoiriGenerator(height, width);
+		}
+
+	}
+
+	static class RippleGeneratorThlead extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+
+		RippleGeneratorThlead(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new RippleGenerator(height, width);
+		}
+
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -859,6 +910,12 @@ public class SudokuGachaWeb extends HttpServlet {
 				t = new YajilinGeneratorThlead(height, width);
 			} else if (type.equals("herugolf")) {
 				t = new HerugolfGeneratorThlead(height, width);
+			} else if (type.equals("nanro")) {
+				t = new NanroGeneratorThlead(height, width);
+			} else if (type.equals("hakoiri")) {
+				t = new HakoiriGeneratorThlead(height, width);
+			} else if (type.equals("ripple")) {
+				t = new RippleGeneratorThlead(height, width);
 			} else {
 				throw new IllegalArgumentException();
 			}
