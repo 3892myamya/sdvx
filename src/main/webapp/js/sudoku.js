@@ -219,6 +219,11 @@ var ruleMap = {
 		url : "https://www.nikoli.co.jp/ja/puzzles/ripple_effect/",
 		source : "ニコリ公式"
 	},
+	usoone : {
+		name : "ウソワン",
+		url : "https://www.nikoli.co.jp/ja/puzzles/usowan/",
+		source : "ニコリ公式"
+	},
 }
 var regMap = {
 		yajilin:['yajilin','yajilin','yajilin','yajilin','yajilin','yajilin','yajilin','yajilin','yajilin','yajilin'],

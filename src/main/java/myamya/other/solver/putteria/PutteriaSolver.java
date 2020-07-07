@@ -595,7 +595,6 @@ public class PutteriaSolver implements Solver {
 
 		}
 
-		@SuppressWarnings("unchecked")
 		public Field(Field other) {
 			fixedMasuSet = other.fixedMasuSet;
 			masu = new Masu[other.getYLength()][other.getXLength()];
