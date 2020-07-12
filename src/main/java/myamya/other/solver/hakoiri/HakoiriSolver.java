@@ -221,7 +221,7 @@ public class HakoiriSolver implements Solver {
 			level = (int) Math.sqrt(level * 5 / 3) + 1;
 			String status = "Lv:" + level + "の問題を獲得！(部屋/記号：" + wkField.getHintCount() + ")";
 			String url = wkField.getPuzPreURL();
-			String link = "<a href=\"" + url + "\" target=\"_blank\">puzz.linkで解く</a>";
+			String link = "<a href=\"" + url + "\" target=\"_blank\">ぱずぷれv3で解く</a>";
 			StringBuilder sb = new StringBuilder();
 			int baseSize = 20;
 			int margin = 5;

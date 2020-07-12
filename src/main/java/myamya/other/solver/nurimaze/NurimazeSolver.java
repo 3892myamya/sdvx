@@ -1,23 +1,489 @@
 package myamya.other.solver.nurimaze;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeMap;
 
+import myamya.other.solver.Common.CountOverException;
 import myamya.other.solver.Common.Difficulty;
 import myamya.other.solver.Common.Direction;
+import myamya.other.solver.Common.GeneratorResult;
 import myamya.other.solver.Common.Masu;
 import myamya.other.solver.Common.Position;
+import myamya.other.solver.Generator;
+import myamya.other.solver.RoomMaker;
 import myamya.other.solver.Solver;
 
 public class NurimazeSolver implements Solver {
+	public static class NurimazeGenerator implements Generator {
+
+		static class NurimazeSolverForGenerator extends NurimazeSolver {
+			private final int limit;
+
+			public NurimazeSolverForGenerator(Field field, int limit) {
+				super(field);
+				this.limit = limit;
+			}
+
+			public int solve2() {
+				try {
+					while (!field.isSolved()) {
+						String befStr = field.getStateDump();
+						if (!field.solveAndCheck()) {
+							return -1;
+						}
+						int recursiveCnt = 0;
+						while (field.getStateDump().equals(befStr) && recursiveCnt < 3) {
+							if (!candSolve(field, recursiveCnt == 2 ? 999 : recursiveCnt)) {
+								return -1;
+							}
+							recursiveCnt++;
+						}
+						if (recursiveCnt == 3 && field.getStateDump().equals(befStr)) {
+							return -1;
+						}
+					}
+				} catch (CountOverException e) {
+					return -1;
+				}
+				return count;
+			}
+
+			@Override
+			protected boolean candSolve(Field field, int recursive) {
+				if (this.count >= limit) {
+					throw new CountOverException();
+				} else {
+					return super.candSolve(field, recursive);
+				}
+			}
+		}
+
+		private final int height;
+		private final int width;
+
+		public NurimazeGenerator(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		public static void main(String[] args) {
+			new NurimazeGenerator(10, 10).generate();
+		}
+
+		// ある地点から最も遠い地点を調べる
+		private Map<Integer, List<Position>> getDistanceMap(Field wkField, Position firstPos) {
+			Map<Integer, List<Position>> distanceMap = new TreeMap<>(new Comparator<Integer>() {
+				@Override
+				public int compare(Integer o1, Integer o2) {
+					return o2 - o1;
+				}
+			});
+			Set<Position> resolvePosSet = new HashSet<>();
+			List<Position> nextPosList = new ArrayList<>();
+			int distance = 0;
+			nextPosList.add(firstPos);
+			distanceMap.put(distance, nextPosList);
+			resolvePosSet.addAll(nextPosList);
+			while (true) {
+				nextPosList = new ArrayList<>();
+				List<Position> nowPosList = distanceMap.get(distance);
+				for (Position nowPos : nowPosList) {
+					if (nowPos.getyIndex() != 0) {
+						Position candPos = new Position(nowPos.getyIndex() - 1, nowPos.getxIndex());
+						if (wkField.masu[candPos.getyIndex()][candPos.getxIndex()] == Masu.NOT_BLACK
+								&&
+								!resolvePosSet.contains(candPos)) {
+							nextPosList.add(candPos);
+							resolvePosSet.add(candPos);
+						}
+					}
+					if (nowPos.getxIndex() != wkField.getXLength() - 1) {
+						Position candPos = new Position(nowPos.getyIndex(), nowPos.getxIndex() + 1);
+						if (wkField.masu[candPos.getyIndex()][candPos.getxIndex()] == Masu.NOT_BLACK
+								&&
+								!resolvePosSet.contains(candPos)) {
+							nextPosList.add(candPos);
+							resolvePosSet.add(candPos);
+						}
+					}
+					if (nowPos.getyIndex() != wkField.getYLength() - 1) {
+						Position candPos = new Position(nowPos.getyIndex() + 1, nowPos.getxIndex());
+						if (wkField.masu[candPos.getyIndex()][candPos.getxIndex()] == Masu.NOT_BLACK
+								&&
+								!resolvePosSet.contains(candPos)) {
+							nextPosList.add(candPos);
+							resolvePosSet.add(candPos);
+						}
+					}
+					if (nowPos.getxIndex() != 0) {
+						Position candPos = new Position(nowPos.getyIndex(), nowPos.getxIndex() - 1);
+						if (wkField.masu[candPos.getyIndex()][candPos.getxIndex()] == Masu.NOT_BLACK
+								&&
+								!resolvePosSet.contains(candPos)) {
+							nextPosList.add(candPos);
+							resolvePosSet.add(candPos);
+						}
+					}
+				}
+				if (nextPosList.isEmpty()) {
+					break;
+				} else {
+					distanceMap.put(++distance,
+							nextPosList);
+				}
+			}
+			return distanceMap;
+		}
+
+		// スタートからゴールまでの経路にある位置情報リストを返す。
+		private List<Position> getRoute(Field wkField, Position startPos, Position goalPos) {
+			List<Position> result = new ArrayList<>();
+			result.add(startPos);
+			Position nowPos = startPos;
+			getRouteReq(result, wkField, nowPos, goalPos);
+			return result;
+		}
+
+		private boolean getRouteReq(List<Position> result, Field wkField, Position nowPos, Position goalPos) {
+			if (nowPos.equals(goalPos)) {
+				return true;
+			}
+			if (nowPos.getyIndex() != 0) {
+				Position candPos = new Position(nowPos.getyIndex() - 1, nowPos.getxIndex());
+				if (wkField.masu[candPos.getyIndex()][candPos.getxIndex()] == Masu.NOT_BLACK
+						&& !result.contains(candPos)) {
+					result.add(candPos);
+					if (getRouteReq(result, wkField, candPos, goalPos)) {
+						return true;
+					} else {
+						result.remove(candPos);
+					}
+				}
+			}
+			if (nowPos.getxIndex() != wkField.getXLength() - 1) {
+				Position candPos = new Position(nowPos.getyIndex(), nowPos.getxIndex() + 1);
+				if (wkField.masu[candPos.getyIndex()][candPos.getxIndex()] == Masu.NOT_BLACK
+						&& !result.contains(candPos)) {
+					result.add(candPos);
+					if (getRouteReq(result, wkField, candPos, goalPos)) {
+						return true;
+					} else {
+						result.remove(candPos);
+					}
+				}
+			}
+			if (nowPos.getyIndex() != wkField.getYLength() - 1) {
+				Position candPos = new Position(nowPos.getyIndex() + 1, nowPos.getxIndex());
+				if (wkField.masu[candPos.getyIndex()][candPos.getxIndex()] == Masu.NOT_BLACK
+						&& !result.contains(candPos)) {
+					result.add(candPos);
+					if (getRouteReq(result, wkField, candPos, goalPos)) {
+						return true;
+					} else {
+						result.remove(candPos);
+					}
+				}
+			}
+			if (nowPos.getxIndex() != 0) {
+				Position candPos = new Position(nowPos.getyIndex(), nowPos.getxIndex() - 1);
+				if (wkField.masu[candPos.getyIndex()][candPos.getxIndex()] == Masu.NOT_BLACK
+						&& !result.contains(candPos)) {
+					result.add(candPos);
+					if (getRouteReq(result, wkField, candPos, goalPos)) {
+						return true;
+					} else {
+						result.remove(candPos);
+					}
+				}
+			}
+			return false;
+		}
+
+		@Override
+		public GeneratorResult generate() {
+			NurimazeSolver.Field wkField = new NurimazeSolver.Field(height, width,
+					RoomMaker.roomMake(height, width, -1, 3));
+			List<Position> indexList = new ArrayList<>();
+			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+					indexList.add(new Position(yIndex, xIndex));
+				}
+			}
+			int level = 0;
+			long start = System.nanoTime();
+			while (true) {
+				// 問題生成部
+				// 数字を配置
+				while (true) {
+					boolean isOk = false;
+					Collections.shuffle(indexList);
+					for (Position pos : indexList) {
+						if (wkField.masu[pos.getyIndex()][pos.getxIndex()] == Masu.SPACE) {
+							isOk = false;
+							List<Integer> numIdxList = new ArrayList<>();
+							for (int i = 0; i < 2; i++) {
+								numIdxList.add(i);
+							}
+							Collections.shuffle(numIdxList);
+							for (int masuNum : numIdxList) {
+								NurimazeSolver.Field virtual = new Field(wkField);
+								if (masuNum < 1) {
+									virtual.masu[pos.getyIndex()][pos.getxIndex()] = Masu.NOT_BLACK;
+								} else if (masuNum < 2) {
+									virtual.masu[pos.getyIndex()][pos.getxIndex()] = Masu.BLACK;
+								}
+								if (virtual.solveAndCheck()) {
+									isOk = true;
+									wkField.masu = virtual.masu;
+									break;
+								}
+							}
+							if (!isOk) {
+								break;
+							}
+						}
+					}
+					if (!isOk) {
+						// 破綻したら0から作り直す。
+						wkField = new NurimazeSolver.Field(height, width,
+								RoomMaker.roomMake(height, width, -1, 3));
+					} else {
+						// スタート、ゴール、ルートを決める
+						Position pivot = null;
+						Collections.shuffle(indexList);
+						for (Position pos : indexList) {
+							if (wkField.masu[pos.getyIndex()][pos.getxIndex()] == Masu.NOT_BLACK) {
+								pivot = pos;
+								break;
+							}
+						}
+						Map<Integer, List<Position>> startPosCand = getDistanceMap(wkField, pivot);
+						Position startPos = null;
+						while (startPos == null) {
+							outer: for (Entry<Integer, List<Position>> entry : startPosCand.entrySet()) {
+								Collections.shuffle(entry.getValue());
+								for (Position pos : entry.getValue()) {
+									// 遠いマスから順に一定確率で抽選
+									if (Math.random() < 0.2) {
+										startPos = pos;
+										break outer;
+									}
+								}
+							}
+						}
+						Map<Integer, List<Position>> endPosCand = getDistanceMap(wkField, startPos);
+						Position endPos = null;
+						while (endPos == null) {
+							outer: for (Entry<Integer, List<Position>> entry : endPosCand.entrySet()) {
+								if (entry.getKey() > 0) {
+									// ゴールはかならず1マス以上離す
+									Collections.shuffle(entry.getValue());
+									for (Position pos : entry.getValue()) {
+										// 遠いマスから順に一定確率で抽選
+										if (Math.random() < 0.2) {
+											endPos = pos;
+											break outer;
+										}
+									}
+								}
+							}
+						}
+						wkField.mark[startPos.getyIndex()][startPos.getxIndex()] = Mark.START;
+						wkField.mark[endPos.getyIndex()][endPos.getxIndex()] = Mark.GOAL;
+						// ルートを決定
+						List<Position> routePosSet = getRoute(wkField, startPos, endPos);
+						for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+							for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+								wkField.route[yIndex][xIndex] = routePosSet.contains(new Position(yIndex, xIndex))
+										? Masu.BLACK
+										: Masu.NOT_BLACK;
+							}
+						}
+						break;
+					}
+				}
+				// マスを戻す＆マーク配置
+				List<Position> fixedMasuList = new ArrayList<>();
+				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+						if (wkField.masu[yIndex][xIndex] == Masu.BLACK) {
+							wkField.masu[yIndex][xIndex] = Masu.SPACE;
+							wkField.route[yIndex][xIndex] = Masu.SPACE;
+						} else if (wkField.mark[yIndex][xIndex] == null) {
+							wkField.mark[yIndex][xIndex] = wkField.route[yIndex][xIndex] == Masu.BLACK ? Mark.OK
+									: Mark.NG;
+							fixedMasuList.add(new Position(yIndex, xIndex));
+						}
+					}
+				}
+				// 解けるかな？
+				level = new NurimazeSolverForGenerator(wkField, 200).solve2();
+				if (level == -1) {
+					// 解けなければやり直し
+					wkField = new NurimazeSolver.Field(height, width,
+							RoomMaker.roomMake(height, width, -1, 3));
+				} else {
+					Collections.shuffle(fixedMasuList);
+					for (Position pos : fixedMasuList) {
+						NurimazeSolver.Field virtual = new NurimazeSolver.Field(wkField, true);
+						virtual.masu[pos.getyIndex()][pos.getxIndex()] = Masu.SPACE;
+						virtual.mark[pos.getyIndex()][pos.getxIndex()] = null;
+						virtual.route[pos.getyIndex()][pos.getxIndex()] = Masu.SPACE;
+						int solveResult = new NurimazeSolverForGenerator(virtual, 4000).solve2();
+						if (solveResult != -1) {
+							wkField.masu[pos.getyIndex()][pos.getxIndex()] = Masu.SPACE;
+							wkField.mark[pos.getyIndex()][pos.getxIndex()] = null;
+							wkField.route[pos.getyIndex()][pos.getxIndex()] = Masu.SPACE;
+							level = solveResult;
+						}
+					}
+					break;
+				}
+			}
+			// 横壁設定
+			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < wkField.getXLength() - 1; xIndex++) {
+					boolean isWall = true;
+					Position pos = new Position(yIndex, xIndex);
+					for (List<Position> room : wkField.rooms) {
+						if (room.contains(pos)) {
+							Position rightPos = new Position(yIndex, xIndex + 1);
+							if (room.contains(rightPos)) {
+								isWall = false;
+								break;
+							}
+						}
+					}
+					wkField.yokoWall[yIndex][xIndex] = isWall;
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = 0; yIndex < wkField.getYLength() - 1; yIndex++) {
+				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+					boolean isWall = true;
+					Position pos = new Position(yIndex, xIndex);
+					for (List<Position> room : wkField.rooms) {
+						if (room.contains(pos)) {
+							Position downPos = new Position(yIndex + 1, xIndex);
+							if (room.contains(downPos)) {
+								isWall = false;
+								break;
+							}
+						}
+					}
+					wkField.tateWall[yIndex][xIndex] = isWall;
+				}
+			}
+			level = (int) Math.sqrt(level / 3) + 1;
+			String status = "Lv:" + level + "の問題を獲得！(部屋/○/△：" + wkField.getHintCount() + ")";
+			String url = wkField.getPuzPreURL();
+			String link = "<a href=\"" + url + "\" target=\"_blank\">ぱずぷれv3で解く</a>";
+			StringBuilder sb = new StringBuilder();
+			int baseSize = 20;
+			int margin = 5;
+			sb.append(
+					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
+							+ "height=\"" + (wkField.getYLength() * baseSize + 2 * baseSize + margin)
+							+ "\" width=\""
+							+ (wkField.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+					if (wkField.mark[yIndex][xIndex] != null) {
+						Mark mark = wkField.mark[yIndex][xIndex];
+						if (mark == Mark.OK) {
+							sb.append("<circle cy=\"" + (yIndex * baseSize + (baseSize / 2) + margin)
+									+ "\" cx=\""
+									+ (xIndex * baseSize + baseSize + (baseSize / 2))
+									+ "\" r=\""
+									+ (baseSize / 2 - 3)
+									+ "\" fill=\"white\", stroke=\"black\">"
+									+ "</circle>");
+						} else {
+							sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 4 + margin)
+									+ "\" x=\""
+									+ (xIndex * baseSize + baseSize + 2)
+									+ "\" font-size=\""
+									+ (baseSize - 5)
+									+ "\" textLength=\""
+									+ (baseSize - 5)
+									+ "\" fill=\""
+									+ "black"
+									+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+									+ mark.toString()
+									+ "</text>");
+						}
+					}
+				}
+			}
+			// 横壁描画
+			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = -1; xIndex < wkField.getXLength(); xIndex++) {
+					boolean oneYokoWall = xIndex == -1 || xIndex == wkField.getXLength() - 1
+							|| wkField.getYokoWall()[yIndex][xIndex];
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + margin)
+							+ "\" x1=\""
+							+ (xIndex * baseSize + 2 * baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ (xIndex * baseSize + 2 * baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneYokoWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">"
+							+ "</line>");
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = -1; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+					boolean oneTateWall = yIndex == -1 || yIndex == wkField.getYLength() - 1
+							|| wkField.getTateWall()[yIndex][xIndex];
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x1=\""
+							+ (xIndex * baseSize + baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ (xIndex * baseSize + baseSize + baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneTateWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">"
+							+ "</line>");
+				}
+			}
+			sb.append("</svg>");
+			System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
+			System.out.println(level);
+			System.out.println(wkField.getHintCount());
+			System.out.println(wkField);
+			System.out.println(url);
+			return new GeneratorResult(status, sb.toString(), link, url, level, "");
+		}
+
+	}
 
 	/**
-	 * 真珠
+	 * マーク
 	 */
 	public enum Mark {
-	START("Ｓ", 1), GOAL("Ｇ", 2), OK("○", 3), NG("△", 4);
+		START("Ｓ", 1), GOAL("Ｇ", 2), OK("○", 3), NG("△", 4);
 
 		String str;
 		int val;
@@ -44,7 +510,7 @@ public class NurimazeSolver implements Solver {
 
 	public static class Field {
 		static final String ALPHABET_FROM_5 = "56789abcdefghijklmnopqrstuvwxyz";
-
+		static final String ALPHABET_AND_NUMBER = "0123456789abcdefghijklmnopqrstuvwxyz";
 		// マスの情報
 		private Masu[][] masu;
 		// 経路情報 Masu.BLACKなら経路に含まれる。Masu.NOT_BLACKなら含まれない。
@@ -62,6 +528,154 @@ public class NurimazeSolver implements Solver {
 
 		public Masu[][] getMasu() {
 			return masu;
+		}
+
+		public String getPuzPreURL() {
+			StringBuilder sb = new StringBuilder();
+			sb.append("http://pzv.jp/p.html?nurimaze/" + getXLength() + "/" + getYLength() + "/");
+			for (int i = 0; i < getYLength() * (getXLength() - 1); i++) {
+				int yIndex1 = i / (getXLength() - 1);
+				int xIndex1 = i % (getXLength() - 1);
+				i++;
+				int yIndex2 = -1;
+				int xIndex2 = -1;
+				if (i < getYLength() * (getXLength() - 1)) {
+					yIndex2 = i / (getXLength() - 1);
+					xIndex2 = i % (getXLength() - 1);
+				}
+				i++;
+				int yIndex3 = -1;
+				int xIndex3 = -1;
+				if (i < getYLength() * (getXLength() - 1)) {
+					yIndex3 = i / (getXLength() - 1);
+					xIndex3 = i % (getXLength() - 1);
+				}
+				i++;
+				int yIndex4 = -1;
+				int xIndex4 = -1;
+				if (i < getYLength() * (getXLength() - 1)) {
+					yIndex4 = i / (getXLength() - 1);
+					xIndex4 = i % (getXLength() - 1);
+				}
+				i++;
+				int yIndex5 = -1;
+				int xIndex5 = -1;
+				if (i < getYLength() * (getXLength() - 1)) {
+					yIndex5 = i / (getXLength() - 1);
+					xIndex5 = i % (getXLength() - 1);
+				}
+				int num = 0;
+				if (yIndex1 != -1 && xIndex1 != -1 && yokoWall[yIndex1][xIndex1]) {
+					num = num + 16;
+				}
+				if (yIndex2 != -1 && xIndex2 != -1 && yokoWall[yIndex2][xIndex2]) {
+					num = num + 8;
+				}
+				if (yIndex3 != -1 && xIndex3 != -1 && yokoWall[yIndex3][xIndex3]) {
+					num = num + 4;
+				}
+				if (yIndex4 != -1 && xIndex4 != -1 && yokoWall[yIndex4][xIndex4]) {
+					num = num + 2;
+				}
+				if (yIndex5 != -1 && xIndex5 != -1 && yokoWall[yIndex5][xIndex5]) {
+					num = num + 1;
+				}
+				sb.append(ALPHABET_AND_NUMBER.substring(num, num + 1));
+			}
+			for (int i = 0; i < (getYLength() - 1) * getXLength(); i++) {
+				int yIndex1 = i / getXLength();
+				int xIndex1 = i % getXLength();
+				i++;
+				int yIndex2 = -1;
+				int xIndex2 = -1;
+				if (i < (getYLength() - 1) * getXLength()) {
+					yIndex2 = i / getXLength();
+					xIndex2 = i % getXLength();
+				}
+				i++;
+				int yIndex3 = -1;
+				int xIndex3 = -1;
+				if (i < (getYLength() - 1) * getXLength()) {
+					yIndex3 = i / getXLength();
+					xIndex3 = i % getXLength();
+				}
+				i++;
+				int yIndex4 = -1;
+				int xIndex4 = -1;
+				if (i < (getYLength() - 1) * getXLength()) {
+					yIndex4 = i / getXLength();
+					xIndex4 = i % getXLength();
+				}
+				i++;
+				int yIndex5 = -1;
+				int xIndex5 = -1;
+				if (i < (getYLength() - 1) * getXLength()) {
+					yIndex5 = i / getXLength();
+					xIndex5 = i % getXLength();
+				}
+				int num = 0;
+				if (yIndex1 != -1 && xIndex1 != -1 && tateWall[yIndex1][xIndex1]) {
+					num = num + 16;
+				}
+				if (yIndex2 != -1 && xIndex2 != -1 && tateWall[yIndex2][xIndex2]) {
+					num = num + 8;
+				}
+				if (yIndex3 != -1 && xIndex3 != -1 && tateWall[yIndex3][xIndex3]) {
+					num = num + 4;
+				}
+				if (yIndex4 != -1 && xIndex4 != -1 && tateWall[yIndex4][xIndex4]) {
+					num = num + 2;
+				}
+				if (yIndex5 != -1 && xIndex5 != -1 && tateWall[yIndex5][xIndex5]) {
+					num = num + 1;
+				}
+				sb.append(ALPHABET_AND_NUMBER.substring(num, num + 1));
+			}
+			int interval = 0;
+			for (int i = 0; i < getYLength() * getXLength(); i++) {
+				int yIndex = i / getXLength();
+				int xIndex = i % getXLength();
+				if (mark[yIndex][xIndex] == null) {
+					interval++;
+					if (interval == 31) {
+						sb.append("z");
+						interval = 0;
+					}
+				} else {
+					Integer num = mark[yIndex][xIndex].val;
+					String numStr = String.valueOf(num);
+					if (interval == 0) {
+						sb.append(numStr);
+					} else {
+						sb.append(ALPHABET_FROM_5.substring(interval - 1, interval));
+						sb.append(numStr);
+						interval = 0;
+					}
+				}
+			}
+			if (interval != 0) {
+				sb.append(ALPHABET_FROM_5.substring(interval - 1, interval));
+			}
+			if (sb.charAt(sb.length() - 1) == '.') {
+				sb.append("/");
+			}
+			return sb.toString();
+		}
+
+		public String getHintCount() {
+			int okCnt = 0;
+			int ngCnt = 0;
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					if (mark[yIndex][xIndex] == Mark.OK) {
+						okCnt++;
+					}
+					if (mark[yIndex][xIndex] == Mark.NG) {
+						ngCnt++;
+					}
+				}
+			}
+			return rooms.size() + "/" + okCnt + "/" + ngCnt;
 		}
 
 		public Masu[][] getRoute() {
@@ -198,15 +812,7 @@ public class NurimazeSolver implements Solver {
 					} else if (mark[markPos.getyIndex()][markPos.getxIndex()] == Mark.NG) {
 						route[markPos.getyIndex()][markPos.getxIndex()] = Masu.NOT_BLACK;
 					}
-					// マークのある島は必ず白
-					for (List<Position> room : rooms) {
-						if (room.contains(markPos)) {
-							for (Position pos : room) {
-								masu[pos.getyIndex()][pos.getxIndex()] = Masu.NOT_BLACK;
-							}
-							break;
-						}
-					}
+					masu[markPos.getyIndex()][markPos.getxIndex()] = Masu.NOT_BLACK;
 				}
 				index++;
 			}
@@ -226,6 +832,57 @@ public class NurimazeSolver implements Solver {
 			tateWall = other.tateWall;
 			rooms = other.rooms;
 			mark = other.mark;
+		}
+
+		/**
+		 * ジェネレータ用。プレーンなフィールド作る
+		 */
+		public Field(int height, int width, List<Set<Position>> rooms) {
+			masu = new Masu[height][width];
+			route = new Masu[height][width];
+			mark = new Mark[height][width];
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					masu[yIndex][xIndex] = Masu.SPACE;
+					route[yIndex][xIndex] = Masu.SPACE;
+				}
+			}
+			yokoWall = new boolean[height][width - 1];
+			tateWall = new boolean[height - 1][width];
+			this.rooms = new ArrayList<>();
+			// 部屋の探索順序を合わせないとレベル表記がずれるので、
+			// 回りくどいが、左上の部屋から加えるようにする。
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					for (Set<Position> room : rooms) {
+						ArrayList<Position> target = new ArrayList<>(room);
+						if (room.contains(new Position(yIndex, xIndex)) &&
+								!this.rooms.contains(target)) {
+							this.rooms.add(target);
+						}
+					}
+				}
+			}
+
+		}
+
+		/**
+		 * ジェネレータ用
+		 */
+		public Field(Field other, boolean flag) {
+			masu = new Masu[other.getYLength()][other.getXLength()];
+			route = new Masu[other.getYLength()][other.getXLength()];
+			mark = new Mark[other.getYLength()][other.getXLength()];
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					masu[yIndex][xIndex] = other.masu[yIndex][xIndex];
+					route[yIndex][xIndex] = other.route[yIndex][xIndex];
+					mark[yIndex][xIndex] = other.mark[yIndex][xIndex];
+				}
+			}
+			yokoWall = other.yokoWall;
+			tateWall = other.tateWall;
+			rooms = other.rooms;
 		}
 
 		// posを起点に上下左右に壁または白確定でないマスを無制限につなげていく。
@@ -763,11 +1420,15 @@ public class NurimazeSolver implements Solver {
 
 	}
 
-	private final Field field;
-	private int count = 0;
+	protected final Field field;
+	protected int count = 0;
 
 	public NurimazeSolver(int height, int width, String param) {
 		field = new Field(height, width, param);
+	}
+
+	public NurimazeSolver(Field field) {
+		this.field = new Field(field);
 	}
 
 	public Field getField() {
@@ -806,17 +1467,19 @@ public class NurimazeSolver implements Solver {
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
 		System.out.println("難易度:" + (count));
 		System.out.println(field);
+		int level = (int) Math.sqrt(count / 3) + 1;
 		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count).toString();
+				+ Difficulty.getByCount(count).toString() + "(Lv:" + level + ")";
 	}
 
 	/**
 	 * 仮置きして調べる
 	 */
-	private boolean candSolve(Field field, int recursive) {
+	protected boolean candSolve(Field field, int recursive) {
 		// System.out.println(field);
 		for (List<Position> room : field.rooms) {
 			// マスは各部屋1マスずつ調べればよい。
+			Collections.shuffle(room);
 			Position pos = room.get(0);
 			if (field.masu[pos.getyIndex()][pos.getxIndex()] == Masu.SPACE) {
 				count++;

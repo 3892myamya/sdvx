@@ -32,6 +32,7 @@ import myamya.other.solver.minarism.MinarismSolver.MinarismGenerator;
 import myamya.other.solver.nanro.NanroSolver.NanroGenerator;
 import myamya.other.solver.norinori.NorinoriSolver.NorinoriGenerator;
 import myamya.other.solver.nurikabe.NurikabeSolver.NurikabeGenerator;
+import myamya.other.solver.nurimaze.NurimazeSolver.NurimazeGenerator;
 import myamya.other.solver.nurimisaki.NurimisakiSolver.NurimisakiGenerator;
 import myamya.other.solver.pipelink.PipelinkSolver.PipelinkGenerator;
 import myamya.other.solver.putteria.PutteriaSolver.PutteriaGenerator;
@@ -52,6 +53,7 @@ import myamya.other.solver.tatamibari.TatamibariSolver.TatamibariGenerator;
 import myamya.other.solver.tateyoko.TateyokoSolver.TateyokoGenerator;
 import myamya.other.solver.tentaisho.TentaishoSolver.TentaishoGenerator;
 import myamya.other.solver.tents.TentsSolver.TentsGenerator;
+import myamya.other.solver.tilepaint.TilepaintSolver.TilepaintGenerator;
 import myamya.other.solver.usoone.UsooneSolver.UsooneGenerator;
 import myamya.other.solver.walllogic.WalllogicSolver.WalllogicGenerator;
 import myamya.other.solver.yajikazu.YajikazuSolver.YajikazuGenerator;
@@ -819,6 +821,38 @@ public class SudokuGachaWeb extends HttpServlet {
 
 	}
 
+	static class NurimazeGeneratorThlead extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+
+		NurimazeGeneratorThlead(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new NurimazeGenerator(height, width);
+		}
+
+	}
+
+	static class TilepaintGeneratorThlead extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+
+		TilepaintGeneratorThlead(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new TilepaintGenerator(height, width);
+		}
+
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -830,7 +864,7 @@ public class SudokuGachaWeb extends HttpServlet {
 			GeneratorThlead t;
 			int height = Integer.parseInt(request.getParameter("height"));
 			int width = Integer.parseInt(request.getParameter("width"));
-			if (height > 10 || width > 10) {
+			if (!type.equals("tilepaint") && (height > 10 || width > 10)) {
 				throw new IllegalArgumentException();
 			}
 			if (type.equals("sudoku")) {
@@ -935,6 +969,10 @@ public class SudokuGachaWeb extends HttpServlet {
 				t = new RippleGeneratorThlead(height, width);
 			} else if (type.equals("usoone")) {
 				t = new UsooneGeneratorThlead(height, width);
+			} else if (type.equals("nurimaze")) {
+				t = new NurimazeGeneratorThlead(height, width);
+			} else if (type.equals("tilepaint")) {
+				t = new TilepaintGeneratorThlead(height, width);
 			} else {
 				throw new IllegalArgumentException();
 			}

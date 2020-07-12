@@ -224,6 +224,16 @@ var ruleMap = {
 		url : "https://www.nikoli.co.jp/ja/puzzles/usowan/",
 		source : "ニコリ公式"
 	},
+	nurimaze : {
+		name : "ぬりめいず",
+		url : "https://www.nikoli.co.jp/ja/puzzles/nurimeizu/",
+		source : "ニコリ公式"
+	},
+	tilepaint : {
+		name : "タイルペイント",
+		url : "https://www.nikoli.co.jp/ja/puzzles/tile_paint/",
+		source : "ニコリ公式"
+	},
 }
 var regMap = {
 		yajilin:['yajilin','yajilin','yajilin','yajilin','yajilin','yajilin','yajilin','yajilin','yajilin','yajilin'],
@@ -242,6 +252,8 @@ var option = {
 	size_8 : '<option value="8">8 x 8</option>',
 	size_9 : '<option value="9">9 x 9</option>',
 	size_10 : '<option value="10">10 x 10</option>',
+	size_12 : '<option value="12">12 x 12</option>',
+	size_15 : '<option value="15">15 x 15</option>',
 	pattern_0 : '<option value="0">フリー</option>',
 	pattern_1 : '<option value="1">点対称</option>',
 	pattern_2 : '<option value="2">左右対称</option>',
@@ -638,6 +650,8 @@ $(function() {
 				$('#sel_size').append(option.size_10);
 				if (nowSelSizeVal == 3) {
 					$('#sel_size').val(4);
+				} else if (nowSelSizeVal > 10) {
+					$('#sel_size').val(10);
 				} else {
 					$('#sel_size').val(nowSelSizeVal);
 				}
@@ -667,6 +681,18 @@ $(function() {
 				} else {
 					$('#sel_size').val(nowSelSizeVal);
 				}
+			} else if (type == 'tilepaint') {
+				$('#sel_size').append(option.size_3);
+				$('#sel_size').append(option.size_4);
+				$('#sel_size').append(option.size_5);
+				$('#sel_size').append(option.size_6);
+				$('#sel_size').append(option.size_7);
+				$('#sel_size').append(option.size_8);
+				$('#sel_size').append(option.size_9);
+				$('#sel_size').append(option.size_10);
+				$('#sel_size').append(option.size_12);
+				$('#sel_size').append(option.size_15);
+				$('#sel_size').val(nowSelSizeVal);
 			} else {
 				$('#sel_size').append(option.size_3);
 				$('#sel_size').append(option.size_4);
@@ -676,7 +702,11 @@ $(function() {
 				$('#sel_size').append(option.size_8);
 				$('#sel_size').append(option.size_9);
 				$('#sel_size').append(option.size_10);
-				$('#sel_size').val(nowSelSizeVal);
+				if (nowSelSizeVal > 10) {
+					$('#sel_size').val(10);
+				} else {
+					$('#sel_size').val(nowSelSizeVal);
+				}
 			}
 			var nowSelPetternVal = $('#sel_pattern').val();
 			$('#sel_pattern').empty();
