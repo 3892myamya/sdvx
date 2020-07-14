@@ -1282,26 +1282,28 @@ public class SolverWeb extends HttpServlet {
 			StringBuilder sb = new StringBuilder();
 			HitoriSolver.Field field = ((HitoriSolver) solver).getField();
 			int baseSize = 20;
+			int margin = 5;
 			sb.append(
 					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
-							+ "height=\"" + (field.getYLength() * baseSize + baseSize) + "\" width=\""
-							+ (field.getXLength() * baseSize + baseSize) + "\" >");
+							+ "height=\"" + (field.getYLength() * baseSize + baseSize + margin) + "\" width=\""
+							+ (field.getXLength() * baseSize + baseSize + margin) + "\" >");
 			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
 					Common.Masu oneMasu = field.getMasu()[yIndex][xIndex];
 					if (oneMasu.toString().equals("■")) {
-						sb.append("<rect y=\"" + (yIndex * baseSize)
+						sb.append("<rect y=\"" + (yIndex * baseSize + margin)
 								+ "\" x=\""
 								+ (xIndex * baseSize + baseSize)
 								+ "\" width=\""
 								+ (baseSize)
 								+ "\" height=\""
 								+ (baseSize)
+								+ "\" fill=\"gray\" >"
 								+ "\">"
 								+ "</rect>");
 					} else {
 						if (oneMasu.toString().equals("・")) {
-							sb.append("<rect y=\"" + (yIndex * baseSize)
+							sb.append("<rect y=\"" + (yIndex * baseSize + margin)
 									+ "\" x=\""
 									+ (xIndex * baseSize + baseSize)
 									+ "\" width=\""
@@ -1311,27 +1313,76 @@ public class SolverWeb extends HttpServlet {
 									+ "\" fill=\"palegreen\" >"
 									+ "</rect>");
 						}
-						String numberStr = String.valueOf(field.numbers[yIndex][xIndex]);
-						int index = HALF_NUMS.indexOf(numberStr);
-						String masuStr = null;
-						if (index >= 0) {
-							masuStr = FULL_NUMS.substring(index / 2, index / 2 + 1);
-						} else {
-							masuStr = numberStr;
-						}
-						sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 4)
-								+ "\" x=\""
-								+ (xIndex * baseSize + baseSize)
-								+ "\" font-size=\""
-								+ (baseSize - 2)
-								+ "\" textLength=\""
-								+ (baseSize - 2)
-								+ "\" lengthAdjust=\"spacingAndGlyphs\">"
-								+ masuStr
-								+ "</text>");
 					}
 				}
 			}
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					String numberStr = String.valueOf(field.numbers[yIndex][xIndex]);
+					String masuStr;
+					int idx = HALF_NUMS.indexOf(numberStr);
+					if (idx >= 0) {
+						masuStr = FULL_NUMS.substring(idx / 2, idx / 2 + 1);
+					} else {
+						masuStr = numberStr;
+					}
+					sb.append("<text y=\"" + (yIndex * baseSize + baseSize + margin - 4)
+							+ "\" x=\""
+							+ (xIndex * baseSize + baseSize + 2)
+							+ "\" font-size=\""
+							+ (baseSize - 5)
+							+ "\" textLength=\""
+							+ (baseSize - 5)
+							+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+							+ masuStr
+							+ "</text>");
+				}
+			}
+			// 横壁描画
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = -1; xIndex < field.getXLength(); xIndex++) {
+					boolean oneYokoWall = xIndex == -1 || xIndex == field.getXLength() - 1;
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + margin)
+							+ "\" x1=\""
+							+ (xIndex * baseSize + 2 * baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ (xIndex * baseSize + 2 * baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneYokoWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">"
+							+ "</line>");
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = -1; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					boolean oneTateWall = yIndex == -1 || yIndex == field.getYLength() - 1;
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x1=\""
+							+ (xIndex * baseSize + baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ (xIndex * baseSize + baseSize + baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneTateWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">"
+							+ "</line>");
+				}
+			}
+
 			sb.append("</svg>");
 			return sb.toString();
 		}

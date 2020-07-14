@@ -234,6 +234,11 @@ var ruleMap = {
 		url : "https://www.nikoli.co.jp/ja/puzzles/tile_paint/",
 		source : "ニコリ公式"
 	},
+	hitori : {
+		name : "ひとりにしてくれ",
+		url : "https://www.nikoli.co.jp/ja/puzzles/hitori/",
+		source : "ニコリ公式"
+	},
 }
 var regMap = {
 		yajilin:['yajilin','yajilin','yajilin','yajilin','yajilin','yajilin','yajilin','yajilin','yajilin','yajilin'],

@@ -1,14 +1,282 @@
 package myamya.other.solver.hitori;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
+import myamya.other.solver.Common.CountOverException;
 import myamya.other.solver.Common.Difficulty;
+import myamya.other.solver.Common.GeneratorResult;
 import myamya.other.solver.Common.Masu;
 import myamya.other.solver.Common.Position;
+import myamya.other.solver.Generator;
 import myamya.other.solver.Solver;
 
 public class HitoriSolver implements Solver {
+	public static class HitoriGenerator implements Generator {
+		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
+		private static final String FULL_NUMS = "０１２３４５６７８９";
+
+		static class HitoriSolverForGenerator extends HitoriSolver {
+
+			private final int limit;
+
+			public HitoriSolverForGenerator(Field field, int limit) {
+				super(field);
+				this.limit = limit;
+			}
+
+			public int solve2() {
+				try {
+					while (!field.isSolved()) {
+						String befStr = field.getStateDump();
+						if (!field.solveAndCheck()) {
+							return -1;
+						}
+						int recursiveCnt = 0;
+						while (field.getStateDump().equals(befStr) && recursiveCnt < 3) {
+							if (!candSolve(field, recursiveCnt == 2 ? 999 : recursiveCnt)) {
+								return -1;
+							}
+							recursiveCnt++;
+						}
+						if (recursiveCnt == 3 && field.getStateDump().equals(befStr)) {
+							return -1;
+						}
+					}
+				} catch (CountOverException e) {
+					return -1;
+				}
+				return count;
+			}
+
+			@Override
+			protected boolean candSolve(Field field, int recursive) {
+				if (this.count >= limit) {
+					throw new CountOverException();
+				} else {
+					return super.candSolve(field, recursive);
+				}
+			}
+		}
+
+		private final int height;
+		private final int width;
+
+		public HitoriGenerator(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		public static void main(String[] args) {
+			new HitoriGenerator(9, 9).generate();
+		}
+
+		@Override
+		public GeneratorResult generate() {
+			HitoriSolver.Field wkField = new HitoriSolver.Field(height, width);
+			List<Integer> indexList = new ArrayList<>();
+			for (int i = 0; i < height * width; i++) {
+				indexList.add(i);
+			}
+			Collections.shuffle(indexList);
+			int index = 0;
+			int level = 0;
+			long start = System.nanoTime();
+			while (true) {
+				// 問題生成部
+				// 適当なラテン方陣を作る
+				for (int yIndex = 0; yIndex < height; yIndex++) {
+					for (int xIndex = 0; xIndex < width; xIndex++) {
+						ArrayList<Integer> cand = new ArrayList<>();
+						for (int i = 1; i <= height; i++) {
+							cand.add(i);
+						}
+						Collections.shuffle(cand);
+						boolean isFill = false;
+						for (int num : cand) {
+							boolean isOk = true;
+							for (int targetY = 0; targetY < height; targetY++) {
+								if (yIndex != targetY) {
+									if (wkField.numbers[targetY][xIndex] != null
+											&& wkField.numbers[targetY][xIndex] == num) {
+										isOk = false;
+										break;
+									}
+								}
+							}
+							for (int targetX = 0; targetX < width; targetX++) {
+								if (xIndex != targetX) {
+									if (wkField.numbers[yIndex][targetX] != null
+											&& wkField.numbers[yIndex][targetX] == num) {
+										isOk = false;
+										break;
+									}
+								}
+							}
+							if (isOk) {
+								wkField.numbers[yIndex][xIndex] = num;
+								isFill = true;
+								break;
+							}
+						}
+						if (!isFill) {
+							// 失敗したら作りなおし
+							wkField.numbers = new Integer[height][width];
+							yIndex = 0;
+							xIndex = -1;
+						}
+					}
+				}
+				// マスを埋める。
+				while (!wkField.isSolved()) {
+					int yIndex = indexList.get(index) / width;
+					int xIndex = indexList.get(index) % width;
+					if (wkField.masu[yIndex][xIndex] == Masu.SPACE) {
+						boolean isOk = false;
+						List<Integer> numIdxList = new ArrayList<>();
+						// 一人にしてくれは黒マスになれるマスは必ず黒マスである必要がある
+						numIdxList.add(1);
+						numIdxList.add(0);
+						for (int masuNum : numIdxList) {
+							HitoriSolver.Field virtual = new HitoriSolver.Field(wkField);
+							if (masuNum < 1) {
+								virtual.masu[yIndex][xIndex] = Masu.NOT_BLACK;
+							} else if (masuNum < 2) {
+								virtual.masu[yIndex][xIndex] = Masu.BLACK;
+							}
+							if (virtual.solveAndCheck()) {
+								isOk = true;
+								wkField.masu = virtual.masu;
+								break;
+							}
+						}
+						if (!isOk) {
+							// 破綻したら0から作り直す。
+							wkField = new HitoriSolver.Field(height, width);
+							index = 0;
+							continue;
+						}
+					}
+					index++;
+				}
+				// 黒マスを適当な重複数字にする。
+				List<Integer> candNumBase = new ArrayList<Integer>();
+				for (int i = 0; i < wkField.getYLength(); i++) {
+					candNumBase.add(i + 1);
+				}
+				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+						if (wkField.masu[yIndex][xIndex] == Masu.BLACK) {
+							List<Integer> candNum = new ArrayList<Integer>(candNumBase);
+							candNum.remove(wkField.numbers[yIndex][xIndex]);
+							wkField.numbers[yIndex][xIndex] = candNum.get((int) (Math.random() * candNum.size()));
+						}
+					}
+				}
+				// マスを戻す
+				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+						wkField.masu[yIndex][xIndex] = Masu.SPACE;
+					}
+				}
+				// 解けるかな？
+				level = new HitoriSolverForGenerator(new HitoriSolver.Field(wkField), 300).solve2();
+				if (level == -1) {
+					// 解けなければやり直し
+					wkField = new HitoriSolver.Field(height, width);
+					index = 0;
+				} else {
+					break;
+				}
+			}
+			level = (int) Math.sqrt(level * 10 / 3) + 1;
+			String status = "Lv:" + level + "の問題を獲得！";
+			String url = wkField.getPuzPreURL();
+			String link = "<a href=\"" + url + "\" target=\"_blank\">ぱずぷれv3で解く</a>";
+			StringBuilder sb = new StringBuilder();
+			int baseSize = 20;
+			int margin = 5;
+			sb.append(
+					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
+							+ "height=\"" + (wkField.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
+							+ (wkField.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+					String numberStr = String.valueOf(wkField.numbers[yIndex][xIndex]);
+					String masuStr;
+					int idx = HALF_NUMS.indexOf(numberStr);
+					if (idx >= 0) {
+						masuStr = FULL_NUMS.substring(idx / 2, idx / 2 + 1);
+					} else {
+						masuStr = numberStr;
+					}
+					sb.append("<text y=\"" + (yIndex * baseSize + baseSize + margin - 4)
+							+ "\" x=\""
+							+ (xIndex * baseSize + baseSize + 2)
+							+ "\" font-size=\""
+							+ (baseSize - 5)
+							+ "\" textLength=\""
+							+ (baseSize - 5)
+							+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+							+ masuStr
+							+ "</text>");
+				}
+			}
+			// 横壁描画
+			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = -1; xIndex < wkField.getXLength(); xIndex++) {
+					boolean oneYokoWall = xIndex == -1 || xIndex == wkField.getXLength() - 1;
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + margin)
+							+ "\" x1=\""
+							+ (xIndex * baseSize + 2 * baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ (xIndex * baseSize + 2 * baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneYokoWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">"
+							+ "</line>");
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = -1; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+					boolean oneTateWall = yIndex == -1 || yIndex == wkField.getYLength() - 1;
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x1=\""
+							+ (xIndex * baseSize + baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ (xIndex * baseSize + baseSize + baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneTateWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">"
+							+ "</line>");
+				}
+			}
+
+			sb.append("</svg>");
+			System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
+			System.out.println(level);
+			System.out.println(wkField);
+			return new GeneratorResult(status, sb.toString(), link, url, level, "");
+		}
+	}
 
 	public static class Field {
 
@@ -19,6 +287,24 @@ public class HitoriSolver implements Solver {
 
 		public Masu[][] getMasu() {
 			return masu;
+		}
+
+		public String getPuzPreURL() {
+			StringBuilder sb = new StringBuilder();
+			sb.append("http://pzv.jp/p.html?hitori/" + getXLength() + "/" + getYLength() + "/");
+			for (int i = 0; i < getYLength() * getXLength(); i++) {
+				int yIndex = i / getXLength();
+				int xIndex = i % getXLength();
+				Integer num = numbers[yIndex][xIndex];
+				String numStr = Integer.toHexString(num);
+				if (numStr.length() == 2) {
+					numStr = "-" + numStr;
+				} else if (numStr.length() == 3) {
+					numStr = "+" + numStr;
+				}
+				sb.append(numStr);
+			}
+			return sb.toString();
 		}
 
 		public int getYLength() {
@@ -70,6 +356,16 @@ public class HitoriSolver implements Solver {
 				}
 			}
 			numbers = other.numbers;
+		}
+
+		public Field(int height, int width) {
+			masu = new Masu[height][width];
+			numbers = new Integer[height][width];
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					masu[yIndex][xIndex] = Masu.SPACE;
+				}
+			}
 		}
 
 		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
@@ -243,14 +539,19 @@ public class HitoriSolver implements Solver {
 		 * @param recursive
 		 */
 		private boolean solveAndCheck() {
+			String str = getStateDump();
 			if (!numberSolve()) {
 				return false;
 			}
 			if (!nextSolve()) {
 				return false;
 			}
-			if (!connectSolve()) {
-				return false;
+			if (!getStateDump().equals(str)) {
+				return solveAndCheck();
+			} else {
+				if (!connectSolve()) {
+					return false;
+				}
 			}
 			return true;
 		}
@@ -294,10 +595,15 @@ public class HitoriSolver implements Solver {
 
 	}
 
-	private final Field field;
+	protected final Field field;
+	protected int count;
 
 	public HitoriSolver(int height, int width, String param) {
 		field = new Field(height, width, param);
+	}
+
+	public HitoriSolver(Field field) {
+		this.field = new Field(field);
 	}
 
 	public Field getField() {
@@ -315,19 +621,16 @@ public class HitoriSolver implements Solver {
 
 	@Override
 	public String solve() {
-		int difficulty = 0;
 		long start = System.nanoTime();
 		while (!field.isSolved()) {
 			System.out.println(field);
 			String befStr = field.getStateDump();
-			if (!field.solveAndCheck()
-					|| (!befStr.equals(field.getStateDump()) && !field.solveAndCheck())) {
+			if (!field.solveAndCheck()) {
 				return "問題に矛盾がある可能性があります。途中経過を返します。";
 			}
 			int recursiveCnt = 0;
 			while (field.getStateDump().equals(befStr) && recursiveCnt < 3) {
-				difficulty = difficulty <= recursiveCnt ? recursiveCnt + 1 : difficulty;
-				if (!candSolve(field, recursiveCnt)) {
+				if (!candSolve(field, recursiveCnt == 2 ? 999 : recursiveCnt)) {
 					return "問題に矛盾がある可能性があります。途中経過を返します。";
 				}
 				recursiveCnt++;
@@ -336,24 +639,31 @@ public class HitoriSolver implements Solver {
 				return "解けませんでした。途中経過を返します。";
 			}
 		}
-		System.out.println(((System.nanoTime() - start) / 1000000) +
-				"ms.");
-		System.out.println("難易度:" + difficulty);
+		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
+		System.out.println("難易度:" + (count * 10));
 		System.out.println(field);
+		int level = (int) Math.sqrt(count * 10 / 3) + 1;
 		return "解けました。推定難易度:"
-				+ Difficulty.getByVal(difficulty).toString();
+				+ Difficulty.getByCount(count * 10).toString() + "(Lv:" + level + ")";
 	}
 
 	/**
 	 * 仮置きして調べる
 	 */
-	private static boolean candSolve(Field field, int recursive) {
+	protected boolean candSolve(Field field, int recursive) {
+		String str = field.getStateDump();
 		for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 			for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
-				if (!oneCandSolve(field, yIndex, xIndex, recursive)) {
-					return false;
+				if (field.masu[yIndex][xIndex] == Masu.SPACE) {
+					count++;
+					if (!oneCandSolve(field, yIndex, xIndex, recursive)) {
+						return false;
+					}
 				}
 			}
+		}
+		if (!field.getStateDump().equals(str)) {
+			return candSolve(field, recursive);
 		}
 		return true;
 	}
@@ -361,35 +671,29 @@ public class HitoriSolver implements Solver {
 	/**
 	 * 1つのマスに対する仮置き調査
 	 */
-	private static boolean oneCandSolve(Field field, int yIndex, int xIndex, int recursive) {
-		if (field.masu[yIndex][xIndex] == Masu.SPACE) {
-			Field virtual = new Field(field);
-			virtual.masu[yIndex][xIndex] = Masu.BLACK;
-			String befStr = virtual.getStateDump();
-			boolean allowBlack = virtual.solveAndCheck()
-					&& (befStr.equals(virtual.getStateDump()) || virtual.solveAndCheck());
-			if (allowBlack && recursive > 0) {
-				if (!candSolve(virtual, recursive - 1)) {
-					allowBlack = false;
-				}
+	private boolean oneCandSolve(Field field, int yIndex, int xIndex, int recursive) {
+		Field virtual = new Field(field);
+		virtual.masu[yIndex][xIndex] = Masu.BLACK;
+		boolean allowBlack = virtual.solveAndCheck();
+		if (allowBlack && recursive > 0) {
+			if (!candSolve(virtual, recursive - 1)) {
+				allowBlack = false;
 			}
-			Field virtual2 = new Field(field);
-			virtual2.masu[yIndex][xIndex] = Masu.NOT_BLACK;
-			befStr = virtual2.getStateDump();
-			boolean allowNotBlack = virtual2.solveAndCheck()
-					&& (befStr.equals(virtual2.getStateDump()) || virtual2.solveAndCheck());
-			if (allowNotBlack && recursive > 0) {
-				if (!candSolve(virtual2, recursive - 1)) {
-					allowNotBlack = false;
-				}
+		}
+		Field virtual2 = new Field(field);
+		virtual2.masu[yIndex][xIndex] = Masu.NOT_BLACK;
+		boolean allowNotBlack = virtual2.solveAndCheck();
+		if (allowNotBlack && recursive > 0) {
+			if (!candSolve(virtual2, recursive - 1)) {
+				allowNotBlack = false;
 			}
-			if (!allowBlack && !allowNotBlack) {
-				return false;
-			} else if (!allowBlack) {
-				field.masu = virtual2.masu;
-			} else if (!allowNotBlack) {
-				field.masu = virtual.masu;
-			}
+		}
+		if (!allowBlack && !allowNotBlack) {
+			return false;
+		} else if (!allowBlack) {
+			field.masu = virtual2.masu;
+		} else if (!allowNotBlack) {
+			field.masu = virtual.masu;
 		}
 		return true;
 	}
