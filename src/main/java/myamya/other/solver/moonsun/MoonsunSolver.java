@@ -1,26 +1,382 @@
 package myamya.other.solver.moonsun;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
+import myamya.other.solver.Common.CountOverException;
 import myamya.other.solver.Common.Difficulty;
 import myamya.other.solver.Common.Direction;
+import myamya.other.solver.Common.GeneratorResult;
 import myamya.other.solver.Common.Masu;
 import myamya.other.solver.Common.Position;
 import myamya.other.solver.Common.Wall;
+import myamya.other.solver.Generator;
+import myamya.other.solver.RoomMaker;
 import myamya.other.solver.Solver;
 
 public class MoonsunSolver implements Solver {
+	public static class MoonsunGenerator implements Generator {
+
+		static class ExtendedField extends MoonsunSolver.Field {
+			public ExtendedField(Field other) {
+				super(other);
+			}
+
+			public ExtendedField(int height, int width, List<Set<Position>> rooms) {
+				super(height, width, rooms);
+			}
+
+			/**
+			 * 作問中は月部屋・太陽部屋の意識は不要。
+			 * ただし、部屋の数が奇数は即OUT
+			 */
+			@Override
+			public boolean roomSolve() {
+				if (rooms.size() != 1 && rooms.size() % 2 == 1) {
+					return false;
+				}
+				for (int i = 0; i < rooms.size(); i++) {
+					Room room = rooms.get(i);
+					// 部屋に対する調査
+					int whiteCnt = 0;
+					int spaceCnt = 0;
+					for (Position pos : room.getMember()) {
+						if (masu[pos.getyIndex()][pos.getxIndex()] == Masu.NOT_BLACK) {
+							whiteCnt++;
+						} else if (masu[pos.getyIndex()][pos.getxIndex()] == Masu.SPACE) {
+							spaceCnt++;
+						}
+					}
+					// 最低1マスは必要なので
+					if (whiteCnt + spaceCnt < 1) {
+						// 白マス不足
+						return false;
+					}
+					if (whiteCnt == 0 && spaceCnt == 1) {
+						for (Position pos : room.getMember()) {
+							if (masu[pos.getyIndex()][pos.getxIndex()] == Masu.SPACE) {
+								masu[pos.getyIndex()][pos.getxIndex()] = Masu.NOT_BLACK;
+							}
+						}
+					}
+				}
+				return true;
+			}
+		}
+
+		static class MoonsunSolverForGenerator extends MoonsunSolver {
+			private final int limit;
+
+			public MoonsunSolverForGenerator(Field field, int limit) {
+				super(field);
+				this.limit = limit;
+			}
+
+			public int solve2() {
+				try {
+					while (!field.isSolved()) {
+						String befStr = field.getStateDump();
+						if (!field.solveAndCheck()) {
+							return -1;
+						}
+						int recursiveCnt = 0;
+						while (field.getStateDump().equals(befStr) && recursiveCnt < 3) {
+							if (!candSolve(field, recursiveCnt == 2 ? 999 : recursiveCnt)) {
+								return -1;
+							}
+							recursiveCnt++;
+						}
+						if (recursiveCnt == 3 && field.getStateDump().equals(befStr)) {
+							return -1;
+						}
+					}
+				} catch (CountOverException e) {
+					return -1;
+				}
+				return count;
+			}
+
+			@Override
+			protected boolean candSolve(Field field, int recursive) {
+				if (this.count >= limit) {
+					throw new CountOverException();
+				} else {
+					return super.candSolve(field, recursive);
+				}
+			}
+		}
+
+		private final int height;
+		private final int width;
+
+		public MoonsunGenerator(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		public static void main(String[] args) {
+			new MoonsunGenerator(8, 8).generate();
+		}
+
+		@Override
+		public GeneratorResult generate() {
+			MoonsunSolver.Field wkField = new ExtendedField(height, width,
+					RoomMaker.roomMake(height, width, (int) (Math.sqrt(height) + 1), -1));
+			List<Integer> indexList = new ArrayList<>();
+			for (int i = 0; i < (height * (width - 1)) + ((height - 1) * width); i++) {
+				indexList.add(i);
+			}
+			int level = 0;
+			int index = 0;
+			long start = System.nanoTime();
+			while (true) {
+				// 問題生成部
+				while (!wkField.isSolved()) {
+					int posBase = indexList.get(index);
+					boolean toYokoWall;
+					int yIndex, xIndex;
+					if (posBase < height * (width - 1)) {
+						toYokoWall = true;
+						yIndex = posBase / (width - 1);
+						xIndex = posBase % (width - 1);
+					} else {
+						toYokoWall = false;
+						posBase = posBase - (height * (width - 1));
+						yIndex = posBase / width;
+						xIndex = posBase % width;
+					}
+					if ((toYokoWall && wkField.yokoWall[yIndex][xIndex] == Wall.SPACE)
+							|| (!toYokoWall && wkField.tateWall[yIndex][xIndex] == Wall.SPACE)) {
+						boolean isOk = false;
+						List<Integer> numIdxList = new ArrayList<>();
+						for (int i = 0; i < 2; i++) {
+							numIdxList.add(i);
+						}
+						Collections.shuffle(numIdxList);
+						for (int masuNum : numIdxList) {
+							MoonsunSolver.Field virtual = new ExtendedField(wkField);
+							if (masuNum < 1) {
+								if (toYokoWall) {
+									virtual.yokoWall[yIndex][xIndex] = Wall.EXISTS;
+								} else {
+									virtual.tateWall[yIndex][xIndex] = Wall.EXISTS;
+								}
+							} else if (masuNum < 2) {
+								if (toYokoWall) {
+									virtual.yokoWall[yIndex][xIndex] = Wall.NOT_EXISTS;
+								} else {
+									virtual.tateWall[yIndex][xIndex] = Wall.NOT_EXISTS;
+								}
+							}
+							if (virtual.solveAndCheck()) {
+								isOk = true;
+								wkField.masu = virtual.masu;
+								wkField.yokoWall = virtual.yokoWall;
+								wkField.tateWall = virtual.tateWall;
+							}
+						}
+						if (!isOk) {
+							// 破綻したら0から作り直す。
+							wkField = new ExtendedField(height, width,
+									RoomMaker.roomMake(height, width, (int) (Math.sqrt(height) + 1), -1));
+							index = 0;
+							continue;
+						}
+					}
+					index++;
+				}
+				// 月と太陽を配置する。
+				// ランダムに1マス白マスを選ぶ。
+				List<Position> whitePosList = new ArrayList<>();
+				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+						if (wkField.masu[yIndex][xIndex] == Masu.NOT_BLACK) {
+							whitePosList.add(new Position(yIndex, xIndex));
+						}
+					}
+				}
+				Position nowPos = whitePosList.get((int) (Math.random() * whitePosList.size()));
+				List<Integer> roomConnectList = new ArrayList<>();
+				List<Position> alreadyPosList = new ArrayList<>();
+				while (true) {
+					// 今いる部屋を加える。
+					for (int i = 0; i < wkField.rooms.size(); i++) {
+						Set<Position> room = wkField.rooms.get(i).getMember();
+						if (room.contains(nowPos)) {
+							if (!roomConnectList.contains(i)) {
+								roomConnectList.add(i);
+							}
+							break;
+						}
+					}
+					if (roomConnectList.size() == wkField.rooms.size()) {
+						break;
+					}
+					alreadyPosList.add(nowPos);
+					if (nowPos.getyIndex() != 0
+							&& wkField.tateWall[nowPos.getyIndex() - 1][nowPos.getxIndex()] == Wall.NOT_EXISTS) {
+						Position nextPos = new Position(nowPos.getyIndex() - 1, nowPos.getxIndex());
+						if (!alreadyPosList.contains(nextPos)) {
+							nowPos = nextPos;
+							continue;
+						}
+					}
+					if (nowPos.getxIndex() != wkField.getXLength() - 1
+							&& wkField.yokoWall[nowPos.getyIndex()][nowPos.getxIndex()] == Wall.NOT_EXISTS) {
+						Position nextPos = new Position(nowPos.getyIndex(), nowPos.getxIndex() + 1);
+						if (!alreadyPosList.contains(nextPos)) {
+							nowPos = nextPos;
+							continue;
+						}
+					}
+					if (nowPos.getyIndex() != wkField.getYLength() - 1
+							&& wkField.tateWall[nowPos.getyIndex()][nowPos.getxIndex()] == Wall.NOT_EXISTS) {
+						Position nextPos = new Position(nowPos.getyIndex() + 1, nowPos.getxIndex());
+						if (!alreadyPosList.contains(nextPos)) {
+							nowPos = nextPos;
+							continue;
+						}
+					}
+					if (nowPos.getxIndex() != 0
+							&& wkField.yokoWall[nowPos.getyIndex()][nowPos.getxIndex() - 1] == Wall.NOT_EXISTS) {
+						Position nextPos = new Position(nowPos.getyIndex(), nowPos.getxIndex() - 1);
+						if (!alreadyPosList.contains(nextPos)) {
+							nowPos = nextPos;
+							continue;
+						}
+					}
+				}
+				// そこから部屋のつながりを判定し、順次太陽→月としていく。
+				int adjust = (int) (Math.random() * 2);
+				for (int i = 0; i < roomConnectList.size(); i++) {
+					for (Position pos : wkField.getRooms().get(i).getMember()) {
+						if (wkField.masu[pos.getyIndex()][pos.getxIndex()] == Masu.NOT_BLACK) {
+							wkField.moonsuns[pos.getyIndex()][pos.getxIndex()] = (i + adjust) % 2 == 0 ? 1 : 2;
+						} else if (wkField.masu[pos.getyIndex()][pos.getxIndex()] == Masu.BLACK) {
+							wkField.moonsuns[pos.getyIndex()][pos.getxIndex()] = (i + adjust) % 2 == 0 ? 2 : 1;
+						}
+
+					}
+				}
+				// マスを戻す
+				List<Position> fixedMasuList = new ArrayList<>();
+				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+						wkField.masu[yIndex][xIndex] = Masu.SPACE;
+						fixedMasuList.add(new Position(yIndex, xIndex));
+					}
+				}
+				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+					for (int xIndex = 0; xIndex < wkField.getXLength() - 1; xIndex++) {
+						wkField.yokoWall[yIndex][xIndex] = Wall.SPACE;
+					}
+				}
+				for (int yIndex = 0; yIndex < wkField.getYLength() - 1; yIndex++) {
+					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+						wkField.tateWall[yIndex][xIndex] = Wall.SPACE;
+					}
+				}
+				// 解けるかな？
+				level = new MoonsunSolverForGenerator(wkField, 100).solve2();
+				if (level == -1) {
+					// 解けなければやり直し
+					wkField = new ExtendedField(height, width,
+							RoomMaker.roomMake(height, width, (int) (Math.sqrt(height) + 1), -1));
+					index = 0;
+				} else {
+					Collections.shuffle(fixedMasuList);
+					for (Position pos : fixedMasuList) {
+						MoonsunSolver.Field virtual = new MoonsunSolver.Field(wkField, true);
+						virtual.moonsuns[pos.getyIndex()][pos.getxIndex()] = 0;
+						int solveResult = new MoonsunSolverForGenerator(virtual, 1500).solve2();
+						if (solveResult != -1 && solveResult >= level) {
+							wkField.moonsuns[pos.getyIndex()][pos.getxIndex()] = 0;
+							level = solveResult;
+						}
+					}
+					break;
+				}
+			}
+			level = (int) Math.sqrt(level / 3) + 1;
+			String status = "Lv:" + level + "の問題を獲得！(部屋/記号：" + wkField.getHintCount() + ")";
+			String url = wkField.getPuzPreURL();
+			String link = "<a href=\"" + url + "\" target=\"_blank\">puzz.linkで解く</a>";
+			StringBuilder sb = new StringBuilder();
+			int baseSize = 20;
+			int margin = 5;
+			sb.append(
+					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
+							+ "height=\"" + (wkField.getYLength() * baseSize + 2 * baseSize + margin)
+							+ "\" width=\""
+							+ (wkField.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			// 横壁描画
+			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = -1; xIndex < wkField.getXLength(); xIndex++) {
+					boolean oneYokoWall = xIndex == -1 || xIndex == wkField.getXLength() - 1
+							|| wkField.getYokoRoomWall()[yIndex][xIndex];
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + margin)
+							+ "\" x1=\""
+							+ (xIndex * baseSize + 2 * baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ (xIndex * baseSize + 2 * baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneYokoWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">"
+							+ "</line>");
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = -1; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+					boolean oneTateWall = yIndex == -1 || yIndex == wkField.getYLength() - 1
+							|| wkField.getTateRoomWall()[yIndex][xIndex];
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x1=\""
+							+ (xIndex * baseSize + baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ (xIndex * baseSize + baseSize + baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneTateWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">"
+							+ "</line>");
+				}
+			}
+			sb.append("</svg>");
+			System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
+			System.out.println(level);
+			System.out.println(wkField.getHintCount());
+			System.out.println(wkField);
+			System.out.println(url);
+			return new GeneratorResult(status, sb.toString(), link, url, level, "");
+		}
+
+	}
 
 	public static class Field {
 		static final String ALPHABET_FROM_G = "ghijklmnopqrstuvwxyz";
 
 		// マスの情報
-		private Masu[][] masu;
+		protected Masu[][] masu;
 		// 月と太陽の情報。1が太陽、2が月
 		private final Integer[][] moonsuns;
 		// 横をふさぐ壁が存在するか
@@ -36,12 +392,22 @@ public class MoonsunSolver implements Solver {
 		// 0,0 = trueなら、0,0と1,0の間に壁があるという意味
 		private Wall[][] tateWall;
 		// 同一グループに属するマスの情報
-		private final List<Room> rooms;
+		protected final List<Room> rooms;
 		// 月部屋・太陽部屋の情報。0は不明、1は太陽部屋、2は月部屋
 		private Map<Integer, Integer> roomType;
 
 		public Masu[][] getMasu() {
 			return masu;
+		}
+
+		public String getHintCount() {
+			// TODO 自動生成されたメソッド・スタブ
+			return null;
+		}
+
+		public String getPuzPreURL() {
+			// TODO 自動生成されたメソッド・スタブ
+			return null;
 		}
 
 		public Integer[][] getMoonSuns() {
@@ -249,6 +615,123 @@ public class MoonsunSolver implements Solver {
 			yokoRoomWall = other.yokoRoomWall;
 			tateRoomWall = other.tateRoomWall;
 			rooms = other.rooms;
+		}
+
+		public Field(Field other, boolean flag) {
+			masu = new Masu[other.getYLength()][other.getXLength()];
+			moonsuns = new Integer[other.getYLength()][other.getXLength()];
+			yokoWall = new Wall[other.getYLength()][other.getXLength() - 1];
+			tateWall = new Wall[other.getYLength() - 1][other.getXLength()];
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					masu[yIndex][xIndex] = other.masu[yIndex][xIndex];
+					moonsuns[yIndex][xIndex] = other.moonsuns[yIndex][xIndex];
+				}
+			}
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength() - 1; xIndex++) {
+					yokoWall[yIndex][xIndex] = other.yokoWall[yIndex][xIndex];
+				}
+			}
+			for (int yIndex = 0; yIndex < getYLength() - 1; yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					tateWall[yIndex][xIndex] = other.tateWall[yIndex][xIndex];
+				}
+			}
+			roomType = new HashMap<>();
+			for (Entry<Integer, Integer> e : other.roomType.entrySet()) {
+				roomType.put(e.getKey(), e.getValue());
+			}
+			yokoRoomWall = other.yokoRoomWall;
+			tateRoomWall = other.tateRoomWall;
+			rooms = other.rooms;
+		}
+
+		public Field(int height, int width, List<Set<Position>> rooms) {
+			masu = new Masu[height][width];
+			moonsuns = new Integer[height][width];
+			yokoWall = new Wall[height][width - 1];
+			tateWall = new Wall[height - 1][width];
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					masu[yIndex][xIndex] = Masu.SPACE;
+					moonsuns[yIndex][xIndex] = 0;
+				}
+			}
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength() - 1; xIndex++) {
+					yokoWall[yIndex][xIndex] = Wall.SPACE;
+				}
+			}
+			for (int yIndex = 0; yIndex < getYLength() - 1; yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					tateWall[yIndex][xIndex] = Wall.SPACE;
+				}
+			}
+			yokoRoomWall = new boolean[height][width - 1];
+			tateRoomWall = new boolean[height - 1][width];
+			// 横壁設定
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength() - 1; xIndex++) {
+					boolean isWall = true;
+					Position pos = new Position(yIndex, xIndex);
+					for (Set<Position> room : rooms) {
+						if (room.contains(pos)) {
+							Position rightPos = new Position(yIndex, xIndex + 1);
+							if (room.contains(rightPos)) {
+								isWall = false;
+								break;
+							}
+						}
+					}
+					yokoRoomWall[yIndex][xIndex] = isWall;
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = 0; yIndex < getYLength() - 1; yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					boolean isWall = true;
+					Position pos = new Position(yIndex, xIndex);
+					for (Set<Position> room : rooms) {
+						if (room.contains(pos)) {
+							Position downPos = new Position(yIndex + 1, xIndex);
+							if (room.contains(downPos)) {
+								isWall = false;
+								break;
+							}
+						}
+					}
+					tateRoomWall[yIndex][xIndex] = isWall;
+				}
+			}
+			this.rooms = new ArrayList<>();
+			roomType = new HashMap<>();
+			for (int i = 0; i < rooms.size(); i++) {
+				Set<Position> room = rooms.get(i);
+				Set<Position> yokoWallPosSet = new HashSet<>();
+				Set<Position> tateWallPosSet = new HashSet<>();
+				for (Position roomPos : room) {
+					if (roomPos.getyIndex() != 0
+							&& tateRoomWall[roomPos.getyIndex() - 1][roomPos.getxIndex()]) {
+						tateWallPosSet.add(new Position(roomPos.getyIndex() - 1, roomPos.getxIndex()));
+					}
+					if (roomPos.getxIndex() != getXLength() - 1
+							&& yokoRoomWall[roomPos.getyIndex()][roomPos.getxIndex()]) {
+						yokoWallPosSet.add(new Position(roomPos.getyIndex(), roomPos.getxIndex()));
+					}
+					if (roomPos.getyIndex() != getYLength() - 1
+							&& tateRoomWall[roomPos.getyIndex()][roomPos.getxIndex()]) {
+						tateWallPosSet.add(new Position(roomPos.getyIndex(), roomPos.getxIndex()));
+					}
+					if (roomPos.getxIndex() != 0
+							&& yokoRoomWall[roomPos.getyIndex()][roomPos.getxIndex() - 1]) {
+						yokoWallPosSet.add(new Position(roomPos.getyIndex(), roomPos.getxIndex() - 1));
+					}
+				}
+				this.rooms.add(new Room(room, yokoWallPosSet, tateWallPosSet));
+				roomType.put(i, 0);
+			}
+
 		}
 
 		// posを起点に上下左右に部屋壁または白確定でないマスを無制限につなげていく。
@@ -718,7 +1201,7 @@ public class MoonsunSolver implements Solver {
 		 * 部屋には最低1マスの黒マスが入り、
 		 * 月か太陽で白(黒)マスが1つでもあれば同じ部屋の同じ星は全て白(黒)マス。
 		 */
-		private boolean roomSolve() {
+		protected boolean roomSolve() {
 			for (int i = 0; i < rooms.size(); i++) {
 				Room room = rooms.get(i);
 				boolean sunRoom = false;
@@ -995,11 +1478,15 @@ public class MoonsunSolver implements Solver {
 
 	}
 
-	private final Field field;
-	private int count = 0;
+	protected final Field field;
+	protected int count = 0;
 
 	public MoonsunSolver(int height, int width, String param) {
 		field = new Field(height, width, param);
+	}
+
+	public MoonsunSolver(Field field) {
+		this.field = new Field(field);
 	}
 
 	public Field getField() {
@@ -1046,7 +1533,7 @@ public class MoonsunSolver implements Solver {
 	 * 仮置きして調べる
 	 * @param posSet
 	 */
-	private boolean candSolve(Field field, int recursive) {
+	protected boolean candSolve(Field field, int recursive) {
 		String str = field.getStateDump();
 		for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 			for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
