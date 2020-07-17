@@ -239,6 +239,11 @@ var ruleMap = {
 		url : "https://www.nikoli.co.jp/ja/puzzles/hitori/",
 		source : "ニコリ公式"
 	},
+	moonsun : {
+		name : "月か太陽",
+		url : "https://www.nikoli.co.jp/ja/puzzles/moon-or-sun/",
+		source : "ニコリ公式"
+	},
 }
 var regMap = {
 		yajilin:['yajilin','yajilin','yajilin','yajilin','yajilin','yajilin','yajilin','yajilin','yajilin','yajilin'],

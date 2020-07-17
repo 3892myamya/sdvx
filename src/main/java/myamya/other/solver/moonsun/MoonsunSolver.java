@@ -121,13 +121,13 @@ public class MoonsunSolver implements Solver {
 		}
 
 		public static void main(String[] args) {
-			new MoonsunGenerator(8, 8).generate();
+			new MoonsunGenerator(10, 10).generate();
 		}
 
 		@Override
 		public GeneratorResult generate() {
 			MoonsunSolver.Field wkField = new ExtendedField(height, width,
-					RoomMaker.roomMake(height, width, (int) (Math.sqrt(height) + 1), -1));
+					RoomMaker.roomMake(height, width, (int) (Math.sqrt(height)), -1));
 			List<Integer> indexList = new ArrayList<>();
 			for (int i = 0; i < (height * (width - 1)) + ((height - 1) * width); i++) {
 				indexList.add(i);
@@ -184,7 +184,7 @@ public class MoonsunSolver implements Solver {
 						if (!isOk) {
 							// 破綻したら0から作り直す。
 							wkField = new ExtendedField(height, width,
-									RoomMaker.roomMake(height, width, (int) (Math.sqrt(height) + 1), -1));
+									RoomMaker.roomMake(height, width, (int) (Math.sqrt(height)), -1));
 							index = 0;
 							continue;
 						}
@@ -255,7 +255,7 @@ public class MoonsunSolver implements Solver {
 				// そこから部屋のつながりを判定し、順次太陽→月としていく。
 				int adjust = (int) (Math.random() * 2);
 				for (int i = 0; i < roomConnectList.size(); i++) {
-					for (Position pos : wkField.getRooms().get(i).getMember()) {
+					for (Position pos : wkField.getRooms().get(roomConnectList.get(i)).getMember()) {
 						if (wkField.masu[pos.getyIndex()][pos.getxIndex()] == Masu.NOT_BLACK) {
 							wkField.moonsuns[pos.getyIndex()][pos.getxIndex()] = (i + adjust) % 2 == 0 ? 1 : 2;
 						} else if (wkField.masu[pos.getyIndex()][pos.getxIndex()] == Masu.BLACK) {
@@ -287,14 +287,14 @@ public class MoonsunSolver implements Solver {
 				if (level == -1) {
 					// 解けなければやり直し
 					wkField = new ExtendedField(height, width,
-							RoomMaker.roomMake(height, width, (int) (Math.sqrt(height) + 1), -1));
+							RoomMaker.roomMake(height, width, (int) (Math.sqrt(height)), -1));
 					index = 0;
 				} else {
 					Collections.shuffle(fixedMasuList);
 					for (Position pos : fixedMasuList) {
 						MoonsunSolver.Field virtual = new MoonsunSolver.Field(wkField, true);
 						virtual.moonsuns[pos.getyIndex()][pos.getxIndex()] = 0;
-						int solveResult = new MoonsunSolverForGenerator(virtual, 1500).solve2();
+						int solveResult = new MoonsunSolverForGenerator(virtual, 2000).solve2();
 						if (solveResult != -1 && solveResult >= level) {
 							wkField.moonsuns[pos.getyIndex()][pos.getxIndex()] = 0;
 							level = solveResult;
@@ -303,8 +303,8 @@ public class MoonsunSolver implements Solver {
 					break;
 				}
 			}
-			level = (int) Math.sqrt(level / 3) + 1;
-			String status = "Lv:" + level + "の問題を獲得！(部屋/記号：" + wkField.getHintCount() + ")";
+			level = (int) Math.sqrt(level * 3 / 3) + 1;
+			String status = "Lv:" + level + "の問題を獲得！(部屋/月/太陽：" + wkField.getHintCount() + ")";
 			String url = wkField.getPuzPreURL();
 			String link = "<a href=\"" + url + "\" target=\"_blank\">puzz.linkで解く</a>";
 			StringBuilder sb = new StringBuilder();
@@ -315,6 +315,36 @@ public class MoonsunSolver implements Solver {
 							+ "height=\"" + (wkField.getYLength() * baseSize + 2 * baseSize + margin)
 							+ "\" width=\""
 							+ (wkField.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+					if (wkField.getMoonSuns()[yIndex][xIndex] != 0) {
+						if (wkField.getMoonSuns()[yIndex][xIndex] == 1) {
+							sb.append("<circle cy=\"" + (yIndex * baseSize + (baseSize / 2) + margin)
+									+ "\" cx=\""
+									+ (xIndex * baseSize + baseSize + (baseSize / 2))
+									+ "\" r=\""
+									+ (baseSize / 2 - 2)
+									+ "\" fill=\"white\", stroke=\"black\">"
+									+ "</circle>");
+						} else if (wkField.getMoonSuns()[yIndex][xIndex] == 2) {
+							sb.append("<circle cy=\"" + (yIndex * baseSize + (baseSize / 2) + margin)
+									+ "\" cx=\""
+									+ (xIndex * baseSize + baseSize + (baseSize / 2))
+									+ "\" r=\""
+									+ (baseSize / 2 - 2)
+									+ "\" fill=\"black\", stroke=\"black\">"
+									+ "</circle>");
+							sb.append("<circle cy=\"" + (yIndex * baseSize + (baseSize / 2) + margin - 2)
+									+ "\" cx=\""
+									+ (xIndex * baseSize + baseSize + (baseSize / 2) - 2)
+									+ "\" r=\""
+									+ (baseSize / 2 - 3)
+									+ "\" fill=\"white\", stroke=\"white\">"
+									+ "</circle>");
+						}
+					}
+				}
+			}
 			// 横壁描画
 			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
 				for (int xIndex = -1; xIndex < wkField.getXLength(); xIndex++) {
@@ -374,6 +404,7 @@ public class MoonsunSolver implements Solver {
 
 	public static class Field {
 		static final String ALPHABET_FROM_G = "ghijklmnopqrstuvwxyz";
+		static final String ALPHABET_AND_NUMBER = "0123456789abcdefghijklmnopqrstuvwxyz";
 
 		// マスの情報
 		protected Masu[][] masu;
@@ -401,13 +432,158 @@ public class MoonsunSolver implements Solver {
 		}
 
 		public String getHintCount() {
-			// TODO 自動生成されたメソッド・スタブ
-			return null;
+			int moonCnt = 0;
+			int sunCnt = 0;
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					if (moonsuns[yIndex][xIndex] == 1) {
+						sunCnt++;
+					} else if (moonsuns[yIndex][xIndex] == 2) {
+						moonCnt++;
+					}
+				}
+			}
+			return rooms.size() + "/" + moonCnt + "/" + sunCnt;
 		}
 
 		public String getPuzPreURL() {
-			// TODO 自動生成されたメソッド・スタブ
-			return null;
+			StringBuilder sb = new StringBuilder();
+			sb.append("http://pzv.jp/p.html?moonsun/" + getXLength() + "/" + getYLength() + "/");
+			for (int i = 0; i < getYLength() * (getXLength() - 1); i++) {
+				int yIndex1 = i / (getXLength() - 1);
+				int xIndex1 = i % (getXLength() - 1);
+				i++;
+				int yIndex2 = -1;
+				int xIndex2 = -1;
+				if (i < getYLength() * (getXLength() - 1)) {
+					yIndex2 = i / (getXLength() - 1);
+					xIndex2 = i % (getXLength() - 1);
+				}
+				i++;
+				int yIndex3 = -1;
+				int xIndex3 = -1;
+				if (i < getYLength() * (getXLength() - 1)) {
+					yIndex3 = i / (getXLength() - 1);
+					xIndex3 = i % (getXLength() - 1);
+				}
+				i++;
+				int yIndex4 = -1;
+				int xIndex4 = -1;
+				if (i < getYLength() * (getXLength() - 1)) {
+					yIndex4 = i / (getXLength() - 1);
+					xIndex4 = i % (getXLength() - 1);
+				}
+				i++;
+				int yIndex5 = -1;
+				int xIndex5 = -1;
+				if (i < getYLength() * (getXLength() - 1)) {
+					yIndex5 = i / (getXLength() - 1);
+					xIndex5 = i % (getXLength() - 1);
+				}
+				int num = 0;
+				if (yIndex1 != -1 && xIndex1 != -1 && yokoRoomWall[yIndex1][xIndex1]) {
+					num = num + 16;
+				}
+				if (yIndex2 != -1 && xIndex2 != -1 && yokoRoomWall[yIndex2][xIndex2]) {
+					num = num + 8;
+				}
+				if (yIndex3 != -1 && xIndex3 != -1 && yokoRoomWall[yIndex3][xIndex3]) {
+					num = num + 4;
+				}
+				if (yIndex4 != -1 && xIndex4 != -1 && yokoRoomWall[yIndex4][xIndex4]) {
+					num = num + 2;
+				}
+				if (yIndex5 != -1 && xIndex5 != -1 && yokoRoomWall[yIndex5][xIndex5]) {
+					num = num + 1;
+				}
+				sb.append(ALPHABET_AND_NUMBER.substring(num, num + 1));
+			}
+			for (int i = 0; i < (getYLength() - 1) * getXLength(); i++) {
+				int yIndex1 = i / getXLength();
+				int xIndex1 = i % getXLength();
+				i++;
+				int yIndex2 = -1;
+				int xIndex2 = -1;
+				if (i < (getYLength() - 1) * getXLength()) {
+					yIndex2 = i / getXLength();
+					xIndex2 = i % getXLength();
+				}
+				i++;
+				int yIndex3 = -1;
+				int xIndex3 = -1;
+				if (i < (getYLength() - 1) * getXLength()) {
+					yIndex3 = i / getXLength();
+					xIndex3 = i % getXLength();
+				}
+				i++;
+				int yIndex4 = -1;
+				int xIndex4 = -1;
+				if (i < (getYLength() - 1) * getXLength()) {
+					yIndex4 = i / getXLength();
+					xIndex4 = i % getXLength();
+				}
+				i++;
+				int yIndex5 = -1;
+				int xIndex5 = -1;
+				if (i < (getYLength() - 1) * getXLength()) {
+					yIndex5 = i / getXLength();
+					xIndex5 = i % getXLength();
+				}
+				int num = 0;
+				if (yIndex1 != -1 && xIndex1 != -1 && tateRoomWall[yIndex1][xIndex1]) {
+					num = num + 16;
+				}
+				if (yIndex2 != -1 && xIndex2 != -1 && tateRoomWall[yIndex2][xIndex2]) {
+					num = num + 8;
+				}
+				if (yIndex3 != -1 && xIndex3 != -1 && tateRoomWall[yIndex3][xIndex3]) {
+					num = num + 4;
+				}
+				if (yIndex4 != -1 && xIndex4 != -1 && tateRoomWall[yIndex4][xIndex4]) {
+					num = num + 2;
+				}
+				if (yIndex5 != -1 && xIndex5 != -1 && tateRoomWall[yIndex5][xIndex5]) {
+					num = num + 1;
+				}
+				sb.append(ALPHABET_AND_NUMBER.substring(num, num + 1));
+			}
+			for (int i = 0; i < getYLength() * getXLength(); i++) {
+				int yIndex1 = i / getXLength();
+				int xIndex1 = i % getXLength();
+				i++;
+				int yIndex2 = i / getXLength();
+				int xIndex2 = i % getXLength();
+				i++;
+				int yIndex3 = i / getXLength();
+				int xIndex3 = i % getXLength();
+				int bitInfo = 0;
+				if (yIndex1 < getYLength()) {
+					if (moonsuns[yIndex1][xIndex1] == 1) {
+						bitInfo = bitInfo + 9;
+					} else if (moonsuns[yIndex1][xIndex1] == 2) {
+						bitInfo = bitInfo + 18;
+					}
+				}
+				if (yIndex2 < getYLength()) {
+					if (moonsuns[yIndex2][xIndex2] == 1) {
+						bitInfo = bitInfo + 3;
+					} else if (moonsuns[yIndex2][xIndex2] == 2) {
+						bitInfo = bitInfo + 6;
+					}
+				}
+				if (yIndex3 < getYLength()) {
+					if (moonsuns[yIndex3][xIndex3] == 1) {
+						bitInfo = bitInfo + 1;
+					} else if (moonsuns[yIndex3][xIndex3] == 2) {
+						bitInfo = bitInfo + 2;
+					}
+				}
+				sb.append(Integer.toString(bitInfo, 36));
+			}
+			if (sb.charAt(sb.length() - 1) == '.') {
+				sb.append("/");
+			}
+			return sb.toString();
 		}
 
 		public Integer[][] getMoonSuns() {
