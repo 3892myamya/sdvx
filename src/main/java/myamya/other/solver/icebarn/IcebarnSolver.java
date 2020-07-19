@@ -322,6 +322,25 @@ public class IcebarnSolver implements Solver {
 					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
 							+ "height=\"" + (wkField.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
 							+ (wkField.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+					Position pos = new Position(yIndex, xIndex);
+					if (wkField.getIcebarnPosSet().contains(pos)) {
+						sb.append("<rect y=\"" + (yIndex * baseSize + margin)
+								+ "\" x=\""
+								+ (xIndex * baseSize + baseSize)
+								+ "\" width=\""
+								+ (baseSize)
+								+ "\" height=\""
+								+ (baseSize)
+								+ "\" fill=\""
+								+ "lightblue"
+								+ "\">"
+								+ "</rect>");
+					}
+
+				}
+			}
 			// 横壁描画
 			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
 				for (int xIndex = -1; xIndex < wkField.getXLength(); xIndex++) {
@@ -366,6 +385,40 @@ public class IcebarnSolver implements Solver {
 							+ "</line>");
 				}
 			}
+			// 横矢印描画
+			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < wkField.getXLength() + 1; xIndex++) {
+					if (wkField.getYokoExtraWallDirection()[yIndex][xIndex] != null) {
+						sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 4 + margin)
+								+ "\" x=\""
+								+ (xIndex * baseSize + baseSize - 7)
+								+ "\" font-size=\""
+								+ (baseSize - 6)
+								+ "\" textLength=\""
+								+ (baseSize - 6)
+								+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+								+ wkField.getYokoExtraWallDirection()[yIndex][xIndex].getDirectString()
+								+ "</text>");
+					}
+				}
+			}
+			// 縦矢印描画
+			for (int yIndex = 0; yIndex < wkField.getYLength() + 1; yIndex++) {
+				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+					if (wkField.getTateExtraWallDirection()[yIndex][xIndex] != null) {
+						sb.append("<text y=\"" + (yIndex * baseSize + 4 + margin)
+								+ "\" x=\""
+								+ (xIndex * baseSize + baseSize + 5)
+								+ "\" font-size=\""
+								+ (baseSize - 10)
+								+ "\" textLength=\""
+								+ (baseSize - 10)
+								+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+								+ wkField.getTateExtraWallDirection()[yIndex][xIndex].getDirectString()
+								+ "</text>");
+					}
+				}
+			}
 			sb.append("</svg>");
 			System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
 			System.out.println(level);
@@ -379,6 +432,7 @@ public class IcebarnSolver implements Solver {
 
 	public static class Field {
 		static final String ALPHABET_FROM_I = "ijklmnopqrstuvwxyz";
+		static final String ALPHABET_AND_NUMBER = "0123456789abcdefghijklmnopqrstuvwxyz";
 
 		// マスの情報
 		private Masu[][] masu;
@@ -423,7 +477,218 @@ public class IcebarnSolver implements Solver {
 		}
 
 		public String getPuzPreURL() {
-			return null;
+			StringBuilder sb = new StringBuilder();
+			sb.append("http://pzv.jp/p.html?icebarn/" + getXLength() + "/" + getYLength() + "/");
+			for (int i = 0; i < getYLength() * getXLength(); i++) {
+				int yIndex1 = i / getXLength();
+				int xIndex1 = i % getXLength();
+				i++;
+				int yIndex2 = -1;
+				int xIndex2 = -1;
+				if (i < getYLength() * getXLength()) {
+					yIndex2 = i / getXLength();
+					xIndex2 = i % getXLength();
+				}
+				i++;
+				int yIndex3 = -1;
+				int xIndex3 = -1;
+				if (i < getYLength() * getXLength()) {
+					yIndex3 = i / getXLength();
+					xIndex3 = i % getXLength();
+				}
+				i++;
+				int yIndex4 = -1;
+				int xIndex4 = -1;
+				if (i < getYLength() * getXLength()) {
+					yIndex4 = i / getXLength();
+					xIndex4 = i % getXLength();
+				}
+				i++;
+				int yIndex5 = -1;
+				int xIndex5 = -1;
+				if (i < getYLength() * getXLength()) {
+					yIndex5 = i / getXLength();
+					xIndex5 = i % getXLength();
+				}
+				int num = 0;
+				if (yIndex1 != -1 && xIndex1 != -1 && icebarnPosSet.contains(new Position(yIndex1, xIndex1))) {
+					num = num + 16;
+				}
+				if (yIndex2 != -1 && xIndex2 != -1 && icebarnPosSet.contains(new Position(yIndex2, xIndex2))) {
+					num = num + 8;
+				}
+				if (yIndex3 != -1 && xIndex3 != -1 && icebarnPosSet.contains(new Position(yIndex3, xIndex3))) {
+					num = num + 4;
+				}
+				if (yIndex4 != -1 && xIndex4 != -1 && icebarnPosSet.contains(new Position(yIndex4, xIndex4))) {
+					num = num + 2;
+				}
+				if (yIndex5 != -1 && xIndex5 != -1 && icebarnPosSet.contains(new Position(yIndex5, xIndex5))) {
+					num = num + 1;
+				}
+				sb.append(ALPHABET_AND_NUMBER.substring(num, num + 1));
+			}
+			int interval = 0;
+			for (int i = 0; i < getYLength() * (getXLength() - 1); i++) {
+				int yIndex = i / (getXLength() - 1);
+				int xIndex = i % (getXLength() - 1) + 1;
+				if (yokoExtraWallDirection[yIndex][xIndex] != Direction.LEFT) {
+					interval++;
+					if (interval == 35) {
+						sb.append("z");
+						interval = 0;
+					}
+				} else {
+					String numStr = ALPHABET_AND_NUMBER.substring(interval, interval + 1);
+					sb.append(numStr);
+					interval = 0;
+				}
+			}
+			for (int i = 0; i < (getYLength() - 1) * getXLength(); i++) {
+				int yIndex = i / getXLength() + 1;
+				int xIndex = i % getXLength();
+				if (tateExtraWallDirection[yIndex][xIndex] != Direction.UP) {
+					interval++;
+					if (interval == 35) {
+						sb.append("z");
+						interval = 0;
+					}
+				} else {
+					String numStr = ALPHABET_AND_NUMBER.substring(interval, interval + 1);
+					sb.append(numStr);
+					interval = 0;
+				}
+			}
+			if (interval != 0) {
+				String numStr = ALPHABET_AND_NUMBER.substring(interval, interval + 1);
+				sb.append(numStr);
+				interval = 0;
+			}
+			interval = 0;
+			for (int i = 0; i < getYLength() * (getXLength() - 1); i++) {
+				int yIndex = i / (getXLength() - 1);
+				int xIndex = i % (getXLength() - 1) + 1;
+				if (yokoExtraWallDirection[yIndex][xIndex] != Direction.RIGHT) {
+					interval++;
+					if (interval == 35) {
+						sb.append("z");
+						interval = 0;
+					}
+				} else {
+					String numStr = ALPHABET_AND_NUMBER.substring(interval, interval + 1);
+					sb.append(numStr);
+					interval = 0;
+				}
+			}
+			for (int i = 0; i < (getYLength() - 1) * getXLength(); i++) {
+				int yIndex = i / getXLength() + 1;
+				int xIndex = i % getXLength();
+				if (tateExtraWallDirection[yIndex][xIndex] != Direction.DOWN) {
+					interval++;
+					if (interval == 35) {
+						sb.append("z");
+						interval = 0;
+					}
+				} else {
+					String numStr = ALPHABET_AND_NUMBER.substring(interval, interval + 1);
+					sb.append(numStr);
+					interval = 0;
+				}
+			}
+			if (interval != 0) {
+				String numStr = ALPHABET_AND_NUMBER.substring(interval, interval + 1);
+				sb.append(numStr);
+				interval = 0;
+			}
+			sb.append("/");
+			int start = -1;
+			int cnt = 0;
+			if (start == -1) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					if (tateExtraWallDirection[0][xIndex] == Direction.DOWN) {
+						start = cnt;
+						break;
+					} else {
+						cnt++;
+					}
+				}
+			}
+			if (start == -1) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					if (tateExtraWallDirection[getYLength()][xIndex] == Direction.UP) {
+						start = cnt;
+						break;
+					} else {
+						cnt++;
+					}
+				}
+			}
+			if (start == -1) {
+				for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+					if (yokoExtraWallDirection[yIndex][0] == Direction.RIGHT) {
+						start = cnt;
+						break;
+					} else {
+						cnt++;
+					}
+				}
+			}
+			if (start == -1) {
+				for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+					if (yokoExtraWallDirection[yIndex][getXLength()] == Direction.LEFT) {
+						start = cnt;
+						break;
+					} else {
+						cnt++;
+					}
+				}
+			}
+			sb.append(start);
+			sb.append("/");
+			int end = -1;
+			cnt = 0;
+			if (end == -1) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					if (tateExtraWallDirection[0][xIndex] == Direction.UP) {
+						end = cnt;
+						break;
+					} else {
+						cnt++;
+					}
+				}
+			}
+			if (end == -1) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					if (tateExtraWallDirection[getYLength()][xIndex] == Direction.DOWN) {
+						end = cnt;
+						break;
+					} else {
+						cnt++;
+					}
+				}
+			}
+			if (end == -1) {
+				for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+					if (yokoExtraWallDirection[yIndex][0] == Direction.LEFT) {
+						end = cnt;
+						break;
+					} else {
+						cnt++;
+					}
+				}
+			}
+			if (end == -1) {
+				for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+					if (yokoExtraWallDirection[yIndex][getXLength()] == Direction.RIGHT) {
+						end = cnt;
+						break;
+					} else {
+						cnt++;
+					}
+				}
+			}
+			sb.append(end);
+			return sb.toString();
 		}
 
 		public Wall[][] getYokoExtraWall() {
@@ -667,7 +932,8 @@ public class IcebarnSolver implements Solver {
 				}
 			}
 			// アイスバーン生成のため一時的に黒マス化
-			double barnRate = Math.random() / 2.5 + 0.15;
+			// アイスバーン発生率は20%～60%
+			double barnRate = Math.random() / 2.5 + 0.2;
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
 					masu[yIndex][xIndex] = Math.random() < barnRate ? Masu.BLACK : Masu.SPACE;
@@ -1332,10 +1598,11 @@ public class IcebarnSolver implements Solver {
 			}
 		}
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
-		System.out.println("難易度:" + count);
+		System.out.println("難易度:" + (count));
 		System.out.println(field);
+		int level = (int) Math.sqrt(count / 3) + 1;
 		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count).toString();
+				+ Difficulty.getByCount(count).toString() + "(Lv:" + level + ")";
 	}
 
 	/**

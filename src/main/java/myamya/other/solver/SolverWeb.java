@@ -7579,40 +7579,50 @@ public class SolverWeb extends HttpServlet {
 				}
 			}
 			// 横壁描画
+			// 横壁描画
 			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 				for (int xIndex = -1; xIndex < field.getXLength(); xIndex++) {
 					boolean oneYokoWall = xIndex == -1 || xIndex == field.getXLength() - 1;
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + margin)
+							+ "\" x1=\""
+							+ (xIndex * baseSize + 2 * baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ (xIndex * baseSize + 2 * baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
 					if (oneYokoWall) {
-						sb.append("<rect y=\"" + (yIndex * baseSize + margin)
-								+ "\" x=\""
-								+ (xIndex * baseSize + 2 * baseSize)
-								+ "\" width=\""
-								+ (1)
-								+ "\" height=\""
-								+ (baseSize)
-								+ "\">"
-								+ "</rect>");
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
 					}
+					sb.append(">"
+							+ "</line>");
 				}
 			}
 			// 縦壁描画
 			for (int yIndex = -1; yIndex < field.getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
 					boolean oneTateWall = yIndex == -1 || yIndex == field.getYLength() - 1;
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x1=\""
+							+ (xIndex * baseSize + baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ (xIndex * baseSize + baseSize + baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
 					if (oneTateWall) {
-						sb.append("<rect y=\"" + (yIndex * baseSize + baseSize + margin)
-								+ "\" x=\""
-								+ (xIndex * baseSize + baseSize)
-								+ "\" width=\""
-								+ (baseSize)
-								+ "\" height=\""
-								+ (1)
-								+ "\">"
-								+ "</rect>");
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
 					}
+					sb.append(">"
+							+ "</line>");
 				}
 			}
-
 			// 横矢印描画
 			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < field.getXLength() + 1; xIndex++) {

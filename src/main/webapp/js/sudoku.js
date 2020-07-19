@@ -244,6 +244,11 @@ var ruleMap = {
 		url : "https://www.nikoli.co.jp/ja/puzzles/moon-or-sun/",
 		source : "ニコリ公式"
 	},
+	icebarn : {
+		name : "アイスバーン",
+		url : "http://indi.s58.xrea.com/icebarn/",
+		source : "連続発破保管庫さん"
+	},
 }
 var regMap = {
 		yajilin:['yajilin','yajilin','yajilin','yajilin','yajilin','yajilin','yajilin','yajilin','yajilin','yajilin'],
@@ -624,7 +629,7 @@ $(function() {
 				}
 			} else if (type == 'balance' || type == 'kurotto'
 					|| type == 'nurikabe' || type == 'heyawake'
-					|| type == 'shugaku') {
+					|| type == 'shugaku' || type == 'icebarn') {
 				$('#sel_size').append(option.size_3);
 				$('#sel_size').append(option.size_4);
 				$('#sel_size').append(option.size_5);

@@ -306,7 +306,7 @@ public class MoonsunSolver implements Solver {
 			level = (int) Math.sqrt(level * 3 / 3) + 1;
 			String status = "Lv:" + level + "の問題を獲得！(部屋/月/太陽：" + wkField.getHintCount() + ")";
 			String url = wkField.getPuzPreURL();
-			String link = "<a href=\"" + url + "\" target=\"_blank\">puzz.linkで解く</a>";
+			String link = "<a href=\"" + url + "\" target=\"_blank\">ぱずぷれv3で解く</a>";
 			StringBuilder sb = new StringBuilder();
 			int baseSize = 20;
 			int margin = 5;
@@ -1701,8 +1701,9 @@ public class MoonsunSolver implements Solver {
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
 		System.out.println("難易度:" + (count * 3));
 		System.out.println(field);
+		int level = (int) Math.sqrt(count) + 1;
 		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count * 3).toString();
+				+ Difficulty.getByCount(count * 3).toString() + "(Lv:" + level + ")";
 	}
 
 	/**

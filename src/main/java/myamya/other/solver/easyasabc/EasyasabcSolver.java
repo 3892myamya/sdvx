@@ -1,4 +1,4 @@
-package myamya.other.solver.building;
+package myamya.other.solver.easyasabc;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -11,12 +11,12 @@ import myamya.other.solver.Common.GeneratorResult;
 import myamya.other.solver.Generator;
 import myamya.other.solver.Solver;
 
-public class BuildingSolver implements Solver {
-	public static class BuildingGenerator implements Generator {
-		static class BuildingSolverForGenerator extends BuildingSolver {
+public class EasyasabcSolver implements Solver {
+	public static class EasyasabcGenerator implements Generator {
+		static class EasyasabcSolverForGenerator extends EasyasabcSolver {
 			private final int limit;
 
-			public BuildingSolverForGenerator(Field field, int limit) {
+			public EasyasabcSolverForGenerator(Field field, int limit) {
 				super(field);
 				this.limit = limit;
 			}
@@ -66,13 +66,13 @@ public class BuildingSolver implements Solver {
 		private final int height;
 		private final int width;
 
-		public BuildingGenerator(int height, int width) {
+		public EasyasabcGenerator(int height, int width) {
 			this.height = height;
 			this.width = width;
 		}
 
 		public static void main(String[] args) {
-			new BuildingGenerator(6, 6).generate();
+			new EasyasabcGenerator(5, 5).generate();
 		}
 
 		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
@@ -85,7 +85,8 @@ public class BuildingSolver implements Solver {
 			Field wkField = null;
 			while (true) {
 				// 問題生成部
-				// 適当なラテン方陣を作る
+				// 適当なラテン方陣を作り、kindを超えたら0にする。
+				int kind = (int) ((height + 1 + (Math.random() * 2)) / 2);
 				int[][] latin = new int[height][width];
 				for (int yIndex = 0; yIndex < height; yIndex++) {
 					for (int xIndex = 0; xIndex < width; xIndex++) {
@@ -127,55 +128,77 @@ public class BuildingSolver implements Solver {
 						}
 					}
 				}
+				for (int yIndex = 0; yIndex < height; yIndex++) {
+					for (int xIndex = 0; xIndex < width; xIndex++) {
+						if (latin[yIndex][xIndex] > kind) {
+							latin[yIndex][xIndex] = 0;
+						}
+					}
+				}
+				// 0を含む市松模様は唯一解にならないのでここではじく。
+				boolean isOk = true;
+				outer: for (int yIndex = 0; yIndex < height - 1; yIndex++) {
+					for (int xIndex = 0; xIndex < width - 1; xIndex++) {
+						if (latin[yIndex][xIndex] == 0 && latin[yIndex + 1][xIndex + 1] == 0
+								&& latin[yIndex][xIndex + 1] == latin[yIndex + 1][xIndex]) {
+							isOk = false;
+							break outer;
+						}
+						if (latin[yIndex][xIndex + 1] == 0 && latin[yIndex + 1][xIndex] == 0
+								&& latin[yIndex][xIndex] == latin[yIndex + 1][xIndex + 1]) {
+							isOk = false;
+							break outer;
+						}
+					}
+				}
+				if (!isOk) {
+					continue;
+				}
 				// ヒントを埋める
 				Integer[] upHints = new Integer[width];
 				Integer[] downHints = new Integer[width];
 				Integer[] leftHints = new Integer[height];
 				Integer[] rightHints = new Integer[height];
 				for (int yIndex = 0; yIndex < height; yIndex++) {
-					int max = 0;
-					int cnt = 0;
+					int hint = 0;
 					for (int xIndex = 0; xIndex < width; xIndex++) {
-						if (max < latin[yIndex][xIndex]) {
-							max = latin[yIndex][xIndex];
-							cnt++;
+						if (latin[yIndex][xIndex] != 0) {
+							hint = latin[yIndex][xIndex];
+							break;
 						}
 					}
-					leftHints[yIndex] = cnt;
-					max = 0;
-					cnt = 0;
+					leftHints[yIndex] = hint;
+					hint = 0;
 					for (int xIndex = width - 1; xIndex >= 0; xIndex--) {
-						if (max < latin[yIndex][xIndex]) {
-							max = latin[yIndex][xIndex];
-							cnt++;
+						if (latin[yIndex][xIndex] != 0) {
+							hint = latin[yIndex][xIndex];
+							break;
 						}
 					}
-					rightHints[yIndex] = cnt;
+					rightHints[yIndex] = hint;
 				}
 				for (int xIndex = 0; xIndex < width; xIndex++) {
-					int max = 0;
-					int cnt = 0;
+					int hint = 0;
 					for (int yIndex = 0; yIndex < height; yIndex++) {
-						if (max < latin[yIndex][xIndex]) {
-							max = latin[yIndex][xIndex];
-							cnt++;
+						if (latin[yIndex][xIndex] != 0) {
+							hint = latin[yIndex][xIndex];
+							break;
 						}
 					}
-					upHints[xIndex] = cnt;
-					max = 0;
-					cnt = 0;
+					upHints[xIndex] = hint;
+					hint = 0;
 					for (int yIndex = height - 1; yIndex >= 0; yIndex--) {
-						if (max < latin[yIndex][xIndex]) {
-							max = latin[yIndex][xIndex];
-							cnt++;
+						if (latin[yIndex][xIndex] != 0) {
+							hint = latin[yIndex][xIndex];
+							break;
 						}
 					}
-					downHints[xIndex] = cnt;
+					downHints[xIndex] = hint;
 				}
 				List<Integer> indexList = new ArrayList<>();
 				// 解けるかな？
-				wkField = new Field(height, width, upHints, downHints, leftHints, rightHints);
-				level = new BuildingSolverForGenerator(wkField, 10000).solve2();
+				wkField = new Field(height, width, kind, upHints, downHints, leftHints, rightHints);
+				level = new EasyasabcSolverForGenerator(wkField, 500).solve2();
 				if (level == -1) {
 					// 解けなければやり直し
 				} else {
@@ -198,9 +221,9 @@ public class BuildingSolver implements Solver {
 						} else {
 							targetDownHints[posBase - height * 2 - width] = null;
 						}
-						Field virtual = new Field(height, width, targetUpHints, targetDownHints, targetLeftHints,
+						Field virtual = new Field(height, width, kind, targetUpHints, targetDownHints, targetLeftHints,
 								targetRightHints);
-						int solveResult = new BuildingSolverForGenerator(virtual, 10000).solve2();
+						int solveResult = new EasyasabcSolverForGenerator(virtual, 10000).solve2();
 						if (solveResult != -1) {
 							level = solveResult;
 							leftHints = targetLeftHints;
@@ -209,11 +232,11 @@ public class BuildingSolver implements Solver {
 							downHints = targetDownHints;
 						}
 					}
-					wkField = new Field(height, width, upHints, downHints, leftHints, rightHints);
+					wkField = new Field(height, width, kind, upHints, downHints, leftHints, rightHints);
 					break;
 				}
 			}
-			level = (int) Math.sqrt(level * 5 / 3) + 1;
+			level = (int) Math.sqrt(level * 3 / 3) + 1;
 			String status = "Lv:" + level + "の問題を獲得！(ヒント数:" + wkField.getHintCount() + ")";
 			String url = wkField.getPuzPreURL();
 			String link = "<a href=\"" + url + "\" target=\"_blank\">ぱずぷれv3で解く</a>";
@@ -356,6 +379,7 @@ public class BuildingSolver implements Solver {
 			System.out.println(level);
 			System.out.println(wkField.getHintCount());
 			System.out.println(wkField);
+			System.out.println(url);
 			return new GeneratorResult(status, sb.toString(), link, url, level, "");
 		}
 
@@ -375,9 +399,11 @@ public class BuildingSolver implements Solver {
 	public static class Field {
 		static final String ALPHABET_FROM_G = "ghijklmnopqrstuvwxyz";
 
+		// 何種類か
+		protected int kind;
+
 		// 数字の候補情報
-		protected List<List<Integer>>[] lineCands;
-		protected List<List<Integer>>[] columnCands;
+		protected List<Integer>[][] numbersCand;
 
 		// ヒント情報。
 		protected Integer[] upHints;
@@ -385,12 +411,8 @@ public class BuildingSolver implements Solver {
 		protected Integer[] leftHints;
 		protected Integer[] rightHints;
 
-		public List<List<Integer>>[] getLineCands() {
-			return lineCands;
-		}
-
-		public List<List<Integer>>[] getColumnCands() {
-			return columnCands;
+		public List<Integer>[][] getNumbersCand() {
+			return numbersCand;
 		}
 
 		public Integer[] getUpHints() {
@@ -410,18 +432,18 @@ public class BuildingSolver implements Solver {
 		}
 
 		public int getYLength() {
-			return lineCands.length;
+			return numbersCand.length;
 		}
 
 		public int getXLength() {
-			return columnCands.length;
+			return numbersCand[0].length;
 		}
 
 		private static final String FOR_URL = "0123456789abcdef";
 
 		public String getPuzPreURL() {
 			StringBuilder sb = new StringBuilder();
-			sb.append("http://pzv.jp/p.html?building/" + getXLength() + "/" + getYLength() + "/");
+			sb.append("http://pzv.jp/p.html?easyasabc/" + getXLength() + "/" + getYLength() + "/" + kind + "/");
 			int interval = 0;
 			for (Integer upHint : upHints) {
 				if (upHint != null) {
@@ -498,21 +520,30 @@ public class BuildingSolver implements Solver {
 		 * ヒントを指定して盤面作成。ジェネレータ用
 		 */
 		@SuppressWarnings("unchecked")
-		public Field(int height, int width, Integer[] upHints, Integer[] downHints, Integer[] leftHints,
+		public Field(int height, int width, int kind, Integer[] upHints, Integer[] downHints, Integer[] leftHints,
 				Integer[] rightHints) {
-			lineCands = new ArrayList[height];
-			columnCands = new ArrayList[width];
+			numbersCand = new ArrayList[height][width];
+			this.kind = kind;
 			this.upHints = upHints;
 			this.downHints = downHints;
 			this.leftHints = leftHints;
 			this.rightHints = rightHints;
-			makeCand();
+			// 初期候補数字を決定
+			// 0からkindまで
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					numbersCand[yIndex][xIndex] = new ArrayList<>();
+					for (int i = 0; i <= kind; i++) {
+						numbersCand[yIndex][xIndex].add(i);
+					}
+				}
+			}
 		}
 
 		@SuppressWarnings("unchecked")
-		public Field(int height, int width, String param) {
-			lineCands = new ArrayList[height];
-			columnCands = new ArrayList[width];
+		public Field(int height, int width, int kind, String param) {
+			numbersCand = new ArrayList[height][width];
+			this.kind = kind;
 			upHints = new Integer[width];
 			downHints = new Integer[width];
 			leftHints = new Integer[height];
@@ -557,83 +588,27 @@ public class BuildingSolver implements Solver {
 					index++;
 				}
 			}
-			makeCand();
-		}
-
-		private void makeCand() {
-			// 縦横の数字により、初期候補数字を決定
+			// 初期候補数字を決定
+			// 0からkindまで
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
-				List<List<Integer>> oneCands = new ArrayList<>();
-				makeCombo(oneCands, new ArrayList<>(), getXLength(), leftHints[yIndex], rightHints[yIndex]);
-				lineCands[yIndex] = oneCands;
-			}
-			for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-				List<List<Integer>> oneCands = new ArrayList<>();
-				makeCombo(oneCands, new ArrayList<>(), getXLength(), upHints[xIndex], downHints[xIndex]);
-				columnCands[xIndex] = oneCands;
-			}
-		}
-
-		public static void makeCombo(List<List<Integer>> result, List<Integer> wk, int size, Integer posiHint,
-				Integer negaHint) {
-			for (int i = 1; i <= size; i++) {
-				if (!wk.contains(i)) {
-					wk.add(i);
-					if (wk.size() == size) {
-						boolean isOk = true;
-						if (posiHint != null) {
-							int max = 0;
-							int cnt = 0;
-							for (Integer oneNum : wk) {
-								if (max < oneNum) {
-									max = oneNum;
-									cnt++;
-								}
-							}
-							if (cnt != posiHint) {
-								isOk = false;
-							}
-						}
-						if (negaHint != null) {
-							int max = 0;
-							int cnt = 0;
-							List<Integer> wkRev = new ArrayList<>(wk);
-							Collections.reverse(wkRev);
-							for (Integer oneNum : wkRev) {
-								if (max < oneNum) {
-									max = oneNum;
-									cnt++;
-								}
-							}
-							if (cnt != negaHint) {
-								isOk = false;
-							}
-						}
-						if (isOk) {
-							result.add(new ArrayList<>(wk));
-						}
-					} else {
-						makeCombo(result, wk, size, posiHint, negaHint);
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					numbersCand[yIndex][xIndex] = new ArrayList<>();
+					for (int i = 0; i <= kind; i++) {
+						numbersCand[yIndex][xIndex].add(i);
 					}
-					wk.remove(wk.size() - 1);
 				}
 			}
 		}
 
-		public int getMaxNumCand() {
-			return getYLength() > getXLength() ? getYLength() : getXLength();
-		}
-
 		@SuppressWarnings("unchecked")
 		public Field(Field other) {
-			lineCands = new ArrayList[other.getYLength()];
-			columnCands = new ArrayList[other.getXLength()];
+			numbersCand = new ArrayList[other.getYLength()][other.getXLength()];
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
-				lineCands[yIndex] = new ArrayList<>(other.lineCands[yIndex]);
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					numbersCand[yIndex][xIndex] = new ArrayList<>(other.numbersCand[yIndex][xIndex]);
+				}
 			}
-			for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-				columnCands[xIndex] = new ArrayList<>(other.columnCands[xIndex]);
-			}
+			kind = other.kind;
 			upHints = other.upHints;
 			downHints = other.downHints;
 			leftHints = other.leftHints;
@@ -682,16 +657,19 @@ public class BuildingSolver implements Solver {
 				}
 				sb.append("→");
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					if (columnCands[xIndex].size() == 0) {
+					if (numbersCand[yIndex][xIndex].size() == 0) {
 						sb.append("×");
-					} else if (columnCands[xIndex].size() == 1) {
-						String numStr = String.valueOf(columnCands[xIndex].get(0).get(yIndex));
+					} else if (numbersCand[yIndex][xIndex].size() == 1) {
+						String numStr = String.valueOf(numbersCand[yIndex][xIndex].get(0));
 						int index = HALF_NUMS.indexOf(numStr);
 						if (index == 0) {
-							sb.append("・");
+							sb.append("■");
 						} else {
 							sb.append(FULL_NUMS.substring(index / 2, index / 2 + 1));
 						}
+					} else if (numbersCand[yIndex][xIndex].size() == 2) {
+						sb.append(numbersCand[yIndex][xIndex].get(0));
+						sb.append(numbersCand[yIndex][xIndex].get(1));
 					} else {
 						sb.append("　");
 					}
@@ -739,79 +717,158 @@ public class BuildingSolver implements Solver {
 		public String getStateDump() {
 			StringBuilder sb = new StringBuilder();
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
-				sb.append(lineCands[yIndex].size());
-			}
-			for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-				sb.append(columnCands[xIndex].size());
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					sb.append(numbersCand[yIndex][xIndex].size());
+				}
 			}
 			return sb.toString();
 		}
 
 		/**
-		 * ある候補列が1通りになっているときにそぐわない候補を除外する。
+		 * 同じ列・行にいる数字を候補から除外する。0は列(行の長さ)-種類の数だけ入る。
 		 */
-		private boolean hintSolve() {
+		public boolean roomSolve() {
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
-				if (lineCands[yIndex].size() == 1) {
-					List<Integer> fixCand = lineCands[yIndex].get(0);
-					for (int targetY = 0; targetY < getYLength(); targetY++) {
-						if (targetY != yIndex) {
-							for (Iterator<List<Integer>> iterator = lineCands[targetY].iterator(); iterator
-									.hasNext();) {
-								List<Integer> targetCand = iterator.next();
-								for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-									if (fixCand.get(xIndex) == targetCand.get(xIndex)) {
-										iterator.remove();
-										break;
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					if (numbersCand[yIndex][xIndex].size() == 1) {
+						Integer myNumber = numbersCand[yIndex][xIndex].get(0);
+						int zeroCnt = myNumber == 0 ? 1 : 0;
+						for (int targetY = 0; targetY < getYLength(); targetY++) {
+							if (yIndex != targetY) {
+								if (myNumber == 0) {
+									if (zeroCnt == getYLength() - kind) {
+										numbersCand[targetY][xIndex].remove(myNumber);
+									} else if (numbersCand[targetY][xIndex].size() == 1
+											&& numbersCand[targetY][xIndex].get(0) == 0) {
+										zeroCnt++;
+									}
+								} else {
+									numbersCand[targetY][xIndex].remove(myNumber);
+								}
+								if (numbersCand[targetY][xIndex].size() == 0) {
+									return false;
+								}
+							}
+						}
+						zeroCnt = myNumber == 0 ? 1 : 0;
+						for (int targetX = 0; targetX < getXLength(); targetX++) {
+							if (numbersCand[yIndex][targetX].size() == 1 && xIndex != targetX) {
+								if (myNumber == 0) {
+									if (zeroCnt == getXLength() - kind) {
+										numbersCand[yIndex][targetX].remove(myNumber);
+									} else if (numbersCand[yIndex][targetX].size() == 1
+											&& numbersCand[yIndex][targetX].get(0) == 0) {
+										zeroCnt++;
+									}
+								} else {
+									numbersCand[yIndex][targetX].remove(myNumber);
+								}
+								if (numbersCand[yIndex][targetX].size() == 0) {
+									return false;
+								}
+							}
+						}
+					} else {
+						for (int cand : numbersCand[yIndex][xIndex]) {
+							boolean isHiddenSingle = true;
+							int zeroCnt = 0;
+							for (int targetY = 0; targetY < getYLength(); targetY++) {
+								if (yIndex != targetY) {
+									if (numbersCand[targetY][xIndex].contains(cand)) {
+										if (cand == 0) {
+											if (zeroCnt < getYLength() - kind - 1) {
+												zeroCnt++;
+											} else {
+												isHiddenSingle = false;
+												break;
+											}
+										} else {
+											isHiddenSingle = false;
+											break;
+										}
 									}
 								}
 							}
-							if (lineCands[targetY].size() == 0) {
-								return false;
+							if (isHiddenSingle) {
+								numbersCand[yIndex][xIndex].clear();
+								numbersCand[yIndex][xIndex].add(cand);
+								break;
 							}
+							isHiddenSingle = true;
+							zeroCnt = 0;
+							for (int targetX = 0; targetX < getXLength(); targetX++) {
+								if (xIndex != targetX) {
+									if (numbersCand[yIndex][targetX].contains(cand)) {
+										if (cand == 0) {
+											if (zeroCnt < getXLength() - kind - 1) {
+												zeroCnt++;
+											} else {
+												isHiddenSingle = false;
+												break;
+											}
+										} else {
+											isHiddenSingle = false;
+											break;
+										}
+									}
+								}
+							}
+							if (isHiddenSingle) {
+								numbersCand[yIndex][xIndex].clear();
+								numbersCand[yIndex][xIndex].add(cand);
+								break;
+							}
+						}
+
+					}
+				}
+			}
+			return true;
+		}
+
+		/**
+		 * ヒントは0を除く最初に見える数字である。
+		 */
+		private boolean hintSolve() {
+			for (int x = 0; x < getXLength(); x++) {
+				Integer upHint = upHints[x];
+				if (upHint != null) {
+					for (int y = 0; y < getYLength(); y++) {
+						if (numbersCand[y][x].contains(upHint)) {
+							break;
+						} else if (!numbersCand[y][x].contains(0)) {
+							return false;
 						}
 					}
-					for (int targetX = 0; targetX < getXLength(); targetX++) {
-						for (Iterator<List<Integer>> iterator = columnCands[targetX].iterator(); iterator.hasNext();) {
-							List<Integer> targetCand = iterator.next();
-							if (fixCand.get(targetX) != targetCand.get(yIndex)) {
-								iterator.remove();
-							}
-						}
-						if (columnCands[targetX].size() == 0) {
+				}
+				Integer downHint = downHints[x];
+				if (downHint != null) {
+					for (int y = getYLength() - 1; y >= 0; y--) {
+						if (numbersCand[y][x].contains(downHint)) {
+							break;
+						} else if (!numbersCand[y][x].contains(0)) {
 							return false;
 						}
 					}
 				}
 			}
-			for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-				if (columnCands[xIndex].size() == 1) {
-					List<Integer> fixCand = columnCands[xIndex].get(0);
-					for (int targetX = 0; targetX < getXLength(); targetX++) {
-						if (targetX != xIndex) {
-							for (Iterator<List<Integer>> iterator = columnCands[targetX].iterator(); iterator
-									.hasNext();) {
-								List<Integer> targetCand = iterator.next();
-								for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
-									if (fixCand.get(yIndex) == targetCand.get(yIndex)) {
-										iterator.remove();
-										break;
-									}
-								}
-							}
-							if (columnCands[targetX].size() == 0) {
-								return false;
-							}
+			for (int y = 0; y < getYLength(); y++) {
+				Integer leftHint = leftHints[y];
+				if (leftHint != null) {
+					for (int x = 0; x < getXLength(); x++) {
+						if (numbersCand[y][x].contains(leftHint)) {
+							break;
+						} else if (!numbersCand[y][x].contains(0)) {
+							return false;
 						}
 					}
-					for (int targetY = 0; targetY < getYLength(); targetY++) {
-						for (Iterator<List<Integer>> iterator = lineCands[targetY].iterator(); iterator.hasNext();) {
-							List<Integer> targetCand = iterator.next();
-							if (fixCand.get(targetY) != targetCand.get(xIndex)) {
-								iterator.remove();
-							}
-						}
-						if (lineCands[targetY].size() == 0) {
+				}
+				Integer rightHint = rightHints[y];
+				if (rightHint != null) {
+					for (int x = getXLength() - 1; x >= 0; x--) {
+						if (numbersCand[y][x].contains(rightHint)) {
+							break;
+						} else if (!numbersCand[y][x].contains(0)) {
 							return false;
 						}
 					}
@@ -825,6 +882,9 @@ public class BuildingSolver implements Solver {
 		 */
 		private boolean solveAndCheck() {
 			String str = getStateDump();
+			if (!roomSolve()) {
+				return false;
+			}
 			if (!hintSolve()) {
 				return false;
 			}
@@ -836,13 +896,10 @@ public class BuildingSolver implements Solver {
 
 		public boolean isSolved() {
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
-				if (lineCands[yIndex].size() != 1) {
-					return false;
-				}
-			}
-			for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-				if (columnCands[xIndex].size() != 1) {
-					return false;
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					if (numbersCand[yIndex][xIndex].size() != 1) {
+						return false;
+					}
 				}
 			}
 			return solveAndCheck();
@@ -853,11 +910,11 @@ public class BuildingSolver implements Solver {
 	protected final Field field;
 	protected int count = 0;
 
-	public BuildingSolver(int height, int width, String param) {
-		field = new Field(height, width, param);
+	public EasyasabcSolver(int height, int width, int kind, String param) {
+		field = new Field(height, width, kind, param);
 	}
 
-	public BuildingSolver(Field field) {
+	public EasyasabcSolver(Field field) {
 		this.field = new Field(field);
 	}
 
@@ -866,12 +923,13 @@ public class BuildingSolver implements Solver {
 	}
 
 	public static void main(String[] args) {
-		String url = ""; //urlを入れれば試せる
+		String url = "http://pzv.jp/p.html?easyasabc/7/7/4/i332g21324h3g1212h22123g"; //urlを入れれば試せる
 		String[] params = url.split("/");
-		int height = Integer.parseInt(params[params.length - 2]);
-		int width = Integer.parseInt(params[params.length - 3]);
+		int kind = Integer.parseInt(params[params.length - 2]);
+		int height = Integer.parseInt(params[params.length - 3]);
+		int width = Integer.parseInt(params[params.length - 4]);
 		String param = params[params.length - 1];
-		System.out.println(new BuildingSolver(height, width, param).solve());
+		System.out.println(new EasyasabcSolver(height, width, kind, param).solve());
 	}
 
 	@Override
@@ -909,11 +967,11 @@ public class BuildingSolver implements Solver {
 			}
 		}
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
-		System.out.println("難易度:" + (count * 5));
+		System.out.println("難易度:" + (count * 3));
 		System.out.println(field);
-		int level = (int) Math.sqrt(count * 5 / 3) + 1;
+		int level = (int) Math.sqrt(count * 3 / 3) + 1;
 		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count * 5).toString() + "(Lv:" + level + ")";
+				+ Difficulty.getByCount(count * 3).toString() + "(Lv:" + level + ")";
 	}
 
 	/**
@@ -924,56 +982,31 @@ public class BuildingSolver implements Solver {
 		while (true) {
 			String befStr = field.getStateDump();
 			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
-				if (field.lineCands[yIndex].size() != 1) {
-					for (Iterator<List<Integer>> iterator = field.lineCands[yIndex].iterator(); iterator
-							.hasNext();) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					if (field.numbersCand[yIndex][xIndex].size() != 1) {
 						count++;
-						List<Integer> oneCand = iterator.next();
-						Field virtual = new Field(field);
-						virtual.lineCands[yIndex].clear();
-						virtual.lineCands[yIndex].add(oneCand);
-						boolean arrowCand = virtual.solveAndCheck();
-						if (arrowCand && recursive > 0) {
-							arrowCand = candSolve(virtual, recursive - 1);
+						for (Iterator<Integer> iterator = field.numbersCand[yIndex][xIndex].iterator(); iterator
+								.hasNext();) {
+							int oneCand = iterator.next();
+							Field virtual = new Field(field);
+							virtual.numbersCand[yIndex][xIndex].clear();
+							virtual.numbersCand[yIndex][xIndex].add(oneCand);
+							boolean arrowCand = virtual.solveAndCheck();
+							if (arrowCand && recursive > 0) {
+								arrowCand = candSolve(virtual, recursive - 1);
+							}
+							if (!arrowCand) {
+								iterator.remove();
+							}
 						}
-						if (!arrowCand) {
-							iterator.remove();
-						}
-					}
-					if (field.lineCands[yIndex].size() == 0) {
-						return false;
-					}
-				}
-				if (field.lineCands[yIndex].size() == 1) {
-					if (!field.solveAndCheck()) {
-						return false;
-					}
-				}
-			}
-			for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
-				if (field.columnCands[xIndex].size() != 1) {
-					for (Iterator<List<Integer>> iterator = field.columnCands[xIndex].iterator(); iterator
-							.hasNext();) {
-						count++;
-						List<Integer> oneCand = iterator.next();
-						Field virtual = new Field(field);
-						virtual.columnCands[xIndex].clear();
-						virtual.columnCands[xIndex].add(oneCand);
-						boolean arrowCand = virtual.solveAndCheck();
-						if (arrowCand && recursive > 0) {
-							arrowCand = candSolve(virtual, recursive - 1);
-						}
-						if (!arrowCand) {
-							iterator.remove();
+						if (field.numbersCand[yIndex][xIndex].size() == 0) {
+							return false;
 						}
 					}
-					if (field.columnCands[xIndex].size() == 0) {
-						return false;
-					}
-				}
-				if (field.columnCands[xIndex].size() == 1) {
-					if (!field.solveAndCheck()) {
-						return false;
+					if (field.numbersCand[yIndex][xIndex].size() == 1) {
+						if (!field.solveAndCheck()) {
+							return false;
+						}
 					}
 				}
 			}
