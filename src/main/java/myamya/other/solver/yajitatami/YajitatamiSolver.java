@@ -198,22 +198,22 @@ public class YajitatamiSolver implements Solver {
 						int fixedHorizonalCnt = fixRightCnt + fixLeftCnt + 1;
 						List<Direction> candDirection = new ArrayList<>();
 						int useCnt = 0;
-						if (fixedVarticalCnt != 1 && fixedVarticalCnt == wallUpCnt
+						if (wallUpCnt != 1 && (fixedVarticalCnt == wallUpCnt || fixedHorizonalCnt == wallUpCnt)
 								&& wkField.tateWall[yIndex - 1][xIndex] == Wall.EXISTS) {
 							candDirection.add(Direction.UP);
 							useCnt = wallUpCnt;
 						}
-						if (fixedHorizonalCnt != 1 && fixedHorizonalCnt == wallRightCnt
+						if (wallRightCnt != 1 && (fixedVarticalCnt == wallRightCnt || fixedHorizonalCnt == wallRightCnt)
 								&& wkField.yokoWall[yIndex][xIndex] == Wall.EXISTS) {
 							candDirection.add(Direction.RIGHT);
 							useCnt = wallRightCnt;
 						}
-						if (fixedVarticalCnt != 1 && fixedVarticalCnt == wallDownCnt
+						if (wallDownCnt != 1 && (fixedVarticalCnt == wallDownCnt || fixedHorizonalCnt == wallDownCnt)
 								&& wkField.tateWall[yIndex][xIndex] == Wall.EXISTS) {
 							candDirection.add(Direction.DOWN);
 							useCnt = wallDownCnt;
 						}
-						if (fixedHorizonalCnt != 1 && fixedHorizonalCnt == wallLeftCnt
+						if (wallLeftCnt != 1 && (fixedVarticalCnt == wallLeftCnt || fixedHorizonalCnt == wallLeftCnt)
 								&& wkField.yokoWall[yIndex][xIndex - 1] == Wall.EXISTS) {
 							candDirection.add(Direction.LEFT);
 							useCnt = wallLeftCnt;
@@ -226,20 +226,15 @@ public class YajitatamiSolver implements Solver {
 						numberPosList.add(new Position(yIndex, xIndex));
 					}
 				}
-				List<Integer> wkIndexList = new ArrayList<>(indexList);
-				// 壁なしマスを戻す
+				// マスを戻す
 				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
 					for (int xIndex = 0; xIndex < wkField.getXLength() - 1; xIndex++) {
-						if (wkField.yokoWall[yIndex][xIndex] == Wall.NOT_EXISTS) {
-							wkField.yokoWall[yIndex][xIndex] = Wall.SPACE;
-						}
+						wkField.yokoWall[yIndex][xIndex] = Wall.SPACE;
 					}
 				}
 				for (int yIndex = 0; yIndex < wkField.getYLength() - 1; yIndex++) {
 					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
-						if (wkField.tateWall[yIndex][xIndex] == Wall.NOT_EXISTS) {
-							wkField.tateWall[yIndex][xIndex] = Wall.SPACE;
-						}
+						wkField.tateWall[yIndex][xIndex] = Wall.SPACE;
 					}
 				}
 				// 解けるかな？
@@ -250,46 +245,7 @@ public class YajitatamiSolver implements Solver {
 					Collections.shuffle(indexList);
 					index = 0;
 				} else {
-					Collections.shuffle(wkIndexList);
 					// ヒントを限界まで減らす
-					// 壁→矢印の順で
-					for (Integer posBase : wkIndexList) {
-						YajitatamiSolver.Field virtual = new YajitatamiSolver.Field(wkField, true);
-						boolean toYokoWall;
-						int yIndex, xIndex;
-						if (posBase < height * (width - 1)) {
-							toYokoWall = true;
-							yIndex = posBase / (width - 1);
-							xIndex = posBase % (width - 1);
-						} else {
-							toYokoWall = false;
-							posBase = posBase - (height * (width - 1));
-							yIndex = posBase / width;
-							xIndex = posBase % width;
-						}
-						if (toYokoWall) {
-							if (virtual.yokoWall[yIndex][xIndex] == Wall.SPACE) {
-								// すでに壁なし
-								continue;
-							}
-							virtual.yokoWall[yIndex][xIndex] = Wall.SPACE;
-						} else {
-							if (virtual.tateWall[yIndex][xIndex] == Wall.SPACE) {
-								// すでに壁なし
-								continue;
-							}
-							virtual.tateWall[yIndex][xIndex] = Wall.SPACE;
-						}
-						int solveResult = new YajitatamiSolverForGenerator(virtual, 2000).solve2();
-						if (solveResult != -1) {
-							if (toYokoWall) {
-								wkField.yokoWall[yIndex][xIndex] = Wall.SPACE;
-							} else {
-								wkField.tateWall[yIndex][xIndex] = Wall.SPACE;
-							}
-							level = solveResult;
-						}
-					}
 					Collections.shuffle(numberPosList);
 					for (Position numberPos : numberPosList) {
 						YajitatamiSolver.Field virtual = new YajitatamiSolver.Field(wkField, true);
@@ -432,6 +388,13 @@ public class YajitatamiSolver implements Solver {
 		private final Arrow[][] arrows;
 		// 横をふさぐ壁が存在するか
 		// 0,0 = trueなら、0,0と0,1の間に壁があるという意味
+		private final boolean[][] yokoFirstWall;
+		// 縦をふさぐ壁が存在するか
+		// 0,0 = trueなら、0,0と1,0の間に壁があるという意味
+		private final boolean[][] tateFirstWall;
+
+		// 横をふさぐ壁が存在するか
+		// 0,0 = trueなら、0,0と0,1の間に壁があるという意味
 		private Wall[][] yokoWall;
 		// 縦をふさぐ壁が存在するか
 		// 0,0 = trueなら、0,0と1,0の間に壁があるという意味
@@ -443,6 +406,14 @@ public class YajitatamiSolver implements Solver {
 
 		public Wall[][] getTateWall() {
 			return tateWall;
+		}
+
+		public boolean[][] getYokoFirstWall() {
+			return yokoFirstWall;
+		}
+
+		public boolean[][] getTateFirstWall() {
+			return tateFirstWall;
 		}
 
 		public Arrow[][] getArrows() {
@@ -515,6 +486,8 @@ public class YajitatamiSolver implements Solver {
 			arrows = new Arrow[height][width];
 			yokoWall = new Wall[height][width - 1];
 			tateWall = new Wall[height - 1][width];
+			yokoFirstWall = new boolean[height][width - 1];
+			tateFirstWall = new boolean[height - 1][width];
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength() - 1; xIndex++) {
 					yokoWall[yIndex][xIndex] = Wall.SPACE;
@@ -531,21 +504,15 @@ public class YajitatamiSolver implements Solver {
 			arrows = new Arrow[height][width];
 			yokoWall = new Wall[height][width - 1];
 			tateWall = new Wall[height - 1][width];
-			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
-				for (int xIndex = 0; xIndex < getXLength() - 1; xIndex++) {
-					yokoWall[yIndex][xIndex] = Wall.SPACE;
-				}
-			}
-			for (int yIndex = 0; yIndex < getYLength() - 1; yIndex++) {
-				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					tateWall[yIndex][xIndex] = Wall.SPACE;
-				}
-			}
+			yokoFirstWall = new boolean[height][width - 1];
+			tateFirstWall = new boolean[height - 1][width];
 			int index = 0;
+			int readPos = -1;
 			Direction direction = null;
 			boolean adjust = false;
 			for (int i = 0; i < param.length(); i++) {
 				if (index >= getXLength() * getYLength()) {
+					readPos = i;
 					break;
 				}
 				char ch = param.charAt(i);
@@ -586,10 +553,93 @@ public class YajitatamiSolver implements Solver {
 					direction = null;
 				}
 			}
+			if (readPos != -1) {
+				int bit = 0;
+				for (int cnt = 0; cnt < getYLength() * (getXLength() - 1); cnt++) {
+					int mod = cnt % 5;
+					if (mod == 0) {
+						bit = Character.getNumericValue(param.charAt(readPos));
+						readPos++;
+					}
+					if (mod == 4 || cnt == (getYLength() * (getXLength() - 1)) - 1) {
+						if (mod >= 0) {
+							yokoFirstWall[(cnt - mod + 0) / (getXLength() - 1)][(cnt - mod + 0)
+									% (getXLength() - 1)] = bit
+											/ 16
+											% 2 == 1;
+						}
+						if (mod >= 1) {
+							yokoFirstWall[(cnt - mod + 1) / (getXLength() - 1)][(cnt - mod + 1)
+									% (getXLength() - 1)] = bit
+											/ 8
+											% 2 == 1;
+						}
+						if (mod >= 2) {
+							yokoFirstWall[(cnt - mod + 2) / (getXLength() - 1)][(cnt - mod + 2)
+									% (getXLength() - 1)] = bit
+											/ 4
+											% 2 == 1;
+						}
+						if (mod >= 3) {
+							yokoFirstWall[(cnt - mod + 3) / (getXLength() - 1)][(cnt - mod + 3)
+									% (getXLength() - 1)] = bit
+											/ 2
+											% 2 == 1;
+						}
+						if (mod >= 4) {
+							yokoFirstWall[(cnt - mod + 4) / (getXLength() - 1)][(cnt - mod + 4)
+									% (getXLength() - 1)] = bit
+											/ 1
+											% 2 == 1;
+						}
+					}
+				}
+				for (int cnt = 0; cnt < (getYLength() - 1) * getXLength(); cnt++) {
+					int mod = cnt % 5;
+					if (mod == 0) {
+						bit = Character.getNumericValue(param.charAt(readPos));
+						readPos++;
+					}
+					if (mod == 4 || cnt == ((getYLength() - 1) * getXLength()) - 1) {
+						if (mod >= 0) {
+							tateFirstWall[(cnt - mod + 0) / getXLength()][(cnt - mod + 0) % getXLength()] = bit / 16
+									% 2 == 1;
+						}
+						if (mod >= 1) {
+							tateFirstWall[(cnt - mod + 1) / getXLength()][(cnt - mod + 1) % getXLength()] = bit / 8
+									% 2 == 1;
+						}
+						if (mod >= 2) {
+							tateFirstWall[(cnt - mod + 2) / getXLength()][(cnt - mod + 2) % getXLength()] = bit / 4
+									% 2 == 1;
+						}
+						if (mod >= 3) {
+							tateFirstWall[(cnt - mod + 3) / getXLength()][(cnt - mod + 3) % getXLength()] = bit / 2
+									% 2 == 1;
+						}
+						if (mod >= 4) {
+							tateFirstWall[(cnt - mod + 4) / getXLength()][(cnt - mod + 4) % getXLength()] = bit / 1
+									% 2 == 1;
+						}
+					}
+				}
+			}
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength() - 1; xIndex++) {
+					yokoWall[yIndex][xIndex] = yokoFirstWall[yIndex][xIndex] ? Wall.EXISTS : Wall.SPACE;
+				}
+			}
+			for (int yIndex = 0; yIndex < getYLength() - 1; yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					tateWall[yIndex][xIndex] = tateFirstWall[yIndex][xIndex] ? Wall.EXISTS : Wall.SPACE;
+				}
+			}
 		}
 
 		public Field(Field other) {
 			arrows = other.arrows;
+			yokoFirstWall = other.yokoFirstWall;
+			tateFirstWall = other.tateFirstWall;
 			yokoWall = new Wall[other.getYLength()][other.getXLength() - 1];
 			tateWall = new Wall[other.getYLength() - 1][other.getXLength()];
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
@@ -606,6 +656,8 @@ public class YajitatamiSolver implements Solver {
 
 		public Field(Field other, boolean flag) {
 			arrows = new Arrow[other.getYLength()][other.getXLength()];
+			yokoFirstWall = other.yokoFirstWall;
+			tateFirstWall = other.tateFirstWall;
 			yokoWall = new Wall[other.getYLength()][other.getXLength() - 1];
 			tateWall = new Wall[other.getYLength() - 1][other.getXLength()];
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
@@ -825,7 +877,7 @@ public class YajitatamiSolver implements Solver {
 					} else if (wall4 == Wall.NOT_EXISTS) {
 						notExists++;
 					}
-					if (exists > 3 && notExists > 2) {
+					if (exists > 3 || notExists > 2) {
 						return false;
 					}
 					if (notExists == 2) {

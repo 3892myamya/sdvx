@@ -249,6 +249,11 @@ var ruleMap = {
 		url : "http://indi.s58.xrea.com/icebarn/",
 		source : "連続発破保管庫さん"
 	},
+	yajitatami : {
+		name : "ヤジタタミ",
+		url : "",
+		source : ""
+	},
 }
 var regMap = {
 		yajilin:['yajilin','yajilin','yajilin','yajilin','yajilin','yajilin','yajilin','yajilin','yajilin','yajilin'],

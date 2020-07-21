@@ -131,6 +131,7 @@ import myamya.other.solver.wblink.WblinkSolver;
 import myamya.other.solver.yajikazu.YajikazuSolver;
 import myamya.other.solver.yajikazu.YajikazuSolver.Arrow;
 import myamya.other.solver.yajilin.YajilinSolver;
+import myamya.other.solver.yajitatami.YajitatamiSolver;
 import myamya.other.solver.yinyang.YinyangSolver;
 import myamya.other.solver.yregions.YajilinRegionsSolver;
 import net.arnx.jsonic.JSON;
@@ -2378,6 +2379,103 @@ public class SolverWeb extends HttpServlet {
 					}
 					sb.append(">"
 							+ "</line>");
+				}
+			}
+			sb.append("</svg>");
+			return sb.toString();
+		}
+	}
+
+	static class YajitatamiSolverThread extends AbsSolverThlead {
+		YajitatamiSolverThread(int height, int width, String param) {
+			super(height, width, param);
+		}
+
+		@Override
+		protected Solver getSolver() {
+			return new YajitatamiSolver(height, width, param);
+		}
+
+		@Override
+		public String makeCambus() {
+			YajitatamiSolver.Field field = ((YajitatamiSolver) solver).getField();
+			int baseSize = 20;
+			StringBuilder sb = new StringBuilder();
+			int margin = 5;
+			sb.append(
+					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
+							+ "height=\"" + (field.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
+							+ (field.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			// 横壁描画
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = -1; xIndex < field.getXLength(); xIndex++) {
+					boolean oneYokoWall = xIndex == -1 || xIndex == field.getXLength() - 1
+							|| field.getYokoFirstWall()[yIndex][xIndex];
+					boolean oneYokoResolveWall = !oneYokoWall
+							&& field.getYokoWall()[yIndex][xIndex] == Wall.EXISTS;
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + margin)
+							+ "\" x1=\""
+							+ (xIndex * baseSize + 2 * baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ (xIndex * baseSize + 2 * baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneYokoWall) {
+						sb.append("stroke=\"#000\" ");
+					} else if (oneYokoResolveWall) {
+						sb.append("stroke=\"green\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">"
+							+ "</line>");
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = -1; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					boolean oneTateWall = yIndex == -1 || yIndex == field.getYLength() - 1
+							|| field.getTateFirstWall()[yIndex][xIndex];
+					boolean oneTateResolveWall = !oneTateWall
+							&& field.getTateWall()[yIndex][xIndex] == Wall.EXISTS;
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x1=\""
+							+ (xIndex * baseSize + baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ (xIndex * baseSize + baseSize + baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneTateWall) {
+						sb.append("stroke=\"#000\" ");
+					} else if (oneTateResolveWall) {
+						sb.append("stroke=\"green\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">"
+							+ "</line>");
+				}
+			}
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					YajitatamiSolver.Arrow oneArrow = field.getArrows()[yIndex][xIndex];
+					if (oneArrow != null) {
+						sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 4 + margin)
+								+ "\" x=\""
+								+ (xIndex * baseSize + baseSize)
+								+ "\" font-size=\""
+								+ (baseSize - 2)
+								+ "\" textLength=\""
+								+ (baseSize - 2)
+								+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+								+ oneArrow.toStringForweb()
+								+ "</text>");
+
+					}
 				}
 			}
 			sb.append("</svg>");
@@ -13990,6 +14088,8 @@ public class SolverWeb extends HttpServlet {
 					t = new PutteriaSolverThread(height, width, param);
 				} else if (puzzleType.contains("tilepaint")) {
 					t = new TilepaintSolverThread(height, width, param);
+				} else if (puzzleType.contains("yajitatami")) {
+					t = new YajitatamiSolverThread(height, width, param);
 				} else {
 					throw new IllegalArgumentException();
 				}
