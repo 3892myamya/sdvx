@@ -616,7 +616,7 @@ $(function() {
 				} else {
 					$('#sel_size').val(9);
 				}
-			} else if (type == 'building') {
+			} else if (type == 'building' || type == 'renban' ) {
 				$('#sel_size').append(option.size_3);
 				$('#sel_size').append(option.size_4);
 				$('#sel_size').append(option.size_5);
@@ -626,7 +626,7 @@ $(function() {
 				} else {
 					$('#sel_size').val(nowSelSizeVal);
 				}
-			} else if (type == 'minarism' || type == 'renban' ) {
+			} else if (type == 'minarism' ) {
 				$('#sel_size').append(option.size_3);
 				$('#sel_size').append(option.size_4);
 				$('#sel_size').append(option.size_5);

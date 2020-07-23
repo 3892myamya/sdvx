@@ -579,7 +579,7 @@ public class RenbanSolver implements Solver {
 				numbersCand = new ArrayList[height][width];
 				yokoWall = new boolean[height][width - 1];
 				tateWall = new boolean[height - 1][width];
-				this.rooms = RoomMaker.roomMake(height, width, -1, -1);
+				this.rooms = RoomMaker.roomMake(height, width, -1, (int) (height * 1.5));
 				// 横壁設定
 				for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 					for (int xIndex = 0; xIndex < getXLength() - 1; xIndex++) {
