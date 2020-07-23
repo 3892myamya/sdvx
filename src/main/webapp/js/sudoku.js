@@ -254,6 +254,11 @@ var ruleMap = {
 		url : "",
 		source : ""
 	},
+	renban : {
+		name : "連番窓口",
+		url : "http://indi.s58.xrea.com/renban/",
+		source : "連続発破保管庫さん"
+	},
 }
 var regMap = {
 		yajilin:['yajilin','yajilin','yajilin','yajilin','yajilin','yajilin','yajilin','yajilin','yajilin','yajilin'],
@@ -621,7 +626,7 @@ $(function() {
 				} else {
 					$('#sel_size').val(nowSelSizeVal);
 				}
-			} else if (type == 'minarism') {
+			} else if (type == 'minarism' || type == 'renban' ) {
 				$('#sel_size').append(option.size_3);
 				$('#sel_size').append(option.size_4);
 				$('#sel_size').append(option.size_5);
