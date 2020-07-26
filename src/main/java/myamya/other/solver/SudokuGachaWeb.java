@@ -18,6 +18,7 @@ import myamya.other.solver.balance.BalanceSolver.BalanceGenerator;
 import myamya.other.solver.barns.BarnsSolver.BarnsGenerator;
 import myamya.other.solver.box.BoxSolver.BoxGenerator;
 import myamya.other.solver.building.BuildingSolver.BuildingGenerator;
+import myamya.other.solver.country.CountrySolver.CountryGenerator;
 import myamya.other.solver.creek.CreekSolver.CreekGenerator;
 import myamya.other.solver.geradeweg.GeradewegSolver.GeradewegGenerator;
 import myamya.other.solver.gokigen.GokigenSolver.GokigenGenerator;
@@ -938,6 +939,22 @@ public class SudokuGachaWeb extends HttpServlet {
 
 	}
 
+	static class CountryGeneratorThlead extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+
+		CountryGeneratorThlead(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new CountryGenerator(height, width);
+		}
+
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -1068,6 +1085,8 @@ public class SudokuGachaWeb extends HttpServlet {
 				t = new YajitatamiGeneratorThlead(height, width);
 			} else if (type.equals("renban")) {
 				t = new RenbanGeneratorThlead(height, width);
+			} else if (type.equals("country")) {
+				t = new CountryGeneratorThlead(height, width);
 			} else {
 				throw new IllegalArgumentException();
 			}

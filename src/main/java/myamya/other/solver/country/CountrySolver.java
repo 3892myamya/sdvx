@@ -1,21 +1,323 @@
 package myamya.other.solver.country;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import myamya.other.solver.Common.CountOverException;
 import myamya.other.solver.Common.Difficulty;
 import myamya.other.solver.Common.Direction;
+import myamya.other.solver.Common.GeneratorResult;
 import myamya.other.solver.Common.Masu;
 import myamya.other.solver.Common.Position;
 import myamya.other.solver.Common.Wall;
+import myamya.other.solver.Generator;
+import myamya.other.solver.RoomMaker;
 import myamya.other.solver.Solver;
 
 public class CountrySolver implements Solver {
+	public static class CountryGenerator implements Generator {
+		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
+		private static final String FULL_NUMS = "０１２３４５６７８９";
+
+		static class ExtendedField extends CountrySolver.Field {
+			public ExtendedField(Field other) {
+				super(other);
+			}
+
+			public ExtendedField(int height, int width, List<Set<Position>> rooms) {
+				super(height, width, rooms);
+			}
+
+			/**
+			 * 部屋数チェックを加える
+			 */
+			@Override
+			public boolean roomSolve() {
+				if (rooms.size() != 1 && rooms.size() % 2 == 1) {
+					return false;
+				}
+				return super.roomSolve();
+			}
+		}
+
+		static class CountrySolverForGenerator extends CountrySolver {
+			private final int limit;
+
+			public CountrySolverForGenerator(Field field, int limit) {
+				super(field);
+				this.limit = limit;
+			}
+
+			public int solve2() {
+				try {
+					while (!field.isSolved()) {
+						String befStr = field.getStateDump();
+						if (!field.solveAndCheck()) {
+							return -1;
+						}
+						int recursiveCnt = 0;
+						while (field.getStateDump().equals(befStr) && recursiveCnt < 3) {
+							if (!candSolve(field, recursiveCnt == 2 ? 999 : recursiveCnt)) {
+								return -1;
+							}
+							recursiveCnt++;
+						}
+						if (recursiveCnt == 3 && field.getStateDump().equals(befStr)) {
+							return -1;
+						}
+					}
+				} catch (CountOverException e) {
+					return -1;
+				}
+				return count;
+			}
+
+			@Override
+			protected boolean candSolve(Field field, int recursive) {
+				if (this.count >= limit) {
+					throw new CountOverException();
+				} else {
+					return super.candSolve(field, recursive);
+				}
+			}
+		}
+
+		private final int height;
+		private final int width;
+
+		public CountryGenerator(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		public static void main(String[] args) {
+			new CountryGenerator(10, 10).generate();
+		}
+
+		@Override
+		public GeneratorResult generate() {
+			CountrySolver.Field wkField = new ExtendedField(height, width,
+					RoomMaker.roomMake(height, width, (int) (Math.sqrt(height)), -1));
+			List<Integer> indexList = new ArrayList<>();
+			for (int i = 0; i < (height * (width - 1)) + ((height - 1) * width); i++) {
+				indexList.add(i);
+			}
+			int level = 0;
+			int index = 0;
+			long start = System.nanoTime();
+			while (true) {
+				// 問題生成部
+				while (!wkField.isSolved()) {
+					int posBase = indexList.get(index);
+					boolean toYokoWall;
+					int yIndex, xIndex;
+					if (posBase < height * (width - 1)) {
+						toYokoWall = true;
+						yIndex = posBase / (width - 1);
+						xIndex = posBase % (width - 1);
+					} else {
+						toYokoWall = false;
+						posBase = posBase - (height * (width - 1));
+						yIndex = posBase / width;
+						xIndex = posBase % width;
+					}
+					if ((toYokoWall && wkField.yokoWall[yIndex][xIndex] == Wall.SPACE)
+							|| (!toYokoWall && wkField.tateWall[yIndex][xIndex] == Wall.SPACE)) {
+						boolean isOk = false;
+						List<Integer> numIdxList = new ArrayList<>();
+						for (int i = 0; i < 2; i++) {
+							numIdxList.add(i);
+						}
+						Collections.shuffle(numIdxList);
+						for (int masuNum : numIdxList) {
+							CountrySolver.Field virtual = new ExtendedField(wkField);
+							if (masuNum < 1) {
+								if (toYokoWall) {
+									virtual.yokoWall[yIndex][xIndex] = Wall.EXISTS;
+								} else {
+									virtual.tateWall[yIndex][xIndex] = Wall.EXISTS;
+								}
+							} else if (masuNum < 2) {
+								if (toYokoWall) {
+									virtual.yokoWall[yIndex][xIndex] = Wall.NOT_EXISTS;
+								} else {
+									virtual.tateWall[yIndex][xIndex] = Wall.NOT_EXISTS;
+								}
+							}
+							if (virtual.solveAndCheck()) {
+								isOk = true;
+								wkField.masu = virtual.masu;
+								wkField.yokoWall = virtual.yokoWall;
+								wkField.tateWall = virtual.tateWall;
+							}
+						}
+						if (!isOk) {
+							// 破綻したら0から作り直す。
+							wkField = new ExtendedField(height, width,
+									RoomMaker.roomMake(height, width, (int) (Math.sqrt(height)), -1));
+							index = 0;
+							continue;
+						}
+					}
+					index++;
+				}
+				// 部屋の数字を確定
+				List<Integer> roomIdxList = new ArrayList<>();
+				for (int i = 0; i < wkField.rooms.size(); i++) {
+					Room room = wkField.rooms.get(i);
+					int cnt = 0;
+					for (Position pos : room.member) {
+						if (wkField.masu[pos.getyIndex()][pos.getxIndex()] == Masu.NOT_BLACK) {
+							cnt++;
+						}
+					}
+					roomIdxList.add(i);
+					room.whiteCnt = cnt;
+				}
+
+				// マスを戻す
+				List<Position> fixedMasuList = new ArrayList<>();
+				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+						wkField.masu[yIndex][xIndex] = Masu.SPACE;
+						fixedMasuList.add(new Position(yIndex, xIndex));
+					}
+				}
+				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+					for (int xIndex = 0; xIndex < wkField.getXLength() - 1; xIndex++) {
+						wkField.yokoWall[yIndex][xIndex] = Wall.SPACE;
+					}
+				}
+				for (int yIndex = 0; yIndex < wkField.getYLength() - 1; yIndex++) {
+					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+						wkField.tateWall[yIndex][xIndex] = Wall.SPACE;
+					}
+				}
+				// 解けるかな？
+				level = new CountrySolverForGenerator(wkField, 200).solve2();
+				if (level == -1) {
+					// 解けなければやり直し
+					wkField = new ExtendedField(height, width,
+							RoomMaker.roomMake(height, width, (int) (Math.sqrt(height)), -1));
+					index = 0;
+				} else {
+					Collections.shuffle(roomIdxList);
+					for (Integer pos : roomIdxList) {
+						CountrySolver.Field virtual = new CountrySolver.Field(wkField, true);
+						virtual.rooms.get(pos).whiteCnt = -1;
+						int solveResult = new CountrySolverForGenerator(virtual, 5000).solve2();
+						if (solveResult != -1 && solveResult >= level) {
+							wkField.rooms.get(pos).whiteCnt = -1;
+							level = solveResult;
+						}
+					}
+					break;
+				}
+			}
+			System.out.println(level);
+			level = (int) Math.sqrt(level / 3) + 1;
+			String status = "Lv:" + level + "の問題を獲得！(部屋：" + wkField.getHintCount() + ")";
+			String url = wkField.getPuzPreURL();
+			String link = "<a href=\"" + url + "\" target=\"_blank\">ぱずぷれv3で解く</a>";
+			StringBuilder sb = new StringBuilder();
+			int baseSize = 20;
+			int margin = 5;
+			sb.append(
+					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
+							+ "height=\"" + (wkField.getYLength() * baseSize + 2 * baseSize + margin)
+							+ "\" width=\""
+							+ (wkField.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			// 横壁描画
+			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = -1; xIndex < wkField.getXLength(); xIndex++) {
+					boolean oneYokoWall = xIndex == -1 || xIndex == wkField.getXLength() - 1
+							|| wkField.getYokoRoomWall()[yIndex][xIndex];
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + margin)
+							+ "\" x1=\""
+							+ (xIndex * baseSize + 2 * baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ (xIndex * baseSize + 2 * baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneYokoWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">"
+							+ "</line>");
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = -1; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+					boolean oneTateWall = yIndex == -1 || yIndex == wkField.getYLength() - 1
+							|| wkField.getTateRoomWall()[yIndex][xIndex];
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x1=\""
+							+ (xIndex * baseSize + baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ (xIndex * baseSize + baseSize + baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneTateWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">"
+							+ "</line>");
+				}
+			}
+			// 数字描画
+			for (CountrySolver.Room room : wkField.getRooms()) {
+				int roomWhiteCount = room.getWhiteCnt();
+				if (roomWhiteCount != -1) {
+					String roomWhiteCountStr;
+					String wkstr = String.valueOf(roomWhiteCount);
+					int idx = HALF_NUMS.indexOf(wkstr);
+					if (idx >= 0) {
+						roomWhiteCountStr = FULL_NUMS.substring(idx / 2,
+								idx / 2 + 1);
+					} else {
+						roomWhiteCountStr = wkstr;
+					}
+					Position numberMasuPos = room.getNumberMasuPos();
+					sb.append("<text y=\"" + (numberMasuPos.getyIndex() * baseSize + baseSize - 5 + margin)
+							+ "\" x=\""
+							+ (numberMasuPos.getxIndex() * baseSize + baseSize + 2)
+							+ "\" fill=\""
+							+ "black"
+							+ "\" font-size=\""
+							+ (baseSize - 5)
+							+ "\" textLength=\""
+							+ (baseSize - 5)
+							+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+							+ roomWhiteCountStr
+							+ "</text>");
+				}
+			}
+			sb.append("</svg>");
+			System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
+			System.out.println(level);
+			System.out.println(wkField.getHintCount());
+			System.out.println(wkField);
+			System.out.println(url);
+			return new GeneratorResult(status, sb.toString(), link, url, level, "");
+		}
+
+	}
 
 	public static class Field {
 		static final String ALPHABET_FROM_G = "ghijklmnopqrstuvwxyz";
+		static final String ALPHABET_AND_NUMBER = "0123456789abcdefghijklmnopqrstuvwxyz";
 
 		// マスの情報
 		private Masu[][] masu;
@@ -32,10 +334,161 @@ public class CountrySolver implements Solver {
 		// 0,0 = trueなら、0,0と1,0の間に壁があるという意味
 		private Wall[][] tateWall;
 		// 同一グループに属するマスの情報
-		private final List<Room> rooms;
+		protected final List<Room> rooms;
 
 		public Masu[][] getMasu() {
 			return masu;
+		}
+
+		public String getHintCount() {
+			return String.valueOf(rooms.size());
+		}
+
+		public String getPuzPreURL() {
+			StringBuilder sb = new StringBuilder();
+			sb.append("http://pzv.jp/p.html?country/" + getXLength() + "/" + getYLength() + "/");
+			for (int i = 0; i < getYLength() * (getXLength() - 1); i++) {
+				int yIndex1 = i / (getXLength() - 1);
+				int xIndex1 = i % (getXLength() - 1);
+				i++;
+				int yIndex2 = -1;
+				int xIndex2 = -1;
+				if (i < getYLength() * (getXLength() - 1)) {
+					yIndex2 = i / (getXLength() - 1);
+					xIndex2 = i % (getXLength() - 1);
+				}
+				i++;
+				int yIndex3 = -1;
+				int xIndex3 = -1;
+				if (i < getYLength() * (getXLength() - 1)) {
+					yIndex3 = i / (getXLength() - 1);
+					xIndex3 = i % (getXLength() - 1);
+				}
+				i++;
+				int yIndex4 = -1;
+				int xIndex4 = -1;
+				if (i < getYLength() * (getXLength() - 1)) {
+					yIndex4 = i / (getXLength() - 1);
+					xIndex4 = i % (getXLength() - 1);
+				}
+				i++;
+				int yIndex5 = -1;
+				int xIndex5 = -1;
+				if (i < getYLength() * (getXLength() - 1)) {
+					yIndex5 = i / (getXLength() - 1);
+					xIndex5 = i % (getXLength() - 1);
+				}
+				int num = 0;
+				if (yIndex1 != -1 && xIndex1 != -1 && yokoRoomWall[yIndex1][xIndex1]) {
+					num = num + 16;
+				}
+				if (yIndex2 != -1 && xIndex2 != -1 && yokoRoomWall[yIndex2][xIndex2]) {
+					num = num + 8;
+				}
+				if (yIndex3 != -1 && xIndex3 != -1 && yokoRoomWall[yIndex3][xIndex3]) {
+					num = num + 4;
+				}
+				if (yIndex4 != -1 && xIndex4 != -1 && yokoRoomWall[yIndex4][xIndex4]) {
+					num = num + 2;
+				}
+				if (yIndex5 != -1 && xIndex5 != -1 && yokoRoomWall[yIndex5][xIndex5]) {
+					num = num + 1;
+				}
+				sb.append(ALPHABET_AND_NUMBER.substring(num, num + 1));
+			}
+			for (int i = 0; i < (getYLength() - 1) * getXLength(); i++) {
+				int yIndex1 = i / getXLength();
+				int xIndex1 = i % getXLength();
+				i++;
+				int yIndex2 = -1;
+				int xIndex2 = -1;
+				if (i < (getYLength() - 1) * getXLength()) {
+					yIndex2 = i / getXLength();
+					xIndex2 = i % getXLength();
+				}
+				i++;
+				int yIndex3 = -1;
+				int xIndex3 = -1;
+				if (i < (getYLength() - 1) * getXLength()) {
+					yIndex3 = i / getXLength();
+					xIndex3 = i % getXLength();
+				}
+				i++;
+				int yIndex4 = -1;
+				int xIndex4 = -1;
+				if (i < (getYLength() - 1) * getXLength()) {
+					yIndex4 = i / getXLength();
+					xIndex4 = i % getXLength();
+				}
+				i++;
+				int yIndex5 = -1;
+				int xIndex5 = -1;
+				if (i < (getYLength() - 1) * getXLength()) {
+					yIndex5 = i / getXLength();
+					xIndex5 = i % getXLength();
+				}
+				int num = 0;
+				if (yIndex1 != -1 && xIndex1 != -1 && tateRoomWall[yIndex1][xIndex1]) {
+					num = num + 16;
+				}
+				if (yIndex2 != -1 && xIndex2 != -1 && tateRoomWall[yIndex2][xIndex2]) {
+					num = num + 8;
+				}
+				if (yIndex3 != -1 && xIndex3 != -1 && tateRoomWall[yIndex3][xIndex3]) {
+					num = num + 4;
+				}
+				if (yIndex4 != -1 && xIndex4 != -1 && tateRoomWall[yIndex4][xIndex4]) {
+					num = num + 2;
+				}
+				if (yIndex5 != -1 && xIndex5 != -1 && tateRoomWall[yIndex5][xIndex5]) {
+					num = num + 1;
+				}
+				sb.append(ALPHABET_AND_NUMBER.substring(num, num + 1));
+			}
+			int interval = 0;
+			Set<Position> wkRooms = new HashSet<>();
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					Position pos = new Position(yIndex, xIndex);
+					if (!wkRooms.contains(pos)) {
+						Room useRoom = null;
+						for (Room room : rooms) {
+							if (room.member.contains(pos)) {
+								useRoom = room;
+								wkRooms.addAll(room.member);
+								break;
+							}
+						}
+						Integer num = useRoom.getWhiteCnt();
+						String numStr;
+						if (num == -1) {
+							interval++;
+							continue;
+						} else {
+							numStr = Integer.toHexString(num);
+							if (numStr.length() == 2) {
+								numStr = "-" + numStr;
+							} else if (numStr.length() == 3) {
+								numStr = "+" + numStr;
+							}
+						}
+						if (interval == 0) {
+							sb.append(numStr);
+						} else {
+							sb.append(ALPHABET_FROM_G.substring(interval - 1, interval));
+							sb.append(numStr);
+							interval = 0;
+						}
+					}
+				}
+			}
+			if (interval != 0) {
+				sb.append(ALPHABET_FROM_G.substring(interval - 1, interval));
+			}
+			if (sb.charAt(sb.length() - 1) == '.') {
+				sb.append("/");
+			}
+			return sb.toString();
 		}
 
 		public boolean[][] getYokoRoomWall() {
@@ -246,6 +699,116 @@ public class CountrySolver implements Solver {
 			yokoRoomWall = other.yokoRoomWall;
 			tateRoomWall = other.tateRoomWall;
 			rooms = other.rooms;
+		}
+
+		public Field(Field other, boolean flag) {
+			masu = new Masu[other.getYLength()][other.getXLength()];
+			yokoWall = new Wall[other.getYLength()][other.getXLength() - 1];
+			tateWall = new Wall[other.getYLength() - 1][other.getXLength()];
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					masu[yIndex][xIndex] = other.masu[yIndex][xIndex];
+				}
+			}
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength() - 1; xIndex++) {
+					yokoWall[yIndex][xIndex] = other.yokoWall[yIndex][xIndex];
+				}
+			}
+			for (int yIndex = 0; yIndex < getYLength() - 1; yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					tateWall[yIndex][xIndex] = other.tateWall[yIndex][xIndex];
+				}
+			}
+			yokoRoomWall = other.yokoRoomWall;
+			tateRoomWall = other.tateRoomWall;
+			rooms = new ArrayList<>();
+			for (Room room : other.rooms) {
+				rooms.add(new Room(room.getWhiteCnt(), room.member, room.yokoWallPosSet, room.tateWallPosSet));
+			}
+		}
+
+		public Field(int height, int width, List<Set<Position>> rooms) {
+			masu = new Masu[height][width];
+			yokoWall = new Wall[height][width - 1];
+			tateWall = new Wall[height - 1][width];
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					masu[yIndex][xIndex] = Masu.SPACE;
+				}
+			}
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength() - 1; xIndex++) {
+					yokoWall[yIndex][xIndex] = Wall.SPACE;
+				}
+			}
+			for (int yIndex = 0; yIndex < getYLength() - 1; yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					tateWall[yIndex][xIndex] = Wall.SPACE;
+				}
+			}
+			yokoRoomWall = new boolean[height][width - 1];
+			tateRoomWall = new boolean[height - 1][width];
+			// 横壁設定
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength() - 1; xIndex++) {
+					boolean isWall = true;
+					Position pos = new Position(yIndex, xIndex);
+					for (Set<Position> room : rooms) {
+						if (room.contains(pos)) {
+							Position rightPos = new Position(yIndex, xIndex + 1);
+							if (room.contains(rightPos)) {
+								isWall = false;
+								break;
+							}
+						}
+					}
+					yokoRoomWall[yIndex][xIndex] = isWall;
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = 0; yIndex < getYLength() - 1; yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					boolean isWall = true;
+					Position pos = new Position(yIndex, xIndex);
+					for (Set<Position> room : rooms) {
+						if (room.contains(pos)) {
+							Position downPos = new Position(yIndex + 1, xIndex);
+							if (room.contains(downPos)) {
+								isWall = false;
+								break;
+							}
+						}
+					}
+					tateRoomWall[yIndex][xIndex] = isWall;
+				}
+			}
+			this.rooms = new ArrayList<>();
+			for (int i = 0; i < rooms.size(); i++) {
+				Set<Position> room = rooms.get(i);
+				Set<Position> yokoWallPosSet = new HashSet<>();
+				Set<Position> tateWallPosSet = new HashSet<>();
+				for (Position roomPos : room) {
+					if (roomPos.getyIndex() != 0
+							&& tateRoomWall[roomPos.getyIndex() - 1][roomPos.getxIndex()]) {
+						tateWallPosSet.add(new Position(roomPos.getyIndex() - 1, roomPos.getxIndex()));
+					}
+					if (roomPos.getxIndex() != getXLength() - 1
+							&& yokoRoomWall[roomPos.getyIndex()][roomPos.getxIndex()]) {
+						yokoWallPosSet.add(new Position(roomPos.getyIndex(), roomPos.getxIndex()));
+					}
+					if (roomPos.getyIndex() != getYLength() - 1
+							&& tateRoomWall[roomPos.getyIndex()][roomPos.getxIndex()]) {
+						tateWallPosSet.add(new Position(roomPos.getyIndex(), roomPos.getxIndex()));
+					}
+					if (roomPos.getxIndex() != 0
+							&& yokoRoomWall[roomPos.getyIndex()][roomPos.getxIndex() - 1]) {
+						yokoWallPosSet.add(new Position(roomPos.getyIndex(), roomPos.getxIndex() - 1));
+					}
+				}
+				this.rooms.add(new Room(-1, room, yokoWallPosSet, tateWallPosSet));
+			}
+
 		}
 
 		// posを起点に上下左右に部屋壁または白確定でないマスを無制限につなげていく。
@@ -845,7 +1408,7 @@ public class CountrySolver implements Solver {
 		}
 
 		// 白マスが何マスあるか。数字がない場合は-1
-		private final int whiteCnt;
+		private int whiteCnt;
 		// 部屋に属するマスの集合
 		private final Set<Position> member;
 		// 国境となる壁の位置情報
@@ -894,11 +1457,15 @@ public class CountrySolver implements Solver {
 
 	}
 
-	private final Field field;
-	private int count = 0;
+	protected final Field field;
+	protected int count = 0;
 
 	public CountrySolver(int height, int width, String param) {
 		field = new Field(height, width, param);
+	}
+
+	public CountrySolver(Field field) {
+		this.field = new Field(field);
 	}
 
 	public Field getField() {
@@ -937,15 +1504,16 @@ public class CountrySolver implements Solver {
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
 		System.out.println("難易度:" + (count));
 		System.out.println(field);
+		int level = (int) Math.sqrt(count / 3) + 1;
 		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count).toString();
+				+ Difficulty.getByCount(count).toString() + "(Lv:" + level + ")";
 	}
 
 	/**
 	 * 仮置きして調べる
 	 * @param posSet
 	 */
-	private boolean candSolve(Field field, int recursive) {
+	protected boolean candSolve(Field field, int recursive) {
 		String str = field.getStateDump();
 		for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 			for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {

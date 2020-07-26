@@ -13399,6 +13399,49 @@ public class SolverWeb extends HttpServlet {
 						} else {
 							masuStr = numberStr;
 						}
+					} else if (field.getLineCands()[yIndex].size() == 1) {
+						String numberStr = String.valueOf(field.getLineCands()[yIndex].get(0).get(xIndex));
+						int idx = HALF_NUMS.indexOf(numberStr);
+						if (idx >= 0) {
+							masuStr = FULL_NUMS.substring(idx / 2, idx / 2 + 1);
+						} else {
+							masuStr = numberStr;
+						}
+					} else {
+						int candNum = -1;
+						if (candNum != 0) {
+							for (List<Integer> cc : field.getColumnCands()[xIndex]) {
+								if (cc.get(yIndex) != candNum) {
+									if (candNum == -1) {
+										candNum = cc.get(yIndex);
+									} else {
+										candNum = 0;
+										break;
+									}
+								}
+							}
+						}
+						if (candNum != 0) {
+							for (List<Integer> lc : field.getLineCands()[yIndex]) {
+								if (lc.get(xIndex) != candNum) {
+									if (candNum == -1) {
+										candNum = lc.get(yIndex);
+									} else {
+										candNum = 0;
+										break;
+									}
+								}
+							}
+						}
+						if (candNum != 0) {
+							String numberStr = String.valueOf(candNum);
+							int idx = HALF_NUMS.indexOf(numberStr);
+							if (idx >= 0) {
+								masuStr = FULL_NUMS.substring(idx / 2, idx / 2 + 1);
+							} else {
+								masuStr = numberStr;
+							}
+						}
 					}
 					sb.append("<text y=\"" + (yIndex * baseSize + baseSize + baseSize - 4)
 							+ "\" x=\""
@@ -13923,6 +13966,7 @@ public class SolverWeb extends HttpServlet {
 			sb.append("</svg>");
 			return sb.toString();
 		}
+
 	}
 
 	@Override

@@ -259,6 +259,11 @@ var ruleMap = {
 		url : "http://indi.s58.xrea.com/renban/",
 		source : "連続発破保管庫さん"
 	},
+	country : {
+		name : "カントリーロード",
+		url : "https://www.nikoli.co.jp/ja/puzzles/country_road/",
+		source : "ニコリ公式"
+	},
 }
 var regMap = {
 		yajilin:['yajilin','yajilin','yajilin','yajilin','yajilin','yajilin','yajilin','yajilin','yajilin','yajilin'],
@@ -639,7 +644,7 @@ $(function() {
 				}
 			} else if (type == 'balance' || type == 'kurotto'
 					|| type == 'nurikabe' || type == 'heyawake'
-					|| type == 'shugaku' || type == 'icebarn') {
+					|| type == 'shugaku' || type == 'icebarn' || type == 'country') {
 				$('#sel_size').append(option.size_3);
 				$('#sel_size').append(option.size_4);
 				$('#sel_size').append(option.size_5);

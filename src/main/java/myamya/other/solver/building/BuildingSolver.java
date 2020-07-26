@@ -692,8 +692,47 @@ public class BuildingSolver implements Solver {
 						} else {
 							sb.append(FULL_NUMS.substring(index / 2, index / 2 + 1));
 						}
+					} else if (lineCands[yIndex].size() == 1) {
+						String numStr = String.valueOf(lineCands[yIndex].get(0).get(xIndex));
+						int index = HALF_NUMS.indexOf(numStr);
+						if (index == 0) {
+							sb.append("・");
+						} else {
+							sb.append(FULL_NUMS.substring(index / 2, index / 2 + 1));
+						}
 					} else {
-						sb.append("　");
+						int candNum = -1;
+						if (candNum != 0) {
+							for (List<Integer> cc : columnCands[xIndex]) {
+								if (cc.get(yIndex) != candNum) {
+									if (candNum == -1) {
+										candNum = cc.get(yIndex);
+									} else {
+										candNum = 0;
+										break;
+									}
+								}
+							}
+						}
+						if (candNum != 0) {
+							for (List<Integer> lc : lineCands[yIndex]) {
+								if (lc.get(xIndex) != candNum) {
+									if (candNum == -1) {
+										candNum = lc.get(yIndex);
+									} else {
+										candNum = 0;
+										break;
+									}
+								}
+							}
+						}
+						String numStr = String.valueOf(candNum);
+						int index = HALF_NUMS.indexOf(numStr);
+						if (index == 0) {
+							sb.append("　");
+						} else {
+							sb.append(FULL_NUMS.substring(index / 2, index / 2 + 1));
+						}
 					}
 				}
 				sb.append("←");
