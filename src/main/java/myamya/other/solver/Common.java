@@ -1,5 +1,8 @@
 package myamya.other.solver;
 
+import java.util.HashSet;
+import java.util.Set;
+
 public class Common {
 	public enum Masu {
 		SPACE("　", 0), NOT_BLACK("・", 1), BLACK("■", 2);
@@ -318,6 +321,18 @@ public class Common {
 					(int) (getLeftUp().getxIndex() + (Math.random() * xLength)));
 		}
 
+		/**
+		 * 自分が包含する位置のセットを返す。
+		 */
+		public Set<Position> getPosSet() {
+			Set<Position> result = new HashSet<>();
+			for (int y = leftUp.yIndex; y <= rightDown.yIndex; y++) {
+				for (int x = leftUp.xIndex; x <= rightDown.xIndex; x++) {
+					result.add(new Position(y, x));
+				}
+			}
+			return result;
+		}
 	}
 
 	public static class GeneratorResult {

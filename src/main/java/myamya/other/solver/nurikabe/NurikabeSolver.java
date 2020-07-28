@@ -79,7 +79,6 @@ public class NurikabeSolver implements Solver {
 				// その代わり、U字型に白マスが発生するのを抑制する(唯一解でなくなるので)
 				for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 					for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-
 						Masu masuUp = yIndex == 0 ? Masu.BLACK : masu[yIndex - 1][xIndex];
 						Masu masuRight = xIndex == getXLength() - 1 ? Masu.BLACK : masu[yIndex][xIndex + 1];
 						Masu masuDown = yIndex == getYLength() - 1 ? Masu.BLACK : masu[yIndex + 1][xIndex];

@@ -20,6 +20,7 @@ import myamya.other.solver.box.BoxSolver.BoxGenerator;
 import myamya.other.solver.building.BuildingSolver.BuildingGenerator;
 import myamya.other.solver.country.CountrySolver.CountryGenerator;
 import myamya.other.solver.creek.CreekSolver.CreekGenerator;
+import myamya.other.solver.easyasabc.EasyasabcSolver.EasyasabcGenerator;
 import myamya.other.solver.geradeweg.GeradewegSolver.GeradewegGenerator;
 import myamya.other.solver.gokigen.GokigenSolver.GokigenGenerator;
 import myamya.other.solver.hakoiri.HakoiriSolver.HakoiriGenerator;
@@ -32,6 +33,7 @@ import myamya.other.solver.kurotto.KurottoSolver.KurottoGenerator;
 import myamya.other.solver.masyu.MasyuSolver.MasyuGenerator;
 import myamya.other.solver.midloop.MidloopSolver.MidloopGenerator;
 import myamya.other.solver.minarism.MinarismSolver.MinarismGenerator;
+import myamya.other.solver.mochikoro.MochikoroSolver.MochikoroGenerator;
 import myamya.other.solver.moonsun.MoonsunSolver.MoonsunGenerator;
 import myamya.other.solver.nanro.NanroSolver.NanroGenerator;
 import myamya.other.solver.norinori.NorinoriSolver.NorinoriGenerator;
@@ -955,6 +957,40 @@ public class SudokuGachaWeb extends HttpServlet {
 
 	}
 
+	static class EasyasabcGeneratorThlead extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+
+		EasyasabcGeneratorThlead(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new EasyasabcGenerator(height, width);
+		}
+
+	}
+
+	static class MochikoroGeneratorThlead extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+		protected final boolean isMochinyoro;
+
+		MochikoroGeneratorThlead(int height, int width, boolean isMochinyoro) {
+			this.height = height;
+			this.width = width;
+			this.isMochinyoro = isMochinyoro;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new MochikoroGenerator(height, width, isMochinyoro, false);
+		}
+
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -1087,6 +1123,12 @@ public class SudokuGachaWeb extends HttpServlet {
 				t = new RenbanGeneratorThlead(height, width);
 			} else if (type.equals("country")) {
 				t = new CountryGeneratorThlead(height, width);
+			} else if (type.equals("easyasabc")) {
+				t = new EasyasabcGeneratorThlead(height, width);
+			} else if (type.equals("mochikoro")) {
+				t = new MochikoroGeneratorThlead(height, width, false);
+			} else if (type.equals("mochinyoro")) {
+				t = new MochikoroGeneratorThlead(height, width, true);
 			} else {
 				throw new IllegalArgumentException();
 			}

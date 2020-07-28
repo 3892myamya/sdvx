@@ -264,6 +264,21 @@ var ruleMap = {
 		url : "https://www.nikoli.co.jp/ja/puzzles/country_road/",
 		source : "ニコリ公式"
 	},
+	easyasabc : {
+		name : "ABCプレース",
+		url : "https://ja.wikipedia.org/wiki/ABC%E3%83%97%E3%83%AC%E3%83%BC%E3%82%B9",
+		source : "Wikipedia"
+	},
+	mochikoro : {
+		name : "モチコロ",
+		url : "https://www.nikoli.co.jp/ja/puzzles/mochikoro/",
+		source : "ニコリ公式"
+	},
+	mochinyoro : {
+		name : "モチにょろ",
+		url : "http://indi.s58.xrea.com/mochinyoro/",
+		source : "連続発破保管庫さん"
+	},
 }
 var regMap = {
 		yajilin:['yajilin','yajilin','yajilin','yajilin','yajilin','yajilin','yajilin','yajilin','yajilin','yajilin'],
@@ -621,7 +636,7 @@ $(function() {
 				} else {
 					$('#sel_size').val(9);
 				}
-			} else if (type == 'building' || type == 'renban' ) {
+			} else if (type == 'building' || type == 'renban' || type == 'easyasabc' ) {
 				$('#sel_size').append(option.size_3);
 				$('#sel_size').append(option.size_4);
 				$('#sel_size').append(option.size_5);
