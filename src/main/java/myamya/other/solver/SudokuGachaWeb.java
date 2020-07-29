@@ -977,16 +977,18 @@ public class SudokuGachaWeb extends HttpServlet {
 		protected final int height;
 		protected final int width;
 		protected final boolean isMochinyoro;
+		protected final boolean isScrin;
 
-		MochikoroGeneratorThlead(int height, int width, boolean isMochinyoro) {
+		MochikoroGeneratorThlead(int height, int width, boolean isMochinyoro, boolean isScrin) {
 			this.height = height;
 			this.width = width;
 			this.isMochinyoro = isMochinyoro;
+			this.isScrin = isScrin;
 		}
 
 		@Override
 		Generator getGenerator() {
-			return new MochikoroGenerator(height, width, isMochinyoro, false);
+			return new MochikoroGenerator(height, width, isMochinyoro, isScrin);
 		}
 
 	}
@@ -1126,9 +1128,11 @@ public class SudokuGachaWeb extends HttpServlet {
 			} else if (type.equals("easyasabc")) {
 				t = new EasyasabcGeneratorThlead(height, width);
 			} else if (type.equals("mochikoro")) {
-				t = new MochikoroGeneratorThlead(height, width, false);
+				t = new MochikoroGeneratorThlead(height, width, false, false);
 			} else if (type.equals("mochinyoro")) {
-				t = new MochikoroGeneratorThlead(height, width, true);
+				t = new MochikoroGeneratorThlead(height, width, true, false);
+			} else if (type.equals("scrin")) {
+				t = new MochikoroGeneratorThlead(height, width, false, true);
 			} else {
 				throw new IllegalArgumentException();
 			}

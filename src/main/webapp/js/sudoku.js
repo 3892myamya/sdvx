@@ -279,6 +279,11 @@ var ruleMap = {
 		url : "http://indi.s58.xrea.com/mochinyoro/",
 		source : "連続発破保管庫さん"
 	},
+	scrin : {
+		name : "スクリン",
+		url : "",
+		source : ""
+	},
 }
 var regMap = {
 		yajilin:['yajilin','yajilin','yajilin','yajilin','yajilin','yajilin','yajilin','yajilin','yajilin','yajilin'],
@@ -685,7 +690,7 @@ $(function() {
 					$('#sel_size').val(nowSelSizeVal);
 				}
 			} else if (type == 'sashigane' || type == 'barns'
-					|| type == 'pipelink') {
+					|| type == 'pipelink' || type == 'scrin') {
 				$('#sel_size').append(option.size_4);
 				$('#sel_size').append(option.size_5);
 				$('#sel_size').append(option.size_6);

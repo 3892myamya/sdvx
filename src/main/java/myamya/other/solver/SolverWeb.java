@@ -6722,7 +6722,18 @@ public class SolverWeb extends HttpServlet {
 					}
 				}
 			}
-
+			// 点描画
+			for (int yIndex = 0; yIndex < field.getYLength() + 1; yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength() + 1; xIndex++) {
+					sb.append("<circle cy=\"" + (yIndex * baseSize + margin)
+							+ "\" cx=\""
+							+ (xIndex * baseSize + baseSize)
+							+ "\" r=\""
+							+ 1
+							+ "\" fill=\"black\", stroke=\"black\">"
+							+ "</circle>");
+				}
+			}
 			// 数字描画
 			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {

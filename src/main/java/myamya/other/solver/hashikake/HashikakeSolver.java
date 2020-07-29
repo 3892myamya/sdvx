@@ -460,6 +460,28 @@ public class HashikakeSolver implements Solver {
 									yokoWallGate[yIndex][xIndex - 1] = 2;
 								}
 							}
+						} else if (numbers[yIndex][xIndex] == maxAll - 1) {
+							// 限界より一つ小さい数字の場合、とりあえず橋がかけられるところにかけることは確定
+							if (yIndex != 0) {
+								if (tateWall[yIndex - 1][xIndex] == Wall.SPACE) {
+									tateWall[yIndex - 1][xIndex] = Wall.NOT_EXISTS;
+								}
+							}
+							if (xIndex != getXLength() - 1) {
+								if (yokoWall[yIndex][xIndex] == Wall.SPACE) {
+									yokoWall[yIndex][xIndex] = Wall.NOT_EXISTS;
+								}
+							}
+							if (yIndex != getYLength() - 1) {
+								if (tateWall[yIndex][xIndex] == Wall.SPACE) {
+									tateWall[yIndex][xIndex] = Wall.NOT_EXISTS;
+								}
+							}
+							if (xIndex != 0) {
+								if (yokoWall[yIndex][xIndex - 1] == Wall.SPACE) {
+									yokoWall[yIndex][xIndex - 1] = Wall.NOT_EXISTS;
+								}
+							}
 						} else if (numbers[yIndex][xIndex] == minAll) {
 							// 限界まで橋をかけない
 							if (yIndex != 0) {
@@ -874,10 +896,10 @@ public class HashikakeSolver implements Solver {
 			}
 		}
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
-		System.out.println("難易度:" + (count / 2));
+		System.out.println("難易度:" + (count * 5));
 		System.out.println(field);
 		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count / 2).toString();
+				+ Difficulty.getByCount(count * 5).toString();
 	}
 
 	/**

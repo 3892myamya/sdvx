@@ -24,9 +24,6 @@ public class MochikoroSolver implements Solver {
 		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
 		private static final String FULL_NUMS = "０１２３４５６７８９";
 
-		/**
-		 * TODO スクリンは候補情報を使うのが解消できてないので未対応…
-		 */
 		static class ExtendedField extends MochikoroSolver.Field {
 
 			// マスの情報
@@ -49,6 +46,12 @@ public class MochikoroSolver implements Solver {
 					for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
 						masu[yIndex][xIndex] = Masu.SPACE;
 					}
+				}
+				if (isScrin) {
+					masu[0][0] = Masu.BLACK;
+					masu[0][getXLength() - 1] = Masu.BLACK;
+					masu[getYLength() - 1][0] = Masu.BLACK;
+					masu[getYLength() - 1][getXLength() - 1] = Masu.BLACK;
 				}
 			}
 
@@ -105,6 +108,169 @@ public class MochikoroSolver implements Solver {
 						}
 					}
 				}
+				if (isScrin) {
+					Set<Position> already = new HashSet<>();
+					for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+						for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+							if (masu[yIndex][xIndex] == Masu.NOT_BLACK
+									&& !already.contains(new Position(yIndex, xIndex))) {
+								boolean isSkip = false;
+								int minY = yIndex;
+								int minX = xIndex;
+								int maxY = yIndex;
+								int maxX = xIndex;
+								for (int targetY = yIndex + 1; targetY < getYLength(); targetY++) {
+									if (masu[targetY][xIndex] != Masu.NOT_BLACK) {
+										if (masu[targetY][xIndex] == Masu.SPACE) {
+											isSkip = true;
+										}
+										break;
+									}
+									already.add(new Position(targetY, xIndex));
+									maxY = targetY;
+								}
+								if (isSkip) {
+									continue;
+								}
+								for (int targetX = xIndex + 1; targetX < getXLength(); targetX++) {
+									if (masu[yIndex][targetX] != Masu.NOT_BLACK) {
+										if (masu[yIndex][targetX] == Masu.SPACE) {
+											isSkip = true;
+										}
+										break;
+									}
+									already.add(new Position(yIndex, targetX));
+									maxX = targetX;
+								}
+								if (isSkip) {
+									continue;
+								}
+								if (minY != 0) {
+									for (int targetX = minX; targetX <= maxX; targetX++) {
+										if (masu[minY - 1][targetX] != Masu.BLACK) {
+											isSkip = true;
+											break;
+										}
+									}
+								}
+								if (isSkip) {
+									continue;
+								}
+								if (minX != 0) {
+									for (int targetY = minY; targetY <= maxY; targetY++) {
+										if (masu[targetY][minX - 1] != Masu.BLACK) {
+											isSkip = true;
+											break;
+										}
+									}
+								}
+								if (isSkip) {
+									continue;
+								}
+								if (maxY != getYLength() - 1) {
+									for (int targetX = minX; targetX <= maxX; targetX++) {
+										if (masu[maxY + 1][targetX] != Masu.BLACK) {
+											isSkip = true;
+											break;
+										}
+									}
+								}
+								if (isSkip) {
+									continue;
+								}
+								if (maxX != getXLength() - 1) {
+									for (int targetY = minY; targetY <= maxY; targetY++) {
+										if (masu[targetY][maxX + 1] != Masu.BLACK) {
+											isSkip = true;
+											break;
+										}
+									}
+								}
+								if (isSkip) {
+									continue;
+								}
+								for (int targetY = minY + 1; targetY <= maxY; targetY++) {
+									for (int targetX = minX + 1; targetX <= maxX; targetX++) {
+										if (masu[targetY][targetY] != Masu.NOT_BLACK) {
+											isSkip = true;
+											break;
+										}
+										already.add(new Position(targetY, targetX));
+									}
+								}
+								if (isSkip) {
+									continue;
+								}
+								int blackCnt = 0;
+								int whiteCnt = 0;
+								Masu masuUL1 = minY <= 0 || minX <= 0 ? Masu.BLACK : masu[minY - 1][minX - 1];
+								if (masuUL1 == Masu.BLACK) {
+									blackCnt++;
+								} else if (masuUL1 == Masu.NOT_BLACK) {
+									whiteCnt++;
+								}
+								Masu masuUR1 = minY <= 0 || maxX >= getXLength() - 1 ? Masu.BLACK
+										: masu[minY - 1][maxX + 1];
+								if (masuUR1 == Masu.BLACK) {
+									blackCnt++;
+								} else if (masuUR1 == Masu.NOT_BLACK) {
+									whiteCnt++;
+								}
+								Masu masuDR1 = maxY >= getYLength() - 1 || maxX >= getXLength() - 1 ? Masu.BLACK
+										: masu[maxY + 1][maxX + 1];
+								if (masuDR1 == Masu.BLACK) {
+									blackCnt++;
+								} else if (masuDR1 == Masu.NOT_BLACK) {
+									whiteCnt++;
+								}
+								Masu masuDL1 = maxY >= getYLength() - 1 || minX <= 0 ? Masu.BLACK
+										: masu[maxY + 1][minX - 1];
+								if (masuDL1 == Masu.BLACK) {
+									blackCnt++;
+								} else if (masuDL1 == Masu.NOT_BLACK) {
+									whiteCnt++;
+								}
+								// 頂点は必ず白マス2個、黒マス2個になる
+								if (2 < blackCnt) {
+									// 黒マス過剰
+									return false;
+								}
+								if (2 > 4 - whiteCnt) {
+									// 黒マス不足
+									return false;
+								}
+								if (2 == blackCnt) {
+									if (masuUL1 == Masu.SPACE) {
+										masu[minY - 1][minX - 1] = Masu.NOT_BLACK;
+									}
+									if (masuUR1 == Masu.SPACE) {
+										masu[minY - 1][maxX + 1] = Masu.NOT_BLACK;
+									}
+									if (masuDR1 == Masu.SPACE) {
+										masu[maxY + 1][maxX + 1] = Masu.NOT_BLACK;
+									}
+									if (masuDL1 == Masu.SPACE) {
+										masu[maxY + 1][minX - 1] = Masu.NOT_BLACK;
+									}
+								}
+								if (2 == 4 - whiteCnt) {
+									if (masuUL1 == Masu.SPACE) {
+										masu[minY - 1][minX - 1] = Masu.BLACK;
+									}
+									if (masuUR1 == Masu.SPACE) {
+										masu[minY - 1][maxX + 1] = Masu.BLACK;
+									}
+									if (masuDR1 == Masu.SPACE) {
+										masu[maxY + 1][maxX + 1] = Masu.BLACK;
+									}
+									if (masuDL1 == Masu.SPACE) {
+										masu[maxY + 1][minX - 1] = Masu.BLACK;
+									}
+								}
+							}
+						}
+					}
+				}
 				if (advance) {
 					return sikakuSolve();
 				}
@@ -112,14 +278,18 @@ public class MochikoroSolver implements Solver {
 			}
 
 			public boolean isSolved() {
+				boolean isWhite = false;
 				for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 					for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
 						if (masu[yIndex][xIndex] == Masu.SPACE) {
 							return false;
 						}
+						if (masu[yIndex][xIndex] == Masu.NOT_BLACK) {
+							isWhite = true;
+						}
 					}
 				}
-				return solveAndCheck();
+				return isWhite && solveAndCheck();
 			}
 
 			/**
@@ -216,7 +386,7 @@ public class MochikoroSolver implements Solver {
 		}
 
 		public static void main(String[] args) {
-			new MochikoroGenerator(10, 10, false, false).generate();
+			new MochikoroGenerator(5, 5, false, true).generate();
 		}
 
 		@Override
@@ -233,6 +403,12 @@ public class MochikoroSolver implements Solver {
 			while (true) {
 				// 問題生成部
 				while (!wkField.isSolved()) {
+					if (index >= height * width) {
+						// スクリンの全黒マス排除
+						wkField = new ExtendedField(height, width, isMochinyoro, isScrin);
+						index = 0;
+						continue;
+					}
 					int yIndex = indexList.get(index) / width;
 					int xIndex = indexList.get(index) % width;
 					if (wkField.masu[yIndex][xIndex] == Masu.SPACE) {
@@ -309,7 +485,7 @@ public class MochikoroSolver implements Solver {
 							virtual.numbers[numberPos.getyIndex()][numberPos.getxIndex()] = null;
 						}
 						virtual.initCand();
-						int solveResult = new MochikoroSolverForGenerator(virtual, 5000).solve2();
+						int solveResult = new MochikoroSolverForGenerator(virtual, 7000).solve2();
 						if (solveResult != -1) {
 							wkField.numbers[numberPos.getyIndex()][numberPos
 									.getxIndex()] = virtual.numbers[numberPos.getyIndex()][numberPos.getxIndex()];
@@ -319,10 +495,11 @@ public class MochikoroSolver implements Solver {
 					break;
 				}
 			}
-			level = (int) Math.sqrt(level / 3);
-			String status = "Lv:" + level + "の問題を獲得！(数字：" + wkField.getHintCount().split("/")[0] + ")";
+			level = (int) Math.sqrt(level / 2 / 3) + 1;
+			String status = "Lv:" + level + "の問題を獲得！(" + (isScrin ? "丸/" : "") + "数字："
+					+ wkField.getHintCount() + ")";
 			String url = wkField.getPuzPreURL();
-			String link = "<a href=\"" + url + "\" target=\"_blank\">ぱずぷれv3で解く</a>";
+			String link = "<a href=\"" + url + "\" target=\"_blank\">" + (isScrin ? "puzz.link" : "ぱずぷれv3") + "で解く</a>";
 			StringBuilder sb = new StringBuilder();
 			int baseSize = 20;
 			int margin = 5;
@@ -330,79 +507,128 @@ public class MochikoroSolver implements Solver {
 					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
 							+ "height=\"" + (wkField.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
 							+ (wkField.getXLength() * baseSize + 2 * baseSize) + "\" >");
-			// 横壁描画
-			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
-				for (int xIndex = -1; xIndex < wkField.getXLength(); xIndex++) {
-					boolean oneYokoWall = xIndex == -1 || xIndex == wkField.getXLength() - 1;
-					sb.append("<line y1=\""
-							+ (yIndex * baseSize + margin)
-							+ "\" x1=\""
-							+ (xIndex * baseSize + 2 * baseSize)
-							+ "\" y2=\""
-							+ (yIndex * baseSize + baseSize + margin)
-							+ "\" x2=\""
-							+ (xIndex * baseSize + 2 * baseSize)
-							+ "\" stroke-width=\"1\" fill=\"none\"");
-					if (oneYokoWall) {
-						if (xIndex == -1 || xIndex == wkField.getXLength() - 1) {
-							sb.append("stroke=\"#000\" ");
-						} else {
-							sb.append("stroke=\"green\" ");
-						}
-					} else {
-						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+			if (isScrin) {
+				// 点描画
+				for (int yIndex = 0; yIndex < wkField.getYLength() + 1; yIndex++) {
+					for (int xIndex = 0; xIndex < wkField.getXLength() + 1; xIndex++) {
+						sb.append("<circle cy=\"" + (yIndex * baseSize + margin)
+								+ "\" cx=\""
+								+ (xIndex * baseSize + baseSize)
+								+ "\" r=\""
+								+ 1
+								+ "\" fill=\"black\", stroke=\"black\">"
+								+ "</circle>");
 					}
-					sb.append(">"
-							+ "</line>");
 				}
-			}
-			// 縦壁描画
-			for (int yIndex = -1; yIndex < wkField.getYLength(); yIndex++) {
-				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
-					boolean oneTateWall = yIndex == -1 || yIndex == wkField.getYLength() - 1;
-					sb.append("<line y1=\""
-							+ (yIndex * baseSize + baseSize + margin)
-							+ "\" x1=\""
-							+ (xIndex * baseSize + baseSize)
-							+ "\" y2=\""
-							+ (yIndex * baseSize + baseSize + margin)
-							+ "\" x2=\""
-							+ (xIndex * baseSize + baseSize + baseSize)
-							+ "\" stroke-width=\"1\" fill=\"none\"");
-					if (oneTateWall) {
-						if (yIndex == -1 || yIndex == wkField.getYLength() - 1) {
-							sb.append("stroke=\"#000\" ");
-						} else {
-							sb.append("stroke=\"green\" ");
+				// 数字描画
+				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+						if (wkField.getNumbers()[yIndex][xIndex] != null) {
+							sb.append("<circle cy=\"" + (yIndex * baseSize + (baseSize / 2) + margin)
+									+ "\" cx=\""
+									+ (xIndex * baseSize + baseSize + (baseSize / 2))
+									+ "\" r=\""
+									+ (baseSize / 2 - 2)
+									+ "\" fill=\"white\", stroke=\"black\">"
+									+ "</circle>");
+							if (wkField.getNumbers()[yIndex][xIndex] != -1) {
+								String numberStr = String.valueOf(wkField.getNumbers()[yIndex][xIndex]);
+								int idx = HALF_NUMS.indexOf(numberStr);
+								String masuStr = null;
+								if (idx >= 0) {
+									masuStr = FULL_NUMS.substring(idx / 2, idx / 2 + 1);
+								} else {
+									masuStr = numberStr;
+								}
+								sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 4 + margin)
+										+ "\" x=\""
+										+ (xIndex * baseSize + baseSize + 2)
+										+ "\" font-size=\""
+										+ (baseSize - 5)
+										+ "\" textLength=\""
+										+ (baseSize - 5)
+										+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+										+ masuStr
+										+ "</text>");
+							}
 						}
-					} else {
-						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
 					}
-					sb.append(">"
-							+ "</line>");
 				}
-			}
-			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
-				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
-					if (wkField.getNumbers()[yIndex][xIndex] != null) {
-						String numberStr = String.valueOf(wkField.getNumbers()[yIndex][xIndex]);
-						String masuStr;
-						int idx = HALF_NUMS.indexOf(numberStr);
-						if (idx >= 0) {
-							masuStr = FULL_NUMS.substring(idx / 2, idx / 2 + 1);
+			} else {
+				// 横壁描画
+				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+					for (int xIndex = -1; xIndex < wkField.getXLength(); xIndex++) {
+						boolean oneYokoWall = xIndex == -1 || xIndex == wkField.getXLength() - 1;
+						sb.append("<line y1=\""
+								+ (yIndex * baseSize + margin)
+								+ "\" x1=\""
+								+ (xIndex * baseSize + 2 * baseSize)
+								+ "\" y2=\""
+								+ (yIndex * baseSize + baseSize + margin)
+								+ "\" x2=\""
+								+ (xIndex * baseSize + 2 * baseSize)
+								+ "\" stroke-width=\"1\" fill=\"none\"");
+						if (oneYokoWall) {
+							if (xIndex == -1 || xIndex == wkField.getXLength() - 1) {
+								sb.append("stroke=\"#000\" ");
+							} else {
+								sb.append("stroke=\"green\" ");
+							}
 						} else {
-							masuStr = numberStr;
+							sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
 						}
-						sb.append("<text y=\"" + (yIndex * baseSize + baseSize + margin - 4)
-								+ "\" x=\""
-								+ (xIndex * baseSize + baseSize + 2)
-								+ "\" font-size=\""
-								+ (baseSize - 5)
-								+ "\" textLength=\""
-								+ (baseSize - 5)
-								+ "\" lengthAdjust=\"spacingAndGlyphs\">"
-								+ masuStr
-								+ "</text>");
+						sb.append(">"
+								+ "</line>");
+					}
+				}
+				// 縦壁描画
+				for (int yIndex = -1; yIndex < wkField.getYLength(); yIndex++) {
+					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+						boolean oneTateWall = yIndex == -1 || yIndex == wkField.getYLength() - 1;
+						sb.append("<line y1=\""
+								+ (yIndex * baseSize + baseSize + margin)
+								+ "\" x1=\""
+								+ (xIndex * baseSize + baseSize)
+								+ "\" y2=\""
+								+ (yIndex * baseSize + baseSize + margin)
+								+ "\" x2=\""
+								+ (xIndex * baseSize + baseSize + baseSize)
+								+ "\" stroke-width=\"1\" fill=\"none\"");
+						if (oneTateWall) {
+							if (yIndex == -1 || yIndex == wkField.getYLength() - 1) {
+								sb.append("stroke=\"#000\" ");
+							} else {
+								sb.append("stroke=\"green\" ");
+							}
+						} else {
+							sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+						}
+						sb.append(">"
+								+ "</line>");
+					}
+				}
+				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+						if (wkField.getNumbers()[yIndex][xIndex] != null) {
+							String numberStr = String.valueOf(wkField.getNumbers()[yIndex][xIndex]);
+							String masuStr;
+							int idx = HALF_NUMS.indexOf(numberStr);
+							if (idx >= 0) {
+								masuStr = FULL_NUMS.substring(idx / 2, idx / 2 + 1);
+							} else {
+								masuStr = numberStr;
+							}
+							sb.append("<text y=\"" + (yIndex * baseSize + baseSize + margin - 4)
+									+ "\" x=\""
+									+ (xIndex * baseSize + baseSize + 2)
+									+ "\" font-size=\""
+									+ (baseSize - 5)
+									+ "\" textLength=\""
+									+ (baseSize - 5)
+									+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+									+ masuStr
+									+ "</text>");
+						}
 					}
 				}
 			}
@@ -438,7 +664,7 @@ public class MochikoroSolver implements Solver {
 
 		public String getPuzPreURL() {
 			StringBuilder sb = new StringBuilder();
-			sb.append("http://pzv.jp/p.html?" + (isMochinyoro ? "mochinyoro"
+			sb.append("http://" + (isScrin ? "puzz.link/p" : "pzv.jp/p.html") + "?" + (isMochinyoro ? "mochinyoro"
 					: isScrin ? "scrin" : "mochikoro") + "/" + getXLength() + "/" + getYLength() + "/");
 			int interval = 0;
 			for (int i = 0; i < getYLength() * getXLength(); i++) {
@@ -494,7 +720,7 @@ public class MochikoroSolver implements Solver {
 					}
 				}
 			}
-			return String.valueOf(numberCnt + "/" + kuroCnt);
+			return String.valueOf(kuroCnt + (numberCnt != 0 ? "/" + numberCnt : ""));
 		}
 
 		public int getYLength() {
@@ -828,7 +1054,7 @@ public class MochikoroSolver implements Solver {
 				}
 			}
 			if (isMochinyoro) {
-				// もちにょろ用
+				// もちにょろ用。長方形の黒マスはダメ
 				for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 					for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
 						if (masu[yIndex][xIndex] == Masu.BLACK) {
@@ -838,6 +1064,106 @@ public class MochikoroSolver implements Solver {
 							if (!setContinuePosSet(masu, blackPos, blackPosSet, null)) {
 								return false;
 							}
+						}
+					}
+				}
+			}
+			if (isScrin) {
+				// スクリン用。リングの内側にある長方形の黒マスはダメ。
+				// このルールほとんど採用されてない気がするが一応…
+				Set<Position> already = new HashSet<>();
+				for (int yIndex = 1; yIndex < getYLength() - 1; yIndex++) {
+					for (int xIndex = 1; xIndex < getXLength() - 1; xIndex++) {
+						if (masu[yIndex][xIndex] == Masu.BLACK
+								&& !already.contains(new Position(yIndex, xIndex))) {
+							boolean isSkip = false;
+							int minY = yIndex;
+							int minX = xIndex;
+							int maxY = yIndex;
+							int maxX = xIndex;
+							for (int targetY = yIndex + 1; targetY < getYLength() - 1; targetY++) {
+								if (masu[targetY][xIndex] != Masu.BLACK) {
+									if (masu[targetY][xIndex] == Masu.SPACE) {
+										isSkip = true;
+									}
+									break;
+								}
+								already.add(new Position(targetY, xIndex));
+								maxY = targetY;
+							}
+							if (isSkip) {
+								continue;
+							}
+							for (int targetX = xIndex + 1; targetX < getXLength() - 1; targetX++) {
+								if (masu[yIndex][targetX] != Masu.BLACK) {
+									if (masu[yIndex][targetX] == Masu.SPACE) {
+										isSkip = true;
+									}
+									break;
+								}
+								already.add(new Position(yIndex, targetX));
+								maxX = targetX;
+							}
+							if (isSkip) {
+								continue;
+							}
+							if (minY != 0) {
+								for (int targetX = minX; targetX <= maxX; targetX++) {
+									if (masu[minY - 1][targetX] != Masu.NOT_BLACK) {
+										isSkip = true;
+										break;
+									}
+								}
+							}
+							if (isSkip) {
+								continue;
+							}
+							if (minX != 0) {
+								for (int targetY = minY; targetY <= maxY; targetY++) {
+									if (masu[targetY][minX - 1] != Masu.NOT_BLACK) {
+										isSkip = true;
+										break;
+									}
+								}
+							}
+							if (isSkip) {
+								continue;
+							}
+							if (maxY != getYLength() - 1) {
+								for (int targetX = minX; targetX <= maxX; targetX++) {
+									if (masu[maxY + 1][targetX] != Masu.NOT_BLACK) {
+										isSkip = true;
+										break;
+									}
+								}
+							}
+							if (isSkip) {
+								continue;
+							}
+							if (maxX != getXLength() - 1) {
+								for (int targetY = minY; targetY <= maxY; targetY++) {
+									if (masu[targetY][maxX + 1] != Masu.NOT_BLACK) {
+										isSkip = true;
+										break;
+									}
+								}
+							}
+							if (isSkip) {
+								continue;
+							}
+							for (int targetY = minY + 1; targetY <= maxY; targetY++) {
+								for (int targetX = minX + 1; targetX <= maxX; targetX++) {
+									if (masu[targetY][targetY] != Masu.BLACK) {
+										isSkip = true;
+										break;
+									}
+									already.add(new Position(targetY, targetX));
+								}
+							}
+							if (isSkip) {
+								continue;
+							}
+							return false;
 						}
 					}
 				}
@@ -1042,11 +1368,11 @@ public class MochikoroSolver implements Solver {
 			}
 		}
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
-		System.out.println("難易度:" + (count));
+		System.out.println("難易度:" + (count / 2));
 		System.out.println(field);
-		int level = (int) Math.sqrt(count / 3) + 1;
+		int level = (int) Math.sqrt(count / 2 / 3) + 1;
 		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count).toString() + "(Lv:" + level + ")";
+				+ Difficulty.getByCount(count / 2).toString() + "(Lv:" + level + ")";
 	}
 
 	/**
