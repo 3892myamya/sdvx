@@ -1153,7 +1153,7 @@ public class MochikoroSolver implements Solver {
 							}
 							for (int targetY = minY + 1; targetY <= maxY; targetY++) {
 								for (int targetX = minX + 1; targetX <= maxX; targetX++) {
-									if (masu[targetY][targetY] != Masu.BLACK) {
+									if (masu[targetY][targetX] != Masu.BLACK) {
 										isSkip = true;
 										break;
 									}
@@ -1335,7 +1335,7 @@ public class MochikoroSolver implements Solver {
 	}
 
 	public static void main(String[] args) {
-		String url = "http://pzv.jp/p.html?mochikoro/10/10/o23scg1r3p1g1i2n2h2j1k2l2k3m"; //urlを入れれば試せる
+		String url = "https://puzz.link/p?scrin/5/5/g.q6m.i"; //urlを入れれば試せる
 		String[] params = url.split("/");
 		int height = Integer.parseInt(params[params.length - 2]);
 		int width = Integer.parseInt(params[params.length - 3]);
