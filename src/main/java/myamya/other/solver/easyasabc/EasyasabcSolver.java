@@ -84,7 +84,7 @@ public class EasyasabcSolver implements Solver {
 			long start = System.nanoTime();
 			Field wkField = null;
 			while (true) {
-				int kind = (int) (Math.random() * (height - 2) + 2);
+				int kind = (int) (Math.random() * (height - 2) + 1.5);
 				// 問題生成部
 				// 適当なラテン方陣を作る
 				int[][] latin = new int[height][width];
