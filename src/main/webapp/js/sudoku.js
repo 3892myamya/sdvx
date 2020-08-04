@@ -284,6 +284,11 @@ var ruleMap = {
 		url : "",
 		source : ""
 	},
+	meander : {
+		name : "にょろにょろナンバー",
+		url : "",
+		source : ""
+	},
 }
 var regMap = {
 		yajilin:['yajilin','yajilin','yajilin','yajilin','yajilin','yajilin','yajilin','yajilin','yajilin','yajilin'],
@@ -664,7 +669,8 @@ $(function() {
 				}
 			} else if (type == 'balance' || type == 'kurotto'
 					|| type == 'nurikabe' || type == 'heyawake'
-					|| type == 'shugaku' || type == 'icebarn' || type == 'country') {
+					|| type == 'shugaku' || type == 'icebarn'
+					|| type == 'country' || type == 'meander') {
 				$('#sel_size').append(option.size_3);
 				$('#sel_size').append(option.size_4);
 				$('#sel_size').append(option.size_5);

@@ -31,6 +31,7 @@ import myamya.other.solver.icebarn.IcebarnSolver.IcebarnGenerator;
 import myamya.other.solver.kurodoko.KurodokoSolver.KurodokoGenerator;
 import myamya.other.solver.kurotto.KurottoSolver.KurottoGenerator;
 import myamya.other.solver.masyu.MasyuSolver.MasyuGenerator;
+import myamya.other.solver.meander.MeanderSolver.MeanderGenerator;
 import myamya.other.solver.midloop.MidloopSolver.MidloopGenerator;
 import myamya.other.solver.minarism.MinarismSolver.MinarismGenerator;
 import myamya.other.solver.mochikoro.MochikoroSolver.MochikoroGenerator;
@@ -993,6 +994,22 @@ public class SudokuGachaWeb extends HttpServlet {
 
 	}
 
+	static class MeanderGeneratorThlead extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+
+		MeanderGeneratorThlead(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new MeanderGenerator(height, width);
+		}
+
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -1133,6 +1150,8 @@ public class SudokuGachaWeb extends HttpServlet {
 				t = new MochikoroGeneratorThlead(height, width, true, false);
 			} else if (type.equals("scrin")) {
 				t = new MochikoroGeneratorThlead(height, width, false, true);
+			} else if (type.equals("meander")) {
+				t = new MeanderGeneratorThlead(height, width);
 			} else {
 				throw new IllegalArgumentException();
 			}
