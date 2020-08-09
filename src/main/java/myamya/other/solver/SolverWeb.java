@@ -11870,8 +11870,84 @@ public class SolverWeb extends HttpServlet {
 			}
 			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
-					if (field.getNumbersCand()[yIndex][xIndex].size() == 1) {
-						if (field.getNumbersCand()[yIndex][xIndex].get(0) == 0) {
+					String masuStr = "";
+					if (field.getColumnCands()[xIndex].size() == 0) {
+						masuStr = "×";
+					} else if (field.getColumnCands()[xIndex].size() == 1) {
+						String numberStr = String.valueOf(field.getColumnCands()[xIndex].get(0).get(yIndex));
+						int idx = HALF_NUMS.indexOf(numberStr);
+						if (idx >= 0) {
+							if (idx == 0) {
+								sb.append("<rect y=\"" + (yIndex * baseSize + baseSize)
+										+ "\" x=\""
+										+ (xIndex * baseSize + baseSize + baseSize)
+										+ "\" width=\""
+										+ (baseSize)
+										+ "\" height=\""
+										+ (baseSize)
+										+ "\" fill=\"black\" >"
+										+ "</rect>");
+							} else {
+								masuStr = FULL_NUMS.substring(idx / 2, idx / 2 + 1);
+							}
+						} else {
+							masuStr = numberStr;
+						}
+					} else if (field.getLineCands()[yIndex].size() == 1) {
+						String numberStr = String.valueOf(field.getLineCands()[yIndex].get(0).get(xIndex));
+						int idx = HALF_NUMS.indexOf(numberStr);
+						if (idx >= 0) {
+							if (idx == 0) {
+								sb.append("<rect y=\"" + (yIndex * baseSize + baseSize)
+										+ "\" x=\""
+										+ (xIndex * baseSize + baseSize + baseSize)
+										+ "\" width=\""
+										+ (baseSize)
+										+ "\" height=\""
+										+ (baseSize)
+										+ "\" fill=\"black\" >"
+										+ "</rect>");
+							} else {
+								masuStr = FULL_NUMS.substring(idx / 2, idx / 2 + 1);
+							}
+						} else {
+							masuStr = numberStr;
+						}
+					} else {
+						int candNum = -1;
+						if (candNum != 0) {
+							for (List<Integer> cc : field.getColumnCands()[xIndex]) {
+								if (cc.get(yIndex) != candNum) {
+									if (candNum == -1) {
+										candNum = cc.get(yIndex);
+									} else {
+										candNum = 0;
+										break;
+									}
+								}
+							}
+						}
+						if (candNum != 0) {
+							for (List<Integer> lc : field.getLineCands()[yIndex]) {
+								if (lc.get(xIndex) != candNum) {
+									if (candNum == -1) {
+										candNum = lc.get(yIndex);
+									} else {
+										candNum = 0;
+										break;
+									}
+								}
+							}
+						}
+						if (candNum != 0) {
+							String numberStr = String.valueOf(candNum);
+							int idx = HALF_NUMS.indexOf(numberStr);
+							if (idx >= 0) {
+								masuStr = FULL_NUMS.substring(idx / 2, idx / 2 + 1);
+							} else {
+								masuStr = numberStr;
+							}
+						} else {
 							sb.append("<rect y=\"" + (yIndex * baseSize + baseSize)
 									+ "\" x=\""
 									+ (xIndex * baseSize + baseSize + baseSize)
@@ -11881,29 +11957,20 @@ public class SolverWeb extends HttpServlet {
 									+ (baseSize)
 									+ "\" fill=\"black\" >"
 									+ "</rect>");
-						} else {
-							String numberStr = String.valueOf(field.getNumbersCand()[yIndex][xIndex].get(0));
-							String masuStr;
-							int idx = HALF_NUMS.indexOf(numberStr);
-							if (idx >= 0) {
-								masuStr = FULL_NUMS.substring(idx / 2, idx / 2 + 1);
-							} else {
-								masuStr = numberStr;
-							}
-							sb.append("<text y=\"" + (yIndex * baseSize + baseSize + baseSize - 4)
-									+ "\" x=\""
-									+ (xIndex * baseSize + baseSize + baseSize + 2)
-									+ "\" font-size=\""
-									+ (baseSize - 5)
-									+ "\" textLength=\""
-									+ (baseSize - 5)
-									+ "\" fill=\""
-									+ "green"
-									+ "\" lengthAdjust=\"spacingAndGlyphs\">"
-									+ masuStr
-									+ "</text>");
 						}
 					}
+					sb.append("<text y=\"" + (yIndex * baseSize + baseSize + baseSize - 4)
+							+ "\" x=\""
+							+ (xIndex * baseSize + baseSize + baseSize + 2)
+							+ "\" font-size=\""
+							+ (baseSize - 5)
+							+ "\" textLength=\""
+							+ (baseSize - 5)
+							+ "\" fill=\""
+							+ "green"
+							+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+							+ masuStr
+							+ "</text>");
 				}
 			}
 			// 横壁描画

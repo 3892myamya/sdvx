@@ -289,6 +289,11 @@ var ruleMap = {
 		url : "",
 		source : ""
 	},
+	doppelblock : {
+		name : "Doppelblock",
+		url : "",
+		source : ""
+	},
 }
 var regMap = {
 		yajilin:['yajilin','yajilin','yajilin','yajilin','yajilin','yajilin','yajilin','yajilin','yajilin','yajilin'],
@@ -646,7 +651,8 @@ $(function() {
 				} else {
 					$('#sel_size').val(9);
 				}
-			} else if (type == 'building' || type == 'renban' || type == 'easyasabc' ) {
+			} else if (type == 'building' || type == 'renban'
+				|| type == 'easyasabc' || type == 'doppelblock' ) {
 				$('#sel_size').append(option.size_3);
 				$('#sel_size').append(option.size_4);
 				$('#sel_size').append(option.size_5);

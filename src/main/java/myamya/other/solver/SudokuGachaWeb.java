@@ -20,6 +20,7 @@ import myamya.other.solver.box.BoxSolver.BoxGenerator;
 import myamya.other.solver.building.BuildingSolver.BuildingGenerator;
 import myamya.other.solver.country.CountrySolver.CountryGenerator;
 import myamya.other.solver.creek.CreekSolver.CreekGenerator;
+import myamya.other.solver.doppelblock.DoppelblockSolver.DoppelblockGenerator;
 import myamya.other.solver.easyasabc.EasyasabcSolver.EasyasabcGenerator;
 import myamya.other.solver.geradeweg.GeradewegSolver.GeradewegGenerator;
 import myamya.other.solver.gokigen.GokigenSolver.GokigenGenerator;
@@ -1010,6 +1011,22 @@ public class SudokuGachaWeb extends HttpServlet {
 
 	}
 
+	static class DoppelblockGeneratorThlead extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+
+		DoppelblockGeneratorThlead(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new DoppelblockGenerator(height, width);
+		}
+
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -1152,6 +1169,8 @@ public class SudokuGachaWeb extends HttpServlet {
 				t = new MochikoroGeneratorThlead(height, width, false, true);
 			} else if (type.equals("meander")) {
 				t = new MeanderGeneratorThlead(height, width);
+			} else if (type.equals("doppelblock")) {
+				t = new DoppelblockGeneratorThlead(height, width);
 			} else {
 				throw new IllegalArgumentException();
 			}
