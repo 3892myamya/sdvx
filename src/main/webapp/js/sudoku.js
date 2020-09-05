@@ -294,13 +294,37 @@ var ruleMap = {
 		url : "",
 		source : ""
 	},
+	fillmat : {
+		name : "フィルマット",
+		url : "https://www.nikoli.co.jp/ja/puzzles/fillmat/",
+		source : "ニコリ公式"
+	},
+	cojun : {
+		name : "コージュン",
+		url : "http://indi.s58.xrea.com/cojun/",
+		source : "連続発破保管庫さん"
+	},
+	mines : {
+		name : "マインスイーパ",
+		url : "",
+		source : ""
+	},
 }
 var regMap = {
-		yajilin:['yajilin','yajilin','yajilin','yajilin','yajilin','yajilin','yajilin','yajilin','yajilin','yajilin'],
-		herugolf:['herugolf','herugolf','herugolf','herugolf','herugolf','herugolf','herugolf','herugolf','herugolf','herugolf'],
-		nurimisaki:['nurimisaki','nurimisaki','nurimisaki','nurimisaki','nurimisaki','nurimisaki','nurimisaki','nurimisaki','nurimisaki','nurimisaki'],
-		allloop:['geradeweg','simpleloop','slither','barns','pipelink','bag','masyu','midloop','yajilin','reflect'],
-		shakashaka:['shakashaka','shakashaka','shakashaka','shakashaka','shakashaka','shakashaka','shakashaka','shakashaka','shakashaka','shakashaka'],
+		yajilin:[{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},
+			{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10}],
+		herugolf:[{type:'herugolf',size:10},{type:'herugolf',size:10},{type:'herugolf',size:10},{type:'herugolf',size:10},{type:'herugolf',size:10},
+			{type:'herugolf',size:10},{type:'herugolf',size:10},{type:'herugolf',size:10},{type:'herugolf',size:10},{type:'herugolf',size:10}],
+		nurimisaki:[{type:'nurimisaki',size:10},{type:'nurimisaki',size:10},{type:'nurimisaki',size:10},{type:'nurimisaki',size:10},{type:'nurimisaki',size:10},
+			{type:'nurimisaki',size:10},{type:'nurimisaki',size:10},{type:'nurimisaki',size:10},{type:'nurimisaki',size:10},{type:'nurimisaki',size:10}],
+		allloop:[{type:'geradeweg',size:10},{type:'simpleloop',size:10},{type:'slither',size:10},{type:'barns',size:10},{type:'pipelink',size:10},
+			{type:'bag',size:10},{type:'masyu',size:10},{type:'midloop',size:10},{type:'yajilin',size:10},{type:'reflect',size:10}],
+		shakashaka:[{type:'shakashaka',size:10},{type:'shakashaka',size:10},{type:'shakashaka',size:10},{type:'shakashaka',size:10},{type:'shakashaka',size:10},
+			{type:'shakashaka',size:10},{type:'shakashaka',size:10},{type:'shakashaka',size:10},{type:'shakashaka',size:10},{type:'shakashaka',size:10}],
+		yajitatami:[{type:'yajitatami',size:10},{type:'yajitatami',size:10},{type:'yajitatami',size:10},{type:'yajitatami',size:10},{type:'yajitatami',size:10},
+			{type:'yajitatami',size:10},{type:'yajitatami',size:10},{type:'yajitatami',size:10},{type:'yajitatami',size:10},{type:'yajitatami',size:10}],
+		icebarn:[{type:'icebarn',size:8},{type:'icebarn',size:8},{type:'icebarn',size:8},{type:'icebarn',size:8},{type:'icebarn',size:8},
+			{type:'icebarn',size:8},{type:'icebarn',size:8},{type:'icebarn',size:8},{type:'icebarn',size:8},{type:'icebarn',size:8}],
 }
 
 var option = {
@@ -491,11 +515,11 @@ $(function() {
 			} else {
 				$('#caption').text('抽選中です。少々お待ちください……' + cnt + '/10');
 				var param = {};
-				param.type = regMap[$('#sel_reg').val()][cnt];
+				param.type = regMap[$('#sel_reg').val()][cnt].type;
 				param.pattern = 0;
-				param.size = 10;
-				param.height = 10;
-				param.width = 10;
+				param.size = regMap[$('#sel_reg').val()][cnt].size;
+				param.height = regMap[$('#sel_reg').val()][cnt].size;
+				param.width = regMap[$('#sel_reg').val()][cnt].size;
 				$.ajax({
 					url : 'SudokuGacha',
 					type : 'POST',
@@ -676,7 +700,7 @@ $(function() {
 			} else if (type == 'balance' || type == 'kurotto'
 					|| type == 'nurikabe' || type == 'heyawake'
 					|| type == 'shugaku' || type == 'icebarn'
-					|| type == 'country' || type == 'meander') {
+					|| type == 'country' || type == 'meander' || type == 'fillmat' ) {
 				$('#sel_size').append(option.size_3);
 				$('#sel_size').append(option.size_4);
 				$('#sel_size').append(option.size_5);
@@ -743,7 +767,7 @@ $(function() {
 				} else {
 					$('#sel_size').val(nowSelSizeVal);
 				}
-			} else if (type == 'tilepaint') {
+			} else if (type == 'tilepaint' || type == 'mines') {
 				$('#sel_size').append(option.size_3);
 				$('#sel_size').append(option.size_4);
 				$('#sel_size').append(option.size_5);
@@ -913,7 +937,7 @@ $(function() {
 		for(var i = 0; i < 10; i++) {
 			rtaGridInfo.push({
 				no : i + 1,
-				type : ruleMap[regMap[$('#sel_reg').val()][i]].name ,
+				type : ruleMap[regMap[$('#sel_reg').val()][i].type].name,
 				level : "",
 				link : "",
 				time : "",

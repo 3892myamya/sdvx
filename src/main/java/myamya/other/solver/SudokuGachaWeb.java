@@ -18,10 +18,12 @@ import myamya.other.solver.balance.BalanceSolver.BalanceGenerator;
 import myamya.other.solver.barns.BarnsSolver.BarnsGenerator;
 import myamya.other.solver.box.BoxSolver.BoxGenerator;
 import myamya.other.solver.building.BuildingSolver.BuildingGenerator;
+import myamya.other.solver.cojun.CojunSolver.CojunGenerator;
 import myamya.other.solver.country.CountrySolver.CountryGenerator;
 import myamya.other.solver.creek.CreekSolver.CreekGenerator;
 import myamya.other.solver.doppelblock.DoppelblockSolver.DoppelblockGenerator;
 import myamya.other.solver.easyasabc.EasyasabcSolver.EasyasabcGenerator;
+import myamya.other.solver.fillmat.FillmatSolver.FillmatGenerator;
 import myamya.other.solver.geradeweg.GeradewegSolver.GeradewegGenerator;
 import myamya.other.solver.gokigen.GokigenSolver.GokigenGenerator;
 import myamya.other.solver.hakoiri.HakoiriSolver.HakoiriGenerator;
@@ -35,6 +37,7 @@ import myamya.other.solver.masyu.MasyuSolver.MasyuGenerator;
 import myamya.other.solver.meander.MeanderSolver.MeanderGenerator;
 import myamya.other.solver.midloop.MidloopSolver.MidloopGenerator;
 import myamya.other.solver.minarism.MinarismSolver.MinarismGenerator;
+import myamya.other.solver.mines.MinesSolver.MinesGenerator;
 import myamya.other.solver.mochikoro.MochikoroSolver.MochikoroGenerator;
 import myamya.other.solver.moonsun.MoonsunSolver.MoonsunGenerator;
 import myamya.other.solver.nanro.NanroSolver.NanroGenerator;
@@ -1027,6 +1030,54 @@ public class SudokuGachaWeb extends HttpServlet {
 
 	}
 
+	static class FillmatGeneratorThlead extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+
+		FillmatGeneratorThlead(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new FillmatGenerator(height, width);
+		}
+
+	}
+
+	static class CojunGeneratorThlead extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+
+		CojunGeneratorThlead(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new CojunGenerator(height, width);
+		}
+
+	}
+
+	static class MinesGeneratorThlead extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+
+		MinesGeneratorThlead(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new MinesGenerator(height, width);
+		}
+
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -1038,7 +1089,7 @@ public class SudokuGachaWeb extends HttpServlet {
 			GeneratorThlead t;
 			int height = Integer.parseInt(request.getParameter("height"));
 			int width = Integer.parseInt(request.getParameter("width"));
-			if (!type.equals("tilepaint") && (height > 10 || width > 10)) {
+			if (!type.equals("tilepaint") && !type.equals("mines") && (height > 10 || width > 10)) {
 				throw new IllegalArgumentException();
 			}
 			if (type.equals("sudoku")) {
@@ -1171,6 +1222,12 @@ public class SudokuGachaWeb extends HttpServlet {
 				t = new MeanderGeneratorThlead(height, width);
 			} else if (type.equals("doppelblock")) {
 				t = new DoppelblockGeneratorThlead(height, width);
+			} else if (type.equals("fillmat")) {
+				t = new FillmatGeneratorThlead(height, width);
+			} else if (type.equals("cojun")) {
+				t = new CojunGeneratorThlead(height, width);
+			} else if (type.equals("mines")) {
+				t = new MinesGeneratorThlead(height, width);
 			} else {
 				throw new IllegalArgumentException();
 			}

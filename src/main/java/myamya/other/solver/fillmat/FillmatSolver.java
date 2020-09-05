@@ -1,17 +1,365 @@
 package myamya.other.solver.fillmat;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import myamya.other.solver.Common.CountOverException;
 import myamya.other.solver.Common.Difficulty;
 import myamya.other.solver.Common.Direction;
+import myamya.other.solver.Common.GeneratorResult;
 import myamya.other.solver.Common.Position;
+import myamya.other.solver.Common.Sikaku;
+import myamya.other.solver.Generator;
 import myamya.other.solver.Solver;
 
 public class FillmatSolver implements Solver {
+	public static class FillmatGenerator implements Generator {
+		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
+		private static final String FULL_NUMS = "０１２３４５６７８９";
+
+		static class FillmatSolverForGenerator extends FillmatSolver {
+			private final int limit;
+
+			public FillmatSolverForGenerator(Field field, int limit) {
+				super(field);
+				this.limit = limit;
+			}
+
+			public int solve2() {
+				try {
+					while (!field.isSolved()) {
+						String befStr = field.getStateDump();
+						if (!field.solveAndCheck()) {
+							return -1;
+						}
+						if (field.getStateDump().equals(befStr)) {
+							if (!candSolve(field, 0)) {
+								return -1;
+							}
+							if (field.getStateDump().equals(befStr)) {
+								if (!candSolve(field, 1)) {
+									return -1;
+								}
+								if (field.getStateDump().equals(befStr)) {
+									if (!candSolve(field, 2)) {
+										return -1;
+									}
+									if (field.getStateDump().equals(befStr)) {
+										return -1;
+									}
+								}
+							}
+						}
+					}
+				} catch (CountOverException e) {
+					return -1;
+				}
+				return count;
+			}
+
+			@Override
+			protected boolean candSolve(Field field, int recursive) {
+				if (this.count >= limit) {
+					throw new CountOverException();
+				} else {
+					return super.candSolve(field, recursive);
+				}
+			}
+		}
+
+		private final int height;
+		private final int width;
+
+		public FillmatGenerator(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		public static void main(String[] args) {
+			new FillmatGenerator(8, 8).generate();
+		}
+
+		@Override
+		public GeneratorResult generate() {
+			Field wkField = new Field(height, width);
+			List<Sikaku> candSikakuList = new ArrayList<>();
+			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+					// 1*1
+					candSikakuList.add(new Sikaku(new Position(yIndex, xIndex), new Position(yIndex, xIndex)));
+					if (yIndex < wkField.getYLength() - 1) {
+						// 2*1
+						candSikakuList.add(new Sikaku(new Position(yIndex, xIndex), new Position(yIndex + 1, xIndex)));
+					}
+					if (yIndex < wkField.getYLength() - 2) {
+						// 3*1
+						candSikakuList.add(new Sikaku(new Position(yIndex, xIndex), new Position(yIndex + 2, xIndex)));
+					}
+					if (yIndex < wkField.getYLength() - 3) {
+						// 4*1
+						candSikakuList.add(new Sikaku(new Position(yIndex, xIndex), new Position(yIndex + 3, xIndex)));
+					}
+					if (xIndex < wkField.getXLength() - 1) {
+						// 1*2
+						candSikakuList.add(new Sikaku(new Position(yIndex, xIndex), new Position(yIndex, xIndex + 1)));
+					}
+					if (xIndex < wkField.getXLength() - 2) {
+						// 1*3
+						candSikakuList.add(new Sikaku(new Position(yIndex, xIndex), new Position(yIndex, xIndex + 2)));
+					}
+					if (xIndex < wkField.getXLength() - 3) {
+						// 1*4
+						candSikakuList.add(new Sikaku(new Position(yIndex, xIndex), new Position(yIndex, xIndex + 3)));
+					}
+				}
+			}
+			int level = 0;
+			long start = System.nanoTime();
+			while (true) {
+				List<Sikaku> filledSikakuList = new ArrayList<>();
+				while (true) {
+					// 問題生成
+					// 左上から埋めていく。そうしないとまず唯一解にならない。
+					boolean allFilled = true;
+					outer: for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+						for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+							boolean already = false;
+							for (Sikaku filledSikaku : filledSikakuList) {
+								if (filledSikaku.isDuplicate(new Position(yIndex, xIndex))) {
+									already = true;
+									break;
+								}
+							}
+							if (already) {
+								continue;
+							}
+							List<Sikaku> useCandSikakuList = new ArrayList<>();
+							for (Sikaku candSikaku : candSikakuList) {
+								if (candSikaku.isDuplicate(new Position(yIndex, xIndex))) {
+									useCandSikakuList.add(candSikaku);
+								}
+							}
+							Collections.shuffle(useCandSikakuList);
+							boolean filled = false;
+							for (Sikaku candSikaku : useCandSikakuList) {
+								boolean isOk = true;
+								for (Sikaku filledSikaku : filledSikakuList) {
+									// かぶっていないこと
+									if (candSikaku.isDuplicate(filledSikaku)) {
+										isOk = false;
+										break;
+									}
+									// 同じ面積で接触していないこと
+									if (candSikaku.getAreaSize() == filledSikaku.getAreaSize()) {
+										Sikaku wkSikaku = new Sikaku(new Position(
+												candSikaku.getLeftUp().getyIndex() - 1,
+												candSikaku.getLeftUp().getxIndex() - 1),
+												new Position(candSikaku.getRightDown().getyIndex() + 1,
+														candSikaku.getRightDown().getxIndex() + 1));
+										if (wkSikaku.isDuplicate(filledSikaku)) {
+											isOk = false;
+											break;
+										}
+									}
+									// 畳になっていないこと
+									if (candSikaku.getLeftUp().getyIndex() - 1 == filledSikaku.getRightDown()
+											.getyIndex()
+											&& candSikaku.getLeftUp().getxIndex() - 1 == filledSikaku.getRightDown()
+													.getxIndex()) {
+										isOk = false;
+										break;
+									}
+									if (candSikaku.getLeftUp().getyIndex() - 1 == filledSikaku.getRightDown()
+											.getyIndex()
+											&& candSikaku.getRightDown().getxIndex() + 1 == filledSikaku.getLeftUp()
+													.getxIndex()) {
+										isOk = false;
+										break;
+									}
+									if (candSikaku.getRightDown().getyIndex() + 1 == filledSikaku.getLeftUp()
+											.getyIndex()
+											&& candSikaku.getLeftUp().getxIndex() - 1 == filledSikaku.getRightDown()
+													.getxIndex()) {
+										isOk = false;
+										break;
+									}
+									if (candSikaku.getRightDown().getyIndex() + 1 == filledSikaku.getLeftUp()
+											.getyIndex()
+											&& candSikaku.getRightDown().getxIndex() + 1 == filledSikaku.getLeftUp()
+													.getxIndex()) {
+										isOk = false;
+										break;
+									}
+								}
+								if (isOk) {
+									filled = true;
+									filledSikakuList.add(candSikaku);
+									break;
+								}
+							}
+							if (!filled) {
+								// うめられてなければ抜ける。
+								allFilled = false;
+								break outer;
+							}
+						}
+					}
+					if (!allFilled) {
+						// 埋めきれなければやり直し
+						filledSikakuList.clear();
+					} else {
+						break;
+					}
+				}
+				// ヒント設定
+				// とりあえず、四角1つにつきランダムで1箇所設定
+				List<Position> numberPosList = new ArrayList<>();
+				for (Sikaku filledSikaku : filledSikakuList) {
+					int yIndex = (int) (filledSikaku.getLeftUp().getyIndex() + (Math.random()
+							* (filledSikaku.getRightDown().getyIndex() - filledSikaku.getLeftUp().getyIndex() + 1)));
+					int xIndex = (int) (filledSikaku.getLeftUp().getxIndex() + (Math.random()
+							* (filledSikaku.getRightDown().getxIndex() - filledSikaku.getLeftUp().getxIndex() + 1)));
+					wkField.numbers[yIndex][xIndex] = filledSikaku.getAreaSize();
+					numberPosList.add(new Position(yIndex, xIndex));
+				}
+				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+						wkField.numbersCand[yIndex][xIndex].clear();
+						if (wkField.numbers[yIndex][xIndex] != null) {
+							wkField.numbersCand[yIndex][xIndex].add(wkField.numbers[yIndex][xIndex]);
+						} else {
+							for (int number = 1; number <= 4; number++) {
+								wkField.numbersCand[yIndex][xIndex].add(number);
+							}
+						}
+					}
+				}
+				// 解けるかな？
+				level = new FillmatSolverForGenerator(new FillmatSolverForGenerator.Field(wkField), 1000).solve2();
+				if (level == -1) {
+					// 解けなければやり直し
+					wkField = new FillmatSolver.Field(height, width);
+					filledSikakuList.clear();
+				} else {
+					Collections.shuffle(numberPosList);
+					for (Position numberPos : numberPosList) {
+						FillmatSolver.Field virtual = new FillmatSolver.Field(wkField, true);
+						int yIndex = numberPos.getyIndex();
+						int xIndex = numberPos.getxIndex();
+						virtual.numbers[yIndex][xIndex] = null;
+						virtual.numbersCand[yIndex][xIndex].clear();
+						for (int number = 1; number <= 4; number++) {
+							virtual.numbersCand[yIndex][xIndex].add(number);
+						}
+						int solveResult = new FillmatSolverForGenerator(new FillmatSolverForGenerator.Field(virtual),
+								10000).solve2();
+						if (solveResult != -1) {
+							wkField.numbers[yIndex][xIndex] = null;
+							wkField.numbersCand[yIndex][xIndex].clear();
+							for (int number = 1; number <= 4; number++) {
+								wkField.numbersCand[yIndex][xIndex].add(number);
+							}
+							level = solveResult;
+						}
+					}
+					break;
+				}
+			}
+			level = (int) Math.sqrt(level / 5 / 3) + 1;
+			String status = "Lv:" + level + "の問題を獲得！(数字:" + wkField.getHintCount() + ")";
+			String url = wkField.getPuzPreURL();
+			String link = "<a href=\"" + url + "\" target=\"_blank\">ぱずぷれv3で解く</a>";
+			StringBuilder sb = new StringBuilder();
+			int baseSize = 20;
+			int margin = 5;
+			sb.append(
+					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
+							+ "height=\"" + (wkField.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
+							+ (wkField.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+					if (wkField.getNumbers()[yIndex][xIndex] != null) {
+						String numberStr = String.valueOf(wkField.getNumbers()[yIndex][xIndex]);
+						String masuStr;
+						int idx = HALF_NUMS.indexOf(numberStr);
+						if (idx >= 0) {
+							masuStr = FULL_NUMS.substring(idx / 2, idx / 2 + 1);
+						} else {
+							masuStr = numberStr;
+						}
+						sb.append("<text y=\"" + (yIndex * baseSize + baseSize + margin - 4)
+								+ "\" x=\""
+								+ (xIndex * baseSize + baseSize + 2)
+								+ "\" fill=\""
+								+ "black"
+								+ "\" font-size=\""
+								+ (baseSize - 5)
+								+ "\" textLength=\""
+								+ (baseSize - 5)
+								+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+								+ masuStr
+								+ "</text>");
+					}
+				}
+			}
+			// 横壁描画
+			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = -1; xIndex < wkField.getXLength(); xIndex++) {
+					boolean oneYokoWall = xIndex == -1 || xIndex == wkField.getXLength() - 1;
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + margin)
+							+ "\" x1=\""
+							+ (xIndex * baseSize + 2 * baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ (xIndex * baseSize + 2 * baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneYokoWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">"
+							+ "</line>");
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = -1; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+					boolean oneTateWall = yIndex == -1 || yIndex == wkField.getYLength() - 1;
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x1=\""
+							+ (xIndex * baseSize + baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ (xIndex * baseSize + baseSize + baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneTateWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">"
+							+ "</line>");
+				}
+			}
+			sb.append("</svg>");
+			System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
+			System.out.println(level);
+			System.out.println(wkField.getHintCount());
+			System.out.println(wkField);
+			return new GeneratorResult(status, sb.toString(), link, url, level, "");
+
+		}
+
+	}
 
 	public static class Field {
 		static final String ALPHABET = "abcdefghijklmnopqrstuvwxyz";
@@ -21,8 +369,89 @@ public class FillmatSolver implements Solver {
 		// 数字の候補情報
 		protected List<Integer>[][] numbersCand;
 
+		public Integer[][] getNumbers() {
+			return numbers;
+		}
+
 		public List<Integer>[][] getNumbersCand() {
 			return numbersCand;
+		}
+
+		public boolean[][] getYokoWall() {
+			boolean[][] result = new boolean[getYLength()][getXLength() - 1];
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength() - 1; xIndex++) {
+					List<Integer> myCand = new ArrayList<>(numbersCand[yIndex][xIndex]);
+					List<Integer> nextCand = new ArrayList<>(numbersCand[yIndex][xIndex + 1]);
+					myCand.retainAll(nextCand);
+					result[yIndex][xIndex] = myCand.isEmpty();
+				}
+			}
+			return result;
+		}
+
+		public boolean[][] getTateWall() {
+			boolean[][] result = new boolean[getYLength() - 1][getXLength()];
+			for (int yIndex = 0; yIndex < getYLength() - 1; yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					List<Integer> myCand = new ArrayList<>(numbersCand[yIndex][xIndex]);
+					List<Integer> nextCand = new ArrayList<>(numbersCand[yIndex + 1][xIndex]);
+					myCand.retainAll(nextCand);
+					result[yIndex][xIndex] = myCand.isEmpty();
+				}
+			}
+			return result;
+		}
+
+		public String getHintCount() {
+			int cnt = 0;
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					if (numbers[yIndex][xIndex] != null) {
+						cnt++;
+					}
+				}
+			}
+			return String.valueOf(cnt);
+		}
+
+		public String getPuzPreURL() {
+			StringBuilder sb = new StringBuilder();
+			sb.append("http://pzv.jp/p.html?fillmat/" + getXLength() + "/" + getYLength() + "/");
+			int interval = 0;
+			for (int i = 0; i < getYLength() * getXLength(); i++) {
+				int yIndex = i / getXLength();
+				int xIndex = i % getXLength();
+				if (numbers[yIndex][xIndex] == null) {
+					interval++;
+					if (interval == 26) {
+						sb.append("z");
+						interval = 0;
+					}
+				} else {
+					Integer num = numbers[yIndex][xIndex];
+					String numStr = Integer.toHexString(num);
+					if (numStr.length() == 2) {
+						numStr = "-" + numStr;
+					} else if (numStr.length() == 3) {
+						numStr = "+" + numStr;
+					}
+					if (interval == 0) {
+						sb.append(numStr);
+					} else {
+						sb.append(ALPHABET.substring(interval - 1, interval));
+						sb.append(numStr);
+						interval = 0;
+					}
+				}
+			}
+			if (interval != 0) {
+				sb.append(ALPHABET.substring(interval - 1, interval));
+			}
+			if (sb.charAt(sb.length() - 1) == '.') {
+				sb.append("/");
+			}
+			return sb.toString();
 		}
 
 		public int getYLength() {
@@ -91,6 +520,32 @@ public class FillmatSolver implements Solver {
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
 					numbersCand[yIndex][xIndex] = new ArrayList<>(other.numbersCand[yIndex][xIndex]);
+				}
+			}
+		}
+
+		@SuppressWarnings("unchecked")
+		public Field(Field other, boolean b) {
+			numbers = new Integer[other.getYLength()][other.getXLength()];
+			numbersCand = new ArrayList[other.getYLength()][other.getXLength()];
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					numbers[yIndex][xIndex] = other.numbers[yIndex][xIndex];
+					numbersCand[yIndex][xIndex] = new ArrayList<>(other.numbersCand[yIndex][xIndex]);
+				}
+			}
+		}
+
+		@SuppressWarnings("unchecked")
+		public Field(int height, int width) {
+			numbers = new Integer[height][width];
+			numbersCand = new ArrayList[height][width];
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					numbersCand[yIndex][xIndex] = new ArrayList<>();
+					for (int number = 0; number <= 4; number++) {
+						numbersCand[yIndex][xIndex].add(number);
+					}
 				}
 			}
 		}
@@ -364,7 +819,7 @@ public class FillmatSolver implements Solver {
 		}
 
 		/**
-		 * 同じ数字が斜めに来ることはない。
+		 * 同じ数字が斜めに来ることはない。(隣接禁止、畳禁止)
 		 */
 		private boolean wallSolve() {
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
@@ -409,7 +864,7 @@ public class FillmatSolver implements Solver {
 		}
 
 		/**
-		 * 2x2のマスのうち、どこか縦横に2マスは連続が必須。
+		 * 2x2のマスのうち、どこか縦横に2マスは連続が必須。(畳禁止)
 		 */
 		private boolean pileSolve() {
 			for (int yIndex = 0; yIndex < getYLength() - 1; yIndex++) {
@@ -477,11 +932,15 @@ public class FillmatSolver implements Solver {
 
 	}
 
-	private final Field field;
-	private int count = 0;
+	protected final Field field;
+	protected int count = 0;
 
 	public FillmatSolver(int height, int width, String param) {
 		field = new Field(height, width, param);
+	}
+
+	public FillmatSolver(Field field) {
+		this.field = new Field(field);
 	}
 
 	public Field getField() {
@@ -531,17 +990,18 @@ public class FillmatSolver implements Solver {
 			}
 		}
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
-		System.out.println("難易度:" + (count / 10));
+		System.out.println("難易度:" + (count / 5));
 		System.out.println(field);
+		int level = (int) Math.sqrt(count / 5 / 3) + 1;
 		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count / 10).toString();
+				+ Difficulty.getByCount(count / 5).toString() + "(Lv:" + level + ")";
 	}
 
 	/**
 	 * 仮置きして調べる
 	 * @param posSet
 	 */
-	private boolean candSolve(Field field, int recursive) {
+	protected boolean candSolve(Field field, int recursive) {
 		for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 			for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
 				if (field.numbersCand[yIndex][xIndex].size() != 1) {
