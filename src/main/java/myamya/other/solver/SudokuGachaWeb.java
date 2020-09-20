@@ -53,12 +53,14 @@ import myamya.other.solver.ripple.RippleSolver.RippleGenerator;
 import myamya.other.solver.sashigane.SashiganeSolver.SashiganeGenerator;
 import myamya.other.solver.shakashaka.ShakashakaSolver.ShakashakaGenerator;
 import myamya.other.solver.shugaku.ShugakuSolver.ShugakuGenerator;
+import myamya.other.solver.simplegako.SimplegakoSolver.SimplegakoGenerator;
 import myamya.other.solver.simpleloop.SimpleloopSolver.SimpleloopGenerator;
 import myamya.other.solver.slither.SlitherSolver.SlitherGenerator;
 import myamya.other.solver.snake.SnakeSolver.SnakeGenerator;
 import myamya.other.solver.starbattle.StarBattleSolver.StarBattleGenerator;
 import myamya.other.solver.sudoku.SudokuSolver.SudokuGenerator;
 import myamya.other.solver.sukoro.SukoroSolver.SukoroGenerator;
+import myamya.other.solver.sukororoom.SukororoomSolver.SukororoomGenerator;
 import myamya.other.solver.tapa.TapaSolver.TapaGenerator;
 import myamya.other.solver.tasquare.TasquareSolver.TasquareGenerator;
 import myamya.other.solver.tatamibari.TatamibariSolver.TatamibariGenerator;
@@ -1078,6 +1080,38 @@ public class SudokuGachaWeb extends HttpServlet {
 
 	}
 
+	static class SukororoomGeneratorThlead extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+
+		SukororoomGeneratorThlead(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new SukororoomGenerator(height, width);
+		}
+
+	}
+
+	static class SimplegakoGeneratorThlead extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+
+		SimplegakoGeneratorThlead(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new SimplegakoGenerator(height, width);
+		}
+
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -1228,6 +1262,10 @@ public class SudokuGachaWeb extends HttpServlet {
 				t = new CojunGeneratorThlead(height, width);
 			} else if (type.equals("mines")) {
 				t = new MinesGeneratorThlead(height, width);
+			} else if (type.equals("sukororoom")) {
+				t = new SukororoomGeneratorThlead(height, width);
+			} else if (type.equals("simplegako")) {
+				t = new SimplegakoGeneratorThlead(height, width);
 			} else {
 				throw new IllegalArgumentException();
 			}

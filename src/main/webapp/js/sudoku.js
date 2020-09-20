@@ -309,6 +309,16 @@ var ruleMap = {
 		url : "",
 		source : ""
 	},
+	sukororoom : {
+		name : "数コロ部屋",
+		url : "",
+		source : ""
+	},
+	simplegako : {
+		name : "シンプルガコ",
+		url : "",
+		source : ""
+	},
 }
 var regMap = {
 		yajilin:[{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},
@@ -676,7 +686,7 @@ $(function() {
 					$('#sel_size').val(9);
 				}
 			} else if (type == 'building' || type == 'renban'
-				|| type == 'easyasabc' || type == 'doppelblock' ) {
+				|| type == 'easyasabc' || type == 'doppelblock' || type == 'simplegako' ) {
 				$('#sel_size').append(option.size_3);
 				$('#sel_size').append(option.size_4);
 				$('#sel_size').append(option.size_5);
@@ -889,7 +899,8 @@ $(function() {
 			time : time,
 			type : ruleMap[type].name,
 			level : resultObj.level,
-			link : resultObj.link.replace('puzz\.linkで', '').replace('ぱずぷれv3で',
+			// TODO むりやり…
+			link : resultObj.link.replace('(波及効果バリアント)', '').replace('puzz\.linkで', '').replace('ぱずぷれv3で',
 					''),
 		});
 		if (historyObj.length > 20) {
