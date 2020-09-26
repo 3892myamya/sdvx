@@ -319,6 +319,11 @@ var ruleMap = {
 		url : "",
 		source : ""
 	},
+	nonogram : {
+		name : "ののぐらむ",
+		url : "https://ja.wikipedia.org/wiki/%E3%81%8A%E7%B5%B5%E3%81%8B%E3%81%8D%E3%83%AD%E3%82%B8%E3%83%83%E3%82%AF",
+		source : "Wikipedia"
+	},
 }
 var regMap = {
 		yajilin:[{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},
@@ -777,7 +782,7 @@ $(function() {
 				} else {
 					$('#sel_size').val(nowSelSizeVal);
 				}
-			} else if (type == 'tilepaint' || type == 'mines') {
+			} else if (type == 'tilepaint' || type == 'mines' || type == 'nonogram') {
 				$('#sel_size').append(option.size_3);
 				$('#sel_size').append(option.size_4);
 				$('#sel_size').append(option.size_5);

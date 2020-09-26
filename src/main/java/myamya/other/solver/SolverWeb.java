@@ -9,6 +9,7 @@ import java.net.ProtocolException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -94,6 +95,7 @@ import myamya.other.solver.nagare.NagareSolver;
 import myamya.other.solver.nagenawa.NagenawaSolver;
 import myamya.other.solver.nanro.NanroSolver;
 import myamya.other.solver.nondango.NondangoSolver;
+import myamya.other.solver.nonogram.NonogramSolver;
 import myamya.other.solver.norinori.NorinoriSolver;
 import myamya.other.solver.numlin.NumlinSolver;
 import myamya.other.solver.nuribou.NuribouSolver;
@@ -15146,6 +15148,171 @@ public class SolverWeb extends HttpServlet {
 		}
 	}
 
+	static class NonogramSolverThread extends AbsSolverThlead {
+
+		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
+		private static final String FULL_NUMS = "０１２３４５６７８９";
+
+		NonogramSolverThread(int height, int width, String param) {
+			super(height, width, param);
+		}
+
+		@Override
+		protected Solver getSolver() {
+			return new NonogramSolver(height, width, param);
+		}
+
+		@Override
+		public String makeCambus() {
+			StringBuilder sb = new StringBuilder();
+			NonogramSolver.Field field = ((NonogramSolver) solver).getField();
+			Masu[][] masu = field.getMasu();
+			int baseSize = 20;
+			int margin = 5;
+			int upHintsAdjust = (field.getYLength() + 1) / 2;
+			int leftHintsAdjust = (field.getXLength() + 1) / 2;
+			sb.append(
+					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
+							+ "height=\""
+							+ ((field.getYLength() + upHintsAdjust) * baseSize + 2 * baseSize
+									+ margin)
+							+ "\" width=\""
+							+ ((field.getXLength() + leftHintsAdjust) * baseSize + 2 * baseSize)
+							+ "\" >");
+			// 横ヒント配置
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				List<Integer> wkList = new ArrayList<>(Arrays.asList(field.getLeftHints()[yIndex]));
+				Collections.reverse(wkList);
+				for (int xIndex = 0; xIndex < leftHintsAdjust; xIndex++) {
+					if (wkList.get(xIndex) != null) {
+						String numberStr = String.valueOf(wkList.get(xIndex));
+						int idx = HALF_NUMS.indexOf(numberStr);
+						String masuStr = null;
+						if (idx >= 0) {
+							masuStr = FULL_NUMS.substring(idx / 2, idx / 2 + 1);
+						} else {
+							masuStr = numberStr;
+						}
+						sb.append("<text y=\"" + ((yIndex + upHintsAdjust) * baseSize + baseSize - 4 + margin)
+								+ "\" x=\""
+								+ (xIndex * baseSize + baseSize + 2)
+								+ "\" font-size=\""
+								+ (baseSize - 5)
+								+ "\" textLength=\""
+								+ (baseSize - 5)
+								+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+								+ masuStr
+								+ "</text>");
+					}
+				}
+			}
+			// 縦ヒント配置
+			for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+				List<Integer> wkList = new ArrayList<>(Arrays.asList(field.getUpHints()[xIndex]));
+				Collections.reverse(wkList);
+				for (int yIndex = 0; yIndex < upHintsAdjust; yIndex++) {
+					if (wkList.get(yIndex) != null) {
+						String numberStr = String.valueOf(wkList.get(yIndex));
+						int idx = HALF_NUMS.indexOf(numberStr);
+						String masuStr = null;
+						if (idx >= 0) {
+							masuStr = FULL_NUMS.substring(idx / 2, idx / 2 + 1);
+						} else {
+							masuStr = numberStr;
+						}
+						sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 4 + margin)
+								+ "\" x=\""
+								+ ((xIndex + leftHintsAdjust) * baseSize + baseSize + 2)
+								+ "\" font-size=\""
+								+ (baseSize - 5)
+								+ "\" textLength=\""
+								+ (baseSize - 5)
+								+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+								+ masuStr
+								+ "</text>");
+					}
+				}
+			}
+			// マス描画
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					Masu oneMasu = masu[yIndex][xIndex];
+					if (oneMasu.toString().equals("■")) {
+						sb.append("<rect y=\"" + ((yIndex + upHintsAdjust) * baseSize + margin)
+								+ "\" x=\""
+								+ ((xIndex + leftHintsAdjust) * baseSize + baseSize)
+								+ "\" width=\""
+								+ (baseSize)
+								+ "\" height=\""
+								+ (baseSize)
+								+ "\">"
+								+ "</rect>");
+					} else {
+						sb.append("<text y=\"" + ((yIndex + upHintsAdjust) * baseSize + baseSize - 4 + margin)
+								+ "\" x=\""
+								+ ((xIndex + leftHintsAdjust)  * baseSize + baseSize)
+								+ "\" font-size=\""
+								+ (baseSize - 2)
+								+ "\" textLength=\""
+								+ (baseSize - 2)
+								+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+								+ oneMasu.toString()
+								+ "</text>");
+					}
+				}
+			}
+			// 横壁描画
+			for (
+
+					int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = -1; xIndex < field.getXLength(); xIndex++) {
+					boolean oneYokoWall = xIndex == -1 || xIndex == field.getXLength() - 1;
+					sb.append("<line y1=\""
+							+ ((yIndex + upHintsAdjust) * baseSize + margin)
+							+ "\" x1=\""
+							+ ((xIndex + leftHintsAdjust) * baseSize + 2 * baseSize)
+							+ "\" y2=\""
+							+ ((yIndex + upHintsAdjust) * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ ((xIndex + leftHintsAdjust) * baseSize + 2 * baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneYokoWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">"
+							+ "</line>");
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = -1; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					boolean oneTateWall = yIndex == -1 || yIndex == field.getYLength() - 1;
+					sb.append("<line y1=\""
+							+ ((yIndex + upHintsAdjust) * baseSize + baseSize + margin)
+							+ "\" x1=\""
+							+ ((xIndex + leftHintsAdjust) * baseSize + baseSize)
+							+ "\" y2=\""
+							+ ((yIndex + upHintsAdjust) * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ ((xIndex + leftHintsAdjust) * baseSize + baseSize + baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneTateWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">"
+							+ "</line>");
+				}
+			}
+			sb.append("</svg>");
+			return sb.toString();
+		}
+
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -15437,6 +15604,8 @@ public class SolverWeb extends HttpServlet {
 					t = new MinesSolverThread(height, width, param);
 				} else if (puzzleType.contains("simplegako")) {
 					t = new SimplegakoSolverThread(height, width, param);
+				} else if (puzzleType.contains("nonogram")) {
+					t = new NonogramSolverThread(height, width, param);
 				} else {
 					throw new IllegalArgumentException();
 				}
