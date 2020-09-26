@@ -467,7 +467,7 @@ $(function() {
 									$('#edt_if').val(resultObj.txt);
 									$('#edt_if').show();
 								}
-								updateHistory(time, param.type, resultObj);
+								updateHistory(time, param.type, param.size, resultObj);
 								showGrid();
 							}
 						}).fail(function() {
@@ -894,7 +894,7 @@ $(function() {
 			$('#div_rule').hide();
 		}
 	}
-	var updateHistory = function(time, type, resultObj) {
+	var updateHistory = function(time, type, size, resultObj) {
 		var history = localStorage.getItem('history');
 		var historyObj = JSON.parse(history);
 		if (historyObj == null) {
@@ -902,7 +902,7 @@ $(function() {
 		}
 		historyObj.unshift({
 			time : time,
-			type : ruleMap[type].name,
+			type : ruleMap[type].name + '(' + size + ')',
 			level : resultObj.level,
 			// TODO むりやり…
 			link : resultObj.link.replace('(波及効果バリアント)', '').replace('puzz\.linkで', '').replace('ぱずぷれv3で',
@@ -930,7 +930,7 @@ $(function() {
 				type : 'text',
 				width : 130
 			}, {
-				title : 'パズル名',
+				title : 'パズル名(サイズ)',
 				name : 'type',
 				type : 'text',
 				width : 115
@@ -953,7 +953,7 @@ $(function() {
 		for(var i = 0; i < 10; i++) {
 			rtaGridInfo.push({
 				no : i + 1,
-				type : ruleMap[regMap[$('#sel_reg').val()][i].type].name,
+				type : ruleMap[regMap[$('#sel_reg').val()][i].type].name + '(' + regMap[$('#sel_reg').val()][i].size + ')' ,
 				level : "",
 				link : "",
 				time : "",
@@ -972,7 +972,7 @@ $(function() {
 				type : 'number',
 				width : 30
 			}, {
-				title : 'パズル名',
+				title : 'パズル名(サイズ)',
 				name : 'type',
 				type : 'text',
 				width : 115
