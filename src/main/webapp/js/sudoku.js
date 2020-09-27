@@ -363,7 +363,26 @@ var option = {
 	pattern_7 : '<option value="7">卍型</option>',
 }
 
+// ハッシュタグに使えない文字
+// 全てを網羅するのは難しいのでとりあえず使用頻度が高そうなもの
+var hashtag_cannot = ['[',']',' ','-','!','?','　','！','？',',','.','、','。','(',')','（','）','%','％'];
+
 $(function() {
+	// コース情報。オリコモードの場合は値が設定される。
+	var courseInfo = {};
+
+	// コースモードかどうかの判定
+	var isCourseMode = function () {
+		return Object.keys(courseInfo).length;
+	}
+
+	var toHashTag = function(str){
+		for(var i=0;i< hashtag_cannot.length;i++){
+			str=str.split(hashtag_cannot[i]).join('');
+		}
+		return str;
+	}
+
 	var getTime = function() {
 		// 先頭ゼロ付加
 		var padZero = function(num) {
@@ -457,9 +476,13 @@ $(function() {
 										+ resultObj.url;
 								var befSplitted = $('#tweetbtn').attr('href').split("?");
 								var splitted = befSplitted[1].split("&");
+								if (befSplitted.length == 3){
+									befSplitted.splice(2,1);
+								}
 								splitted[0] = 'hashtags=ペンパガチャ';
 								splitted[1] = 'text='
 										+ encodeURIComponent(tweetTxt);
+								splitted[3] = 'url=https%3a%2f%2ft%2eco%2fGg5hFCjLwP';
 								befSplitted[1] = splitted.join('&')
 								$('#tweetbtn').attr('href', befSplitted.join('?'))
 								$('#tweetbtn').show();
@@ -504,23 +527,28 @@ $(function() {
 		$('#btn_rta_clear').hide();
 		$('#sel_mode').prop("disabled", true);
 		$('#sel_reg').prop("disabled", true);
-		// 条件をローカルストレージ保存
-		var cond = localStorage.getItem('condsudoku');
-		var condObj = JSON.parse(cond);
-		if (condObj != null) {
-			condObj.mode = $('#sel_mode').val();
-			condObj.reg = $('#sel_reg').val();
+		var regulations = regMap[$('#sel_reg').val()];
+		if (isCourseMode()){
+			regulations = courseInfo.course;
 		} else {
-			condObj = {
-					mode : $('#sel_mode').val(),
-					reg : $('#sel_reg').val(),
-			};
+			// 条件をローカルストレージ保存
+			var cond = localStorage.getItem('condsudoku');
+			var condObj = JSON.parse(cond);
+			if (condObj != null) {
+				condObj.mode = $('#sel_mode').val();
+				condObj.reg = $('#sel_reg').val();
+			} else {
+				condObj = {
+						mode : $('#sel_mode').val(),
+						reg : $('#sel_reg').val(),
+				};
+			}
+			cond = JSON.stringify(condObj);
+			localStorage.setItem('condsudoku', cond);
 		}
-		cond = JSON.stringify(condObj);
-		localStorage.setItem('condsudoku', cond);
 		var startSubmit = function(cnt) {
 			$('#loading').show();
-			if (cnt == 10) {
+			if (cnt == regulations.length) {
 				$('#caption').text('抽選完了。←のボタンを押すと開始します。');
 				$('#loading').hide();
 				$('#sel_mode').prop("disabled", false);
@@ -528,13 +556,13 @@ $(function() {
 				$('#btn_submit_rta').hide();
 				$('#btn_start_rta').show();
 			} else {
-				$('#caption').text('抽選中です。少々お待ちください……' + cnt + '/10');
+				$('#caption').text('抽選中です。少々お待ちください……' + cnt + '/' + regulations.length);
 				var param = {};
-				param.type = regMap[$('#sel_reg').val()][cnt].type;
+				param.type = regulations[cnt].type;
 				param.pattern = 0;
-				param.size = regMap[$('#sel_reg').val()][cnt].size;
-				param.height = regMap[$('#sel_reg').val()][cnt].size;
-				param.width = regMap[$('#sel_reg').val()][cnt].size;
+				param.size = regulations[cnt].size;
+				param.height = regulations[cnt].size;
+				param.width = regulations[cnt].size;
 				$.ajax({
 					url : 'SudokuGacha',
 					type : 'POST',
@@ -587,7 +615,7 @@ $(function() {
 		rtaGridInfo[nowIndex].link = linkList[nowIndex].replace('puzz\.linkで', '').replace('ぱずぷれv3で','');
 		rtaGridInfo[nowIndex].time = ((now - befTime) / 1000).toFixed(3);
 		rtaGridInfo[nowIndex].totaltime = ((now - firstTime) / 1000).toFixed(3);
-		if (nowIndex == 9) {
+		if (nowIndex == rtaGridInfo.length - 1) {
 			$('#lbl_rta_status').text("完走済");
 			showRtaGrid();
 			var totalTime = rtaGridInfo[nowIndex].totaltime;
@@ -596,17 +624,29 @@ $(function() {
 			var decimal = totalTime.split('.')[1];
 			var resultStr = minute + '分' + second + '秒' + decimal;
 			$('#caption').text(resultStr + 'で完走！お疲れさまでした！');
+			var coursename = $('#sel_reg option[value=' + $('#sel_reg').val() + ']').text();
+			if (isCourseMode()){
+				coursename = courseInfo.name;
+			}
 			var tweetTxt =
-					$('#sel_reg option[value=' + $('#sel_reg').val() + ']').text()
+					coursename
 					+ 'を'
 					+ resultStr
 					+ 'で完走しました！'
 			var befSplitted = $('#tweetbtn').attr('href').split("?");
 			var splitted = befSplitted[1].split("&");
+			if (befSplitted.length == 3){
+				befSplitted.splice(2,1);
+			}
 			splitted[0] = 'hashtags=ペンパガチャ,'
-				+ encodeURIComponent($('#sel_reg option[value=' + $('#sel_reg').val() + ']').text() + 'RTA');
+				+ encodeURIComponent(toHashTag(coursename) + 'RTA');
 			splitted[1] = 'text='
 					+ encodeURIComponent(tweetTxt);
+			if (isCourseMode()){
+				splitted[3] = 'url=' + encodeURIComponent(location.href);
+			} else {
+				splitted[3] = 'url=' + 'https%3a%2f%2ft%2eco%2fGg5hFCjLwP';
+			}
 			befSplitted[1] = splitted.join('&')
 			$('#tweetbtn').attr('href', befSplitted.join('?'))
 			$('#tweetbtn').show();
@@ -638,18 +678,75 @@ $(function() {
 	});
 	$('#sel_mode').change(function() {
 		showhide();
+		if ($('#sel_mode').val() != 'course'){
+			initCourseGridInfo();
+			showCourseGrid();
+		}
 	});
 	var showhide = function() {
+		if (isCourseMode()){
+			$('#div_title').html(courseInfo.name);
+			$('#lbl_mode').hide();
+			$('#sel_mode').hide();
+			$('#lbl_type').hide();
+			$('#sel_type').hide();
+			$('#lbl_reg').hide();
+			$('#sel_reg').hide();
+			$('#lbl_size').hide();
+			$('#sel_size').hide();
+			$('#lbl_pattern').hide();
+			$('#sel_pattern').hide();
+			$('#btn_submit').hide();
+			$('#btn_submit_rta').show();
+			$('#btn_submit_course').hide();
+			$('#btn_start_rta').hide();
+			$('#btn_next_rta').hide();
+			$('#lbl_history').hide();
+			$('#btn_clear').hide();
+			$('#lbl_rta_history').show();
+			$('#lbl_rta_status').show();
+			$('#btn_rta_clear').hide();
+			$('#lbl_course_name').hide();
+			$('#edt_course_name').hide();
+			$('#btn_course_finish').hide();
+			$('#grid').hide();
+			$('#grid_rta').show();
+			$('#grid_course').hide();
+			$('#tweetbtn').hide();
+			$('#edt_if').hide();
+			$('#caption').text('');
+			$('#div_result').text('');
+			$('#div_link').text('');
+			$('#loading').hide();
+			initRtaGridInfo();
+			showRtaGrid();
+			$('#div_rule').hide();
+			$('#lbl_course_already').hide();
+			$('#a_course').hide();
+			return;
+		}
 		var mode = $('#sel_mode').val();
 		if (mode == 'normal') {
+			var type = $('#sel_type').val();
 			$('#lbl_type').show();
 			$('#sel_type').show();
 			$('#lbl_reg').hide();
 			$('#sel_reg').hide();
 			$('#lbl_size').show();
 			$('#sel_size').show();
+			if (type == 'sudoku' || type == 'akari' || type == 'slither'
+				|| type == 'creek' || type == 'gokigen' || type == 'tapa'
+				|| type == 'bag' || type == 'kurodoko' || type == 'sukoro'
+				|| type == 'walllogic' || type == 'tateyoko') {
+				$('#lbl_pattern').show();
+				$('#sel_pattern').show();
+			} else {
+				$('#lbl_pattern').hide();
+				$('#sel_pattern').hide();
+			}
 			$('#btn_submit').show();
 			$('#btn_submit_rta').hide();
+			$('#btn_submit_course').hide();
 			$('#btn_start_rta').hide();
 			$('#btn_next_rta').hide();
 			$('#lbl_history').show();
@@ -657,25 +754,102 @@ $(function() {
 			$('#lbl_rta_history').hide();
 			$('#lbl_rta_status').hide();
 			$('#btn_rta_clear').hide();
+			$('#lbl_course_name').hide();
+			$('#edt_course_name').hide();
+			$('#btn_course_finish').hide();
 			$('#grid').show();
 			$('#grid_rta').hide();
+			$('#grid_course').hide();
 			$('#tweetbtn').hide();
 			$('#edt_if').hide();
 			$('#caption').text('');
 			$('#div_result').text('');
 			$('#div_link').text('');
 			$('#loading').hide();
-			var type = $('#sel_type').val();
-			if (type == 'sudoku' || type == 'akari' || type == 'slither'
-					|| type == 'creek' || type == 'gokigen' || type == 'tapa'
-					|| type == 'bag' || type == 'kurodoko' || type == 'sukoro'
-					|| type == 'walllogic' || type == 'tateyoko') {
-				$('#lbl_pattern').show();
-				$('#sel_pattern').show();
+			var oneRule = ruleMap[type];
+			if (oneRule.url != '') {
+				$('#a_rule').attr('href', oneRule.url)
+				$('#a_rule').text(
+						oneRule.name + 'のルールを表示(' + oneRule.source + ')')
+				$('#div_rule').show();
 			} else {
-				$('#lbl_pattern').hide();
-				$('#sel_pattern').hide();
+				$('#div_rule').hide();
 			}
+			$('#lbl_course_already').hide();
+			$('#a_course').hide();
+		} else if (mode == 'rta') {
+			$('#lbl_type').hide();
+			$('#sel_type').hide();
+			$('#lbl_reg').show();
+			$('#sel_reg').show();
+			$('#lbl_size').hide();
+			$('#sel_size').hide();
+			$('#lbl_pattern').hide();
+			$('#sel_pattern').hide();
+			$('#btn_submit').hide();
+			$('#btn_submit_rta').show();
+			$('#btn_submit_course').hide();
+			$('#btn_start_rta').hide();
+			$('#btn_next_rta').hide();
+			$('#lbl_history').hide();
+			$('#btn_clear').hide();
+			$('#lbl_rta_history').show();
+			$('#lbl_rta_status').show();
+			$('#btn_rta_clear').hide();
+			$('#lbl_course_name').hide();
+			$('#edt_course_name').hide();
+			$('#btn_course_finish').hide();
+			$('#grid').hide();
+			$('#grid_rta').show();
+			$('#grid_course').hide();
+			$('#tweetbtn').hide();
+			$('#edt_if').hide();
+			$('#caption').text('');
+			$('#div_result').text('');
+			$('#div_link').text('');
+			$('#loading').hide();
+			initRtaGridInfo();
+			showRtaGrid();
+			$('#div_rule').hide();
+			$('#lbl_course_already').hide();
+			$('#a_course').hide();
+		} else if (mode == 'course') {
+			$('#lbl_type').show();
+			$('#sel_type').show();
+			$('#lbl_reg').hide();
+			$('#sel_reg').hide();
+			$('#lbl_size').show();
+			$('#sel_size').show();
+			$('#lbl_pattern').hide();
+			$('#sel_pattern').hide();
+			$('#btn_submit').hide();
+			$('#btn_submit_rta').hide();
+			$('#btn_submit_course').show();
+			$('#btn_start_rta').hide();
+			$('#btn_next_rta').hide();
+			$('#lbl_history').hide();
+			$('#btn_clear').hide();
+			$('#lbl_rta_history').hide();
+			$('#lbl_rta_status').hide();
+			$('#btn_rta_clear').hide();
+			$('#lbl_course_name').show();
+			$('#edt_course_name').show();
+			$('#btn_course_finish').show();
+			$('#grid').hide();
+			$('#grid_rta').hide();
+			$('#grid_course').show();
+			$('#tweetbtn').hide();
+			$('#edt_if').hide();
+			$('#caption').text('');
+			$('#div_result').text('');
+			$('#div_link').text('');
+			$('#loading').hide();
+			$('#div_rule').hide();
+			$('#lbl_course_already').hide();
+			$('#a_course').hide();
+		}
+		if (mode == 'normal' || mode == 'course') {
+			var type = $('#sel_type').val();
 			// この辺の書き方がいかにもJQuery的で古くさい…モダンFW使いたい…
 			var nowSelSizeVal = $('#sel_size').val();
 			$('#sel_size').empty();
@@ -854,44 +1028,6 @@ $(function() {
 				$('#sel_pattern').append(option.pattern_7);
 				$('#sel_pattern').val(nowSelPetternVal);
 			}
-			var oneRule = ruleMap[type];
-			if (oneRule.url != '') {
-				$('#a_rule').attr('href', oneRule.url)
-				$('#a_rule').text(
-						oneRule.name + 'のルールを表示(' + oneRule.source + ')')
-				$('#div_rule').show();
-			} else {
-				$('#div_rule').hide();
-			}
-		} else if (mode == 'rta') {
-			$('#lbl_type').hide();
-			$('#sel_type').hide();
-			$('#lbl_reg').show();
-			$('#sel_reg').show();
-			$('#lbl_size').hide();
-			$('#sel_size').hide();
-			$('#lbl_pattern').hide();
-			$('#sel_pattern').hide();
-			$('#btn_submit').hide();
-			$('#btn_submit_rta').show();
-			$('#btn_start_rta').hide();
-			$('#btn_next_rta').hide();
-			$('#lbl_history').hide();
-			$('#btn_clear').hide();
-			$('#lbl_rta_history').show();
-			$('#lbl_rta_status').show();
-			$('#btn_rta_clear').hide();
-			$('#grid').hide();
-			$('#grid_rta').show();
-			$('#tweetbtn').hide();
-			$('#edt_if').hide();
-			$('#caption').text('');
-			$('#div_result').text('');
-			$('#div_link').text('');
-			$('#loading').hide();
-			initRtaGridInfo();
-			showRtaGrid();
-			$('#div_rule').hide();
 		}
 	}
 	var updateHistory = function(time, type, size, resultObj) {
@@ -950,10 +1086,14 @@ $(function() {
 	var initRtaGridInfo = function() {
 		rtaGridInfo.splice(0)
 		$('#lbl_rta_status').text("まだ開始していません");
-		for(var i = 0; i < 10; i++) {
+		var regulations = regMap[$('#sel_reg').val()];
+		if (isCourseMode()){
+			regulations = courseInfo.course;
+		}
+		for(var i = 0; i < regulations.length; i++) {
 			rtaGridInfo.push({
 				no : i + 1,
-				type : ruleMap[regMap[$('#sel_reg').val()][i].type].name + '(' + regMap[$('#sel_reg').val()][i].size + ')' ,
+				type : ruleMap[regulations[i].type].name + '(' + regulations[i].size + ')' ,
 				level : "",
 				link : "",
 				time : "",
@@ -999,6 +1139,187 @@ $(function() {
 			}, ]
 		});
 	}
+	// jsgridはグリッドになってしまうとデータの形での再操作はできないらしい
+	// しかたないので、グリッドはプレゼンテーション専用としアイテムだけ自前で持つ
+	var courseGridInfo = [];
+
+	var initCourseGridInfo = function() {
+		courseGridInfo.splice(0);
+	}
+
+	var showCourseGrid = function() {
+		for(var i = 0; i < courseGridInfo.length; i++) {
+			courseGridInfo[i].no = i + 1;
+			courseGridInfo[i].up = i == 0 ? '' : '<button type="button" class="up" value="' + i + '">↑</button>';
+			courseGridInfo[i].down = i == courseGridInfo.length - 1 ? '' : '<button type="button" class="down" value="' + i + '">↓</button>';
+			courseGridInfo[i].del = '<button type="button" class="del" value="' + i + '">×</button>';
+		}
+		$('#grid_course').jsGrid({
+			width : '100%',
+			noDataContent : 'まだ追加されていません',
+			data : courseGridInfo,
+			fields : [  {
+				title : 'No.',
+				name : 'no',
+				type : 'number',
+				width : 30
+			}, {
+				title : 'パズル名',
+				name : 'pname',
+				type : 'text',
+				width : 115
+			}, {
+				title : 'サイズ',
+				name : 'size',
+				type : 'text',
+				width : 55
+			}, {
+				title : '',
+				name : 'up',
+				type : 'text',
+				width : 30
+			}, {
+				title : '',
+				name : 'down',
+				type : 'text',
+				width : 30
+			}, {
+				title : '',
+				name : 'del',
+				type : '',
+				width : 30
+			}, {
+				title : '',
+				name : 'type',
+				type : '',
+				width : 0
+			}, ]
+		});
+		$("#grid_course").jsGrid("fieldOption", "type", "visible", false);
+        $('#lbl_course_already').hide();
+        $('#a_course').hide();
+        $('#tweetbtn').hide();
+	}
+
+	// コース追加ボタン
+	$('#btn_submit_course').click(function() {
+		var no = courseGridInfo.length + 1;
+		if (no > 15){
+			alert('追加できるパズルは最大15個までです。')
+			return;
+		}
+		var type = $('#sel_type').val();
+		if (type == 'simplegako'){
+			alert('申し訳ございません。そのパズルは追加できません。')
+			return;
+		}
+		courseGridInfo.push({
+			pname:ruleMap[type].name,
+			size:$('#sel_size').val(),
+			type:type,
+		});
+		showCourseGrid();
+	});
+
+	// ↑
+    $('body').on('click', '.up' , function(e) {
+    	var idx = parseInt($(e.target).val() ,10);
+    	var wk = courseGridInfo[idx - 1];
+    	courseGridInfo[idx - 1] = courseGridInfo[idx]
+    	courseGridInfo[idx] = wk;
+		showCourseGrid();
+    });
+	// ↓
+    $('body').on('click', '.down' , function(e) {
+    	var idx = parseInt($(e.target).val() ,10);
+    	var wk = courseGridInfo[idx + 1];
+    	courseGridInfo[idx + 1] = courseGridInfo[idx]
+    	courseGridInfo[idx] = wk;
+		showCourseGrid();
+    });
+	// ×
+    $('body').on('click', '.del' , function(e) {
+    	var idx = parseInt($(e.target).val() ,10);
+    	courseGridInfo.splice( idx, 1 ) ;
+		showCourseGrid();
+    });
+
+	// コース作成完了ボタン
+	$('#btn_course_finish').click(function() {
+		if ($('#edt_course_name').val() == ''){
+			alert('コース名を設定してください。')
+			$('#edt_course_name').focus();
+			return;
+		}
+		if (toHashTag($('#edt_course_name').val()) == ''){
+			alert('コース名は英数字・ひらがな・カタカナ・漢字などを使用してください。')
+			$('#edt_course_name').focus();
+			return;
+		}
+		if (courseGridInfo.length == 0){
+			alert('パズルを最低1つ追加してください。')
+			return;
+		}
+		var param = {};
+		param.name = $('#edt_course_name').val();
+		param.course = [];
+		for(var i = 0; i < courseGridInfo.length; i++) {
+			param.course.push({type:courseGridInfo[i].type,size:courseGridInfo[i].size});
+		}
+		var text = JSON.stringify(param);
+        var u8text = new TextEncoder().encode(text);
+        var deflate = new Zlib.RawDeflate(u8text);
+        var compressed = deflate.compress();
+        var char8 = Array.from(compressed, e => String.fromCharCode(e)).join("");
+        var ba = window.btoa(char8);
+        var url = location.href.split('?')[0] + '?p=' + ba;
+        $('#lbl_course_already').show();
+        $('#a_course').attr('href',url);
+        $('#a_course').html(url);
+        $('#a_course').show();
+		var tweetTxt = '新コース「'
+				+ param.name
+				+ '」を作成！RTAに挑戦しましょう！';
+		var befSplitted = $('#tweetbtn').attr('href').split("?");
+		var splitted = befSplitted[1].split("&");
+		if (befSplitted.length == 3){
+			befSplitted.splice(2,1);
+		}
+		splitted[0] = 'hashtags=ペンパガチャ,'
+			+ encodeURIComponent(toHashTag(param.name) + 'RTA');
+		splitted[1] = 'text='
+				+ encodeURIComponent(tweetTxt);
+		splitted[3] = 'url=' + encodeURIComponent(url);
+		befSplitted[1] = splitted.join('&')
+		$('#tweetbtn').attr('href', befSplitted.join('?'))
+		$('#tweetbtn').show();
+	});
+
+    //まずはパラメータのチェック
+	var urlParam = location.search.substring(1);
+	if (urlParam != ''){
+		try {
+			// パラメータがあれば特殊ルート
+			var param = urlParam.split('&')[0].split('=')[1];
+	    	//pを復号
+	    	var ab = atob(param);
+	    	ab = Uint8Array.from(ab.split(""), e => e.charCodeAt(0));
+	    	var inflate = new Zlib.RawInflate(ab);
+	    	var plain = inflate.decompress();
+	    	var rtext = new TextDecoder().decode(plain);
+	    	courseInfo = JSON.parse(rtext);
+			$('#tweetbtn').hide();
+			$('#edt_if').hide();
+			$('#loading').hide();
+			$('#a_return').show();
+			showhide();
+		} catch (e) {
+			$('body').html('申し訳ございません。パラメータエラーが発生したようです。問題が解消しない場合<a href="https://twitter.com/3892myamya/" target="_blank">@3892myamya</a>までお問合せください。');
+		} finally {
+			return;
+		}
+	}
+
 	// 保存された条件があれば読みだす
 	var cond = localStorage.getItem('condsudoku');
 	var condObj = JSON.parse(cond);
@@ -1039,6 +1360,7 @@ $(function() {
 	}
 	$('#tweetbtn').hide();
 	$('#edt_if').hide();
+	$('#a_return').hide();
 	$('#loading').hide();
 	showhide();
 });

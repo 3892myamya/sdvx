@@ -18,11 +18,6 @@ div{
   width: 120px;
 }
 
-#btn_submit{
-  height: 45px;
-  width: 120px;
-}
-
 #btn_submit_rta{
   height: 45px;
   width: 120px;
@@ -38,6 +33,9 @@ div{
   width: 130px;
 }
 
+#edt_course_name{
+  width: 250px;
+}
 
 #loading {
     vertical-align: middle;
@@ -61,6 +59,11 @@ div{
 }
 
 #grid_rta {
+	margin-top: 2px;
+    max-width: 500px;
+}
+
+#grid_course {
 	margin-top: 2px;
     max-width: 500px;
 }

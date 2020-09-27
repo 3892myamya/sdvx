@@ -14,10 +14,12 @@
     <meta name="description" content="ペンシルパズルガチャ(ペンパガチャ)は自動生成されたペンシルパズルの問題がゲットできるガチャです。引いた問題はその場で解いたりTwitterでシェア可能です。RTAモードで記録にも挑戦しましょう！"/>
     <link rel="stylesheet" href="css/jsgrid.min.css"/>
     <link rel="stylesheet" href="css/jsgrid-theme.min.css"/>
-    <link rel="stylesheet" href="css/sudoku.css?ver=20200704"/>
+    <link rel="stylesheet" href="css/sudoku.css?ver=20200926"/>
     <script src="js/jquery-3.3.1.min.js"></script>
     <script src="js/jsgrid.min.js"></script>
-    <script src="js/sudoku.js?ver=20200921"></script>
+    <script src="js/rawdeflate.min.js"></script>
+    <script src="js/rawinflate.min.js"></script>
+    <script src="js/sudoku.js?ver=20200927"></script>
 </head>
 <body>
 <div id="div_title">ペンシルパズルガチャ<span style="font-size: xx-small;">(旧：数独ガチャ)</span></div>
@@ -27,6 +29,7 @@
 <select id="sel_mode" name="sel_type">
 	<option value="normal">通常モード</option>
 	<option value="rta">RTAモード</option>
+	<option value="course">コース作成モード</option>
 </select>
 </div>
 
@@ -138,6 +141,7 @@
 	<option value="7">卍型</option>
 </select>
 </div>
+<button type="button" id="btn_submit_course">追加する</button>
 <hr>
 <div>
 <button type="button" id="btn_submit">ガチャを回す！</button>
@@ -145,12 +149,18 @@
 <button type="button" id="btn_start_rta">RTAを開始する</button>
 <label id="caption"></label>
 <img id="loading" src="icon_loader_a_ww_02_s1.gif" width="22" height="22" border="0" alt="">
+<label id="lbl_course_name" for="edt_course_name">コース名</label>
+<input type="text" id="edt_course_name" name="edt_course_name" maxlength="20"/>
+<div id="grid_course"></div>
 </div>
+<button type="button" id="btn_course_finish">これで作成する</button>
+<label id="lbl_course_already">作成完了！以下のURLからRTAに挑戦しましょう！</label>
 <div id="div_result">
 </div>
 <div id="div_link" style="font-size: large;">
 </div>
 <button type="button" id="btn_next_rta">解けました！</button>
+<a id="a_course" target="_blank"></a>
 <div id="div_tweet">
 <a id="tweetbtn" href="https://twitter.com/intent/tweet?hashtags=ペンパガチャ&text=ペンシルパズルの問題がゲットできるガチャです。&tw_p=tweetbutton&url=https%3a%2f%2ft%2eco%2fGg5hFCjLwP" target="_blank" rel="nofollow">
 <img id="tweetpng" src="tweetbtn.png" width="80" height="20">
@@ -173,6 +183,9 @@
 <hr>
 <div>
 <input type="text" id="edt_if" name="edt_if" disabled/>
+<div style="font-size: x-small;">
+<a id="a_return" href="./sudoku.html" target="_blank">通常のペンパガチャへ</a>
+</div>
 </div>
 <hr>
 <div style="font-size: x-small;">
