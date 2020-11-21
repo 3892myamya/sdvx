@@ -324,6 +324,16 @@ var ruleMap = {
 		url : "https://ja.wikipedia.org/wiki/%E3%81%8A%E7%B5%B5%E3%81%8B%E3%81%8D%E3%83%AD%E3%82%B8%E3%83%83%E3%82%AF",
 		source : "Wikipedia"
 	},
+	aqre : {
+		name : "Aqre",
+		url : "",
+		source : ""
+	},
+	fillomino : {
+		name : "フィルオミノ",
+		url : "https://www.nikoli.co.jp/ja/puzzles/fillomino/",
+		source : "ニコリ公式"
+	},
 }
 var regMap = {
 		yajilin:[{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},
@@ -889,7 +899,8 @@ $(function() {
 			} else if (type == 'balance' || type == 'kurotto'
 					|| type == 'nurikabe' || type == 'heyawake'
 					|| type == 'shugaku' || type == 'icebarn'
-					|| type == 'country' || type == 'meander' || type == 'fillmat' ) {
+					|| type == 'country' || type == 'meander'
+					|| type == 'fillmat' || type == 'aqre' || type == 'fillomino') {
 				$('#sel_size').append(option.size_3);
 				$('#sel_size').append(option.size_4);
 				$('#sel_size').append(option.size_5);
@@ -1295,13 +1306,13 @@ $(function() {
 		$('#tweetbtn').show();
 	});
 
-    //まずはパラメータのチェック
+    // まずはパラメータのチェック
 	var urlParam = location.search.substring(1);
 	if (urlParam != ''){
 		try {
 			// パラメータがあれば特殊ルート
 			var param = urlParam.split('&')[0].split('=')[1];
-	    	//pを復号
+	    	// pを復号
 	    	var ab = atob(param);
 	    	ab = Uint8Array.from(ab.split(""), e => e.charCodeAt(0));
 	    	var inflate = new Zlib.RawInflate(ab);

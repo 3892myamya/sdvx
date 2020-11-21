@@ -13,6 +13,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import myamya.other.solver.Common.GeneratorResult;
 import myamya.other.solver.akari.AkariSolver.AkariGenerator;
+import myamya.other.solver.aqre.AqreSolver.AqreGenerator;
 import myamya.other.solver.bag.BagSolver.BagGenerator;
 import myamya.other.solver.balance.BalanceSolver.BalanceGenerator;
 import myamya.other.solver.barns.BarnsSolver.BarnsGenerator;
@@ -24,6 +25,7 @@ import myamya.other.solver.creek.CreekSolver.CreekGenerator;
 import myamya.other.solver.doppelblock.DoppelblockSolver.DoppelblockGenerator;
 import myamya.other.solver.easyasabc.EasyasabcSolver.EasyasabcGenerator;
 import myamya.other.solver.fillmat.FillmatSolver.FillmatGenerator;
+import myamya.other.solver.fillomino.FillominoSolver.FillominoGenerator;
 import myamya.other.solver.geradeweg.GeradewegSolver.GeradewegGenerator;
 import myamya.other.solver.gokigen.GokigenSolver.GokigenGenerator;
 import myamya.other.solver.hakoiri.HakoiriSolver.HakoiriGenerator;
@@ -1129,6 +1131,38 @@ public class SudokuGachaWeb extends HttpServlet {
 
 	}
 
+	static class AqreGeneratorThlead extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+
+		AqreGeneratorThlead(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new AqreGenerator(height, width);
+		}
+
+	}
+
+	static class FillominoGeneratorThlead extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+
+		FillominoGeneratorThlead(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new FillominoGenerator(height, width);
+		}
+
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -1286,6 +1320,10 @@ public class SudokuGachaWeb extends HttpServlet {
 				t = new SimplegakoGeneratorThlead(height, width);
 			} else if (type.equals("nonogram")) {
 				t = new NonogramGeneratorThlead(height, width);
+			} else if (type.equals("aqre")) {
+				t = new AqreGeneratorThlead(height, width);
+			} else if (type.equals("fillomino")) {
+				t = new FillominoGeneratorThlead(height, width);
 			} else {
 				throw new IllegalArgumentException();
 			}
