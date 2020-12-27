@@ -1,16 +1,283 @@
 package myamya.other.solver.lookair;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
+import myamya.other.solver.Common.CountOverException;
 import myamya.other.solver.Common.Difficulty;
+import myamya.other.solver.Common.GeneratorResult;
 import myamya.other.solver.Common.Masu;
 import myamya.other.solver.Common.Position;
 import myamya.other.solver.Common.Sikaku;
+import myamya.other.solver.Generator;
 import myamya.other.solver.Solver;
 
 public class LookairSolver implements Solver {
+	public static class LookairGenerator implements Generator {
+
+		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
+		private static final String FULL_NUMS = "０１２３４５６７８９";
+
+		static class LookairSolverForGenerator extends LookairSolver {
+			private final int limit;
+
+			public LookairSolverForGenerator(Field field, int limit) {
+				super(field);
+				this.limit = limit;
+			}
+
+			public int solve2() {
+				try {
+					while (!field.isSolved()) {
+						String befStr = field.getStateDump();
+						if (!field.solveAndCheck()) {
+							return -1;
+						}
+						int recursiveCnt = 0;
+						while (field.getStateDump().equals(befStr) && recursiveCnt < 3) {
+							if (!candSolve(field, recursiveCnt == 2 ? 999 : recursiveCnt)) {
+								return -1;
+							}
+							recursiveCnt++;
+						}
+						if (recursiveCnt == 3 && field.getStateDump().equals(befStr)) {
+							return -1;
+						}
+					}
+				} catch (CountOverException e) {
+					return -1;
+				}
+				return count;
+			}
+
+			@Override
+			protected boolean candSolve(Field field, int recursive) {
+				if (this.count >= limit) {
+					throw new CountOverException();
+				} else {
+					return super.candSolve(field, recursive);
+				}
+			}
+		}
+
+		private final int height;
+		private final int width;
+
+		public LookairGenerator(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		public static void main(String[] args) {
+			new LookairGenerator(10, 10).generate();
+		}
+
+		@Override
+		public GeneratorResult generate() {
+			List<Sikaku> squareCandBase = LookairSolver.Field.makeSquareCandBase(height, width);
+			LookairSolver.Field wkField = new LookairSolver.Field(height, width, squareCandBase);
+			int index = 0;
+			int level = 0;
+			long start = System.nanoTime();
+			while (true) {
+				for (Iterator<Sikaku> iterator = wkField.squareCand.iterator(); iterator.hasNext();) {
+					// 1x1の正方形＆巨大な正方形を発生しにくくする処理
+					Sikaku sikaku = iterator.next();
+					int sikakuLength = (int) Math.sqrt(sikaku.getAreaSize());
+					int fieldLength = height < width ? height : width;
+					sikakuLength = sikakuLength == 1 ? fieldLength / 4 : sikakuLength;
+					int fieldSize = (int) Math.pow(fieldLength - 1, 4);
+					int isOkRange = (int) Math.pow(fieldLength - sikakuLength, 4);
+					if (isOkRange < Math.random() * fieldSize) {
+						iterator.remove();
+					}
+				}
+				List<Integer> indexList = new ArrayList<>();
+				List<Sikaku> useCand = new ArrayList<>(wkField.squareCand);
+				for (int i = 0; i < useCand.size(); i++) {
+					indexList.add(i);
+				}
+				Collections.shuffle(indexList);
+				// 問題生成部
+				while (!wkField.isSolved()) {
+					Sikaku oneCand = useCand.get(index);
+					if (wkField.squareCand.contains(oneCand)) {
+						boolean isOk = false;
+						List<Integer> numIdxList = new ArrayList<>();
+						for (int i = 0; i < 2; i++) {
+							numIdxList.add(i);
+						}
+						Collections.shuffle(numIdxList);
+						for (int masuNum : numIdxList) {
+							LookairSolver.Field virtual = new LookairSolver.Field(wkField, true);
+							if (masuNum < 1) {
+								virtual.squareCand.remove(oneCand);
+							} else if (masuNum < 2) {
+								virtual.squareCand.remove(oneCand);
+								virtual.squareFixed.add(oneCand);
+							}
+							if (virtual.solveAndCheck()) {
+								isOk = true;
+								wkField.squareCand = virtual.squareCand;
+								wkField.squareFixed = virtual.squareFixed;
+								break;
+							}
+						}
+						if (!isOk) {
+							// 破綻したら0から作り直す。
+							wkField = new LookairSolver.Field(height, width, squareCandBase);
+							index = 0;
+							continue;
+						}
+					}
+					index++;
+				}
+				// 数字埋め＆マス初期化
+				// まず数字を埋める
+				List<Position> numberPosList = new ArrayList<>();
+				Masu[][] masu = wkField.getMasu();
+				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+						int cnt = 0;
+						if (masu[yIndex][xIndex] == Masu.BLACK) {
+							cnt++;
+						}
+						if (yIndex != 0 && masu[yIndex - 1][xIndex] == Masu.BLACK) {
+							cnt++;
+						}
+						if (xIndex != wkField.getXLength() - 1 && masu[yIndex][xIndex + 1] == Masu.BLACK) {
+							cnt++;
+						}
+						if (yIndex != wkField.getYLength() - 1 && masu[yIndex + 1][xIndex] == Masu.BLACK) {
+							cnt++;
+						}
+						if (xIndex != 0 && masu[yIndex][xIndex - 1] == Masu.BLACK) {
+							cnt++;
+						}
+						wkField.numbers[yIndex][xIndex] = cnt;
+						numberPosList.add(new Position(yIndex, xIndex));
+					}
+				}
+				// マスを戻す
+				wkField.initCand(squareCandBase);
+				// 解けるかな？
+				level = new LookairSolverForGenerator(wkField, 500).solve2();
+				if (level == -1) {
+					// 解けなければやり直し
+					wkField = new LookairSolver.Field(height, width);
+					index = 0;
+				} else {
+					// ヒントを限界まで減らす
+					Collections.shuffle(numberPosList);
+					for (Position numberPos : numberPosList) {
+						System.out.println(wkField);
+						LookairSolver.Field virtual = new LookairSolver.Field(wkField, true);
+						virtual.numbers[numberPos.getyIndex()][numberPos.getxIndex()] = null;
+						virtual.initCand(squareCandBase);
+						int solveResult = new LookairSolverForGenerator(virtual, 5000).solve2();
+						if (solveResult != -1) {
+							wkField.numbers[numberPos.getyIndex()][numberPos
+									.getxIndex()] = virtual.numbers[numberPos.getyIndex()][numberPos.getxIndex()];
+							level = solveResult;
+						}
+					}
+					break;
+				}
+			}
+			level = (int) Math.sqrt(level / 5 / 3);
+			String status = "Lv:" + level + "の問題を獲得！(数字：" + wkField.getHintCount() + ")";
+			String url = wkField.getPuzPreURL();
+			String link = "<a href=\"" + url + "\" target=\"_blank\">ぱずぷれv3で解く</a>";
+			StringBuilder sb = new StringBuilder();
+			int baseSize = 20;
+			int margin = 5;
+			sb.append(
+					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
+							+ "height=\"" + (wkField.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
+							+ (wkField.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			// 数字描画
+			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+					if (wkField.getNumbers()[yIndex][xIndex] != null) {
+						String numberStr = String.valueOf(wkField.getNumbers()[yIndex][xIndex]);
+						int numIdx = HALF_NUMS.indexOf(numberStr);
+						String masuStr = null;
+						if (numIdx >= 0) {
+							masuStr = FULL_NUMS.substring(numIdx / 2, numIdx / 2 + 1);
+						} else {
+							masuStr = numberStr;
+						}
+						sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 4 + margin)
+								+ "\" x=\""
+								+ (xIndex * baseSize + baseSize + 2)
+								+ "\" font-size=\""
+								+ (baseSize - 5)
+								+ "\" textLength=\""
+								+ (baseSize - 5)
+								+ "\" lengthAdjust=\"spacingAndGlyphs\">"
+								+ masuStr
+								+ "</text>");
+
+					}
+				}
+			}
+			// 横壁描画
+			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = -1; xIndex < wkField.getXLength(); xIndex++) {
+					boolean oneYokoWall = xIndex == -1 || xIndex == wkField.getXLength() - 1;
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + margin)
+							+ "\" x1=\""
+							+ (xIndex * baseSize + 2 * baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ (xIndex * baseSize + 2 * baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneYokoWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">"
+							+ "</line>");
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = -1; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+					boolean oneTateWall = yIndex == -1 || yIndex == wkField.getYLength() - 1;
+					sb.append("<line y1=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x1=\""
+							+ (xIndex * baseSize + baseSize)
+							+ "\" y2=\""
+							+ (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\""
+							+ (xIndex * baseSize + baseSize + baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneTateWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">"
+							+ "</line>");
+				}
+			}
+			sb.append("</svg>");
+			System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
+			System.out.println(level);
+			System.out.println(wkField.getHintCount());
+			System.out.println(wkField);
+			System.out.println(url);
+			return new GeneratorResult(status, sb.toString(), link, url, level, "");
+
+		}
+
+	}
 
 	public static class Field {
 		static final String ALPHABET = "abcdefghijklmnopqrstuvwxyz";
@@ -28,62 +295,58 @@ public class LookairSolver implements Solver {
 
 		public String getPuzPreURL() {
 			StringBuilder sb = new StringBuilder();
-			//			sb.append("http://pzv.jp/p.html?tasquare/" + getXLength() + "/" + getYLength() + "/");
-			//			int interval = 0;
-			//			for (int i = 0; i < getYLength() * getXLength(); i++) {
-			//				int yIndex = i / getXLength();
-			//				int xIndex = i % getXLength();
-			//				if (numbers[yIndex][xIndex] == null) {
-			//					interval++;
-			//					if (interval == 20) {
-			//						sb.append("z");
-			//						interval = 0;
-			//					}
-			//				} else {
-			//					Integer num = numbers[yIndex][xIndex];
-			//					String numStr = null;
-			//					if (num == -1) {
-			//						numStr = ".";
-			//					} else {
-			//						numStr = Integer.toHexString(num);
-			//						if (numStr.length() == 2) {
-			//							numStr = "-" + numStr;
-			//						} else if (numStr.length() == 3) {
-			//							numStr = "+" + numStr;
-			//						}
-			//					}
-			//					if (interval == 0) {
-			//						sb.append(numStr);
-			//					} else {
-			//						sb.append(ALPHABET_FROM_G.substring(interval - 1, interval));
-			//						sb.append(numStr);
-			//						interval = 0;
-			//					}
-			//				}
-			//			}
-			//			if (interval != 0) {
-			//				sb.append(ALPHABET_FROM_G.substring(interval - 1, interval));
-			//			}
-			//			if (sb.charAt(sb.length() - 1) == '.') {
-			//				sb.append("/");
-			//			}
+			sb.append("http://pzv.jp/p.html?lookair/" + getXLength() + "/" + getYLength() + "/");
+			int interval = 0;
+			for (int i = 0; i < getYLength() * getXLength(); i++) {
+				int yIndex = i / getXLength();
+				int xIndex = i % getXLength();
+				if (numbers[yIndex][xIndex] == null) {
+					interval++;
+					if (interval == 26) {
+						sb.append("z");
+						interval = 0;
+					}
+				} else {
+					Integer num = numbers[yIndex][xIndex];
+					String numStr = null;
+					if (num == -1) {
+						numStr = ".";
+					} else {
+						numStr = Integer.toHexString(num);
+						if (numStr.length() == 2) {
+							numStr = "-" + numStr;
+						} else if (numStr.length() == 3) {
+							numStr = "+" + numStr;
+						}
+					}
+					if (interval == 0) {
+						sb.append(numStr);
+					} else {
+						sb.append(ALPHABET.substring(interval - 1, interval));
+						sb.append(numStr);
+						interval = 0;
+					}
+				}
+			}
+			if (interval != 0) {
+				sb.append(ALPHABET.substring(interval - 1, interval));
+			}
+			if (sb.charAt(sb.length() - 1) == '.') {
+				sb.append("/");
+			}
 			return sb.toString();
 		}
 
 		public String getHintCount() {
 			int kuroCnt = 0;
-			int numberCnt = 0;
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
 					if (numbers[yIndex][xIndex] != null) {
 						kuroCnt++;
-						if (numbers[yIndex][xIndex] != -1) {
-							numberCnt++;
-						}
 					}
 				}
 			}
-			return String.valueOf(numberCnt + "/" + kuroCnt);
+			return String.valueOf(kuroCnt);
 		}
 
 		public int getYLength() {
@@ -99,27 +362,49 @@ public class LookairSolver implements Solver {
 			initCand();
 		}
 
+		public Field(int height, int width, List<Sikaku> squareCandBase) {
+			numbers = new Integer[height][width];
+			initCand(squareCandBase);
+		}
+
 		/**
 		 * 部屋のきりかたの候補を初期化する。
 		 */
 		protected void initCand() {
-			squareCand = new ArrayList<>();
+			squareCand = makeSquareCandBase(getYLength(), getXLength());
 			squareFixed = new ArrayList<>();
-			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
-				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					for (int size = 1; size <= (getXLength() < getYLength() ? getXLength() : getYLength()); size++) {
-						int maxY = yIndex + size > getYLength() ? getYLength() - size : yIndex;
-						int maxX = xIndex + size > getXLength() ? getXLength() - size : xIndex;
+		}
+
+		/**
+		 * 部屋のきりかたの候補を初期化する。
+		 * キャッシュを使って高速化。
+		 */
+		protected void initCand(List<Sikaku> squareCandBase) {
+			squareCand = new ArrayList<>(squareCandBase);
+			squareFixed = new ArrayList<>();
+		}
+
+		/**
+		 * 部屋の切り方の候補を作成する。
+		 */
+		static protected List<Sikaku> makeSquareCandBase(int height, int width) {
+			List<Sikaku> squareCandBase = new ArrayList<>();
+			for (int yIndex = 0; yIndex < height; yIndex++) {
+				for (int xIndex = 0; xIndex < width; xIndex++) {
+					for (int size = 1; size <= (width < height ? width : height); size++) {
+						int maxY = yIndex + size > height ? height - size : yIndex;
+						int maxX = xIndex + size > width ? width - size : xIndex;
 						for (int y = yIndex; y <= maxY; y++) {
 							for (int x = xIndex; x <= maxX; x++) {
 								Sikaku sikaku = new Sikaku(new Position(y, x),
 										new Position(y + size - 1, x + size - 1));
-								squareCand.add(sikaku);
+								squareCandBase.add(sikaku);
 							}
 						}
 					}
 				}
 			}
+			return squareCandBase;
 		}
 
 		public Field(int height, int width, String param) {
@@ -254,6 +539,64 @@ public class LookairSolver implements Solver {
 			if (!countSolve()) {
 				return false;
 			}
+			if (!lookSolve()) {
+				return false;
+			}
+			return true;
+		}
+
+		/**
+		 * 確定した四角から右、下を順次検索し、同じサイズの確定四角が来ることが確定している場合falseを返す。
+		 */
+		public boolean lookSolve() {
+			for (Sikaku fixed : squareFixed) {
+				// 右方向
+				for (int yIndex = fixed.getLeftUp().getyIndex(); yIndex <= fixed.getRightDown().getyIndex(); yIndex++) {
+					outer: for (int xIndex = fixed.getRightDown().getxIndex() + 1; xIndex < getXLength(); xIndex++) {
+						for (Sikaku otherFixed : squareFixed) {
+							if (otherFixed.isDuplicate(new Position(yIndex, xIndex))) {
+								if (fixed.getAreaSize() == otherFixed.getAreaSize()) {
+									// 同じサイズの確定マスがあったらアウト
+									return false;
+								} else {
+									// 違うサイズの確定マスがあれば大丈夫なので抜ける
+									break outer;
+								}
+							}
+						}
+						// 違うサイズの候補があれば大丈夫なので抜ける
+						for (Sikaku otherCand : squareCand) {
+							if (otherCand.isDuplicate(new Position(yIndex, xIndex))
+									&& fixed.getAreaSize() != otherCand.getAreaSize()) {
+								break outer;
+							}
+						}
+					}
+				}
+				// 下方向
+				for (int xIndex = fixed.getLeftUp().getxIndex(); xIndex <= fixed.getRightDown().getxIndex(); xIndex++) {
+					outer: for (int yIndex = fixed.getRightDown().getyIndex() + 1; yIndex < getYLength(); yIndex++) {
+						for (Sikaku otherFixed : squareFixed) {
+							if (otherFixed.isDuplicate(new Position(yIndex, xIndex))) {
+								if (fixed.getAreaSize() == otherFixed.getAreaSize()) {
+									// 同じサイズの確定マスがあったらアウト
+									return false;
+								} else {
+									// 違うサイズの確定マスがあれば大丈夫なので抜ける
+									break outer;
+								}
+							}
+						}
+						// 違うサイズの候補があれば、いったん大丈夫なので抜ける
+						for (Sikaku otherCand : squareCand) {
+							if (otherCand.isDuplicate(new Position(yIndex, xIndex))
+									&& fixed.getAreaSize() != otherCand.getAreaSize()) {
+								break outer;
+							}
+						}
+					}
+				}
+			}
 			return true;
 		}
 
@@ -262,16 +605,9 @@ public class LookairSolver implements Solver {
 		 */
 		private boolean sikakuSolve() {
 			for (Sikaku fixed : squareFixed) {
-				// TODO 同じ列にあり、間に他の四角が挟まらない同サイズの四角も候補から消す
-				Sikaku removeSikaku1 = new Sikaku(
-						new Position(fixed.getLeftUp().getyIndex() - 1, fixed.getLeftUp().getxIndex()),
-						new Position(fixed.getRightDown().getyIndex() + 1, fixed.getRightDown().getxIndex()));
-				Sikaku removeSikaku2 = new Sikaku(
-						new Position(fixed.getLeftUp().getyIndex(), fixed.getLeftUp().getxIndex() - 1),
-						new Position(fixed.getRightDown().getyIndex(), fixed.getRightDown().getxIndex() + 1));
 				for (Iterator<Sikaku> iterator = squareCand.iterator(); iterator.hasNext();) {
 					Sikaku sikaku = iterator.next();
-					if (sikaku.isDuplicate(removeSikaku1) || sikaku.isDuplicate(removeSikaku2)) {
+					if (sikaku.isDuplicateBig(fixed)) {
 						iterator.remove();
 					}
 				}
@@ -294,19 +630,19 @@ public class LookairSolver implements Solver {
 						int fixDown = 0;
 						int fixLeft = 0;
 						for (Sikaku fixed : squareFixed) {
-							if (fixed.isDuplicate(new Position(yIndex, xIndex))) {
+							if (fixMe == 0 && fixed.isDuplicate(new Position(yIndex, xIndex))) {
 								fixMe = 1;
 							}
-							if (fixed.isDuplicate(new Position(yIndex - 1, xIndex))) {
+							if (fixUp == 0 && fixed.isDuplicate(new Position(yIndex - 1, xIndex))) {
 								fixUp = 1;
 							}
-							if (fixed.isDuplicate(new Position(yIndex, xIndex + 1))) {
+							if (fixRight == 0 && fixed.isDuplicate(new Position(yIndex, xIndex + 1))) {
 								fixRight = 1;
 							}
-							if (fixed.isDuplicate(new Position(yIndex + 1, xIndex))) {
+							if (fixDown == 0 && fixed.isDuplicate(new Position(yIndex + 1, xIndex))) {
 								fixDown = 1;
 							}
-							if (fixed.isDuplicate(new Position(yIndex, xIndex - 1))) {
+							if (fixLeft == 0 && fixed.isDuplicate(new Position(yIndex, xIndex - 1))) {
 								fixLeft = 1;
 							}
 						}
@@ -320,25 +656,25 @@ public class LookairSolver implements Solver {
 						int candDown = fixDown;
 						int candLeft = fixLeft;
 						for (Sikaku cand : squareCand) {
-							if (cand.isDuplicate(new Position(yIndex, xIndex))) {
+							if (candMe == 0 && cand.isDuplicate(new Position(yIndex, xIndex))) {
 								candMe = 1;
 							}
-							if (cand.isDuplicate(new Position(yIndex - 1, xIndex))) {
+							if (candUp == 0 && cand.isDuplicate(new Position(yIndex - 1, xIndex))) {
 								candUp = 1;
 							}
-							if (cand.isDuplicate(new Position(yIndex, xIndex + 1))) {
+							if (candRight == 0 && cand.isDuplicate(new Position(yIndex, xIndex + 1))) {
 								candRight = 1;
 							}
-							if (cand.isDuplicate(new Position(yIndex + 1, xIndex))) {
+							if (candDown == 0 && cand.isDuplicate(new Position(yIndex + 1, xIndex))) {
 								candDown = 1;
 							}
-							if (cand.isDuplicate(new Position(yIndex, xIndex - 1))) {
+							if (candLeft == 0 && cand.isDuplicate(new Position(yIndex, xIndex - 1))) {
 								candLeft = 1;
 							}
 						}
 						int candCnt = candMe + candUp + candRight + candDown + candLeft;
 						if (num > candCnt) {
-							continue;
+							return false;
 						}
 					}
 				}
@@ -369,8 +705,10 @@ public class LookairSolver implements Solver {
 		return field;
 	}
 
+	// http://pzv.jp/p.html?lookair/10/10/b101c1b2d11b2r3b3d2l1j1j2a5d2g1b
+	//
 	public static void main(String[] args) {
-		String url = "http://pzv.jp/p.html?lookair/10/10/b101c1b2d11b2r3b3d2l1j1j2a5d2g1b"; //urlを入れれば試せる
+		String url = "http://pzv.jp/p.html?lookair/10/10/d4e2h1g1j1b2a3d0o2e2d21i1a0a0i"; //urlを入れれば試せる
 		String[] params = url.split("/");
 		int height = Integer.parseInt(params[params.length - 2]);
 		int width = Integer.parseInt(params[params.length - 3]);
@@ -389,7 +727,7 @@ public class LookairSolver implements Solver {
 			}
 			int recursiveCnt = 0;
 			while (field.getStateDump().equals(befStr) && recursiveCnt < 3) {
-				if (!candSolve(field, recursiveCnt)) {
+				if (!candSolve(field, recursiveCnt == 2 ? 999 : recursiveCnt)) {
 					return "問題に矛盾がある可能性があります。途中経過を返します。";
 				}
 				recursiveCnt++;
@@ -399,11 +737,11 @@ public class LookairSolver implements Solver {
 			}
 		}
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
-		System.out.println("難易度:" + (count * 2));
+		System.out.println("難易度:" + (count / 5));
 		System.out.println(field);
-		int level = (int) Math.sqrt(count * 2 / 3);
+		int level = (int) Math.sqrt(count / 5 / 3);
 		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count * 2).toString() + "(Lv:" + level + ")";
+				+ Difficulty.getByCount(count / 5).toString() + "(Lv:" + level + ")";
 	}
 
 	/**
@@ -411,7 +749,6 @@ public class LookairSolver implements Solver {
 	 * @param posSet
 	 */
 	protected boolean candSolve(Field field, int recursive) {
-		System.out.println(field);
 		String str = field.getStateDump();
 		for (Iterator<Sikaku> iterator = field.squareCand.iterator(); iterator
 				.hasNext();) {

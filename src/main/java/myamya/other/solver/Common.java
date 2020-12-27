@@ -249,6 +249,29 @@ public class Common {
 		}
 
 		/**
+		 * 自分とotherの領域がかぶったり接している場合trueを返す。
+		 */
+		public boolean isDuplicateBig(Sikaku other) {
+			if (this.rightDown.getyIndex() < other.leftUp.getyIndex() - 1 ||
+					this.rightDown.getxIndex() < other.leftUp.getxIndex() ||
+					this.leftUp.getyIndex() > other.rightDown.getyIndex() + 1 ||
+					this.leftUp.getxIndex() > other.rightDown.getxIndex()) {
+				if (this.rightDown.getyIndex() < other.leftUp.getyIndex() ||
+						this.rightDown.getxIndex() < other.leftUp.getxIndex() - 1 ||
+						this.leftUp.getyIndex() > other.rightDown.getyIndex() ||
+						this.leftUp.getxIndex() > other.rightDown.getxIndex() + 1) {
+					return false;
+				} else {
+					return true;
+				}
+			} else {
+				return true;
+			}
+			// 自分の上が相手の下より上、かつ、自分の右が相手の左より右
+			// または、自分の左上が、相手の左上と右下の間にあれば、重複している
+		}
+
+		/**
 		 * 自分とposの領域がかぶっている場合trueを返す。
 		 */
 		public boolean isDuplicate(Position pos) {

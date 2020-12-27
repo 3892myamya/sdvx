@@ -334,6 +334,11 @@ var ruleMap = {
 		url : "https://www.nikoli.co.jp/ja/puzzles/fillomino/",
 		source : "ニコリ公式"
 	},
+	lookair : {
+		name : "るっくえあ",
+		url : "",
+		source : ""
+	},
 }
 var regMap = {
 		yajilin:[{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},
@@ -900,7 +905,8 @@ $(function() {
 					|| type == 'nurikabe' || type == 'heyawake'
 					|| type == 'shugaku' || type == 'icebarn'
 					|| type == 'country' || type == 'meander'
-					|| type == 'fillmat' || type == 'aqre' || type == 'fillomino') {
+					|| type == 'fillmat' || type == 'aqre'
+					|| type == 'fillomino' || type == 'lookair') {
 				$('#sel_size').append(option.size_3);
 				$('#sel_size').append(option.size_4);
 				$('#sel_size').append(option.size_5);
