@@ -10,11 +10,11 @@ $(function() {
         if ($('#sel_array').val() == 2){
             $('#div_number').addClass('middlebtn');
             $('#div_number').html('<div id="div_tools"><img id="img_C" src="img/C.png"><img id="img_F" src="img/F.png"></div><div><img id="img_1" src="img/1.png"><img id="img_2" src="img/2.png"><img id="img_3" src="img/3.png"><img id="img_4" src="img/4.png"><img id="img_5" src="img/5.png"></div><div><img id="img_6" src="img/6.png"><img id="img_7" src="img/7.png"><img id="img_8" src="img/8.png"><img id="img_9" src="img/9.png"><img id="img_0" src="img/0.png"></div><div><button type="button" id="btn_answer">解答する</button></div>');
-            $('#btn_answer').width('335px');
+            $('#btn_answer').width('325px');
         } else if ($('#sel_array').val() == 4){
             $('#div_number').addClass('largebtn');
             $('#div_number').html('<div id="div_tools"><img id="img_C" src="img/C.png"><img id="img_F" src="img/F.png"></div><div><img id="img_7" src="img/7.png"><img id="img_8" src="img/8.png"><img id="img_9" src="img/9.png"></div><div><img id="img_4" src="img/4.png"><img id="img_5" src="img/5.png"><img id="img_6" src="img/6.png"></div><div><img id="img_1" src="img/1.png"><img id="img_2" src="img/2.png"><img id="img_3" src="img/3.png"></div><div><img id="img_0" src="img/0.png"><button type="button" id="btn_answer">解答する</button></div>');
-            $('#btn_answer').width('180px');
+            $('#btn_answer').width('170px');
         }
     }
 
