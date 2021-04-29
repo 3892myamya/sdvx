@@ -79,13 +79,17 @@ $(function() {
         initHistoryGridInfo();
         showHistoryGrid();
         if ($('#btn_start').text() == '中断する'){
-            // 終了処理
+            // 中断処理
+            isActive = false;
             $('#lbl_status').text('状況：開始前です');
             $('#lbl_quest').text('開始前です');
             $('#lbl_judge').removeClass();
             $('#lbl_judge').text('');
             $('#lbl_answer').text('');
             $('#btn_start').text('開始する');
+            $("#sel_div").prop("disabled", false);
+            $("#sel_level").prop("disabled", false);
+            $("#sel_count").prop("disabled", false);
             return;
         }
         var baseTime = new Date().getTime();
@@ -98,6 +102,9 @@ $(function() {
                 $('#lbl_quest').text('スタート！');
                 setTimeout(function () {
                    $('#btn_start').text('中断する');
+                   $("#sel_div").prop("disabled", true);
+                   $("#sel_level").prop("disabled", true);
+                   $("#sel_count").prop("disabled", true);
                    total = 0;
                    questCnt = 0;
                    makeQuest();
@@ -190,6 +197,9 @@ $(function() {
             $('#lbl_judge').text('');
             $('#lbl_answer').text('');
             $('#btn_start').text('開始する');
+            $("#sel_div").prop("disabled", false);
+            $("#sel_level").prop("disabled", false);
+            $("#sel_count").prop("disabled", false);
             showHistoryGrid();
             // ハイスコア記録処理
             var targetHiScore = hiscoreGridInfo[div][level][count]; 
