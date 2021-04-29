@@ -1,0 +1,91 @@
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>算数練習</title>
+    <meta name="description" content="算数の練習ができます。"/>
+    <link rel="stylesheet" href="css/sansu.css?ver=20210429"/>
+    <script src="js/jquery-3.3.1.min.js"></script>
+    <script src="js/jsgrid.min.js"></script>
+    <script src="js/sansu.js?ver=20210429"></script>
+</head>
+<body>
+<div id="div_title">算数練習</div>
+<div>
+<label id="lbl_div" for="sel_div">種類</label>
+<select id="sel_div" name="sel_div">
+	<option value="1">足し算</option>
+	<option value="2">引き算</option>
+	<option value="3">掛け算</option>
+	<option value="4">割り算</option>
+</select>
+<label id="lbl_level" for="sel_level">レベル</label>
+<select id="sel_level" name="sel_level">
+	<option value="1">1</option>
+	<option value="2">2</option>
+	<option value="3">3</option>
+</select>
+<label id="lbl_count" for="sel_count">問題数</label>
+<select id="sel_count" name="sel_count">
+	<option value="10">10</option>
+	<option value="20">20</option>
+</select>
+<label id="lbl_array" for="sel_array">配列</label>
+<select id="sel_array" name="sel_array">
+	<option value="2">2列</option>
+	<option value="4">電卓</option>
+</select>
+</div>
+<hr>
+<div>
+<button type="button" id="btn_start">開始する</button>
+<label id="lbl_status">状況：開始前です</label>
+</div>
+<hr>
+<div id="div_quest">
+<label id="lbl_quest">開始前です</label>
+<label id="lbl_answer"></label>
+<label id="lbl_judge"></label>
+</div>
+<div id="div_number">
+<div id="div_tools">
+<img id="img_C" src="img/C.png">
+<img id="img_F" src="img/F.png">
+</div>
+<div>
+<img id="img_1" src="img/1.png">
+<img id="img_2" src="img/2.png">
+<img id="img_3" src="img/3.png">
+<img id="img_4" src="img/4.png">
+<img id="img_5" src="img/5.png">
+</div>
+<div>
+<img id="img_6" src="img/6.png">
+<img id="img_7" src="img/7.png">
+<img id="img_8" src="img/8.png">
+<img id="img_9" src="img/9.png">
+<img id="img_0" src="img/0.png">
+</div>
+<div>
+<button type="button" id="btn_answer">解答する</button>
+</div>
+</div>
+<hr>
+<div>
+<label id="lbl_history">解答履歴</label>
+<div id="grid_history"></div>
+</div>
+</div>
+<hr>
+<div>
+<label id="lbl_hiscore">ハイスコア</label>
+<div id="grid_hiscore"></div>
+</div>
+<button type="button" id="btn_hiscore_clear">クリアする</button>
+</div>
+<hr>
+<div style="font-size: x-small;">
+※<a href="https://3892myamya.github.io/introduction/" target="_blank">3892myamya tools</a> developed by <a href="https://twitter.com/3892myamya/" target="_blank">@3892myamya</a>
+</div>
+</body>
+</html>

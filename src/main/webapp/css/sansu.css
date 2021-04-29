@@ -1,0 +1,101 @@
+body{
+  margin:0px;
+  touch-action: manipulation;
+}
+
+#div_readme_head {
+    background: #000000;
+    margin-bottom: 2px;
+}
+
+.subtitle {
+  font-size: 1.25em;
+  font-weight: bold;
+}
+
+#div_title{
+  font-size: 1.5em;
+  font-weight: bold;
+  background: linear-gradient(#ff8000, #ffff00);
+  color: #000080;
+}
+#btn_start{
+  height: 50px;
+  width: 120px;
+}
+#btn_answer{
+  height: 80px;
+  width: 320px;
+  margin : 5px;
+}
+#lbl_quest {
+  font-size: 2em;
+  font-weight: bold;
+}
+#lbl_answer {
+  font-size: 2em;
+  font-weight: bold;
+  color: #FF8000;
+}
+#lbl_judge {
+  font-size: 2em;
+  font-weight: bold;
+}
+#div_quest {
+    max-width :360px;
+    background-color:#EEFFEE;
+    padding : 10px;
+    border : 2px solid #004000;
+}
+#div_number {
+    padding : 10px;
+}
+#div_tools {
+    padding : 0px 0px 10px 0px;
+}
+.middlebtn img{
+  height: 64px;
+  width: 64px;
+  padding : 4px;
+  vertical-align: middle;
+}
+
+.largebtn img{
+  height: 96px;
+  width: 96px;
+  padding : 4px;
+  vertical-align: middle;
+}
+
+.ok{
+  color: #FF0000;
+  font-weight: bold;
+}
+.ng{
+  color: #0000FF;
+  font-weight: bold;
+}
+.giveup{
+  color: #FFFF00;
+}
+.jsgrid-header-row>.jsgrid-header-cell {
+    background: #d9d9ff;
+}
+
+.jsgrid-grid-header {
+    overflow-y: auto;
+}
+
+.jsgrid-grid-body {
+    overflow-y: auto;
+}
+
+.jsgrid-header-cell {
+    font-size:.8em;
+    padding:.2em;
+}
+
+.jsgrid-cell {
+    font-size:.8em;
+    padding:.2em;
+}
