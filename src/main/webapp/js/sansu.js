@@ -232,72 +232,72 @@ $(function() {
         while (true) {
             if (level == 1){
                 if (div == 1){
-                    var numA = Math.floor(Math.random() * 8) + 1;
-                    var numB = Math.floor(Math.random() * 8) + 1;
+                    var numA = Math.floor(Math.random() * 9) + 1;
+                    var numB = Math.floor(Math.random() * 9) + 1;
                     questTxt = numA + ' ＋ ' + numB + ' = ';
                     answer = numA + numB;
                 } else if (div == 2){
-                    var numA = Math.floor(Math.random() * 8) + 1;
-                    var numB = Math.floor(Math.random() * 8) + 1;
+                    var numA = Math.floor(Math.random() * 9) + 1;
+                    var numB = Math.floor(Math.random() * 9) + 1;
                     answer = numA + numB;
                     questTxt = answer + ' － ' + numB + ' = ';
                     answer = numA
                 } else if (div == 3){
-                    var numA = Math.floor(Math.random() * 8) + 1;
-                    var numB = Math.floor(Math.random() * 8) + 1;
+                    var numA = Math.floor(Math.random() * 9) + 1;
+                    var numB = Math.floor(Math.random() * 9) + 1;
                     questTxt = numA + ' × ' + numB + ' = ';
                     answer = numA * numB;
                 } else if (div == 4){
-                    var numA = Math.floor(Math.random() * 8) + 1;
-                    var numB = Math.floor(Math.random() * 8) + 1;
+                    var numA = Math.floor(Math.random() * 9) + 1;
+                    var numB = Math.floor(Math.random() * 9) + 1;
                     answer = numA * numB;
                     questTxt = answer + ' ÷ ' + numB + ' = ';
                     answer = numA
                 }
             } else if (level == 2){
                 if (div == 1){
-                    var numA = Math.floor(Math.random() * 98) + 1;
-                    var numB = Math.floor(Math.random() * 98) + 1;
+                    var numA = Math.floor(Math.random() * 99) + 1;
+                    var numB = Math.floor(Math.random() * 99) + 1;
                     questTxt = numA + ' ＋ ' + numB + ' = ';
                     answer = numA + numB;
                 } else if (div == 2){
-                    var numA = Math.floor(Math.random() * 98) + 1;
-                    var numB = Math.floor(Math.random() * 98) + 1;
+                    var numA = Math.floor(Math.random() * 99) + 1;
+                    var numB = Math.floor(Math.random() * 99) + 1;
                     answer = numA + numB;
                     questTxt = answer + ' － ' + numB + ' = ';
                     answer = numA
                 } else if (div == 3){
-                    var numA = Math.floor(Math.random() * 97) + 2;
-                    var numB = Math.floor(Math.random() * 7) + 2;
+                    var numA = Math.floor(Math.random() * 98) + 2;
+                    var numB = Math.floor(Math.random() * 8) + 2;
                     questTxt = numA + ' × ' + numB + ' = ';
                     answer = numA * numB;
                 } else if (div == 4){
-                    var numA = Math.floor(Math.random() * 97) + 2;
-                    var numB = Math.floor(Math.random() * 7) + 2;
+                    var numA = Math.floor(Math.random() * 98) + 2;
+                    var numB = Math.floor(Math.random() * 8) + 2;
                     answer = numA * numB;
                     questTxt = answer + ' ÷ ' + numB + ' = ';
                     answer = numA
                 }
             } else if (level == 3){
                 if (div == 1){
-                    var numA = Math.floor(Math.random() * 998) + 1;
-                    var numB = Math.floor(Math.random() * 998) + 1;
+                    var numA = Math.floor(Math.random() * 999) + 1;
+                    var numB = Math.floor(Math.random() * 999) + 1;
                     questTxt = numA + ' ＋ ' + numB + ' = ';
                     answer = numA + numB;
                 } else if (div == 2){
-                    var numA = Math.floor(Math.random() * 998) + 1;
-                    var numB = Math.floor(Math.random() * 998) + 1;
+                    var numA = Math.floor(Math.random() * 999) + 1;
+                    var numB = Math.floor(Math.random() * 999) + 1;
                     answer = numA + numB;
                     questTxt = answer + ' － ' + numB + ' = ';
                     answer = numA
                 } else if (div == 3){
-                    var numA = Math.floor(Math.random() * 97) + 2;
-                    var numB = Math.floor(Math.random() * 97) + 2;
+                    var numA = Math.floor(Math.random() * 98) + 2;
+                    var numB = Math.floor(Math.random() * 98) + 2;
                     questTxt = numA + ' × ' + numB + ' = ';
                     answer = numA * numB;
                 } else if (div == 4){
-                    var numA = Math.floor(Math.random() * 97) + 2;
-                    var numB = Math.floor(Math.random() * 97) + 2;
+                    var numA = Math.floor(Math.random() * 98) + 2;
+                    var numB = Math.floor(Math.random() * 98) + 2;
                     answer = numA * numB;
                     questTxt = answer + ' ÷ ' + numB + ' = ';
                     answer = numA
