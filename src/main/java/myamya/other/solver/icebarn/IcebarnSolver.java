@@ -817,6 +817,9 @@ public class IcebarnSolver implements Solver {
 				char ch = param.charAt(i);
 				index = index + Character.getNumericValue(ch);
 				if (ch == 'z') {
+					if (index + 1 > (height * (width - 1)) + ((height - 1) * width)) {
+						rightDown = true;
+					}
 					continue;
 				}
 				if (index < (height * (width - 1))) {
