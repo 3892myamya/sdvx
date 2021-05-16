@@ -65,6 +65,7 @@ import myamya.other.solver.hanare.HanareSolver;
 import myamya.other.solver.hashikake.HashikakeSolver;
 import myamya.other.solver.hebi.HebiSolver;
 import myamya.other.solver.herugolf.HerugolfSolver;
+import myamya.other.solver.heteromino.HeterominoSolver;
 import myamya.other.solver.heyabon.HeyabonSolver;
 import myamya.other.solver.heyawake.HeyawakeSolver;
 import myamya.other.solver.hitori.HitoriSolver;
@@ -15563,6 +15564,94 @@ public class SolverWeb extends HttpServlet {
 		}
 	}
 
+	static class HeterominoSolverThread extends AbsSolverThlead {
+
+		HeterominoSolverThread(int height, int width, String param) {
+			super(height, width, param);
+		}
+
+		@Override
+		protected Solver getSolver() {
+			return new HeterominoSolver(height, width, param);
+		}
+
+		@Override
+		public String makeCambus() {
+			HeterominoSolver.Field field = ((HeterominoSolver) solver).getField();
+			StringBuilder sb = new StringBuilder();
+			int baseSize = 20;
+			int margin = 5;
+			sb.append(
+					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
+							+ "height=\"" + (field.getYLength() * baseSize + 2 * baseSize) + "\" width=\""
+							+ (field.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			// 黒マス描画
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					if (field.getMasu()[yIndex][xIndex]) {
+						sb.append("<rect y=\"" + (yIndex * baseSize + margin + 0.5)
+								+ "\" x=\""
+								+ (xIndex * baseSize + baseSize+ 0.5)
+								+ "\" width=\""
+								+ (baseSize)
+								+ "\" height=\""
+								+ (baseSize)
+								+ "\" stroke=\""
+								+ "black"
+								+ "\" fill=\""
+								+ "black"
+								+ "\">"
+								+ "</rect>");
+					}
+				}
+			}
+			// 横壁描画
+			boolean[][] yokoWall = field.getYokoWall();
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = -1; xIndex < field.getXLength(); xIndex++) {
+					boolean oneYokoWall = xIndex == -1 || xIndex == field.getXLength() - 1
+							|| yokoWall[yIndex][xIndex];
+					if (oneYokoWall) {
+						sb.append("<rect y=\"" + (yIndex * baseSize + margin)
+								+ "\" x=\""
+								+ (xIndex * baseSize + 2 * baseSize)
+								+ "\" width=\""
+								+ (2)
+								+ "\" height=\""
+								+ (baseSize)
+								+ "\" fill=\""
+								+ ((xIndex == -1 || xIndex == field.getXLength() - 1) ? "black" : "green")
+								+ "\">"
+								+ "</rect>");
+					}
+				}
+			}
+			// 縦壁描画
+			boolean[][] tateWall = field.getTateWall();
+			for (int yIndex = -1; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					boolean oneTateWall = yIndex == -1 || yIndex == field.getYLength() - 1
+							|| tateWall[yIndex][xIndex];
+					if (oneTateWall) {
+						sb.append("<rect y=\"" + (yIndex * baseSize + baseSize + margin)
+								+ "\" x=\""
+								+ (xIndex * baseSize + baseSize)
+								+ "\" width=\""
+								+ (baseSize)
+								+ "\" height=\""
+								+ (2)
+								+ "\" fill=\""
+								+ ((yIndex == -1 || yIndex == field.getYLength() - 1) ? "black" : "green")
+								+ "\">"
+								+ "</rect>");
+					}
+				}
+			}
+			sb.append("</svg>");
+			return sb.toString();
+		}
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -15860,6 +15949,8 @@ public class SolverWeb extends HttpServlet {
 					t = new AqreSolverThread(height, width, param);
 				} else if (puzzleType.contains("lookair")) {
 					t = new LookairSolverThread(height, width, param);
+				} else if (puzzleType.contains("heteromino")) {
+					t = new HeterominoSolverThread(height, width, param);
 				} else {
 					throw new IllegalArgumentException();
 				}
