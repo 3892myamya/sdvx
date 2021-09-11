@@ -142,6 +142,7 @@ public class Common {
 	 */
 	public enum Direction {
 		UP("u", 1, "↑", "▲"), RIGHT("r", 4, "→", "►"), DOWN("d", 2, "↓", "▼"), LEFT("l", 3, "←", "◄");
+
 		private final String str;
 		private final int num;
 		private final String directString;
@@ -252,14 +253,14 @@ public class Common {
 		 * 自分とotherの領域がかぶったり接している場合trueを返す。
 		 */
 		public boolean isDuplicateBig(Sikaku other) {
-			if (this.rightDown.getyIndex() < other.leftUp.getyIndex() - 1 ||
-					this.rightDown.getxIndex() < other.leftUp.getxIndex() ||
-					this.leftUp.getyIndex() > other.rightDown.getyIndex() + 1 ||
-					this.leftUp.getxIndex() > other.rightDown.getxIndex()) {
-				if (this.rightDown.getyIndex() < other.leftUp.getyIndex() ||
-						this.rightDown.getxIndex() < other.leftUp.getxIndex() - 1 ||
-						this.leftUp.getyIndex() > other.rightDown.getyIndex() ||
-						this.leftUp.getxIndex() > other.rightDown.getxIndex() + 1) {
+			if (this.rightDown.getyIndex() < other.leftUp.getyIndex() - 1
+					|| this.rightDown.getxIndex() < other.leftUp.getxIndex()
+					|| this.leftUp.getyIndex() > other.rightDown.getyIndex() + 1
+					|| this.leftUp.getxIndex() > other.rightDown.getxIndex()) {
+				if (this.rightDown.getyIndex() < other.leftUp.getyIndex()
+						|| this.rightDown.getxIndex() < other.leftUp.getxIndex() - 1
+						|| this.leftUp.getyIndex() > other.rightDown.getyIndex()
+						|| this.leftUp.getxIndex() > other.rightDown.getxIndex() + 1) {
 					return false;
 				} else {
 					return true;
@@ -409,6 +410,31 @@ public class Common {
 			return txt;
 		}
 
+	}
+
+	public static class PenpaEditGeneratorResult extends GeneratorResult {
+		private final String fieldStr;
+
+		private final String solutionStr;
+
+		public PenpaEditGeneratorResult(String status, String result, String link, int level, String txt,
+				String fieldStr, String solutionStr) {
+			super(status, result, link, "", level, txt);
+			this.fieldStr = fieldStr;
+			this.solutionStr = solutionStr;
+		}
+
+		public String getUrl() {
+			return PenpaEditLib.PENPA_EDIT_DUMMY_URL;
+		}
+
+		public String getFieldStr() {
+			return fieldStr;
+		}
+
+		public String getSolutionStr() {
+			return solutionStr;
+		}
 	}
 
 	public static class CountOverException extends RuntimeException {

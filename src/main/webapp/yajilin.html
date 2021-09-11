@@ -12,9 +12,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ペンシルパズルソルバー(ペンパソルバー)</title>
     <meta name="description" content="ペンシルパズルソルバー(ペンパソルバー)は「ぱずぷれ v3」「パズルスクエア」さんで公開されたペンシルパズルを解くことができるかもしれないツールです。60種類以上のパズルに対応しています。"/>
-    <link rel="stylesheet" href="css/yajilin.css?ver=20200411"/>
+    <link rel="stylesheet" href="css/yajilin.css?ver=20210911"/>
     <script src="js/jquery-3.3.1.min.js"></script>
-    <script src="js/yajilin.js?ver=20200411"></script>
+    <script src="js/rawdeflate.min.js"></script>
+    <script src="js/rawinflate.min.js"></script>
+    <script src="js/yajilin.js?ver=20210911"></script>
 </head>
 <body>
 <div id="div_title">ペンシルパズルソルバー<span style="font-size: xx-small;">(旧：ヤジリンソルバー)</span></div>
@@ -54,6 +56,7 @@ A:こっそり裏技を教えます。「解きたい問題のURL」に入力し
 　・URLの「yajilin-regions」を「yajilin-regionsout(yajilin-regions_out)」にして実行すると…？<br>
 　・URLの「nurimisaki」を「trimisaki」にして実行すると…？<br>
 　・URLの「ripple」を「simplegako」にして実行すると…？<br>
+　・URLの「creek」を「nibunnogo(nibunogo,nibunnnogo)」にして実行すると…？<br>
 </p>
 <div class="subtitle">■4.免責■</div>
 <p>本ツールの利用によって生じたいかなる問題についても作者は責任を負わないものとします。また、本ツールについて以下に記載した先以外への問い合わせはご遠慮ください。</p>
@@ -61,18 +64,22 @@ A:こっそり裏技を教えます。「解きたい問題のURL」に入力し
 <p>本ツールについてお気づきの点や要望があれば<a href="https://twitter.com/3892myamya/" target="_blank">@3892myamya</a>までご連絡ください。</p>
 </div>
 <div>
-<label id="lbl_args" for="text_args">解きたい問題のURL</label>
+<label id="lbl_args" for="edt_url">解きたい問題のURL</label>
 </div>
 <div>
-<input type="text" id="edt_url">
+<input type="text" id="edt_url" name="edt_url">
 </div>
-
+<div id="div_ext">
+<label id="lbl_type" for="sel_type">penpa-edit向けパズル種別</label>
+<select id="sel_type" name="sel_type">
+	<option value="nibunnogo">ニブンノゴ</option>
+</select>
+</div>
 <div>
 <button type="button" id="btn_submit">実行</button>
 <label id="caption"></label>
 <img id="loading" src="icon_loader_a_ww_02_s1.gif" width="22" height="22" border="0" alt="">
 </div>
-
 <div id="div_result">
 </div>
 <hr>

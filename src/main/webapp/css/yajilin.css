@@ -34,3 +34,9 @@ body{
 #loading {
     vertical-align: middle;
 }
+
+#btn_submit{
+  margin-top: 5px;
+  height: 45px;
+  width: 120px;
+}

@@ -12,6 +12,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import myamya.other.solver.Common.GeneratorResult;
+import myamya.other.solver.Common.PenpaEditGeneratorResult;
 import myamya.other.solver.akari.AkariSolver.AkariGenerator;
 import myamya.other.solver.aqre.AqreSolver.AqreGenerator;
 import myamya.other.solver.bag.BagSolver.BagGenerator;
@@ -44,6 +45,7 @@ import myamya.other.solver.mines.MinesSolver.MinesGenerator;
 import myamya.other.solver.mochikoro.MochikoroSolver.MochikoroGenerator;
 import myamya.other.solver.moonsun.MoonsunSolver.MoonsunGenerator;
 import myamya.other.solver.nanro.NanroSolver.NanroGenerator;
+import myamya.other.solver.nibunnogo.NibunnogoSolver.NibunnogoGenerator;
 import myamya.other.solver.nonogram.NonogramSolver.NonogramGenerator;
 import myamya.other.solver.norinori.NorinoriSolver.NorinoriGenerator;
 import myamya.other.solver.nurikabe.NurikabeSolver.NurikabeGenerator;
@@ -84,8 +86,7 @@ import net.arnx.jsonic.JSON;
 public class SudokuGachaWeb extends HttpServlet {
 
 	abstract static class GeneratorThlead extends Thread {
-		private GeneratorResult result = new GeneratorResult(
-				"申し訳ありません。時間内に抽選が完了しませんでした。時間をおいて再度お試しください。");
+		private GeneratorResult result = new GeneratorResult("申し訳ありません。時間内に抽選が完了しませんでした。時間をおいて再度お試しください。");
 
 		@Override
 		public void run() {
@@ -1180,6 +1181,22 @@ public class SudokuGachaWeb extends HttpServlet {
 
 	}
 
+	static class NibunnogoGeneratorThlead extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+
+		NibunnogoGeneratorThlead(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new NibunnogoGenerator(height, width);
+		}
+
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -1343,6 +1360,8 @@ public class SudokuGachaWeb extends HttpServlet {
 				t = new FillominoGeneratorThlead(height, width);
 			} else if (type.equals("lookair")) {
 				t = new LookairGeneratorThlead(height, width);
+			} else if (type.equals("nibunnogo")) {
+				t = new NibunnogoGeneratorThlead(height, width);
 			} else {
 				throw new IllegalArgumentException();
 			}
@@ -1351,7 +1370,12 @@ public class SudokuGachaWeb extends HttpServlet {
 			resultMap.put("status", t.result.getStatus());
 			resultMap.put("result", t.result.getResult());
 			resultMap.put("link", t.result.getLink());
-			resultMap.put("url", t.result.getUrl());
+			if (t.result instanceof PenpaEditGeneratorResult) {
+				resultMap.put("fieldStr", ((PenpaEditGeneratorResult) t.result).getFieldStr());
+				resultMap.put("solutionStr", ((PenpaEditGeneratorResult) t.result).getSolutionStr());
+			} else {
+				resultMap.put("url", t.result.getUrl());
+			}
 			resultMap.put("txt", t.result.getTxt());
 			resultMap.put("level", t.result.getLevel());
 		} catch (
@@ -1361,8 +1385,7 @@ public class SudokuGachaWeb extends HttpServlet {
 			resultMap.put("status", "予期せぬエラーが発生しました。");
 			resultMap.put("result", "");
 		}
-		try (
-				PrintWriter out = response.getWriter()) {
+		try (PrintWriter out = response.getWriter()) {
 			out.print(JSON.encode(resultMap));
 		}
 	}

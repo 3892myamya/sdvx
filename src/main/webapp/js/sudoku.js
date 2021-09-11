@@ -339,6 +339,11 @@ var ruleMap = {
 		url : "",
 		source : ""
 	},
+	nibunnogo : {
+		name : "ニブンノゴ",
+		url : "",
+		source : ""
+	},
 }
 var regMap = {
 		yajilin:[{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},
@@ -356,6 +361,8 @@ var regMap = {
 		icebarn:[{type:'icebarn',size:8},{type:'icebarn',size:8},{type:'icebarn',size:8},{type:'icebarn',size:8},{type:'icebarn',size:8},
 			{type:'icebarn',size:8},{type:'icebarn',size:8},{type:'icebarn',size:8},{type:'icebarn',size:8},{type:'icebarn',size:8}],
 }
+var penpaEditUrlBase = 'https://opt-pan.github.io/penpa-edit/?m=solve';
+var penpaEditDummyUrl = "penpa-edit-dummy-url";
 
 var option = {
 	size_3 : '<option value="3">3 x 3</option>',
@@ -416,6 +423,16 @@ $(function() {
 				+ padZero(now.getSeconds());
 		return time;
 	}
+
+	var zipEncode = function(str){
+        var u8text = new TextEncoder().encode(str);
+        var deflate = new Zlib.RawDeflate(u8text);
+        var compressed = deflate.compress();
+        var char8 = Array.from(compressed, e => String.fromCharCode(e)).join("");
+        var ba = window.btoa(char8);
+        return ba;
+	}
+	
 	$('#btn_clear').on('click', function(event) {
 		if (window.confirm('履歴をクリアします。よろしいですか？')) {
 			localStorage.setItem('history', JSON.stringify([]));
@@ -481,6 +498,13 @@ $(function() {
 							$('#sel_pattern').prop("disabled", false);
 							if (resultObj.result != '') {
 								$('#div_result').html(resultObj.result);
+								if (resultObj.fieldStr !== undefined){
+									// penpa-edit対応
+									var fieldStr = zipEncode(resultObj.fieldStr);
+									var solutionStr = zipEncode(resultObj.solutionStr);
+									resultObj.url = penpaEditUrlBase + '&p=' + fieldStr + '&a=' + solutionStr;
+									resultObj.link = resultObj.link.replace(penpaEditDummyUrl, resultObj.url);
+								}
 								$('#div_link').html(resultObj.link);
 								var tweetTxt = $(
 										'#sel_type option[value=' + param.type
@@ -589,6 +613,13 @@ $(function() {
 						// 抽選できてなかったらもう一回
 						startSubmit(cnt);
 					} else {
+						if (resultObj.fieldStr !== undefined){
+							// penpa-edit対応
+							var fieldStr = zipEncode(resultObj.fieldStr);
+							var solutionStr = zipEncode(resultObj.solutionStr);
+							resultObj.url = penpaEditUrlBase + '&p=' + fieldStr + '&a=' + solutionStr;
+							resultObj.link = resultObj.link.replace(penpaEditDummyUrl, resultObj.url);
+						}
 						resultList.push(resultObj.result);
 						linkList.push(resultObj.link);
 						levelList.push(resultObj.level);
@@ -627,7 +658,7 @@ $(function() {
 	});
 	$('#btn_next_rta').on('click', function(event) {
 		var now = new Date().getTime();
-		rtaGridInfo[nowIndex].link = linkList[nowIndex].replace('puzz\.linkで', '').replace('ぱずぷれv3で','');
+		rtaGridInfo[nowIndex].link = linkList[nowIndex].replace('puzz\.linkで', '').replace('ぱずぷれv3で','').replace('penpa-editで','');
 		rtaGridInfo[nowIndex].time = ((now - befTime) / 1000).toFixed(3);
 		rtaGridInfo[nowIndex].totaltime = ((now - firstTime) / 1000).toFixed(3);
 		if (nowIndex == rtaGridInfo.length - 1) {
@@ -1059,7 +1090,7 @@ $(function() {
 			level : resultObj.level,
 			// TODO むりやり…
 			link : resultObj.link.replace('(波及効果バリアント)', '').replace('puzz\.linkで', '').replace('ぱずぷれv3で',
-					''),
+					'').replace('penpa-editで',''),
 		});
 		if (historyObj.length > 20) {
 			historyObj.pop();
@@ -1284,12 +1315,7 @@ $(function() {
 			param.course.push({type:courseGridInfo[i].type,size:courseGridInfo[i].size});
 		}
 		var text = JSON.stringify(param);
-        var u8text = new TextEncoder().encode(text);
-        var deflate = new Zlib.RawDeflate(u8text);
-        var compressed = deflate.compress();
-        var char8 = Array.from(compressed, e => String.fromCharCode(e)).join("");
-        var ba = window.btoa(char8);
-        var url = location.href.split('?')[0] + '?p=' + ba;
+        var url = location.href.split('?')[0] + '?p=' + zipEncode(text);
         $('#lbl_course_already').show();
         $('#a_course').attr('href',url);
         $('#a_course').html(url);
