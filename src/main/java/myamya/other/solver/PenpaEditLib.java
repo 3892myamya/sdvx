@@ -1,5 +1,9 @@
 package myamya.other.solver;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 import myamya.other.solver.Common.Masu;
 
 public class PenpaEditLib {
@@ -79,19 +83,25 @@ public class PenpaEditLib {
 	 * 黒マスの情報をPenpaEditの回答情報向け文字列に変換して返す。 Masuは正方形である前提
 	 */
 	public static String convertSolutionMasu(Masu[][] masu) {
-		StringBuilder sb = new StringBuilder();
+		List<String> indexStrList = new ArrayList<>();
 		int firstPos = 2 * (masu.length + 5);
 		for (int yIndex = 0; yIndex < masu.length; yIndex++) {
 			for (int xIndex = 0; xIndex < masu[0].length; xIndex++) {
 				if (masu[yIndex][xIndex] == Masu.BLACK) {
-					if (sb.length() != 0) {
-						sb.append(",");
-					}
-					sb.append("\"");
-					sb.append(firstPos + yIndex * (masu[0].length + 4) + xIndex);
-					sb.append("\"");
+					indexStrList.add(String.valueOf(firstPos + yIndex * (masu[0].length + 4) + xIndex));
 				}
 			}
+		}
+		// 文字列ソートがいるっぽい
+		Collections.sort(indexStrList);
+		StringBuilder sb = new StringBuilder();
+		for (String indexStr : indexStrList) {
+			if (sb.length() != 0) {
+				sb.append(",");
+			}
+			sb.append("\"");
+			sb.append(indexStr);
+			sb.append("\"");
 		}
 		return "[[" + sb.toString() + "],[],[],[],[],[]]";
 	}
