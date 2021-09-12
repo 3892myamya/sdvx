@@ -25,14 +25,27 @@ $(function() {
         param.url = $('#edt_url').val();
         if ($('#edt_url').val().indexOf('penpa-edit') > -1) {
             // pを復号
-            var param = getURLParams($('#edt_url').val())['p'];
-            var ab = atob(param);
+            param.type = $('#sel_type').val();
+            var urlp = getURLParams($('#edt_url').val())['p'];
+            var ab = atob(urlp);
             ab = Uint8Array.from(ab.split(""), e => e.charCodeAt(0));
             var inflate = new Zlib.RawInflate(ab);
             var plain = inflate.decompress();
             var rtext = new TextDecoder().decode(plain);
             param.fieldStr = rtext;
         }
+		// 条件をローカルストレージ保存
+		var cond = localStorage.getItem('condyajilin');
+		var condObj = JSON.parse(cond);
+		if (condObj != null) {
+			condObj.type = param.type ;
+		} else {
+			condObj = {
+					type : param.type ,
+			};
+		}
+		cond = JSON.stringify(condObj);
+		localStorage.setItem('condyajilin', cond);
         $.ajax({
             url: location.host.indexOf('localhost') == -1 ? 'https://myamyaapi.herokuapp.com/SolverWeb' : 'SolverWeb',
             type: 'POST',
@@ -51,13 +64,26 @@ $(function() {
     $('#div_readme_head').click(function(){
         $('#div_readme_body').slideToggle();
     });
-//    $('#edt_url').keyup(function(){
-//        if ($('#edt_url').val().indexOf('penpa-edit') > -1){
-//            $('#div_ext').show();
-//        } else {
-//            $('#div_ext').hide();
-//        }
-//    });
+    $('#edt_url').keyup(function(){
+        if ($('#edt_url').val().indexOf('penpa-edit') > -1){
+            $('#div_ext').show();
+        } else {
+            $('#div_ext').hide();
+        }
+    });
+	// 保存された条件があれば読みだす
+	var cond = localStorage.getItem('condyajilin');
+	var condObj = JSON.parse(cond);
+	if (condObj != null) {
+		if (condObj.type === undefined) {
+			$('#sel_type').val('nibunnogo');
+		} else {
+			$('#sel_type').val(condObj.type);
+		}
+	} else {
+		// 初期条件。
+		$('#sel_type').val('nibunnogo');
+	}
     $('#loading').hide();
     $('#div_ext').hide();
 });

@@ -42,6 +42,7 @@ import myamya.other.solver.box.BoxSolver;
 import myamya.other.solver.building.BuildingSolver;
 import myamya.other.solver.castle.CastleSolver;
 import myamya.other.solver.cells.CellsSolver;
+import myamya.other.solver.chocobanana.ChocobananaSolver;
 import myamya.other.solver.chocona.ChoconaSolver;
 import myamya.other.solver.chocona.ChoconaSolver.Room;
 import myamya.other.solver.cojun.CojunSolver;
@@ -11340,13 +11341,26 @@ public class SolverWeb extends HttpServlet {
 		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
 		private static final String FULL_NUMS = "０１２３４５６７８９";
 
+		private final String fieldStr;
+
 		NibunnogoSolverThread(int height, int width, String param) {
 			super(height, width, param);
+			this.fieldStr = null;
+		}
+
+		// penpa-edit向けコンストラクタ
+		public NibunnogoSolverThread(String fieldStr) {
+			super(0, 0, "");
+			this.fieldStr = fieldStr;
 		}
 
 		@Override
 		protected Solver getSolver() {
-			return new NibunnogoSolver(height, width, param);
+			if (fieldStr != null) {
+				return new NibunnogoSolver(fieldStr);
+			} else {
+				return new NibunnogoSolver(height, width, param);
+			}
 		}
 
 		@Override
@@ -11426,6 +11440,96 @@ public class SolverWeb extends HttpServlet {
 		}
 	}
 
+	static class ChocobananaSolverThread extends AbsSolverThlead {
+		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
+		private static final String FULL_NUMS = "０１２３４５６７８９";
+
+		private final String fieldStr;
+
+		// penpa-edit向けコンストラクタ
+		public ChocobananaSolverThread(String fieldStr) {
+			super(0, 0, "");
+			this.fieldStr = fieldStr;
+		}
+
+		@Override
+		protected Solver getSolver() {
+			return new ChocobananaSolver(fieldStr);
+		}
+
+		@Override
+		public String makeCambus() {
+			StringBuilder sb = new StringBuilder();
+			ChocobananaSolver.Field field = ((ChocobananaSolver) solver).getField();
+			int baseSize = 20;
+			int margin = 5;
+			sb.append("<svg xmlns=\"http://www.w3.org/2000/svg\" " + "height=\""
+					+ (field.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
+					+ (field.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					Masu oneMasu = field.getMasu()[yIndex][xIndex];
+					if (oneMasu.toString().equals("■")) {
+						sb.append(
+								"<rect y=\"" + (yIndex * baseSize + margin) + "\" x=\"" + (xIndex * baseSize + baseSize)
+										+ "\" width=\"" + (baseSize) + "\" height=\"" + (baseSize) + "\">" + "</rect>");
+					} else if (oneMasu.toString().equals("・")) {
+						sb.append("<rect y=\"" + (yIndex * baseSize + margin) + "\" x=\""
+								+ (xIndex * baseSize + baseSize) + "\" fill=\"" + "palegreen" + "\" width=\""
+								+ (baseSize) + "\" height=\"" + (baseSize) + "\">" + "</rect>");
+					}
+					if (field.getNumbers()[yIndex][xIndex] != null) {
+						String numberStr = String.valueOf(field.getNumbers()[yIndex][xIndex]);
+						int index = HALF_NUMS.indexOf(numberStr);
+						String masuStr = null;
+						if (index >= 0) {
+							masuStr = FULL_NUMS.substring(index / 2, index / 2 + 1);
+						} else {
+							masuStr = numberStr;
+						}
+						sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 4 + margin) + "\" x=\""
+								+ (xIndex * baseSize + baseSize + 2) + "\" font-size=\"" + (baseSize - 5) + "\" fill=\""
+								+ (oneMasu.toString().equals("■") ? "white" : "black") + "\" textLength=\""
+								+ (baseSize - 5) + "\" lengthAdjust=\"spacingAndGlyphs\">" + masuStr + "</text>");
+					}
+				}
+			}
+			// 横壁描画
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = -1; xIndex < field.getXLength(); xIndex++) {
+					boolean oneYokoWall = xIndex == -1 || xIndex == field.getXLength() - 1;
+					sb.append("<line y1=\"" + (yIndex * baseSize + margin) + "\" x1=\""
+							+ (xIndex * baseSize + 2 * baseSize) + "\" y2=\"" + (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\"" + (xIndex * baseSize + 2 * baseSize) + "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneYokoWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">" + "</line>");
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = -1; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					boolean oneTateWall = yIndex == -1 || yIndex == field.getYLength() - 1;
+					sb.append("<line y1=\"" + (yIndex * baseSize + baseSize + margin) + "\" x1=\""
+							+ (xIndex * baseSize + baseSize) + "\" y2=\"" + (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\"" + (xIndex * baseSize + baseSize + baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneTateWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">" + "</line>");
+				}
+			}
+			sb.append("</svg>");
+			return sb.toString();
+		}
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -11433,305 +11537,317 @@ public class SolverWeb extends HttpServlet {
 		response.setHeader("Access-Control-Allow-Origin", "*");
 		Map<String, Object> resultMap = new HashMap<>();
 		try {
-			List<String> parts = getURLparts(request.getParameter("url"));
-			String puzzleType = parts.get(0);
 			AbsSolverThlead t;
-			if (puzzleType.contains("icelom")) {
-				boolean isIcelom2 = parts.get(1).equals("b");
-				if (isIcelom2) {
-					// TODO アイスローム2は未完成なので封じる
+			if (request.getParameter("fieldStr") != null) {
+				// penpa-edit
+				String puzzleType = request.getParameter("type");
+				if (puzzleType.contains("nibunnogo")) {
+					t = new NibunnogoSolverThread(request.getParameter("fieldStr"));
+				} else if (puzzleType.contains("chocobanana")) {
+					t = new ChocobananaSolverThread(request.getParameter("fieldStr"));
+				} else {
 					throw new IllegalArgumentException();
 				}
-				int height = Integer.parseInt(parts.get(3));
-				int width = Integer.parseInt(parts.get(2));
-				String param = parts.get(4).split("@")[0];
-				int start = Integer.parseInt(parts.get(5));
-				int goal = Integer.parseInt(parts.get(6));
-				t = new IcelomSolverThread(height, width, param, start, goal, isIcelom2);
-			} else if (puzzleType.contains("bonsan")) {
-				boolean heyabon = !parts.get(1).equals("c");
-				int height = Integer.parseInt(parts.get(3));
-				int width = Integer.parseInt(parts.get(2));
-				String param = parts.get(4).split("@")[0];
-				t = new HeyabonSolverThread(height, width, param, heyabon);
-			} else if (puzzleType.contains("aquarium")) {
-				boolean sameHeight = parts.get(1).equals("r");
-				if (sameHeight) {
+			} else {
+				List<String> parts = getURLparts(request.getParameter("url"));
+				String puzzleType = parts.get(0);
+				if (puzzleType.contains("icelom")) {
+					boolean isIcelom2 = parts.get(1).equals("b");
+					if (isIcelom2) {
+						// TODO アイスローム2は未完成なので封じる
+						throw new IllegalArgumentException();
+					}
 					int height = Integer.parseInt(parts.get(3));
 					int width = Integer.parseInt(parts.get(2));
 					String param = parts.get(4).split("@")[0];
-					String numberParam = parts.get(5).split("@")[0];
-					t = new AquariumSolverThread(height, width, param, numberParam, sameHeight);
+					int start = Integer.parseInt(parts.get(5));
+					int goal = Integer.parseInt(parts.get(6));
+					t = new IcelomSolverThread(height, width, param, start, goal, isIcelom2);
+				} else if (puzzleType.contains("bonsan")) {
+					boolean heyabon = !parts.get(1).equals("c");
+					int height = Integer.parseInt(parts.get(3));
+					int width = Integer.parseInt(parts.get(2));
+					String param = parts.get(4).split("@")[0];
+					t = new HeyabonSolverThread(height, width, param, heyabon);
+				} else if (puzzleType.contains("aquarium")) {
+					boolean sameHeight = parts.get(1).equals("r");
+					if (sameHeight) {
+						int height = Integer.parseInt(parts.get(3));
+						int width = Integer.parseInt(parts.get(2));
+						String param = parts.get(4).split("@")[0];
+						String numberParam = parts.get(5).split("@")[0];
+						t = new AquariumSolverThread(height, width, param, numberParam, sameHeight);
+					} else {
+						int height = Integer.parseInt(parts.get(2));
+						int width = Integer.parseInt(parts.get(1));
+						String param = parts.get(3).split("@")[0];
+						String numberParam = parts.get(4).split("@")[0];
+						t = new AquariumSolverThread(height, width, param, numberParam, sameHeight);
+					}
+				} else if (puzzleType.contains("yajilin") || puzzleType.contains("yajirin")) {
+					boolean isGray = parts.get(1).equals("b");
+					int width;
+					int height;
+					String param;
+					if (isGray) {
+						width = Integer.parseInt(parts.get(2));
+						height = Integer.parseInt(parts.get(3));
+						param = parts.get(4).split("@")[0];
+					} else {
+						width = Integer.parseInt(parts.get(1));
+						height = Integer.parseInt(parts.get(2));
+						param = parts.get(3).split("@")[0];
+					}
+					if (puzzleType.contains("regions")) {
+						t = new YajilinRegionsSolverThlead(height, width, param, puzzleType.contains("out"));
+					} else {
+						t = new YajilinSolverThlead(height, width, param, puzzleType.contains("out"));
+					}
 				} else {
-					int height = Integer.parseInt(parts.get(2));
 					int width = Integer.parseInt(parts.get(1));
+					int height = Integer.parseInt(parts.get(2));
 					String param = parts.get(3).split("@")[0];
-					String numberParam = parts.get(4).split("@")[0];
-					t = new AquariumSolverThread(height, width, param, numberParam, sameHeight);
-				}
-			} else if (puzzleType.contains("yajilin") || puzzleType.contains("yajirin")) {
-				boolean isGray = parts.get(1).equals("b");
-				int width;
-				int height;
-				String param;
-				if (isGray) {
-					width = Integer.parseInt(parts.get(2));
-					height = Integer.parseInt(parts.get(3));
-					param = parts.get(4).split("@")[0];
-				} else {
-					width = Integer.parseInt(parts.get(1));
-					height = Integer.parseInt(parts.get(2));
-					param = parts.get(3).split("@")[0];
-				}
-				if (puzzleType.contains("regions")) {
-					t = new YajilinRegionsSolverThlead(height, width, param, puzzleType.contains("out"));
-				} else {
-					t = new YajilinSolverThlead(height, width, param, puzzleType.contains("out"));
-				}
-			} else {
-				int width = Integer.parseInt(parts.get(1));
-				int height = Integer.parseInt(parts.get(2));
-				String param = parts.get(3).split("@")[0];
-				if (puzzleType.contains("nurikabe")) {
-					t = new NurikabeSolverThread(height, width, param);
-				} else if (puzzleType.contains("stostone")) {
-					t = new StostoneSolverThread(height, width, param);
-				} else if (puzzleType.contains("heyawake") || puzzleType.contains("heyawacky")
-						|| puzzleType.contains("ayeheya")) {
-					t = new HeyawakeSolverThread(height, width, param, puzzleType.contains("ayeheya"));
-				} else if (puzzleType.contains("lits")) {
-					t = new LitsSolverThread(height, width, param);
-				} else if (puzzleType.contains("norinori")) {
-					t = new NorinoriSolverThread(height, width, param);
-				} else if (puzzleType.contains("shimaguni")) {
-					t = new ShimaguniSolverThread(height, width, param);
-				} else if (puzzleType.contains("shikaku")) {
-					t = new ShikakuSolverThread(height, width, param);
-				} else if (puzzleType.contains("akari") || puzzleType.contains("lightup")) {
-					t = new AkariSolverThread(height, width, param);
-				} else if (puzzleType.contains("yinyang")) {
-					t = new YinyangSolverThread(height, width, param);
-				} else if (puzzleType.contains("nurimisaki")) {
-					t = new NurimisakiSolverThread(height, width, param);
-				} else if (puzzleType.contains("trimisaki")) {
-					t = new TrimisakiSolverThread(height, width, param);
-				} else if (puzzleType.contains("hitori")) {
-					t = new HitoriSolverThread(height, width, param);
-				} else if (puzzleType.contains("dosufuwa")) {
-					t = new DosufuwaSolverThread(height, width, param);
-				} else if (puzzleType.contains("kurodoko")) {
-					t = new KurodokoSolverThread(height, width, param);
-				} else if (puzzleType.contains("slither")) {
-					t = new SlitherSolverThread(height, width, param);
-				} else if (puzzleType.contains("kurohoui")) {
-					t = new KurohouiSolverThread(height, width, param);
-				} else if (puzzleType.contains("yajikazu")) {
-					t = new YajikazuSolverThread(height, width, param);
-				} else if (puzzleType.contains("mashu") || puzzleType.contains("masyu")
-						|| puzzleType.contains("pearl")) {
-					t = puzzleType.contains("ura") ? new UraMasyuSolverThread(height, width, param)
-							: new MasyuSolverThread(height, width, param);
-				} else if (puzzleType.contains("sashigane")) {
-					t = new SashiganeSolverThread(height, width, param);
-				} else if (puzzleType.contains("bag") || puzzleType.contains("cave")) {
-					t = new BagSolverThread(height, width, param);
-				} else if (puzzleType.contains("shakashaka")) {
-					t = new ShakashakaSolverThread(height, width, param);
-				} else if (puzzleType.contains("tapa")) {
-					t = new TapaSolverThread(height, width, param);
-				} else if (puzzleType.contains("starbattle")) {
-					int starCnt = Integer.parseInt(parts.get(3));
-					param = parts.get(4).split("@")[0];
-					t = new StarBattleSolverThread(height, width, starCnt, param);
-				} else if (puzzleType.contains("sudoku")) {
-					t = new SudokuSolverThread(height, width, param);
-				} else if (puzzleType.contains("country")) {
-					t = new CountrySolverThread(height, width, param);
-				} else if (puzzleType.contains("fillomino")) {
-					t = new FillominoSolverThread(height, width, param);
-				} else if (puzzleType.contains("firefly")) {
-					t = new FireflySolverThread(height, width, param);
-				} else if (puzzleType.contains("nagare")) {
-					t = new NagareSolverThread(height, width, param);
-				} else if (puzzleType.contains("ripple") || puzzleType.contains("hakyukoka")) {
-					t = new RippleSolverThread(height, width, param);
-				} else if (puzzleType.contains("sato")) {
-					t = new SatogaeriSolverThread(height, width, param);
-				} else if (puzzleType.contains("barns")) {
-					t = new BarnsSolverThread(height, width, param);
-				} else if (puzzleType.contains("loopsp")) {
-					t = new LoopspSolverThread(height, width, param);
-				} else if (puzzleType.contains("pipelink")) {
-					if (puzzleType.contains("pipelinkr")) {
-						t = new PipelinkrSolverThread(height, width, param);
+					if (puzzleType.contains("nurikabe")) {
+						t = new NurikabeSolverThread(height, width, param);
+					} else if (puzzleType.contains("stostone")) {
+						t = new StostoneSolverThread(height, width, param);
+					} else if (puzzleType.contains("heyawake") || puzzleType.contains("heyawacky")
+							|| puzzleType.contains("ayeheya")) {
+						t = new HeyawakeSolverThread(height, width, param, puzzleType.contains("ayeheya"));
+					} else if (puzzleType.contains("lits")) {
+						t = new LitsSolverThread(height, width, param);
+					} else if (puzzleType.contains("norinori")) {
+						t = new NorinoriSolverThread(height, width, param);
+					} else if (puzzleType.contains("shimaguni")) {
+						t = new ShimaguniSolverThread(height, width, param);
+					} else if (puzzleType.contains("shikaku")) {
+						t = new ShikakuSolverThread(height, width, param);
+					} else if (puzzleType.contains("akari") || puzzleType.contains("lightup")) {
+						t = new AkariSolverThread(height, width, param);
+					} else if (puzzleType.contains("yinyang")) {
+						t = new YinyangSolverThread(height, width, param);
+					} else if (puzzleType.contains("nurimisaki")) {
+						t = new NurimisakiSolverThread(height, width, param);
+					} else if (puzzleType.contains("trimisaki")) {
+						t = new TrimisakiSolverThread(height, width, param);
+					} else if (puzzleType.contains("hitori")) {
+						t = new HitoriSolverThread(height, width, param);
+					} else if (puzzleType.contains("dosufuwa")) {
+						t = new DosufuwaSolverThread(height, width, param);
+					} else if (puzzleType.contains("kurodoko")) {
+						t = new KurodokoSolverThread(height, width, param);
+					} else if (puzzleType.contains("slither")) {
+						t = new SlitherSolverThread(height, width, param);
+					} else if (puzzleType.contains("kurohoui")) {
+						t = new KurohouiSolverThread(height, width, param);
+					} else if (puzzleType.contains("yajikazu")) {
+						t = new YajikazuSolverThread(height, width, param);
+					} else if (puzzleType.contains("mashu") || puzzleType.contains("masyu")
+							|| puzzleType.contains("pearl")) {
+						t = puzzleType.contains("ura") ? new UraMasyuSolverThread(height, width, param)
+								: new MasyuSolverThread(height, width, param);
+					} else if (puzzleType.contains("sashigane")) {
+						t = new SashiganeSolverThread(height, width, param);
+					} else if (puzzleType.contains("bag") || puzzleType.contains("cave")) {
+						t = new BagSolverThread(height, width, param);
+					} else if (puzzleType.contains("shakashaka")) {
+						t = new ShakashakaSolverThread(height, width, param);
+					} else if (puzzleType.contains("tapa")) {
+						t = new TapaSolverThread(height, width, param);
+					} else if (puzzleType.contains("starbattle")) {
+						int starCnt = Integer.parseInt(parts.get(3));
+						param = parts.get(4).split("@")[0];
+						t = new StarBattleSolverThread(height, width, starCnt, param);
+					} else if (puzzleType.contains("sudoku")) {
+						t = new SudokuSolverThread(height, width, param);
+					} else if (puzzleType.contains("country")) {
+						t = new CountrySolverThread(height, width, param);
+					} else if (puzzleType.contains("fillomino")) {
+						t = new FillominoSolverThread(height, width, param);
+					} else if (puzzleType.contains("firefly")) {
+						t = new FireflySolverThread(height, width, param);
+					} else if (puzzleType.contains("nagare")) {
+						t = new NagareSolverThread(height, width, param);
+					} else if (puzzleType.contains("ripple") || puzzleType.contains("hakyukoka")) {
+						t = new RippleSolverThread(height, width, param);
+					} else if (puzzleType.contains("sato")) {
+						t = new SatogaeriSolverThread(height, width, param);
+					} else if (puzzleType.contains("barns")) {
+						t = new BarnsSolverThread(height, width, param);
+					} else if (puzzleType.contains("loopsp")) {
+						t = new LoopspSolverThread(height, width, param);
+					} else if (puzzleType.contains("pipelink")) {
+						if (puzzleType.contains("pipelinkr")) {
+							t = new PipelinkrSolverThread(height, width, param);
+						} else {
+							t = new PipelinkSolverThread(height, width, param);
+						}
+					} else if (puzzleType.contains("reflect")) {
+						t = new ReflectSolverThread(height, width, param);
+					} else if (puzzleType.contains("ringring")) {
+						t = new RingringSolverThread(height, width, param);
+					} else if (puzzleType.contains("rectslider")) {
+						t = new RectsliderSolverThread(height, width, param);
+					} else if (puzzleType.contains("hebi") || puzzleType.contains("snakes")) {
+						t = new HebiSolverThread(height, width, param);
+					} else if (puzzleType.contains("shwolf")) {
+						t = new ShwolfSolverThread(height, width, param);
+					} else if (puzzleType.contains("shugaku")) {
+						t = new ShugakuSolverThread(height, width, param);
+					} else if (puzzleType.contains("angleloop")) {
+						t = new AngleloopSolverThread(height, width, param);
+						// } else if (puzzleType.contains("numlin") ||
+						// puzzleType.contains("numberlink")) {
+						// t = new NumlinSolverThread(height, width, param);
+					} else if (puzzleType.contains("hashi")) {
+						t = new HashikakeSolverThread(height, width, param);
+					} else if (puzzleType.contains("cells")) {
+						t = new CellsSolverThread(height, width, param, puzzleType.contains("fourcells") ? 4 : 5);
+					} else if (puzzleType.contains("kurochute")) {
+						t = new KurochuteSolverThread(height, width, param);
+					} else if (puzzleType.contains("nondango")) {
+						t = new NondangoSolverThread(height, width, param);
+					} else if (puzzleType.contains("juosan")) {
+						t = new JuosanSolverThread(height, width, param);
+					} else if (puzzleType.contains("moonsun")) {
+						t = new MoonsunSolverThread(height, width, param);
+					} else if (puzzleType.contains("scrin")) {
+						t = new ScrinSolverThread(height, width, param);
+					} else if (puzzleType.contains("usoone")) {
+						t = new UsooneSolverThread(height, width, param);
+					} else if (puzzleType.contains("kakuro")) {
+						t = new KakuroSolverThread(height, width, param);
+					} else if (puzzleType.contains("kropki")) {
+						t = new KropkiSolverThread(height, width, param);
+					} else if (puzzleType.contains("nanro")) {
+						t = new NanroSolverThread(height, width, param);
+					} else if (puzzleType.contains("sukoro")) {
+						if (puzzleType.contains("sukororoom")) {
+							t = new SukororoomSolverThread(height, width, param);
+						} else {
+							t = new SukoroSolverThread(height, width, param);
+						}
+					} else if (puzzleType.contains("hakoiri")) {
+						t = new HakoiriSolverThread(height, width, param);
+					} else if (puzzleType.contains("hanare")) {
+						t = new HanareSolverThread(height, width, param);
+					} else if (puzzleType.contains("icebarn")) {
+						int start = Integer.parseInt(parts.get(4));
+						int goal = Integer.parseInt(parts.get(5));
+						t = new IcebarnSolverThread(height, width, param, start, goal);
+					} else if (puzzleType.contains("roma")) {
+						t = new RomaSolverThread(height, width, param);
+					} else if (puzzleType.contains("herugolf")) {
+						t = new HerugolfSolverThread(height, width, param);
+					} else if (puzzleType.contains("makaro")) {
+						t = new MakaroSolverThread(height, width, param);
+					} else if (puzzleType.contains("tentaisho")) {
+						t = new TentaishoSolverThread(height, width, param);
+					} else if (puzzleType.contains("heyabon")) {
+						t = new HeyabonSolverThread(height, width, param, true);
+					} else if (puzzleType.contains("gokigen")) {
+						t = new GokigenSolverThread(height, width, param);
+					} else if (puzzleType.contains("creek")) {
+						t = new CreekSolverThread(height, width, param);
+					} else if (puzzleType.contains("tasquare")) {
+						t = new TasquareSolverThread(height, width, param);
+					} else if (puzzleType.contains("geradeweg")) {
+						t = new GeradewegSolverThread(height, width, param);
+					} else if (puzzleType.contains("kurotto")) {
+						t = new KurottoSolverThread(height, width, param);
+					} else if (puzzleType.contains("tatamibari")) {
+						t = new TatamibariSolverThread(height, width, param);
+					} else if (puzzleType.contains("wblink")) {
+						t = new WblinkSolverThread(height, width, param);
+					} else if (puzzleType.contains("compass")) {
+						t = new CompassSolverThread(height, width, param);
+					} else if (puzzleType.contains("castle")) {
+						t = new CastleSolverThlead(height, width, param);
+					} else if (puzzleType.contains("doubleback")) {
+						t = new DoublebackSolverThread(height, width, param);
+					} else if (puzzleType.contains("chocona")) {
+						t = new ChoconaSolverThread(height, width, param);
+					} else if (puzzleType.contains("nagenawa")) {
+						t = new NagenawaSolverThread(height, width, param);
+					} else if (puzzleType.contains("view")) {
+						t = new ViewSolverThread(height, width, param);
+					} else if (puzzleType.contains("nuribou")) {
+						t = new NuribouSolverThread(height, width, param);
+					} else if (puzzleType.contains("midloop")) {
+						t = new MidloopSolverThread(height, width, param);
+					} else if (puzzleType.contains("maxi")) {
+						t = new MaxiSolverThread(height, width, param);
+					} else if (puzzleType.contains("balance")) {
+						t = new BalanceSolverThread(height, width, param);
+					} else if (puzzleType.contains("kazunori")) {
+						t = new KazunoriSolverThread(height, width, param);
+					} else if (puzzleType.contains("minarism")) {
+						t = new MinarismSolverThread(height, width, param);
+					} else if (puzzleType.contains("doppelblock")) {
+						t = new DoppelblockSolverThread(height, width, param);
+					} else if (puzzleType.contains("simpleloop")) {
+						t = new SimpleloopSolverThread(height, width, param);
+					} else if (puzzleType.contains("box")) {
+						t = new BoxSolverThread(height, width, param);
+					} else if (puzzleType.contains("mejilink")) {
+						t = new MejilinkSolverThread(height, width, param);
+					} else if (puzzleType.contains("tents")) {
+						t = new TentsSolverThread(height, width, param);
+					} else if (puzzleType.contains("walllogic")) {
+						t = new WalllogicSolverThread(height, width, param);
+					} else if (puzzleType.contains("snake")) {
+						t = new SnakeSolverThread(height, width, param);
+					} else if (puzzleType.contains("detour")) {
+						t = new DetourSolverThread(height, width, param);
+					} else if (puzzleType.contains("nurimaze")) {
+						t = new NurimazeSolverThread(height, width, param);
+					} else if (puzzleType.contains("tateyoko")) {
+						t = new TateyokoSolverThread(height, width, param);
+					} else if (puzzleType.contains("building") || puzzleType.contains("skyscraper")) {
+						t = new BuildingSolverThread(height, width, param);
+					} else if (puzzleType.contains("putteria")) {
+						t = new PutteriaSolverThread(height, width, param);
+					} else if (puzzleType.contains("tilepaint")) {
+						t = new TilepaintSolverThread(height, width, param);
+					} else if (puzzleType.contains("yajitatami")) {
+						t = new YajitatamiSolverThread(height, width, param);
+					} else if (puzzleType.contains("renban")) {
+						t = new RenbanSolverThread(height, width, param);
+					} else if (puzzleType.contains("easyasabc")) {
+						int kind = Integer.parseInt(parts.get(3));
+						param = parts.get(4).split("@")[0];
+						t = new EasyasabcSolverThread(height, width, kind, param);
+					} else if (puzzleType.contains("mochikoro")) {
+						t = new MochikoroSolverThread(height, width, param, false);
+					} else if (puzzleType.contains("mochinyoro")) {
+						t = new MochikoroSolverThread(height, width, param, true);
+					} else if (puzzleType.contains("meander")) {
+						t = new MeanderSolverThread(height, width, param);
+					} else if (puzzleType.contains("ichimaga")) {
+						t = new IchimagaSolverThread(height, width, param, puzzleType.contains("ichimagam"));
+					} else if (puzzleType.contains("fillmat")) {
+						t = new FillmatSolverThread(height, width, param);
+					} else if (puzzleType.contains("cojun")) {
+						t = new CojunSolverThread(height, width, param);
+					} else if (puzzleType.contains("mines")) {
+						t = new MinesSolverThread(height, width, param);
+					} else if (puzzleType.contains("simplegako")) {
+						t = new SimplegakoSolverThread(height, width, param);
+					} else if (puzzleType.contains("nonogram")) {
+						t = new NonogramSolverThread(height, width, param);
+					} else if (puzzleType.contains("aqre")) {
+						t = new AqreSolverThread(height, width, param);
+					} else if (puzzleType.contains("lookair")) {
+						t = new LookairSolverThread(height, width, param);
+					} else if (puzzleType.contains("heteromino")) {
+						t = new HeterominoSolverThread(height, width, param);
+					} else if (puzzleType.contains("nibunogo") || puzzleType.contains("nibunnogo")
+							|| puzzleType.contains("nibunnnogo")) {
+						// 表記ゆれ対応
+						t = new NibunnogoSolverThread(height, width, param);
 					} else {
-						t = new PipelinkSolverThread(height, width, param);
+						throw new IllegalArgumentException();
 					}
-				} else if (puzzleType.contains("reflect")) {
-					t = new ReflectSolverThread(height, width, param);
-				} else if (puzzleType.contains("ringring")) {
-					t = new RingringSolverThread(height, width, param);
-				} else if (puzzleType.contains("rectslider")) {
-					t = new RectsliderSolverThread(height, width, param);
-				} else if (puzzleType.contains("hebi") || puzzleType.contains("snakes")) {
-					t = new HebiSolverThread(height, width, param);
-				} else if (puzzleType.contains("shwolf")) {
-					t = new ShwolfSolverThread(height, width, param);
-				} else if (puzzleType.contains("shugaku")) {
-					t = new ShugakuSolverThread(height, width, param);
-				} else if (puzzleType.contains("angleloop")) {
-					t = new AngleloopSolverThread(height, width, param);
-					// } else if (puzzleType.contains("numlin") ||
-					// puzzleType.contains("numberlink")) {
-					// t = new NumlinSolverThread(height, width, param);
-				} else if (puzzleType.contains("hashi")) {
-					t = new HashikakeSolverThread(height, width, param);
-				} else if (puzzleType.contains("cells")) {
-					t = new CellsSolverThread(height, width, param, puzzleType.contains("fourcells") ? 4 : 5);
-				} else if (puzzleType.contains("kurochute")) {
-					t = new KurochuteSolverThread(height, width, param);
-				} else if (puzzleType.contains("nondango")) {
-					t = new NondangoSolverThread(height, width, param);
-				} else if (puzzleType.contains("juosan")) {
-					t = new JuosanSolverThread(height, width, param);
-				} else if (puzzleType.contains("moonsun")) {
-					t = new MoonsunSolverThread(height, width, param);
-				} else if (puzzleType.contains("scrin")) {
-					t = new ScrinSolverThread(height, width, param);
-				} else if (puzzleType.contains("usoone")) {
-					t = new UsooneSolverThread(height, width, param);
-				} else if (puzzleType.contains("kakuro")) {
-					t = new KakuroSolverThread(height, width, param);
-				} else if (puzzleType.contains("kropki")) {
-					t = new KropkiSolverThread(height, width, param);
-				} else if (puzzleType.contains("nanro")) {
-					t = new NanroSolverThread(height, width, param);
-				} else if (puzzleType.contains("sukoro")) {
-					if (puzzleType.contains("sukororoom")) {
-						t = new SukororoomSolverThread(height, width, param);
-					} else {
-						t = new SukoroSolverThread(height, width, param);
-					}
-				} else if (puzzleType.contains("hakoiri")) {
-					t = new HakoiriSolverThread(height, width, param);
-				} else if (puzzleType.contains("hanare")) {
-					t = new HanareSolverThread(height, width, param);
-				} else if (puzzleType.contains("icebarn")) {
-					int start = Integer.parseInt(parts.get(4));
-					int goal = Integer.parseInt(parts.get(5));
-					t = new IcebarnSolverThread(height, width, param, start, goal);
-				} else if (puzzleType.contains("roma")) {
-					t = new RomaSolverThread(height, width, param);
-				} else if (puzzleType.contains("herugolf")) {
-					t = new HerugolfSolverThread(height, width, param);
-				} else if (puzzleType.contains("makaro")) {
-					t = new MakaroSolverThread(height, width, param);
-				} else if (puzzleType.contains("tentaisho")) {
-					t = new TentaishoSolverThread(height, width, param);
-				} else if (puzzleType.contains("heyabon")) {
-					t = new HeyabonSolverThread(height, width, param, true);
-				} else if (puzzleType.contains("gokigen")) {
-					t = new GokigenSolverThread(height, width, param);
-				} else if (puzzleType.contains("creek")) {
-					t = new CreekSolverThread(height, width, param);
-				} else if (puzzleType.contains("tasquare")) {
-					t = new TasquareSolverThread(height, width, param);
-				} else if (puzzleType.contains("geradeweg")) {
-					t = new GeradewegSolverThread(height, width, param);
-				} else if (puzzleType.contains("kurotto")) {
-					t = new KurottoSolverThread(height, width, param);
-				} else if (puzzleType.contains("tatamibari")) {
-					t = new TatamibariSolverThread(height, width, param);
-				} else if (puzzleType.contains("wblink")) {
-					t = new WblinkSolverThread(height, width, param);
-				} else if (puzzleType.contains("compass")) {
-					t = new CompassSolverThread(height, width, param);
-				} else if (puzzleType.contains("castle")) {
-					t = new CastleSolverThlead(height, width, param);
-				} else if (puzzleType.contains("doubleback")) {
-					t = new DoublebackSolverThread(height, width, param);
-				} else if (puzzleType.contains("chocona")) {
-					t = new ChoconaSolverThread(height, width, param);
-				} else if (puzzleType.contains("nagenawa")) {
-					t = new NagenawaSolverThread(height, width, param);
-				} else if (puzzleType.contains("view")) {
-					t = new ViewSolverThread(height, width, param);
-				} else if (puzzleType.contains("nuribou")) {
-					t = new NuribouSolverThread(height, width, param);
-				} else if (puzzleType.contains("midloop")) {
-					t = new MidloopSolverThread(height, width, param);
-				} else if (puzzleType.contains("maxi")) {
-					t = new MaxiSolverThread(height, width, param);
-				} else if (puzzleType.contains("balance")) {
-					t = new BalanceSolverThread(height, width, param);
-				} else if (puzzleType.contains("kazunori")) {
-					t = new KazunoriSolverThread(height, width, param);
-				} else if (puzzleType.contains("minarism")) {
-					t = new MinarismSolverThread(height, width, param);
-				} else if (puzzleType.contains("doppelblock")) {
-					t = new DoppelblockSolverThread(height, width, param);
-				} else if (puzzleType.contains("simpleloop")) {
-					t = new SimpleloopSolverThread(height, width, param);
-				} else if (puzzleType.contains("box")) {
-					t = new BoxSolverThread(height, width, param);
-				} else if (puzzleType.contains("mejilink")) {
-					t = new MejilinkSolverThread(height, width, param);
-				} else if (puzzleType.contains("tents")) {
-					t = new TentsSolverThread(height, width, param);
-				} else if (puzzleType.contains("walllogic")) {
-					t = new WalllogicSolverThread(height, width, param);
-				} else if (puzzleType.contains("snake")) {
-					t = new SnakeSolverThread(height, width, param);
-				} else if (puzzleType.contains("detour")) {
-					t = new DetourSolverThread(height, width, param);
-				} else if (puzzleType.contains("nurimaze")) {
-					t = new NurimazeSolverThread(height, width, param);
-				} else if (puzzleType.contains("tateyoko")) {
-					t = new TateyokoSolverThread(height, width, param);
-				} else if (puzzleType.contains("building") || puzzleType.contains("skyscraper")) {
-					t = new BuildingSolverThread(height, width, param);
-				} else if (puzzleType.contains("putteria")) {
-					t = new PutteriaSolverThread(height, width, param);
-				} else if (puzzleType.contains("tilepaint")) {
-					t = new TilepaintSolverThread(height, width, param);
-				} else if (puzzleType.contains("yajitatami")) {
-					t = new YajitatamiSolverThread(height, width, param);
-				} else if (puzzleType.contains("renban")) {
-					t = new RenbanSolverThread(height, width, param);
-				} else if (puzzleType.contains("easyasabc")) {
-					int kind = Integer.parseInt(parts.get(3));
-					param = parts.get(4).split("@")[0];
-					t = new EasyasabcSolverThread(height, width, kind, param);
-				} else if (puzzleType.contains("mochikoro")) {
-					t = new MochikoroSolverThread(height, width, param, false);
-				} else if (puzzleType.contains("mochinyoro")) {
-					t = new MochikoroSolverThread(height, width, param, true);
-				} else if (puzzleType.contains("meander")) {
-					t = new MeanderSolverThread(height, width, param);
-				} else if (puzzleType.contains("ichimaga")) {
-					t = new IchimagaSolverThread(height, width, param, puzzleType.contains("ichimagam"));
-				} else if (puzzleType.contains("fillmat")) {
-					t = new FillmatSolverThread(height, width, param);
-				} else if (puzzleType.contains("cojun")) {
-					t = new CojunSolverThread(height, width, param);
-				} else if (puzzleType.contains("mines")) {
-					t = new MinesSolverThread(height, width, param);
-				} else if (puzzleType.contains("simplegako")) {
-					t = new SimplegakoSolverThread(height, width, param);
-				} else if (puzzleType.contains("nonogram")) {
-					t = new NonogramSolverThread(height, width, param);
-				} else if (puzzleType.contains("aqre")) {
-					t = new AqreSolverThread(height, width, param);
-				} else if (puzzleType.contains("lookair")) {
-					t = new LookairSolverThread(height, width, param);
-				} else if (puzzleType.contains("heteromino")) {
-					t = new HeterominoSolverThread(height, width, param);
-				} else if (puzzleType.contains("nibunogo") || puzzleType.contains("nibunnogo")
-						|| puzzleType.contains("nibunnnogo")) {
-					// 表記ゆれ対応
-					t = new NibunnogoSolverThread(height, width, param);
-				} else {
-					throw new IllegalArgumentException();
 				}
 			}
 			t.start();

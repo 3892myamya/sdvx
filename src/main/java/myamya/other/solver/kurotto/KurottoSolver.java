@@ -682,32 +682,6 @@ public class KurottoSolver implements Solver {
 
 	}
 
-	public static class Room {
-		@Override
-		public String toString() {
-			return "Room [capacity=" + capacity + ", pivot=" + pivot + "]";
-		}
-
-		// 白マスが何マスあるか。
-		private final int capacity;
-		// 部屋に属するマスの集合
-		private final Position pivot;
-
-		public Room(int capacity, Position pivot) {
-			this.capacity = capacity;
-			this.pivot = pivot;
-		}
-
-		public int getCapacity() {
-			return capacity;
-		}
-
-		public Position getPivot() {
-			return pivot;
-		}
-
-	}
-
 	protected final Field field;
 	protected int count;
 

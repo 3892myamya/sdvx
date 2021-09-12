@@ -155,7 +155,7 @@ public class NibunnogoSolver implements Solver {
 				}
 				// 解答の記憶
 				solutionStr = PenpaEditLib.convertSolutionMasu(wkField.masu);
-				System.out.println(wkField); // FIXME
+//				System.out.println(wkField);
 				// マスを戻す
 				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
 					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
@@ -197,8 +197,8 @@ public class NibunnogoSolver implements Solver {
 			}
 			// ヒント数字を含む盤面変換
 			String fieldStr = PenpaEditLib.convertExtraNumbersField(wkField.extraNumbers);
-			System.out.println(fieldStr); // FIXME
-			System.out.println(solutionStr); // FIXME
+//			System.out.println(fieldStr);
+//			System.out.println(solutionStr);
 
 			level = (int) Math.sqrt(level / 3) + 1;
 			String status = "Lv:" + level + "の問題を獲得！(ヒント数：" + wkField.getHintCount() + ")";
@@ -464,6 +464,11 @@ public class NibunnogoSolver implements Solver {
 			}
 		}
 
+		public Field(String fieldStr) {
+			masu = PenpaEditLib.getMasu(fieldStr);
+			extraNumbers = PenpaEditLib.getExtraNumbers(fieldStr);
+		}
+
 		private static final String FULL_NUMS = "０１２３４５６７８９";
 
 		@Override
@@ -718,6 +723,11 @@ public class NibunnogoSolver implements Solver {
 
 	public NibunnogoSolver(Field field) {
 		this.field = new Field(field);
+	}
+
+	// penpa-edit向けコンストラクタ
+	public NibunnogoSolver(String fieldStr) {
+		field = new Field(fieldStr);
 	}
 
 	public Field getField() {

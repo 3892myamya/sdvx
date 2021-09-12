@@ -16,7 +16,7 @@
     <script src="js/jquery-3.3.1.min.js"></script>
     <script src="js/rawdeflate.min.js"></script>
     <script src="js/rawinflate.min.js"></script>
-    <script src="js/yajilin.js?ver=20210911"></script>
+    <script src="js/yajilin.js?ver=20210912"></script>
 </head>
 <body>
 <div id="div_title">ペンシルパズルソルバー<span style="font-size: xx-small;">(旧：ヤジリンソルバー)</span></div>
@@ -48,6 +48,9 @@ A:ヤギとオオカミの動物や鋭直鈍ループの五角形など、いく
 Q:エラーが表示されます。<br>
 A:端末がインターネットに接続しているか、URLを正しく入力したかなどを確認してください。短縮URLでは認識できないことがあります。また、パズルスクエアは内部でぱずぷれv3にリンクしているURLのみ対応しています。<br>
 <br>
+Q:penpa-editの問題が解けません。<br>
+A:penpa-editはパズルごとの盤面描画がこちらで想定しているものと一致している必要があります。詳細な条件はパズルごとに異なりますので不明な場合はお問い合わせください。<br>
+<br>
 Q:他におもしろ機能はありますか？<br>
 A:こっそり裏技を教えます。「解きたい問題のURL」に入力したぱずぷれv3のURLに対して、<br>
 　・URLの「mashu」を「uramashu」にして実行すると…？<br>
@@ -72,6 +75,7 @@ A:こっそり裏技を教えます。「解きたい問題のURL」に入力し
 <div id="div_ext">
 <label id="lbl_type" for="sel_type">penpa-edit向けパズル種別</label>
 <select id="sel_type" name="sel_type">
+	<option value="chocobanana">チョコバナナ</option>
 	<option value="nibunnogo">ニブンノゴ</option>
 </select>
 </div>
@@ -82,7 +86,6 @@ A:こっそり裏技を教えます。「解きたい問題のURL」に入力し
 </div>
 <div id="div_result">
 </div>
-<hr>
 <hr>
 <div style="font-size: x-small;">
 ※<a href="https://3892myamya.github.io/introduction/" target="_blank">3892myamya tools</a> developed by <a href="https://twitter.com/3892myamya/" target="_blank">@3892myamya</a>
