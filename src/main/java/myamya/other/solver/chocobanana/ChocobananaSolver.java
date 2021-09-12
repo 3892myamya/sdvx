@@ -934,8 +934,8 @@ public class ChocobananaSolver implements Solver {
 							continue;
 						}
 						// 範囲内に白未確定マスがあればOK
-						for (int targetY = minY; targetY < maxY; targetY++) {
-							for (int targetX = minX; targetX < maxX; targetX++) {
+						for (int targetY = minY; targetY <= maxY; targetY++) {
+							for (int targetX = minX; targetX <= maxX; targetX++) {
 								if (masu[targetY][targetX] != Masu.NOT_BLACK) {
 									isSkip = true;
 									break;

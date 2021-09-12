@@ -71,6 +71,27 @@ $(function() {
             $('#div_ext').hide();
         }
     });
+    $('#edt_url').keydown(function(){
+        if ($('#edt_url').val().indexOf('penpa-edit') > -1){
+            $('#div_ext').show();
+        } else {
+            $('#div_ext').hide();
+        }
+    });
+    $('#edt_url').keypress(function(){
+        if ($('#edt_url').val().indexOf('penpa-edit') > -1){
+            $('#div_ext').show();
+        } else {
+            $('#div_ext').hide();
+        }
+    });
+    $('#edt_url').change(function(){
+        if ($('#edt_url').val().indexOf('penpa-edit') > -1){
+            $('#div_ext').show();
+        } else {
+            $('#div_ext').hide();
+        }
+    });
 	// 保存された条件があれば読みだす
 	var cond = localStorage.getItem('condyajilin');
 	var condObj = JSON.parse(cond);
