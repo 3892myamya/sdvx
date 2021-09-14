@@ -1,4 +1,4 @@
-package myamya.other.solver.chocobanana;
+package myamya.other.solver.las;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -17,16 +17,16 @@ import myamya.other.solver.Generator;
 import myamya.other.solver.PenpaEditLib;
 import myamya.other.solver.Solver;
 
-public class ChocobananaSolver implements Solver {
-	public static class ChocobananaGenerator implements Generator {
+public class LasSolver implements Solver {
+	public static class LasGenerator implements Generator {
 		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
 		private static final String FULL_NUMS = "０１２３４５６７８９";
 
-		static class ChocobananaSolverForGenerator extends ChocobananaSolver {
+		static class LasSolverForGenerator extends LasSolver {
 
 			private final int limit;
 
-			public ChocobananaSolverForGenerator(Field field, int limit) {
+			public LasSolverForGenerator(Field field, int limit) {
 				super(field);
 				this.limit = limit;
 			}
@@ -65,22 +65,40 @@ public class ChocobananaSolver implements Solver {
 			}
 		}
 
+		static class ExtendedField extends LasSolver.Field {
+			public ExtendedField(Field other) {
+				super(other);
+			}
+
+			public ExtendedField(int height, int width) {
+				super(height, width);
+			}
+
+			@Override
+			protected boolean standAloneSolve() {
+				// 数字があとから決まるので、ここではじいてしまうとダメ。
+				// 全通過させる
+				return true;
+			}
+
+		}
+
 		private final int height;
 		private final int width;
 
-		public ChocobananaGenerator(int height, int width) {
+		public LasGenerator(int height, int width) {
 			this.height = height;
 			this.width = width;
 		}
 
 		public static void main(String[] args) {
-			new ChocobananaGenerator(6, 6).generate();
+			new LasGenerator(8, 8).generate();
 		}
 
 		@Override
 		public GeneratorResult generate() {
 			String solutionStr;
-			ChocobananaSolver.Field wkField = new ChocobananaSolver.Field(height, width);
+			ExtendedField wkField = new ExtendedField(height, width);
 			List<Integer> indexList = new ArrayList<>();
 			for (int i = 0; i < height * width; i++) {
 				indexList.add(i);
@@ -97,16 +115,37 @@ public class ChocobananaSolver implements Solver {
 					if (wkField.masu[yIndex][xIndex] == Masu.SPACE) {
 						boolean isOk = false;
 						List<Integer> numIdxList = new ArrayList<>();
-						for (int i = 0; i < 3; i++) {
+						for (int i = 0; i < 2; i++) {
 							numIdxList.add(i);
 						}
 						Collections.shuffle(numIdxList);
 						for (int masuNum : numIdxList) {
-							ChocobananaSolver.Field virtual = new ChocobananaSolver.Field(wkField);
+							ExtendedField virtual = new ExtendedField(wkField);
 							if (masuNum < 1) {
 								virtual.masu[yIndex][xIndex] = Masu.NOT_BLACK;
-							} else if (masuNum < 3) {
+							} else if (masuNum < 2) {
 								virtual.masu[yIndex][xIndex] = Masu.BLACK;
+							}
+							// 同じ色のマスが隣り合いやすくする処理
+							if (yIndex != 0) {
+								if (virtual.masu[yIndex - 1][xIndex] == Masu.SPACE && Math.random() * 5 < 1) {
+									virtual.masu[yIndex - 1][xIndex] = virtual.masu[yIndex][xIndex];
+								}
+							}
+							if (xIndex != width - 1) {
+								if (virtual.masu[yIndex][xIndex + 1] == Masu.SPACE && Math.random() * 5 < 1) {
+									virtual.masu[yIndex][xIndex + 1] = virtual.masu[yIndex][xIndex];
+								}
+							}
+							if (yIndex != height - 1) {
+								if (virtual.masu[yIndex + 1][xIndex] == Masu.SPACE && Math.random() * 5 < 1) {
+									virtual.masu[yIndex + 1][xIndex] = virtual.masu[yIndex][xIndex];
+								}
+							}
+							if (xIndex != 0) {
+								if (virtual.masu[yIndex][xIndex - 1] == Masu.SPACE && Math.random() * 5 < 1) {
+									virtual.masu[yIndex][xIndex - 1] = virtual.masu[yIndex][xIndex];
+								}
 							}
 							if (virtual.solveAndCheck()) {
 								isOk = true;
@@ -116,64 +155,79 @@ public class ChocobananaSolver implements Solver {
 						}
 						if (!isOk) {
 							// 破綻したら0から作り直す。
-							wkField = new ChocobananaSolver.Field(height, width);
+							wkField = new ExtendedField(height, width);
 							index = 0;
 							continue;
 						}
 					}
 					index++;
 				}
-				// 数字埋め
-				List<Position> numberPosList = new ArrayList<>();
+				// 数字埋め＆マス初期化
+				// まず数字を埋める
+				List<Position> posList = new ArrayList<>();
 				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
 					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
-						numberPosList.add(new Position(yIndex, xIndex));
+						posList.add(new Position(yIndex, xIndex));
 					}
 				}
-				wkField.setNumbers();
+				Collections.shuffle(posList);
+				Set<Position> alreadyPosSet = new HashSet<>();
+				for (Position pos : posList) {
+					if (alreadyPosSet.contains(pos)) {
+						continue;
+					}
+					Set<Position> continueWhitePosSet = wkField.getContinuePosSet(pos);
+					wkField.numbers[pos.getyIndex()][pos.getxIndex()] = continueWhitePosSet.size();
+					alreadyPosSet.addAll(continueWhitePosSet);
+				}
+//				System.out.println(wkField);
 				// 解答の記憶
-				solutionStr = PenpaEditLib.convertSolutionMasu(wkField.masu);
-				System.out.println(wkField);
-				// マスを戻す
+				// 既存の黒マスが回答に含まれないようにする。
+				boolean existBlack = false;
 				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
 					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
-						wkField.masu[yIndex][xIndex] = Masu.SPACE;
+						if (wkField.masu[yIndex][xIndex] == Masu.BLACK) {
+							if (wkField.numbers[yIndex][xIndex] != null) {
+								wkField.masu[yIndex][xIndex] = Masu.SPACE;
+							} else {
+								existBlack = true;
+							}
+						}
+					}
+				}
+				// 黒ますとしてぬれるマスが0の場合、問題不成立
+				if (!existBlack) {
+					wkField = new ExtendedField(height, width);
+					index = 0;
+					continue;
+				}
+				solutionStr = PenpaEditLib.convertSolutionMasu(wkField.masu);
+				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+						if (wkField.numbers[yIndex][xIndex] == null) {
+							wkField.masu[yIndex][xIndex] = Masu.SPACE;
+						} else if (wkField.masu[yIndex][xIndex] == Masu.SPACE) {
+							wkField.masu[yIndex][xIndex] = Masu.BLACK;
+						}
 					}
 				}
 				// 解けるかな？
-				level = new ChocobananaSolverForGenerator(new ChocobananaSolver.Field(wkField), 500).solve2();
+				level = new LasSolverForGenerator(new LasSolver.Field(wkField), 500).solve2();
 				if (level == -1) {
 					// 解けなければやり直し
-					wkField = new ChocobananaSolver.Field(height, width);
+					wkField = new ExtendedField(height, width);
 					index = 0;
 				} else {
-					Collections.shuffle(numberPosList);
-					for (Position numberPos : numberPosList) {
-						ChocobananaSolver.Field virtual = new ChocobananaSolver.Field(wkField, true);
-						if (virtual.numbers[numberPos.getyIndex()][numberPos.getxIndex()] == null) {
-							continue;
-						} else {
-							virtual.numbers[numberPos.getyIndex()][numberPos.getxIndex()] = null;
-						}
-						int solveResult = new ChocobananaSolverForGenerator(virtual, 10000).solve2();
-						if (solveResult != -1) {
-							wkField.masu[numberPos.getyIndex()][numberPos
-									.getxIndex()] = virtual.masu[numberPos.getyIndex()][numberPos.getxIndex()];
-							wkField.numbers[numberPos.getyIndex()][numberPos
-									.getxIndex()] = virtual.numbers[numberPos.getyIndex()][numberPos.getxIndex()];
-							level = solveResult;
-						}
-					}
 					break;
 				}
 			}
 			// ヒント数字を含む盤面変換
-			String fieldStr = PenpaEditLib.convertNumbersField(wkField.numbers);
-			System.out.println(fieldStr);
-			System.out.println(solutionStr);
+			String fieldStr = PenpaEditLib.convertNumbersMasuField(wkField.masu, wkField.numbers);
+//			System.out.println(fieldStr);
+//			System.out.println(solutionStr);
 
-			level = (int) Math.sqrt(Math.pow(level, 0.65) / 3) + 1;
-			String status = "Lv:" + (int) (Math.pow(level, 0.65)) + "の問題を獲得！(ヒント数：" + wkField.getHintCount() + ")";
+			level = (int) Math.sqrt(level / 3) + 1;
+			String status = "Lv:" + (int) (level) + "の問題を獲得！(ヒント数：" + wkField.getHintCount() + ")";
 			String url = wkField.getPuzPreURL();
 			String link = "<a href=\"" + url + "\" target=\"_blank\">penpa-editで解く</a>";
 			StringBuilder sb = new StringBuilder();
@@ -184,19 +238,25 @@ public class ChocobananaSolver implements Solver {
 					+ (wkField.getXLength() * baseSize + 2 * baseSize) + "\" >");
 			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+					Masu oneMasu = wkField.getMasu()[yIndex][xIndex];
+					if (oneMasu.toString().equals("■")) {
+						sb.append(
+								"<rect y=\"" + (yIndex * baseSize + margin) + "\" x=\"" + (xIndex * baseSize + baseSize)
+										+ "\" width=\"" + (baseSize) + "\" height=\"" + (baseSize) + "\">" + "</rect>");
+					}
 					if (wkField.getNumbers()[yIndex][xIndex] != null) {
 						String numberStr = String.valueOf(wkField.getNumbers()[yIndex][xIndex]);
-						String masuStr;
-						int idx = HALF_NUMS.indexOf(numberStr);
-						if (idx >= 0) {
-							masuStr = FULL_NUMS.substring(idx / 2, idx / 2 + 1);
+						int numIdx = HALF_NUMS.indexOf(numberStr);
+						String masuStr = null;
+						if (numIdx >= 0) {
+							masuStr = FULL_NUMS.substring(numIdx / 2, numIdx / 2 + 1);
 						} else {
 							masuStr = numberStr;
 						}
-						sb.append("<text y=\"" + (yIndex * baseSize + baseSize + margin - 4) + "\" x=\""
-								+ (xIndex * baseSize + baseSize + 2) + "\" font-size=\"" + (baseSize - 5)
-								+ "\" textLength=\"" + (baseSize - 5) + "\" lengthAdjust=\"spacingAndGlyphs\">"
-								+ masuStr + "</text>");
+						sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 4 + margin) + "\" x=\""
+								+ (xIndex * baseSize + baseSize + 2) + "\" font-size=\"" + (baseSize - 5) + "\" fill=\""
+								+ (oneMasu.toString().equals("■") ? "white" : "black") + "\" textLength=\""
+								+ (baseSize - 5) + "\" lengthAdjust=\"spacingAndGlyphs\">" + masuStr + "</text>");
 					}
 				}
 			}
@@ -232,7 +292,7 @@ public class ChocobananaSolver implements Solver {
 				}
 			}
 			sb.append("</svg>");
-			System.out.println(((System.nanoTime() - start) / 1000000) + "ms.(chocobanana)");
+			System.out.println(((System.nanoTime() - start) / 1000000) + "ms.(las)");
 			System.out.println(level);
 			System.out.println(wkField.getHintCount());
 			System.out.println(wkField);
@@ -244,11 +304,11 @@ public class ChocobananaSolver implements Solver {
 		static final String ALPHABET_FROM_G = "ghijklmnopqrstuvwxyz";
 
 		// マスの情報
-		private Masu[][] masu;
+		protected Masu[][] masu;
 		// 数字の情報
-		private final Integer[][] numbers;
-		// 確定済み数字の位置情報
-		private final Set<Position> alreadyPosSet;
+		protected final Integer[][] numbers;
+		// 確定した島の位置情報
+		protected final Set<Position> alreadyPosSet;
 
 		public Masu[][] getMasu() {
 			return masu;
@@ -256,6 +316,16 @@ public class ChocobananaSolver implements Solver {
 
 		public String getPuzPreURL() {
 			return PenpaEditLib.PENPA_EDIT_DUMMY_URL;
+		}
+
+		/**
+		 * あるマスからつながるマスセットを返す。ジェネレータ用
+		 */
+		public Set<Position> getContinuePosSet(Position pos) {
+			Set<Position> result = new HashSet<>();
+			result.add(pos);
+			setContinuePosSet(masu[pos.getyIndex()][pos.getxIndex()], pos, result, Integer.MAX_VALUE, null);
+			return result;
 		}
 
 		public String getHintCount() {
@@ -342,6 +412,14 @@ public class ChocobananaSolver implements Solver {
 			masu = PenpaEditLib.getMasu(fieldStr);
 			numbers = PenpaEditLib.getNumbers(fieldStr);
 			alreadyPosSet = new HashSet<>();
+			// 数字のマスで黒でない場合、白確定
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					if (numbers[yIndex][xIndex] != null && masu[yIndex][xIndex] == Masu.SPACE) {
+						masu[yIndex][xIndex] = Masu.NOT_BLACK;
+					}
+				}
+			}
 		}
 
 		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
@@ -386,88 +464,16 @@ public class ChocobananaSolver implements Solver {
 		/**
 		 * 各種チェックを1セット実行
 		 */
-		private boolean solveAndCheck() {
+		protected boolean solveAndCheck() {
 			String str = getStateDump();
-			if (!nextSolve()) {
-				return false;
-			}
 			if (!countSolve()) {
 				return false;
 			}
-			if (!rectBlackSolve()) {
-				return false;
-			}
-			if (!notRectWhiteSolve()) {
+			if (!standAloneSolve()) {
 				return false;
 			}
 			if (!getStateDump().equals(str)) {
 				return solveAndCheck();
-			}
-			return true;
-		}
-
-		// 違う数字が隣り合う場合は必ず違う色になる。
-		private boolean nextSolve() {
-			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
-				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					if (numbers[yIndex][xIndex] != null) {
-						if (masu[yIndex][xIndex] != Masu.SPACE) {
-							if (yIndex != 0) {
-								if (numbers[yIndex - 1][xIndex] != null
-										&& numbers[yIndex - 1][xIndex] != numbers[yIndex][xIndex]) {
-									if (masu[yIndex - 1][xIndex] != Masu.SPACE) {
-										if (masu[yIndex - 1][xIndex] == masu[yIndex][xIndex]) {
-											return false;
-										}
-									} else {
-										masu[yIndex - 1][xIndex] = masu[yIndex][xIndex] == Masu.BLACK ? Masu.NOT_BLACK
-												: Masu.BLACK;
-									}
-								}
-							}
-							if (xIndex != getXLength() - 1) {
-								if (numbers[yIndex][xIndex + 1] != null
-										&& numbers[yIndex][xIndex + 1] != numbers[yIndex][xIndex]) {
-									if (masu[yIndex][xIndex + 1] != Masu.SPACE) {
-										if (masu[yIndex][xIndex + 1] == masu[yIndex][xIndex]) {
-											return false;
-										}
-									} else {
-										masu[yIndex][xIndex + 1] = masu[yIndex][xIndex] == Masu.BLACK ? Masu.NOT_BLACK
-												: Masu.BLACK;
-									}
-								}
-							}
-							if (yIndex != getYLength() - 1) {
-								if (numbers[yIndex + 1][xIndex] != null
-										&& numbers[yIndex + 1][xIndex] != numbers[yIndex][xIndex]) {
-									if (masu[yIndex + 1][xIndex] != Masu.SPACE) {
-										if (masu[yIndex + 1][xIndex] == masu[yIndex][xIndex]) {
-											return false;
-										}
-									} else {
-										masu[yIndex + 1][xIndex] = masu[yIndex][xIndex] == Masu.BLACK ? Masu.NOT_BLACK
-												: Masu.BLACK;
-									}
-								}
-							}
-							if (xIndex != 0) {
-								if (numbers[yIndex][xIndex - 1] != null
-										&& numbers[yIndex][xIndex - 1] != numbers[yIndex][xIndex]) {
-									if (masu[yIndex][xIndex - 1] != Masu.SPACE) {
-										if (masu[yIndex][xIndex - 1] == masu[yIndex][xIndex]) {
-											return false;
-										}
-									} else {
-										masu[yIndex][xIndex - 1] = masu[yIndex][xIndex] == Masu.BLACK ? Masu.NOT_BLACK
-												: Masu.BLACK;
-									}
-								}
-							}
-						}
-
-					}
-				}
 			}
 			return true;
 		}
@@ -478,10 +484,7 @@ public class ChocobananaSolver implements Solver {
 		private boolean countSolve() {
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					if (numbers[yIndex][xIndex] != null) {
-						if (masu[yIndex][xIndex] == Masu.SPACE) {
-							continue;
-						}
+					if (numbers[yIndex][xIndex] != null && numbers[yIndex][xIndex] != -1) {
 						Position pivot = new Position(yIndex, xIndex);
 						if (alreadyPosSet.contains(pivot)) {
 							continue;
@@ -573,16 +576,14 @@ public class ChocobananaSolver implements Solver {
 		 */
 		private boolean setContinueCandPosSet(Masu target, Position pos, Set<Position> continuePosSet, int size,
 				Direction from) {
-			if (continuePosSet.size() > size) {
+			if (size != -1 && continuePosSet.size() > size) {
 				return true;
 			}
 			if (pos.getyIndex() != 0 && from != Direction.UP) {
 				Position nextPos = new Position(pos.getyIndex() - 1, pos.getxIndex());
 				if ((masu[nextPos.getyIndex()][nextPos.getxIndex()] == target
 						|| masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.SPACE)
-						&& !continuePosSet.contains(nextPos)
-						&& (numbers[nextPos.getyIndex()][nextPos.getxIndex()] == null
-								|| numbers[nextPos.getyIndex()][nextPos.getxIndex()] == size)) {
+						&& !continuePosSet.contains(nextPos) && checkNext(target, nextPos, Direction.DOWN)) {
 					continuePosSet.add(nextPos);
 					if (setContinueCandPosSet(target, nextPos, continuePosSet, size, Direction.DOWN)) {
 						return true;
@@ -593,9 +594,7 @@ public class ChocobananaSolver implements Solver {
 				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() + 1);
 				if ((masu[nextPos.getyIndex()][nextPos.getxIndex()] == target
 						|| masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.SPACE)
-						&& !continuePosSet.contains(nextPos)
-						&& (numbers[nextPos.getyIndex()][nextPos.getxIndex()] == null
-								|| numbers[nextPos.getyIndex()][nextPos.getxIndex()] == size)) {
+						&& !continuePosSet.contains(nextPos) && checkNext(target, nextPos, Direction.LEFT)) {
 					continuePosSet.add(nextPos);
 					if (setContinueCandPosSet(target, nextPos, continuePosSet, size, Direction.LEFT)) {
 						return true;
@@ -606,9 +605,7 @@ public class ChocobananaSolver implements Solver {
 				Position nextPos = new Position(pos.getyIndex() + 1, pos.getxIndex());
 				if ((masu[nextPos.getyIndex()][nextPos.getxIndex()] == target
 						|| masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.SPACE)
-						&& !continuePosSet.contains(nextPos)
-						&& (numbers[nextPos.getyIndex()][nextPos.getxIndex()] == null
-								|| numbers[nextPos.getyIndex()][nextPos.getxIndex()] == size)) {
+						&& !continuePosSet.contains(nextPos) && checkNext(target, nextPos, Direction.UP)) {
 					continuePosSet.add(nextPos);
 					if (setContinueCandPosSet(target, nextPos, continuePosSet, size, Direction.UP)) {
 						return true;
@@ -619,9 +616,7 @@ public class ChocobananaSolver implements Solver {
 				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() - 1);
 				if ((masu[nextPos.getyIndex()][nextPos.getxIndex()] == target
 						|| masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.SPACE)
-						&& !continuePosSet.contains(nextPos)
-						&& (numbers[nextPos.getyIndex()][nextPos.getxIndex()] == null
-								|| numbers[nextPos.getyIndex()][nextPos.getxIndex()] == size)) {
+						&& !continuePosSet.contains(nextPos) && checkNext(target, nextPos, Direction.RIGHT)) {
 					continuePosSet.add(nextPos);
 					if (setContinueCandPosSet(target, nextPos, continuePosSet, size, Direction.RIGHT)) {
 						return true;
@@ -631,19 +626,53 @@ public class ChocobananaSolver implements Solver {
 			return false;
 		}
 
+		// posの前後左右に、targetと同じ色の数字マスがあればfalseを返す。
+		private boolean checkNext(Masu target, Position pos, Direction from) {
+			if (pos.getyIndex() != 0 && from != Direction.UP) {
+				Position nextPos = new Position(pos.getyIndex() - 1, pos.getxIndex());
+				if (masu[nextPos.getyIndex()][nextPos.getxIndex()] == target
+						&& numbers[nextPos.getyIndex()][nextPos.getxIndex()] != null) {
+					return false;
+				}
+			}
+			if (pos.getxIndex() != getXLength() - 1 && from != Direction.RIGHT) {
+				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() + 1);
+				if (masu[nextPos.getyIndex()][nextPos.getxIndex()] == target
+						&& numbers[nextPos.getyIndex()][nextPos.getxIndex()] != null) {
+					return false;
+				}
+			}
+			if (pos.getyIndex() != getYLength() - 1 && from != Direction.DOWN) {
+				Position nextPos = new Position(pos.getyIndex() + 1, pos.getxIndex());
+				if (masu[nextPos.getyIndex()][nextPos.getxIndex()] == target
+						&& numbers[nextPos.getyIndex()][nextPos.getxIndex()] != null) {
+					return false;
+				}
+			}
+			if (pos.getxIndex() != 00 && from != Direction.LEFT) {
+				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() - 1);
+				if (masu[nextPos.getyIndex()][nextPos.getxIndex()] == target
+						&& numbers[nextPos.getyIndex()][nextPos.getxIndex()] != null) {
+					return false;
+				}
+			}
+			return true;
+		}
+
 		/**
-		 * posを起点に上下左右にtargetと同じ色が確定しているマスをつなげていく。別部屋につながるかsizeが超過すると分かった時点でfalseを返す。
+		 * posを起点に上下左右にtargetと同じ色が確定しているマスをつなげていく。 sizeが超過すると分かった時点でfalseを返す。
 		 */
 		private boolean setContinuePosSet(Masu target, Position pos, Set<Position> continuePosSet, int size,
 				Direction from) {
-			if (continuePosSet.size() > size) {
+			if (size != -1 && continuePosSet.size() > size) {
 				return false;
 			}
 			if (pos.getyIndex() != 0 && from != Direction.UP) {
 				Position nextPos = new Position(pos.getyIndex() - 1, pos.getxIndex());
-				if (masu[nextPos.getyIndex()][nextPos.getxIndex()] == target && !continuePosSet.contains(nextPos)
-						&& (numbers[nextPos.getyIndex()][nextPos.getxIndex()] == null
-								|| numbers[nextPos.getyIndex()][nextPos.getxIndex()] == size)) {
+				if (masu[nextPos.getyIndex()][nextPos.getxIndex()] == target && !continuePosSet.contains(nextPos)) {
+					if (numbers[nextPos.getyIndex()][nextPos.getxIndex()] != null) {
+						return false;
+					}
 					continuePosSet.add(nextPos);
 					if (!setContinuePosSet(target, nextPos, continuePosSet, size, Direction.DOWN)) {
 						return false;
@@ -652,9 +681,10 @@ public class ChocobananaSolver implements Solver {
 			}
 			if (pos.getxIndex() != getXLength() - 1 && from != Direction.RIGHT) {
 				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() + 1);
-				if (masu[nextPos.getyIndex()][nextPos.getxIndex()] == target && !continuePosSet.contains(nextPos)
-						&& (numbers[nextPos.getyIndex()][nextPos.getxIndex()] == null
-								|| numbers[nextPos.getyIndex()][nextPos.getxIndex()] == size)) {
+				if (masu[nextPos.getyIndex()][nextPos.getxIndex()] == target && !continuePosSet.contains(nextPos)) {
+					if (numbers[nextPos.getyIndex()][nextPos.getxIndex()] != null) {
+						return false;
+					}
 					continuePosSet.add(nextPos);
 					if (!setContinuePosSet(target, nextPos, continuePosSet, size, Direction.LEFT)) {
 						return false;
@@ -663,9 +693,10 @@ public class ChocobananaSolver implements Solver {
 			}
 			if (pos.getyIndex() != getYLength() - 1 && from != Direction.DOWN) {
 				Position nextPos = new Position(pos.getyIndex() + 1, pos.getxIndex());
-				if (masu[nextPos.getyIndex()][nextPos.getxIndex()] == target && !continuePosSet.contains(nextPos)
-						&& (numbers[nextPos.getyIndex()][nextPos.getxIndex()] == null
-								|| numbers[nextPos.getyIndex()][nextPos.getxIndex()] == size)) {
+				if (masu[nextPos.getyIndex()][nextPos.getxIndex()] == target && !continuePosSet.contains(nextPos)) {
+					if (numbers[nextPos.getyIndex()][nextPos.getxIndex()] != null) {
+						return false;
+					}
 					continuePosSet.add(nextPos);
 					if (!setContinuePosSet(target, nextPos, continuePosSet, size, Direction.UP)) {
 						return false;
@@ -674,9 +705,10 @@ public class ChocobananaSolver implements Solver {
 			}
 			if (pos.getxIndex() != 0 && from != Direction.LEFT) {
 				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() - 1);
-				if (masu[nextPos.getyIndex()][nextPos.getxIndex()] == target && !continuePosSet.contains(nextPos)
-						&& (numbers[nextPos.getyIndex()][nextPos.getxIndex()] == null
-								|| numbers[nextPos.getyIndex()][nextPos.getxIndex()] == size)) {
+				if (masu[nextPos.getyIndex()][nextPos.getxIndex()] == target && !continuePosSet.contains(nextPos)) {
+					if (numbers[nextPos.getyIndex()][nextPos.getxIndex()] != null) {
+						return false;
+					}
 					continuePosSet.add(nextPos);
 					if (!setContinuePosSet(target, nextPos, continuePosSet, size, Direction.RIGHT)) {
 						return false;
@@ -687,353 +719,132 @@ public class ChocobananaSolver implements Solver {
 		}
 
 		/**
-		 * 黒マスは長方形に。矛盾した場合はfalse。
+		 * posを起点に上下左右にtargetと同じ色になりうるマスをつなげていく。 数字を見つけた時点でtrueを返す。
 		 */
-		public boolean rectBlackSolve() {
-			boolean advance = false;
-			for (int yIndex = 0; yIndex < getYLength() - 1; yIndex++) {
-				for (int xIndex = 0; xIndex < getXLength() - 1; xIndex++) {
-					Masu masu1 = masu[yIndex][xIndex];
-					Masu masu2 = masu[yIndex][xIndex + 1];
-					Masu masu3 = masu[yIndex + 1][xIndex];
-					Masu masu4 = masu[yIndex + 1][xIndex + 1];
-					if (masu1 == Masu.BLACK && masu2 == Masu.BLACK && masu3 == Masu.BLACK && masu4 == Masu.NOT_BLACK) {
-						return false;
-					}
-					if (masu1 == Masu.BLACK && masu2 == Masu.BLACK && masu3 == Masu.NOT_BLACK && masu4 == Masu.BLACK) {
-						return false;
-					}
-					if (masu1 == Masu.BLACK && masu2 == Masu.NOT_BLACK && masu3 == Masu.BLACK && masu4 == Masu.BLACK) {
-						return false;
-					}
-					if (masu1 == Masu.NOT_BLACK && masu2 == Masu.BLACK && masu3 == Masu.BLACK && masu4 == Masu.BLACK) {
-						return false;
-					}
-					if (masu1 == Masu.BLACK && masu2 == Masu.BLACK && masu3 == Masu.BLACK && masu4 == Masu.SPACE) {
-						advance = true;
-						masu[yIndex + 1][xIndex + 1] = Masu.BLACK;
-					}
-					if (masu1 == Masu.BLACK && masu2 == Masu.BLACK && masu3 == Masu.SPACE && masu4 == Masu.BLACK) {
-						advance = true;
-						masu[yIndex + 1][xIndex] = Masu.BLACK;
-					}
-					if (masu1 == Masu.BLACK && masu2 == Masu.SPACE && masu3 == Masu.BLACK && masu4 == Masu.BLACK) {
-						advance = true;
-						masu[yIndex][xIndex + 1] = Masu.BLACK;
-					}
-					if (masu1 == Masu.SPACE && masu2 == Masu.BLACK && masu3 == Masu.BLACK && masu4 == Masu.BLACK) {
-						advance = true;
-						masu[yIndex][xIndex] = Masu.BLACK;
+		private boolean setContinueCandPosSet(Masu target, Position pos, Set<Position> continuePosSet, Direction from) {
+			if (numbers[pos.getyIndex()][pos.getxIndex()] != null) {
+				return true;
+			}
+			if (pos.getyIndex() != 0 && from != Direction.UP) {
+				Position nextPos = new Position(pos.getyIndex() - 1, pos.getxIndex());
+				if (!continuePosSet.contains(nextPos) && (masu[nextPos.getyIndex()][nextPos.getxIndex()] == target
+						|| masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.SPACE)) {
+					continuePosSet.add(nextPos);
+					if (setContinueCandPosSet(target, nextPos, continuePosSet, Direction.DOWN)) {
+						return true;
 					}
 				}
 			}
-			if (advance) {
-				return rectBlackSolve();
-			} else {
-//				Set<Position> already = new HashSet<>();
-//				for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
-//					for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-//						// ふくらましきったら、前後左右がすべて止まっている場合は周囲を白確定にする。
-//						if (masu[yIndex][xIndex] == Masu.BLACK && !already.contains(new Position(yIndex, xIndex))) {
-//							// 上下左右探索
-//							int minY = yIndex;
-//							int minX = xIndex;
-//							int maxY = yIndex;
-//							int maxX = xIndex;
-//							for (int targetY = yIndex - 1; targetY >= 0; targetY--) {
-//								if (masu[targetY][xIndex] != Masu.BLACK) {
-//									break;
-//								}
-//								minY = targetY;
-//							}
-//							for (int targetY = yIndex + 1; targetY < getYLength(); targetY++) {
-//								if (masu[targetY][xIndex] != Masu.BLACK) {
-//									break;
-//								}
-//								maxY = targetY;
-//							}
-//							for (int targetX = xIndex - 1; targetX >= 0; targetX--) {
-//								if (masu[yIndex][targetX] != Masu.BLACK) {
-//									break;
-//								}
-//								minX = targetX;
-//							}
-//							for (int targetX = xIndex + 1; targetX < getXLength(); targetX++) {
-//								if (masu[yIndex][targetX] != Masu.BLACK) {
-//									break;
-//								}
-//								maxX = targetX;
-//							}
-//							// 周囲探索
-//							if (minY != 0) {
-//								boolean findWall = false;
-//								for (int targetX = minX; targetX <= maxX; targetX++) {
-//									if (masu[minY - 1][targetX] == Masu.NOT_BLACK) {
-//										findWall = true;
-//										break;
-//									}
-//								}
-//								if (findWall) {
-//									for (int targetX = minX; targetX <= maxX; targetX++) {
-//										masu[minY - 1][targetX] = Masu.NOT_BLACK;
-//									}
-//								}
-//							}
-//							if (maxX != getXLength() - 1) {
-//								boolean findWall = false;
-//								for (int targetY = minY; targetY <= maxY; targetY++) {
-//									if (masu[targetY][maxX + 1] == Masu.NOT_BLACK) {
-//										break;
-//									}
-//								}
-//								if (findWall) {
-//									for (int targetY = minY; targetY <= maxY; targetY++) {
-//										masu[targetY][maxX + 1] = Masu.NOT_BLACK;
-//									}
-//								}
-//							}
-//							if (maxY != getYLength() - 1) {
-//								boolean findWall = false;
-//								for (int targetX = minX; targetX <= maxX; targetX++) {
-//									if (masu[maxY + 1][targetX] == Masu.NOT_BLACK) {
-//										break;
-//									}
-//								}
-//								if (findWall) {
-//									for (int targetX = minX; targetX <= maxX; targetX++) {
-//										masu[maxY + 1][targetX] = Masu.NOT_BLACK;
-//									}
-//								}
-//							}
-//							if (minX != 0) {
-//								boolean findWall = false;
-//								for (int targetY = minY; targetY <= maxY; targetY++) {
-//									if (masu[targetY][minX - 1] == Masu.NOT_BLACK) {
-//										break;
-//									}
-//								}
-//								if (findWall) {
-//									for (int targetY = minY; targetY <= maxY; targetY++) {
-//										masu[targetY][minX - 1] = Masu.NOT_BLACK;
-//									}
-//								}
-//							}
-//							for (int targetY = minY; targetY <= maxY; targetY++) {
-//								for (int targetX = minX; targetX <= maxX; targetX++) {
-//									already.add(new Position(targetY, targetX));
-//								}
-//							}
-//						}
-//					}
-//				}
+			if (pos.getxIndex() != getXLength() - 1 && from != Direction.RIGHT) {
+				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() + 1);
+				if (!continuePosSet.contains(nextPos) && (masu[nextPos.getyIndex()][nextPos.getxIndex()] == target
+						|| masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.SPACE)) {
+					continuePosSet.add(nextPos);
+					if (setContinueCandPosSet(target, nextPos, continuePosSet, Direction.LEFT)) {
+						return true;
+					}
+				}
+			}
+			if (pos.getyIndex() != getYLength() - 1 && from != Direction.DOWN) {
+				Position nextPos = new Position(pos.getyIndex() + 1, pos.getxIndex());
+				if (!continuePosSet.contains(nextPos) && (masu[nextPos.getyIndex()][nextPos.getxIndex()] == target
+						|| masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.SPACE)) {
+					continuePosSet.add(nextPos);
+					if (setContinueCandPosSet(target, nextPos, continuePosSet, Direction.UP)) {
+						return true;
+					}
+				}
+			}
+			if (pos.getxIndex() != 0 && from != Direction.LEFT) {
+				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() - 1);
+				if (!continuePosSet.contains(nextPos) && (masu[nextPos.getyIndex()][nextPos.getxIndex()] == target
+						|| masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.SPACE)) {
+					continuePosSet.add(nextPos);
+					if (setContinueCandPosSet(target, nextPos, continuePosSet, Direction.RIGHT)) {
+						return true;
+					}
+				}
+			}
+			return false;
+		}
+
+		/**
+		 * posを起点に上下左右にtargetと同じ色が確定しているマスをつなげていく。 数字を2個見つけた時点でfalseを返す。
+		 */
+		private boolean setContinuePosSet(Masu target, Position pos, Set<Position> continuePosSet, Direction from,
+				Set<Position> findNumber) {
+			if (numbers[pos.getyIndex()][pos.getxIndex()] != null) {
+				if (findNumber.isEmpty()) {
+					findNumber.add(pos);
+				} else {
+					return false;
+				}
+			}
+			if (pos.getyIndex() != 0 && from != Direction.UP) {
+				Position nextPos = new Position(pos.getyIndex() - 1, pos.getxIndex());
+				if (!continuePosSet.contains(nextPos) && masu[nextPos.getyIndex()][nextPos.getxIndex()] == target) {
+					continuePosSet.add(nextPos);
+					if (!setContinuePosSet(target, nextPos, continuePosSet, Direction.DOWN, findNumber)) {
+						return false;
+					}
+				}
+			}
+			if (pos.getxIndex() != getXLength() - 1 && from != Direction.RIGHT) {
+				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() + 1);
+				if (!continuePosSet.contains(nextPos) && masu[nextPos.getyIndex()][nextPos.getxIndex()] == target) {
+					continuePosSet.add(nextPos);
+					if (!setContinuePosSet(target, nextPos, continuePosSet, Direction.LEFT, findNumber)) {
+						return false;
+					}
+				}
+			}
+			if (pos.getyIndex() != getYLength() - 1 && from != Direction.DOWN) {
+				Position nextPos = new Position(pos.getyIndex() + 1, pos.getxIndex());
+				if (!continuePosSet.contains(nextPos) && masu[nextPos.getyIndex()][nextPos.getxIndex()] == target) {
+					continuePosSet.add(nextPos);
+					if (!setContinuePosSet(target, nextPos, continuePosSet, Direction.UP, findNumber)) {
+						return false;
+					}
+				}
+			}
+			if (pos.getxIndex() != 0 && from != Direction.LEFT) {
+				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() - 1);
+				if (!continuePosSet.contains(nextPos) && masu[nextPos.getyIndex()][nextPos.getxIndex()] == target) {
+					continuePosSet.add(nextPos);
+					if (!setContinuePosSet(target, nextPos, continuePosSet, Direction.RIGHT, findNumber)) {
+						return false;
+					}
+				}
 			}
 			return true;
 		}
 
 		/**
-		 * 白マスは長方形以外に。矛盾した場合はfalse。
+		 * 数字が入らない・2個以上入るマスができてはならない。
 		 */
-		public boolean notRectWhiteSolve() {
+		protected boolean standAloneSolve() {
+			Set<Position> checkPosSet = new HashSet<>();
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					// 自身の上下左右の白確定マスが確定しており、取り囲むマスがすべて黒ならアウト
-					if (masu[yIndex][xIndex] == Masu.NOT_BLACK) {
-						// 上下左右探索
-						boolean isSkip = false;
-						int minY = yIndex;
-						int minX = xIndex;
-						int maxY = yIndex;
-						int maxX = xIndex;
-						for (int targetY = yIndex - 1; targetY >= 0; targetY--) {
-							if (masu[targetY][xIndex] != Masu.NOT_BLACK) {
-								if (masu[targetY][xIndex] == Masu.SPACE) {
-									isSkip = true;
-								}
-								break;
-							}
-							minY = targetY;
-						}
-						if (isSkip) {
-							continue;
-						}
-						for (int targetY = yIndex + 1; targetY < getYLength(); targetY++) {
-							if (masu[targetY][xIndex] != Masu.NOT_BLACK) {
-								if (masu[targetY][xIndex] == Masu.SPACE) {
-									isSkip = true;
-								}
-								break;
-							}
-							maxY = targetY;
-						}
-						if (isSkip) {
-							continue;
-						}
-						for (int targetX = xIndex - 1; targetX >= 0; targetX--) {
-							if (masu[yIndex][targetX] != Masu.NOT_BLACK) {
-								if (masu[yIndex][targetX] == Masu.SPACE) {
-									isSkip = true;
-								}
-								break;
-							}
-							minX = targetX;
-						}
-						if (isSkip) {
-							continue;
-						}
-						for (int targetX = xIndex + 1; targetX < getXLength(); targetX++) {
-							if (masu[yIndex][targetX] != Masu.NOT_BLACK) {
-								if (masu[yIndex][targetX] == Masu.SPACE) {
-									isSkip = true;
-								}
-								break;
-							}
-							maxX = targetX;
-						}
-						if (isSkip) {
-							continue;
-						}
-						// 範囲内に白未確定マスがあればOK
-						for (int targetY = minY; targetY <= maxY; targetY++) {
-							for (int targetX = minX; targetX <= maxX; targetX++) {
-								if (masu[targetY][targetX] != Masu.NOT_BLACK) {
-									isSkip = true;
-									break;
-								}
-							}
-						}
-						if (isSkip) {
-							continue;
-						}
-						// 周囲探索
-						if (minY != 0) {
-							for (int targetX = minX; targetX <= maxX; targetX++) {
-								if (masu[minY - 1][targetX] != Masu.BLACK) {
-									isSkip = true;
-									break;
-								}
-							}
-							if (isSkip) {
-								continue;
-							}
-						}
-						if (maxX != getXLength() - 1) {
-							for (int targetY = minY; targetY <= maxY; targetY++) {
-								if (masu[targetY][maxX + 1] != Masu.BLACK) {
-									isSkip = true;
-									break;
-								}
-							}
-							if (isSkip) {
-								continue;
-							}
-						}
-						if (maxY != getYLength() - 1) {
-							for (int targetX = minX; targetX <= maxX; targetX++) {
-								if (masu[maxY + 1][targetX] != Masu.BLACK) {
-									isSkip = true;
-									break;
-								}
-							}
-							if (isSkip) {
-								continue;
-							}
-						}
-						if (minX != 0) {
-							for (int targetY = minY; targetY <= maxY; targetY++) {
-								if (masu[targetY][minX - 1] != Masu.BLACK) {
-									isSkip = true;
-									break;
-								}
-							}
-							if (isSkip) {
-								continue;
-							}
-						}
-						return false;
-//						Position oneSpace = null;
-//						if (minY != 0) {
-//							for (int targetX = minX; targetX <= maxX; targetX++) {
-//								if (masu[minY - 1][targetX] == Masu.NOT_BLACK) {
-//									isSkip = true;
-//									break;
-//								}
-//								if (masu[minY - 1][targetX] == Masu.SPACE) {
-//									if (oneSpace == null) {
-//										oneSpace = new Position(minY - 1, targetX);
-//									} else {
-//										isSkip = true;
-//										break;
-//									}
-//								}
-//							}
-//							if (isSkip) {
-//								continue;
-//							}
-//						}
-//						if (maxX != getXLength() - 1) {
-//							for (int targetY = minY; targetY <= maxY; targetY++) {
-//								if (masu[targetY][maxX + 1] == Masu.NOT_BLACK) {
-//									isSkip = true;
-//									break;
-//								}
-//								if (masu[targetY][maxX + 1] == Masu.SPACE) {
-//									if (oneSpace == null) {
-//										oneSpace = new Position(targetY, maxX + 1);
-//									} else {
-//										isSkip = true;
-//										break;
-//									}
-//								}
-//							}
-//							if (isSkip) {
-//								continue;
-//							}
-//						}
-//						if (maxY != getYLength() - 1) {
-//							for (int targetX = minX; targetX <= maxX; targetX++) {
-//								if (masu[maxY + 1][targetX] == Masu.NOT_BLACK) {
-//									isSkip = true;
-//									break;
-//								}
-//								if (masu[maxY + 1][targetX] == Masu.SPACE) {
-//									if (oneSpace == null) {
-//										oneSpace = new Position(minY + 1, targetX);
-//									} else {
-//										isSkip = true;
-//										break;
-//									}
-//								}
-//							}
-//							if (isSkip) {
-//								continue;
-//							}
-//						}
-//						if (minX != 0) {
-//							for (int targetY = minY; targetY <= maxY; targetY++) {
-//								if (masu[targetY][minX - 1] == Masu.NOT_BLACK) {
-//									isSkip = true;
-//									break;
-//								}
-//								if (masu[targetY][minX - 1] == Masu.SPACE) {
-//									if (oneSpace == null) {
-//										oneSpace = new Position(targetY, maxX - 1);
-//									} else {
-//										isSkip = true;
-//										break;
-//									}
-//								}
-//							}
-//							if (isSkip) {
-//								continue;
-//							}
-//						}
-//						if (oneSpace != null) {
-//							masu[oneSpace.getyIndex()][oneSpace.getxIndex()] = Masu.NOT_BLACK;
-//						} else {
-//							return false;
-//						}
+					if (numbers[yIndex][xIndex] == null && masu[yIndex][xIndex] != Masu.SPACE) {
+						checkPosSet.add(new Position(yIndex, xIndex));
 					}
 				}
+			}
+			while (!checkPosSet.isEmpty()) {
+				Position pivot = new ArrayList<>(checkPosSet).get(0);
+				Set<Position> continuePosSet = new HashSet<>();
+				continuePosSet.add(pivot);
+				if (!setContinueCandPosSet(masu[pivot.getyIndex()][pivot.getxIndex()], pivot, continuePosSet, null)) {
+					return false;
+				}
+				continuePosSet = new HashSet<>();
+				continuePosSet.add(pivot);
+				if (!setContinuePosSet(masu[pivot.getyIndex()][pivot.getxIndex()], pivot, continuePosSet, null,
+						new HashSet<>())) {
+					return false;
+				}
+				checkPosSet.remove(pivot);
 			}
 			return true;
 		}
@@ -1054,12 +865,12 @@ public class ChocobananaSolver implements Solver {
 	protected final Field field;
 	protected int count;
 
-	public ChocobananaSolver(Field field) {
+	public LasSolver(Field field) {
 		this.field = new Field(field);
 	}
 
 	// penpa-edit向けコンストラクタ
-	public ChocobananaSolver(String fieldStr) {
+	public LasSolver(String fieldStr) {
 		field = new Field(fieldStr);
 	}
 
@@ -1068,12 +879,11 @@ public class ChocobananaSolver implements Solver {
 	}
 
 	public static void main(String[] args) {
-		String fieldStr = "square,10,10,38,0,1,1,418,418,286,286\n" + "[0,0,0,0]\n"
-				+ "[\"1\",\"2\",\"1\"]~zS~[\"\",1]\n"
-				+ "{zR:{z_:[]},zU:{z_:[]},zS:{},zN:{\"30\":[\"1\",1,\"1\"],\"46\":[\"1\",1,\"1\"],\"47\":[\"5\",1,\"1\"],\"58\":[\"4\",1,\"1\"],\"60\":[\"4\",1,\"1\"],\"63\":[\"4\",1,\"1\"],\"94\":[\"4\",1,\"1\"],\"95\":[\"4\",1,\"1\"],\"101\":[\"2\",1,\"1\"],\"117\":[\"5\",1,\"1\"],\"121\":[\"4\",1,\"1\"],\"129\":[\"3\",1,\"1\"],\"144\":[\"4\",1,\"1\"],\"149\":[\"3\",1,\"1\"],\"150\":[\"2\",1,\"1\"]},z1:{},zY:{},zF:{},z2:{},zT:[],z3:[],zD:[],z0:[],z5:[],zL:{},zE:{},zW:{},zC:{},z4:{}}\n"
+		String fieldStr = "square,8,8,36,0,1,1,324,324,209,209\n" + "[0,0,0,0]\n" + "[\"1\",\"2\",\"1\"]~zS~[\"\",1]\n"
+				+ "{zR:{z_:[]},zU:{z_:[]},zS:{\"33\":1,\"50\":1,\"55\":1,\"64\":1,\"78\":1,\"101\":1,\"116\":1},zN:{\"27\":[\"?\",1,\"1\"],\"33\":[\"?\",4,\"1\"],\"42\":[\"?\",1,\"1\"],\"50\":[\"3\",4,\"1\"],\"55\":[\"?\",4,\"1\"],\"64\":[\"7\",4,\"1\"],\"65\":[\"6\",1,\"1\"],\"78\":[\"3\",4,\"1\"],\"79\":[\"8\",1,\"1\"],\"88\":[\"?\",1,\"1\"],\"93\":[\"4\",1,\"1\"],\"101\":[\"?\",4,\"1\"],\"110\":[\"?\",1,\"1\"],\"116\":[\"?\",4,\"1\"]},z1:{},zY:{},zF:{},z2:{},zT:[],z3:[],zD:[],z0:[],z5:[],zL:{},zE:{},zW:{},zC:{},z4:{}}\n"
 				+ "\n"
-				+ "[30,1,1,1,1,1,1,1,1,1,5,1,1,1,1,1,1,1,1,1,5,1,1,1,1,1,1,1,1,1,5,1,1,1,1,1,1,1,1,1,5,1,1,1,1,1,1,1,1,1,5,1,1,1,1,1,1,1,1,1,5,1,1,1,1,1,1,1,1,1,5,1,1,1,1,1,1,1,1,1,5,1,1,1,1,1,1,1,1,1,5,1,1,1,1,1,1,1,1,1]"; // urlを入れれば試せる
-		System.out.println(new ChocobananaSolver(fieldStr).solve());
+				+ "[26,1,1,1,1,1,1,1,5,1,1,1,1,1,1,1,5,1,1,1,1,1,1,1,5,1,1,1,1,1,1,1,5,1,1,1,1,1,1,1,5,1,1,1,1,1,1,1,5,1,1,1,1,1,1,1,5,1,1,1,1,1,1,1]"; // urlを入れれば試せる
+		System.out.println(new LasSolver(fieldStr).solve());
 	}
 
 	@Override
@@ -1097,10 +907,10 @@ public class ChocobananaSolver implements Solver {
 			}
 		}
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
-		System.out.println("難易度:" + Math.pow(count, 0.65));
+		System.out.println("難易度:" + count);
 		System.out.println(field);
-		int level = (int) Math.sqrt(Math.pow(count, 0.65) / 3) + 1;
-		return "解けました。推定難易度:" + Difficulty.getByCount((int) Math.pow(count, 0.65)).toString() + "(Lv:" + level + ")";
+		int level = (int) Math.sqrt(count / 3) + 1;
+		return "解けました。推定難易度:" + Difficulty.getByCount((int) count).toString() + "(Lv:" + level + ")";
 	}
 
 	/**

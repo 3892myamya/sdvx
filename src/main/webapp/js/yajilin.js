@@ -24,15 +24,21 @@ $(function() {
         var param = {};
         param.url = $('#edt_url').val();
         if ($('#edt_url').val().indexOf('penpa-edit') > -1) {
-            // pを復号
-            param.type = $('#sel_type').val();
-            var urlp = getURLParams($('#edt_url').val())['p'];
-            var ab = atob(urlp);
-            ab = Uint8Array.from(ab.split(""), e => e.charCodeAt(0));
-            var inflate = new Zlib.RawInflate(ab);
-            var plain = inflate.decompress();
-            var rtext = new TextDecoder().decode(plain);
-            param.fieldStr = rtext;
+	        try {
+                // pを復号
+                param.type = $('#sel_type').val();
+                var urlp = getURLParams($('#edt_url').val())['p'];
+                var ab = atob(urlp);
+                ab = Uint8Array.from(ab.split(""), e => e.charCodeAt(0));
+                var inflate = new Zlib.RawInflate(ab);
+                var plain = inflate.decompress();
+                var rtext = new TextDecoder().decode(plain);
+                param.fieldStr = rtext;
+            } catch (error) {
+	            $('#caption').text('penpa-editのURLのパラメータ読込に失敗しました。URLが正しいかを確認してください。');
+                $('#loading').hide();
+	            return;
+	        }
         }
 		// 条件をローカルストレージ保存
 		var cond = localStorage.getItem('condyajilin');

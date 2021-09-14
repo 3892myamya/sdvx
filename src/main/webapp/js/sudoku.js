@@ -344,6 +344,11 @@ var ruleMap = {
 		url : "",
 		source : ""
 	},
+	las : {
+		name : "Light and Shadow",
+		url : "",
+		source : ""
+	},
 }
 var regMap = {
 		yajilin:[{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},
@@ -937,7 +942,8 @@ $(function() {
 					|| type == 'shugaku' || type == 'icebarn'
 					|| type == 'country' || type == 'meander'
 					|| type == 'fillmat' || type == 'aqre'
-					|| type == 'fillomino' || type == 'lookair') {
+					|| type == 'fillomino' || type == 'lookair'
+					|| type == 'las') {
 				$('#sel_size').append(option.size_3);
 				$('#sel_size').append(option.size_4);
 				$('#sel_size').append(option.size_5);
