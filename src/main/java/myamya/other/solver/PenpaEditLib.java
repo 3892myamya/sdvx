@@ -11,6 +11,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import myamya.other.solver.Common.Masu;
+import myamya.other.solver.Common.Pipemasu;
 import myamya.other.solver.Common.Position;
 import myamya.other.solver.Common.Wall;
 import net.arnx.jsonic.JSON;
@@ -173,6 +174,49 @@ public class PenpaEditLib {
 	}
 
 	/**
+	 * パイプリンク型盤面のPenpaEdit向け文字列を返す。盤面が正方形である前提
+	 */
+	public static String convertPipelinkField(int size, Map<Position, Pipemasu> firstPipeMap) {
+		StringBuilder sb = new StringBuilder();
+		int firstPos = 2 * (size + 5);
+		for (int yIndex = 0; yIndex < size; yIndex++) {
+			for (int xIndex = 0; xIndex < size; xIndex++) {
+				Pipemasu pipe = firstPipeMap.get(new Position(yIndex, xIndex));
+				if (pipe != null) {
+//					if (sb.length() != 0) {
+//						sb.append(",");
+//					}
+//					// ここから
+//					sb.append("\"");
+//					sb.append(firstPos + yIndex * (numbers[0].length + 4) + xIndex);
+//					sb.append("\":[\"");
+//					sb.append(numbers[yIndex][xIndex]);
+//					sb.append("\",1,\"1\"]");
+//					int myIndex = firstPos + yIndex * (size + 4) + xIndex;
+//					if (pipe == Pipemasu.UP_RIGHT || pipe == Pipemasu.RIGHT_DOWN || pipe == Pipemasu.RIGHT_LEFT) {
+//						int rightIndex = myIndex + 1;
+//						String pipeStr = "\"" + myIndex + "," + rightIndex + ",1\"";
+//						if (!pipeStrList.contains(pipeStr)) {
+//							pipeStrList.add(pipeStr);
+//						}
+//					}
+//					if (pipe == Pipemasu.UP_DOWN || pipe == Pipemasu.RIGHT_DOWN || pipe == Pipemasu.DOWN_LEFT) {
+//						int downIndex = myIndex + size + 4;
+//						String pipeStr = "\"" + myIndex + "," + downIndex + ",1\"";
+//						if (!pipeStrList.contains(pipeStr)) {
+//							pipeStrList.add(pipeStr);
+//						}
+//					}
+				}
+
+			}
+		}
+		return convertFieldBefore(size) + "{zR:{z_:[]},zU:{z_:[]},zS:{},zN:{" + sb.toString()
+				+ "},z1:{},zY:{},zF:{},z2:{},zT:[],z3:[],zD:[],z0:[],z5:[],zL:{},zE:{},zW:{},zC:{},z4:{}}\n\n"
+				+ convertFieldAfter(size);
+	}
+
+	/**
 	 * サイズを指定してPenpaEditの盤面向け文字列のヒントより手前の内容を返す。
 	 */
 	private static String convertFieldBefore(int fieldSize) {
@@ -240,6 +284,64 @@ public class PenpaEditLib {
 			sb.append("\"");
 		}
 		return "[[" + sb.toString() + "],[],[],[],[],[]]";
+	}
+
+	/**
+	 * ヤジリン系(ループ+黒マス)のPenpaEditの回答情報向け文字列に変換して返す。 sizeは正方形である前提
+	 * 
+	 * @param pipeMap
+	 */
+	public static String convertSolutionYajilin(int size, Map<Position, Pipemasu> pipeMap) {
+		List<String> indexStrList = new ArrayList<>();
+		List<String> pipeStrList = new ArrayList<>();
+		int firstPos = 2 * (size + 5);
+		for (int yIndex = 0; yIndex < size; yIndex++) {
+			for (int xIndex = 0; xIndex < size; xIndex++) {
+				Pipemasu pipe = pipeMap.get(new Position(yIndex, xIndex));
+				if (pipe != null) {
+					int myIndex = firstPos + yIndex * (size + 4) + xIndex;
+					if (pipe == Pipemasu.UP_RIGHT || pipe == Pipemasu.RIGHT_DOWN || pipe == Pipemasu.RIGHT_LEFT) {
+						int rightIndex = myIndex + 1;
+						String pipeStr = "\"" + myIndex + "," + rightIndex + ",1\"";
+						if (!pipeStrList.contains(pipeStr)) {
+							pipeStrList.add(pipeStr);
+						}
+					}
+					if (pipe == Pipemasu.UP_DOWN || pipe == Pipemasu.RIGHT_DOWN || pipe == Pipemasu.DOWN_LEFT) {
+						int downIndex = myIndex + size + 4;
+						String pipeStr = "\"" + myIndex + "," + downIndex + ",1\"";
+						if (!pipeStrList.contains(pipeStr)) {
+							pipeStrList.add(pipeStr);
+						}
+					}
+					if (pipe == Pipemasu.BLACK) {
+						indexStrList.add(String.valueOf(firstPos + yIndex * (size + 4) + xIndex));
+					}
+				}
+			}
+		}
+		// 文字列ソートがいるっぽい
+		Collections.sort(indexStrList);
+		Collections.sort(pipeStrList);
+		StringBuilder masuSb = new StringBuilder();
+		StringBuilder pipeSb = new StringBuilder();
+		for (String indexStr : indexStrList) {
+			if (masuSb.length() != 0) {
+				masuSb.append(",");
+			}
+			masuSb.append("\"");
+			masuSb.append(indexStr);
+			masuSb.append("\"");
+		}
+		for (String pipeStr : pipeStrList) {
+			if (pipeSb.length() != 0) {
+				pipeSb.append(",");
+			}
+			pipeSb.append("\"");
+			pipeSb.append(pipeStr);
+			pipeSb.append("\"");
+		}
+		return "[[" + masuSb.toString() + "],[" + pipeSb.toString() + "],[],[],[],[]]";
 	}
 
 	/**

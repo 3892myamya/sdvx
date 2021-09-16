@@ -2,8 +2,10 @@ package myamya.other.solver.whitelink;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import myamya.other.solver.Common.CountOverException;
@@ -11,6 +13,8 @@ import myamya.other.solver.Common.Difficulty;
 import myamya.other.solver.Common.Direction;
 import myamya.other.solver.Common.GeneratorResult;
 import myamya.other.solver.Common.Masu;
+import myamya.other.solver.Common.PenpaEditGeneratorResult;
+import myamya.other.solver.Common.Pipemasu;
 import myamya.other.solver.Common.Position;
 import myamya.other.solver.Common.Wall;
 import myamya.other.solver.Generator;
@@ -65,17 +69,6 @@ public class WhitelinkSolver implements Solver {
 			}
 		}
 
-		static class ExtendedField extends WhitelinkSolver.Field {
-			public ExtendedField(Field other) {
-				super(other);
-			}
-
-			public ExtendedField(int height, int width) {
-				super(height, width);
-			}
-
-		}
-
 		private final int height;
 		private final int width;
 
@@ -90,9 +83,11 @@ public class WhitelinkSolver implements Solver {
 
 		@Override
 		public GeneratorResult generate() {
-			ExtendedField wkField = new ExtendedField(height, width);
+			Map<Position, Pipemasu> pipeMap;
+			Map<Position, Pipemasu> firstPipeMap;
+			WhitelinkSolver.Field wkField = new WhitelinkSolver.Field(height, width);
 			List<Integer> indexList = new ArrayList<>();
-			for (int i = 0; i < height * width; i++) {
+			for (int i = 0; i < (height * (width - 1)) + ((height - 1) * width); i++) {
 				indexList.add(i);
 			}
 			Collections.shuffle(indexList);
@@ -101,94 +96,154 @@ public class WhitelinkSolver implements Solver {
 			long start = System.nanoTime();
 			while (true) {
 				// 問題生成部
-				while (!wkField.isSolved() && index < height * width) {
+				while (!wkField.isSolved()) {
 					int posBase = indexList.get(index);
+					boolean toYokoWall;
 					int yIndex, xIndex;
-					yIndex = posBase / width;
-					xIndex = posBase % width;
-					Field virtual = new Field(wkField, true);
-					int notExistsCount = 0;
-					Wall wallUp = yIndex == 0 ? Wall.EXISTS : virtual.tateWall[yIndex - 1][xIndex];
-					if (wallUp == Wall.NOT_EXISTS) {
-						notExistsCount++;
+					if (posBase < height * (width - 1)) {
+						toYokoWall = true;
+						yIndex = posBase / (width - 1);
+						xIndex = posBase % (width - 1);
+					} else {
+						toYokoWall = false;
+						posBase = posBase - (height * (width - 1));
+						yIndex = posBase / width;
+						xIndex = posBase % width;
 					}
-					Wall wallRight = xIndex == virtual.getXLength() - 1 ? Wall.EXISTS
-							: virtual.yokoWall[yIndex][xIndex];
-					if (wallRight == Wall.NOT_EXISTS) {
-						notExistsCount++;
-					}
-					Wall wallDown = yIndex == virtual.getYLength() - 1 ? Wall.EXISTS : virtual.tateWall[yIndex][xIndex];
-					if (wallDown == Wall.NOT_EXISTS) {
-						notExistsCount++;
-					}
-					Wall wallLeft = xIndex == 0 ? Wall.EXISTS : virtual.yokoWall[yIndex][xIndex - 1];
-					if (wallLeft == Wall.NOT_EXISTS) {
-						notExistsCount++;
-					}
-					if (notExistsCount == 0 && Math.random() * 2 < 1) {
-						virtual.masu[yIndex][xIndex] = Masu.BLACK;
-						// 黒マス周りを壁で閉鎖
-						if (yIndex != 0) {
-							virtual.tateWall[yIndex - 1][xIndex] = Wall.EXISTS;
+					if ((toYokoWall && wkField.yokoWall[yIndex][xIndex] == Wall.SPACE)
+							|| (!toYokoWall && wkField.tateWall[yIndex][xIndex] == Wall.SPACE)) {
+						boolean isOk = false;
+						List<Integer> numIdxList = new ArrayList<>();
+						for (int i = 0; i < 2; i++) {
+							numIdxList.add(i);
 						}
-						if (xIndex != virtual.getXLength() - 1) {
-							virtual.yokoWall[yIndex][xIndex] = Wall.EXISTS;
+						Collections.shuffle(numIdxList);
+						for (int masuNum : numIdxList) {
+							Field virtual = new Field(wkField);
+							if (masuNum < 1) {
+								if (toYokoWall) {
+									virtual.yokoWall[yIndex][xIndex] = Wall.EXISTS;
+								} else {
+									virtual.tateWall[yIndex][xIndex] = Wall.EXISTS;
+								}
+							} else if (masuNum < 2) {
+								if (toYokoWall) {
+									virtual.yokoWall[yIndex][xIndex] = Wall.NOT_EXISTS;
+								} else {
+									virtual.tateWall[yIndex][xIndex] = Wall.NOT_EXISTS;
+								}
+							}
+							if (virtual.solveAndCheck()) {
+								isOk = true;
+								wkField.yokoWall = virtual.yokoWall;
+								wkField.tateWall = virtual.tateWall;
+							}
 						}
-						if (yIndex != virtual.getYLength() - 1) {
-							virtual.tateWall[yIndex][xIndex] = Wall.EXISTS;
-						}
-						if (xIndex != 0) {
-							virtual.yokoWall[yIndex][xIndex - 1] = Wall.EXISTS;
-						}
-						if (Math.random() * 2 < 1 || virtual.solveAndCheck()) {
-							wkField.masu = virtual.masu;
-							wkField.yokoWall = virtual.yokoWall;
-							wkField.tateWall = virtual.tateWall;
+						if (!isOk) {
+							// 破綻したら0から作り直す。
+							wkField = new Field(height, width);
+							Collections.shuffle(indexList);
+							index = 0;
+							continue;
 						}
 					}
 					index++;
 				}
-				// マスを戻す
+				// マスを戻す＆回答記憶
+				pipeMap = new HashMap<>();
+				firstPipeMap = new HashMap<>();
+				List<Position> posList = new ArrayList<>();
 				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
-					for (int xIndex = 0; xIndex < wkField.getXLength() - 1; xIndex++) {
-						wkField.yokoWall[yIndex][xIndex] = Wall.SPACE;
-					}
-				}
-				for (int yIndex = 0; yIndex < wkField.getYLength() - 1; yIndex++) {
 					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
-						wkField.tateWall[yIndex][xIndex] = Wall.SPACE;
+						Position pos = new Position(yIndex, xIndex);
+						pipeMap.put(pos, Pipemasu.getByWall(
+								(pos.getyIndex() == 0
+										|| wkField.tateWall[pos.getyIndex() - 1][pos.getxIndex()] == Wall.EXISTS),
+								(pos.getxIndex() == width - 1
+										|| wkField.yokoWall[pos.getyIndex()][pos.getxIndex()] == Wall.EXISTS),
+								(pos.getyIndex() == height - 1
+										|| wkField.tateWall[pos.getyIndex()][pos.getxIndex()] == Wall.EXISTS),
+								(pos.getxIndex() == 0
+										|| wkField.yokoWall[pos.getyIndex()][pos.getxIndex() - 1] == Wall.EXISTS)));
+						if (wkField.masu[yIndex][xIndex] == Masu.BLACK) {
+							if (pos.getyIndex() != 0) {
+								wkField.tateWall[pos.getyIndex() - 1][pos.getxIndex()] = Wall.SPACE;
+							}
+							if (pos.getxIndex() != width - 1) {
+								wkField.yokoWall[pos.getyIndex()][pos.getxIndex()] = Wall.SPACE;
+							}
+							if (pos.getyIndex() != height - 1) {
+								wkField.tateWall[pos.getyIndex()][pos.getxIndex()] = Wall.SPACE;
+							}
+							if (pos.getxIndex() != 0) {
+								wkField.yokoWall[pos.getyIndex()][pos.getxIndex() - 1] = Wall.SPACE;
+							}
+						} else {
+							wkField.firstPosSet.add(pos);
+							posList.add(pos);
+						}
+						wkField.masu[yIndex][xIndex] = Masu.SPACE;
 					}
 				}
 				// 解けるかな？
-				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
-					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
-						if (wkField.masu[yIndex][xIndex] == Masu.BLACK) {
-							// 黒マス周りを壁で閉鎖
-							if (yIndex != 0) {
-								wkField.tateWall[yIndex - 1][xIndex] = Wall.EXISTS;
-							}
-							if (xIndex != wkField.getXLength() - 1) {
-								wkField.yokoWall[yIndex][xIndex] = Wall.EXISTS;
-							}
-							if (yIndex != wkField.getYLength() - 1) {
-								wkField.tateWall[yIndex][xIndex] = Wall.EXISTS;
-							}
-							if (xIndex != 0) {
-								wkField.yokoWall[yIndex][xIndex - 1] = Wall.EXISTS;
-							}
-						}
-					}
-				}
 				level = new WhitelinkSolverForGenerator(wkField, 100).solve2();
 				if (level == -1) {
 					// 解けなければやり直し
-					wkField = new ExtendedField(height, width);
+					wkField = new WhitelinkSolver.Field(height, width);
 					Collections.shuffle(indexList);
 					index = 0;
 				} else {
+					// ヒントを限界まで減らす
+					Collections.shuffle(posList);
+					for (Position pos : posList) {
+						WhitelinkSolver.Field virtual = new WhitelinkSolver.Field(wkField, true);
+						virtual.firstPosSet.remove(pos);
+						if (pos.getyIndex() != 0
+								&& !virtual.firstPosSet.contains(new Position(pos.getyIndex() - 1, pos.getxIndex()))) {
+							virtual.tateWall[pos.getyIndex() - 1][pos.getxIndex()] = Wall.SPACE;
+						}
+						if (pos.getxIndex() != width - 1
+								&& !virtual.firstPosSet.contains(new Position(pos.getyIndex(), pos.getxIndex() + 1))) {
+							virtual.yokoWall[pos.getyIndex()][pos.getxIndex()] = Wall.SPACE;
+						}
+						if (pos.getyIndex() != height - 1
+								&& !virtual.firstPosSet.contains(new Position(pos.getyIndex() + 1, pos.getxIndex()))) {
+							virtual.tateWall[pos.getyIndex()][pos.getxIndex()] = Wall.SPACE;
+						}
+						if (pos.getxIndex() != 0
+								&& !virtual.firstPosSet.contains(new Position(pos.getyIndex(), pos.getxIndex() - 1))) {
+							virtual.yokoWall[pos.getyIndex()][pos.getxIndex() - 1] = Wall.SPACE;
+						}
+						int solveResult = new WhitelinkSolverForGenerator(virtual, 200).solve2();
+						if (solveResult != -1) {
+							firstPipeMap.put(pos, pipeMap.remove(pos));
+							wkField.firstPosSet.remove(pos);
+							if (pos.getyIndex() != 0 && !wkField.firstPosSet
+									.contains(new Position(pos.getyIndex() - 1, pos.getxIndex()))) {
+								wkField.tateWall[pos.getyIndex() - 1][pos.getxIndex()] = Wall.SPACE;
+							}
+							if (pos.getxIndex() != width - 1 && !wkField.firstPosSet
+									.contains(new Position(pos.getyIndex(), pos.getxIndex() + 1))) {
+								wkField.yokoWall[pos.getyIndex()][pos.getxIndex()] = Wall.SPACE;
+							}
+							if (pos.getyIndex() != height - 1 && !wkField.firstPosSet
+									.contains(new Position(pos.getyIndex() + 1, pos.getxIndex()))) {
+								wkField.tateWall[pos.getyIndex()][pos.getxIndex()] = Wall.SPACE;
+							}
+							if (pos.getxIndex() != 0 && !wkField.firstPosSet
+									.contains(new Position(pos.getyIndex(), pos.getxIndex() - 1))) {
+								wkField.yokoWall[pos.getyIndex()][pos.getxIndex() - 1] = Wall.SPACE;
+							}
+							level = solveResult;
+						}
+					}
 					break;
 				}
 			}
+			// ヒント数字を含む盤面変換
+			String fieldStr = PenpaEditLib.convertPipelinkField(wkField.masu.length, firstPipeMap);
+			String solutionStr = PenpaEditLib.convertSolutionYajilin(wkField.masu.length, pipeMap);
+
 			level = (int) Math.sqrt(level * 10 / 3) + 1;
 			String status = "Lv:" + level + "の問題を獲得！(黒：" + wkField.getHintCount() + ")";
 			String url = wkField.getPuzPreURL();
@@ -252,7 +307,7 @@ public class WhitelinkSolver implements Solver {
 			System.out.println(level);
 			System.out.println(wkField.getHintCount());
 			System.out.println(wkField);
-			return new GeneratorResult(status, sb.toString(), link, url, level, "");
+			return new PenpaEditGeneratorResult(status, sb.toString(), link, level, "", fieldStr, solutionStr);
 		}
 
 	}
@@ -349,6 +404,11 @@ public class WhitelinkSolver implements Solver {
 			masu = new Masu[other.getYLength()][other.getXLength()];
 			yokoWall = new Wall[other.getYLength()][other.getXLength() - 1];
 			tateWall = new Wall[other.getYLength() - 1][other.getXLength()];
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					masu[yIndex][xIndex] = other.masu[yIndex][xIndex];
+				}
+			}
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength() - 1; xIndex++) {
 					yokoWall[yIndex][xIndex] = other.yokoWall[yIndex][xIndex];

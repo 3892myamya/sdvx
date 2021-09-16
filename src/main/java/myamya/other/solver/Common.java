@@ -206,6 +206,44 @@ public class Common {
 
 	}
 
+	public enum Pipemasu {
+		UP_RIGHT("└", 1), UP_DOWN("│", 2), UP_LEFT("┘", 3), RIGHT_DOWN("┌", 4), RIGHT_LEFT("─", 5), DOWN_LEFT("┐", 6),
+		BLACK("■", 7);
+
+		String str;
+		int val;
+
+		Pipemasu(String str, int val) {
+			this.str = str;
+			this.val = val;
+		}
+
+		@Override
+		public String toString() {
+			return str;
+		}
+
+		public static Pipemasu getByWall(boolean upWall, boolean rightWall, boolean downWall, boolean leftWall) {
+			if (!upWall && !rightWall && downWall && leftWall) {
+				return UP_RIGHT;
+			} else if (!upWall && rightWall && !downWall && leftWall) {
+				return UP_DOWN;
+			} else if (!upWall && rightWall && downWall && !leftWall) {
+				return UP_LEFT;
+			} else if (upWall && !rightWall && !downWall && leftWall) {
+				return RIGHT_DOWN;
+			} else if (upWall && !rightWall && downWall && !leftWall) {
+				return RIGHT_LEFT;
+			} else if (upWall && rightWall && !downWall && !leftWall) {
+				return DOWN_LEFT;
+			} else if (upWall && rightWall && downWall && leftWall) {
+				return BLACK;
+			}
+			return null;
+		}
+
+	}
+
 	/**
 	 * 四角の情報
 	 */
