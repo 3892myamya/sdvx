@@ -146,6 +146,7 @@ import myamya.other.solver.usoone.UsooneSolver;
 import myamya.other.solver.view.ViewSolver;
 import myamya.other.solver.walllogic.WalllogicSolver;
 import myamya.other.solver.wblink.WblinkSolver;
+import myamya.other.solver.whitelink.WhitelinkSolver;
 import myamya.other.solver.yajikazu.YajikazuSolver;
 import myamya.other.solver.yajikazu.YajikazuSolver.Arrow;
 import myamya.other.solver.yajilin.YajilinSolver;
@@ -11732,6 +11733,112 @@ public class SolverWeb extends HttpServlet {
 		}
 	}
 
+	static class WhitelinkSolverThread extends AbsSolverThlead {
+
+		private final String fieldStr;
+
+		// penpa-edit向けコンストラクタ
+		public WhitelinkSolverThread(String fieldStr) {
+			super(0, 0, "");
+			this.fieldStr = fieldStr;
+		}
+
+		@Override
+		protected Solver getSolver() {
+			return new WhitelinkSolver(fieldStr);
+		}
+
+		@Override
+		public String makeCambus() {
+			StringBuilder sb = new StringBuilder();
+			WhitelinkSolver.Field field = ((WhitelinkSolver) solver).getField();
+			int baseSize = 20;
+			int margin = 5;
+			sb.append("<svg xmlns=\"http://www.w3.org/2000/svg\" " + "height=\""
+					+ (field.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
+					+ (field.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			// 横壁描画
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = -1; xIndex < field.getXLength(); xIndex++) {
+					boolean oneYokoWall = xIndex == -1 || xIndex == field.getXLength() - 1;
+					sb.append("<line y1=\"" + (yIndex * baseSize + margin) + "\" x1=\""
+							+ (xIndex * baseSize + 2 * baseSize) + "\" y2=\"" + (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\"" + (xIndex * baseSize + 2 * baseSize) + "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneYokoWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">" + "</line>");
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = -1; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					boolean oneTateWall = yIndex == -1 || yIndex == field.getYLength() - 1;
+					sb.append("<line y1=\"" + (yIndex * baseSize + baseSize + margin) + "\" x1=\""
+							+ (xIndex * baseSize + baseSize) + "\" y2=\"" + (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\"" + (xIndex * baseSize + baseSize + baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneTateWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">" + "</line>");
+				}
+			}
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					if (field.getMasu()[yIndex][xIndex] == Masu.BLACK) {
+						sb.append("<rect y=\"" + (yIndex * baseSize + margin) + "\" x=\""
+								+ (xIndex * baseSize + baseSize) + "\" width=\"" + (baseSize) + "\" height=\""
+								+ (baseSize) + "\" stroke=\"" + "gray" + "\" fill=\"" + "gray" + "\">" + "</rect>");
+					} else {
+						String str = "";
+						Wall up = yIndex == 0 ? Wall.EXISTS : field.getTateWall()[yIndex - 1][xIndex];
+						Wall right = xIndex == field.getXLength() - 1 ? Wall.EXISTS
+								: field.getYokoWall()[yIndex][xIndex];
+						Wall down = yIndex == field.getYLength() - 1 ? Wall.EXISTS
+								: field.getTateWall()[yIndex][xIndex];
+						Wall left = xIndex == 0 ? Wall.EXISTS : field.getYokoWall()[yIndex][xIndex - 1];
+						if (up == Wall.NOT_EXISTS && right == Wall.NOT_EXISTS && down == Wall.NOT_EXISTS
+								&& left == Wall.NOT_EXISTS) {
+							str = "┼";
+						} else if (up == Wall.NOT_EXISTS && right == Wall.NOT_EXISTS) {
+							str = "└";
+						} else if (up == Wall.NOT_EXISTS && down == Wall.NOT_EXISTS) {
+							str = "│";
+						} else if (up == Wall.NOT_EXISTS && left == Wall.NOT_EXISTS) {
+							str = "┘";
+						} else if (right == Wall.NOT_EXISTS && down == Wall.NOT_EXISTS) {
+							str = "┌";
+						} else if (right == Wall.NOT_EXISTS && left == Wall.NOT_EXISTS) {
+							str = "─";
+						} else if (down == Wall.NOT_EXISTS && left == Wall.NOT_EXISTS) {
+							str = "┐";
+						} else {
+							str = "　";
+						}
+						String fillColor;
+						if (field.getFirstPosSet().contains(new Position(yIndex, xIndex))) {
+							fillColor = "black";
+						} else {
+							fillColor = "green";
+						}
+						sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 2 + margin) + "\" x=\""
+								+ (xIndex * baseSize + baseSize) + "\" font-size=\"" + (baseSize) + "\" textLength=\""
+								+ (baseSize) + "\" fill=\"" + fillColor + "\" stroke=\"" + fillColor
+								+ "\" stroke-width=\"1" + "\" lengthAdjust=\"spacingAndGlyphs\">" + str + "</text>");
+					}
+				}
+			}
+
+			sb.append("</svg>");
+			return sb.toString();
+		}
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -11751,6 +11858,8 @@ public class SolverWeb extends HttpServlet {
 					t = new DotchiloopSolverThread(request.getParameter("fieldStr"));
 				} else if (puzzleType.contains("las")) {
 					t = new LasSolverThread(request.getParameter("fieldStr"));
+				} else if (puzzleType.contains("whitelink")) {
+					t = new WhitelinkSolverThread(request.getParameter("fieldStr"));
 				} else {
 					throw new IllegalArgumentException();
 				}

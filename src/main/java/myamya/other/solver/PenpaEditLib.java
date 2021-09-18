@@ -100,7 +100,7 @@ public class PenpaEditLib {
 				}
 			}
 		}
-		return convertFieldBefore(fieldSize) + "{zR:{z_:[]},zU:{z_:[]},zS:{},zN:{" + sb.toString()
+		return convertFieldBefore(fieldSize, false) + "{zR:{z_:[]},zU:{z_:[]},zS:{},zN:{" + sb.toString()
 				+ "},z1:{},zY:{},zF:{},z2:{},zT:[],z3:[],zD:[],z0:[],z5:[],zL:{},zE:{},zW:{},zC:{},z4:{}}\n\n"
 				+ convertFieldAfter(fieldSize);
 	}
@@ -141,7 +141,7 @@ public class PenpaEditLib {
 				}
 			}
 		}
-		return convertFieldBefore(fieldSize) + "{zR:{z_:[]},zU:{z_:[]},zS:{" + masuSb.toString() + "},zN:{"
+		return convertFieldBefore(fieldSize, false) + "{zR:{z_:[]},zU:{z_:[]},zS:{" + masuSb.toString() + "},zN:{"
 				+ numberSb.toString()
 				+ "},z1:{},zY:{},zF:{},z2:{},zT:[],z3:[],zD:[],z0:[],z5:[],zL:{},zE:{},zW:{},zC:{},z4:{}}\n\n"
 				+ convertFieldAfter(fieldSize);
@@ -168,7 +168,7 @@ public class PenpaEditLib {
 				}
 			}
 		}
-		return convertFieldBefore(fieldSize) + "{zR:{z_:[]},zU:{z_:[]},zS:{},zN:{" + sb.toString()
+		return convertFieldBefore(fieldSize, false) + "{zR:{z_:[]},zU:{z_:[]},zS:{},zN:{" + sb.toString()
 				+ "},z1:{},zY:{},zF:{},z2:{},zT:[],z3:[],zD:[],z0:[],z5:[],zL:{},zE:{},zW:{},zC:{},z4:{}}\n\n"
 				+ convertFieldAfter(fieldSize);
 	}
@@ -176,50 +176,50 @@ public class PenpaEditLib {
 	/**
 	 * パイプリンク型盤面のPenpaEdit向け文字列を返す。盤面が正方形である前提
 	 */
-	public static String convertPipelinkField(int size, Map<Position, Pipemasu> firstPipeMap) {
+	public static String convertPipelinkField(int size, Wall[][] tateWall, Wall[][] yokoWall,
+			Set<Position> firstPosSet) {
 		StringBuilder sb = new StringBuilder();
 		int firstPos = 2 * (size + 5);
 		for (int yIndex = 0; yIndex < size; yIndex++) {
 			for (int xIndex = 0; xIndex < size; xIndex++) {
-				Pipemasu pipe = firstPipeMap.get(new Position(yIndex, xIndex));
-				if (pipe != null) {
-//					if (sb.length() != 0) {
-//						sb.append(",");
-//					}
-//					// ここから
-//					sb.append("\"");
-//					sb.append(firstPos + yIndex * (numbers[0].length + 4) + xIndex);
-//					sb.append("\":[\"");
-//					sb.append(numbers[yIndex][xIndex]);
-//					sb.append("\",1,\"1\"]");
-//					int myIndex = firstPos + yIndex * (size + 4) + xIndex;
-//					if (pipe == Pipemasu.UP_RIGHT || pipe == Pipemasu.RIGHT_DOWN || pipe == Pipemasu.RIGHT_LEFT) {
-//						int rightIndex = myIndex + 1;
-//						String pipeStr = "\"" + myIndex + "," + rightIndex + ",1\"";
-//						if (!pipeStrList.contains(pipeStr)) {
-//							pipeStrList.add(pipeStr);
-//						}
-//					}
-//					if (pipe == Pipemasu.UP_DOWN || pipe == Pipemasu.RIGHT_DOWN || pipe == Pipemasu.DOWN_LEFT) {
-//						int downIndex = myIndex + size + 4;
-//						String pipeStr = "\"" + myIndex + "," + downIndex + ",1\"";
-//						if (!pipeStrList.contains(pipeStr)) {
-//							pipeStrList.add(pipeStr);
-//						}
-//					}
+				if (firstPosSet.contains(new Position(yIndex, xIndex))) {
+					if (sb.length() != 0) {
+						sb.append(",");
+					}
+					sb.append("\"");
+					sb.append(firstPos + yIndex * (size + 4) + xIndex);
+					sb.append("\":[[");
+					Pipemasu pipe = Pipemasu.getByWall((yIndex == 0 || tateWall[yIndex - 1][xIndex] != Wall.NOT_EXISTS),
+							(xIndex == size - 1 || yokoWall[yIndex][xIndex] != Wall.NOT_EXISTS),
+							(yIndex == size - 1 || tateWall[yIndex][xIndex] != Wall.NOT_EXISTS),
+							(xIndex == 0 || yokoWall[yIndex][xIndex - 1] != Wall.NOT_EXISTS));
+					if (pipe == Pipemasu.UP_RIGHT) {
+						sb.append("1,0,0,1");
+					} else if (pipe == Pipemasu.UP_DOWN) {
+						sb.append("0,1,0,1");
+					} else if (pipe == Pipemasu.UP_LEFT) {
+						sb.append("0,0,1,1");
+					} else if (pipe == Pipemasu.RIGHT_DOWN) {
+						sb.append("1,1,0,0");
+					} else if (pipe == Pipemasu.RIGHT_LEFT) {
+						sb.append("1,0,1,0");
+					} else if (pipe == Pipemasu.DOWN_LEFT) {
+						sb.append("0,1,1,0");
+					}
+					sb.append("],\"cross\",2]");
 				}
 
 			}
 		}
-		return convertFieldBefore(size) + "{zR:{z_:[]},zU:{z_:[]},zS:{},zN:{" + sb.toString()
-				+ "},z1:{},zY:{},zF:{},z2:{},zT:[],z3:[],zD:[],z0:[],z5:[],zL:{},zE:{},zW:{},zC:{},z4:{}}\n\n"
+		return convertFieldBefore(size, true) + "{zR:{z_:[]},zU:{z_:[]},zS:{},zN:{},z1:{},zY:{" + sb.toString()
+				+ "},zF:{},z2:{},zT:[],z3:[],zD:[],z0:[],z5:[],zL:{},zE:{},zW:{},zC:{},z4:{}}\n\n"
 				+ convertFieldAfter(size);
 	}
 
 	/**
 	 * サイズを指定してPenpaEditの盤面向け文字列のヒントより手前の内容を返す。
 	 */
-	private static String convertFieldBefore(int fieldSize) {
+	private static String convertFieldBefore(int fieldSize, boolean isYajilin) {
 		StringBuilder sb = new StringBuilder();
 		sb.append("square,"); // 正方形
 		sb.append(fieldSize + "," + fieldSize + ","); // 横縦の長さ
@@ -234,7 +234,12 @@ public class PenpaEditLib {
 		sb.append("\n"); // ここまで1行目
 		sb.append("[0,0,0,0]"); // 余白情報
 		sb.append("\n"); // ここまで2行目
-		sb.append("[\"1\",\"2\",\"1\"]~zS~[\"\",1]"); // 実線・点線・クリック時の色などの情報。とりあえず固定値
+		sb.append("[\"1\",\"2\",\"1\"]"); // 実線・点線・クリック時の情報。とりあえず固定値
+		if (isYajilin) {
+			sb.append("~\"combi\"~[\"yajilin\",\"\"]");
+		} else {
+			sb.append("~zS~[\"\",1]");
+		}
 		sb.append("\n"); // ここまで3行目
 		return sb.toString();
 	}
@@ -290,30 +295,43 @@ public class PenpaEditLib {
 	 * ヤジリン系(ループ+黒マス)のPenpaEditの回答情報向け文字列に変換して返す。 sizeは正方形である前提
 	 * 
 	 * @param pipeMap
+	 * @param firstPosSet
 	 */
-	public static String convertSolutionYajilin(int size, Map<Position, Pipemasu> pipeMap) {
+	public static String convertSolutionYajilin(int size, Map<Position, Pipemasu> pipeMap, Set<Position> firstPosSet) {
 		List<String> indexStrList = new ArrayList<>();
 		List<String> pipeStrList = new ArrayList<>();
 		int firstPos = 2 * (size + 5);
 		for (int yIndex = 0; yIndex < size; yIndex++) {
 			for (int xIndex = 0; xIndex < size; xIndex++) {
-				Pipemasu pipe = pipeMap.get(new Position(yIndex, xIndex));
+				Position pos = new Position(yIndex, xIndex);
+				Pipemasu pipe = pipeMap.get(pos);
 				if (pipe != null) {
 					int myIndex = firstPos + yIndex * (size + 4) + xIndex;
 					if (pipe == Pipemasu.UP_RIGHT || pipe == Pipemasu.RIGHT_DOWN || pipe == Pipemasu.RIGHT_LEFT) {
-						int rightIndex = myIndex + 1;
-						String pipeStr = "\"" + myIndex + "," + rightIndex + ",1\"";
-						if (!pipeStrList.contains(pipeStr)) {
-							pipeStrList.add(pipeStr);
+						// 右伸び確定
+						if (firstPosSet.contains(pos) && firstPosSet.contains(new Position(yIndex, xIndex + 1))) {
+							// 伸びる先がいずれも表出マスであれば回答盤面から除外
+						} else {
+							int rightIndex = myIndex + 1;
+							String pipeStr = myIndex + "," + rightIndex + ",1";
+							if (!pipeStrList.contains(pipeStr)) {
+								pipeStrList.add(pipeStr);
+							}
 						}
 					}
 					if (pipe == Pipemasu.UP_DOWN || pipe == Pipemasu.RIGHT_DOWN || pipe == Pipemasu.DOWN_LEFT) {
-						int downIndex = myIndex + size + 4;
-						String pipeStr = "\"" + myIndex + "," + downIndex + ",1\"";
-						if (!pipeStrList.contains(pipeStr)) {
-							pipeStrList.add(pipeStr);
+						// 下伸び確定
+						if (firstPosSet.contains(pos) && firstPosSet.contains(new Position(yIndex + 1, xIndex))) {
+							// 伸びる先がいずれも表出マスであれば回答盤面から除外
+						} else {
+							int downIndex = myIndex + size + 4;
+							String pipeStr = myIndex + "," + downIndex + ",1";
+							if (!pipeStrList.contains(pipeStr)) {
+								pipeStrList.add(pipeStr);
+							}
 						}
 					}
+					// 黒マスを回答要件とする
 					if (pipe == Pipemasu.BLACK) {
 						indexStrList.add(String.valueOf(firstPos + yIndex * (size + 4) + xIndex));
 					}
@@ -559,7 +577,7 @@ public class PenpaEditLib {
 	}
 
 	/**
-	 * fieldStrからパイプリンク系盤面を復元。
+	 * fieldStrからパイプリンク系盤面を復元。 crossを使っている場合のみ読み取れる。
 	 */
 	public static PipelinkWalls getPipelinkWalls(String fieldStr) {
 		String[] fieldInfo = fieldStr.split("\n")[0].split(",");

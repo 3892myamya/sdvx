@@ -83,8 +83,7 @@ public class WhitelinkSolver implements Solver {
 
 		@Override
 		public GeneratorResult generate() {
-			Map<Position, Pipemasu> pipeMap;
-			Map<Position, Pipemasu> firstPipeMap;
+			Map<Position, Pipemasu> answerPipeMap;
 			WhitelinkSolver.Field wkField = new WhitelinkSolver.Field(height, width);
 			List<Integer> indexList = new ArrayList<>();
 			for (int i = 0; i < (height * (width - 1)) + ((height - 1) * width); i++) {
@@ -150,21 +149,21 @@ public class WhitelinkSolver implements Solver {
 					index++;
 				}
 				// マスを戻す＆回答記憶
-				pipeMap = new HashMap<>();
-				firstPipeMap = new HashMap<>();
+				answerPipeMap = new HashMap<>();
 				List<Position> posList = new ArrayList<>();
 				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
 					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
 						Position pos = new Position(yIndex, xIndex);
-						pipeMap.put(pos, Pipemasu.getByWall(
+						Pipemasu pipe = Pipemasu.getByWall(
 								(pos.getyIndex() == 0
-										|| wkField.tateWall[pos.getyIndex() - 1][pos.getxIndex()] == Wall.EXISTS),
+										|| wkField.tateWall[pos.getyIndex() - 1][pos.getxIndex()] != Wall.NOT_EXISTS),
 								(pos.getxIndex() == width - 1
-										|| wkField.yokoWall[pos.getyIndex()][pos.getxIndex()] == Wall.EXISTS),
+										|| wkField.yokoWall[pos.getyIndex()][pos.getxIndex()] != Wall.NOT_EXISTS),
 								(pos.getyIndex() == height - 1
-										|| wkField.tateWall[pos.getyIndex()][pos.getxIndex()] == Wall.EXISTS),
+										|| wkField.tateWall[pos.getyIndex()][pos.getxIndex()] != Wall.NOT_EXISTS),
 								(pos.getxIndex() == 0
-										|| wkField.yokoWall[pos.getyIndex()][pos.getxIndex() - 1] == Wall.EXISTS)));
+										|| wkField.yokoWall[pos.getyIndex()][pos.getxIndex() - 1] != Wall.NOT_EXISTS));
+						answerPipeMap.put(pos, pipe);
 						if (wkField.masu[yIndex][xIndex] == Masu.BLACK) {
 							if (pos.getyIndex() != 0) {
 								wkField.tateWall[pos.getyIndex() - 1][pos.getxIndex()] = Wall.SPACE;
@@ -216,7 +215,6 @@ public class WhitelinkSolver implements Solver {
 						}
 						int solveResult = new WhitelinkSolverForGenerator(virtual, 200).solve2();
 						if (solveResult != -1) {
-							firstPipeMap.put(pos, pipeMap.remove(pos));
 							wkField.firstPosSet.remove(pos);
 							if (pos.getyIndex() != 0 && !wkField.firstPosSet
 									.contains(new Position(pos.getyIndex() - 1, pos.getxIndex()))) {
@@ -241,16 +239,19 @@ public class WhitelinkSolver implements Solver {
 				}
 			}
 			// ヒント数字を含む盤面変換
-			String fieldStr = PenpaEditLib.convertPipelinkField(wkField.masu.length, firstPipeMap);
-			String solutionStr = PenpaEditLib.convertSolutionYajilin(wkField.masu.length, pipeMap);
-
+			String fieldStr = PenpaEditLib.convertPipelinkField(wkField.masu.length, wkField.tateWall, wkField.yokoWall,
+					wkField.firstPosSet);
+			String solutionStr = PenpaEditLib.convertSolutionYajilin(wkField.masu.length, answerPipeMap,
+					wkField.firstPosSet);
+//			System.out.println(fieldStr);
+//			System.out.println(solutionStr);
 			level = (int) Math.sqrt(level * 10 / 3) + 1;
-			String status = "Lv:" + level + "の問題を獲得！(黒：" + wkField.getHintCount() + ")";
+			String status = "Lv:" + level + "の問題を獲得！(ヒント数：" + wkField.getHintCount() + ")";
 			String url = wkField.getPuzPreURL();
-			String link = "<a href=\"" + url + "\" target=\"_blank\">puzz.linkで解く</a>";
+			String link = "<a href=\"" + url + "\" target=\"_blank\">penpa-editで解く</a>";
+			StringBuilder sb = new StringBuilder();
 			int baseSize = 20;
 			int margin = 5;
-			StringBuilder sb = new StringBuilder();
 			sb.append("<svg xmlns=\"http://www.w3.org/2000/svg\" " + "height=\""
 					+ (wkField.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
 					+ (wkField.getXLength() * baseSize + 2 * baseSize) + "\" >");
@@ -262,11 +263,7 @@ public class WhitelinkSolver implements Solver {
 							+ (xIndex * baseSize + 2 * baseSize) + "\" y2=\"" + (yIndex * baseSize + baseSize + margin)
 							+ "\" x2=\"" + (xIndex * baseSize + 2 * baseSize) + "\" stroke-width=\"1\" fill=\"none\"");
 					if (oneYokoWall) {
-						if (xIndex == -1 || xIndex == wkField.getXLength() - 1) {
-							sb.append("stroke=\"#000\" ");
-						} else {
-							sb.append("stroke=\"green\" ");
-						}
+						sb.append("stroke=\"#000\" ");
 					} else {
 						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
 					}
@@ -282,11 +279,7 @@ public class WhitelinkSolver implements Solver {
 							+ "\" x2=\"" + (xIndex * baseSize + baseSize + baseSize)
 							+ "\" stroke-width=\"1\" fill=\"none\"");
 					if (oneTateWall) {
-						if (yIndex == -1 || yIndex == wkField.getYLength() - 1) {
-							sb.append("stroke=\"#000\" ");
-						} else {
-							sb.append("stroke=\"green\" ");
-						}
+						sb.append("stroke=\"#000\" ");
 					} else {
 						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
 					}
@@ -295,13 +288,42 @@ public class WhitelinkSolver implements Solver {
 			}
 			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
-					if (wkField.getMasu()[yIndex][xIndex] == Masu.BLACK) {
-						sb.append("<rect y=\"" + (yIndex * baseSize + margin) + "\" x=\""
-								+ (xIndex * baseSize + baseSize) + "\" width=\"" + (baseSize) + "\" height=\""
-								+ (baseSize) + "\" stroke=\"" + "black" + "\" fill=\"" + "black" + "\">" + "</rect>");
+					if (wkField.firstPosSet.contains(new Position(yIndex, xIndex))) {
+						String str = "";
+						Wall up = yIndex == 0 ? Wall.EXISTS : wkField.getTateWall()[yIndex - 1][xIndex];
+						Wall right = xIndex == wkField.getXLength() - 1 ? Wall.EXISTS
+								: wkField.getYokoWall()[yIndex][xIndex];
+						Wall down = yIndex == wkField.getYLength() - 1 ? Wall.EXISTS
+								: wkField.getTateWall()[yIndex][xIndex];
+						Wall left = xIndex == 0 ? Wall.EXISTS : wkField.getYokoWall()[yIndex][xIndex - 1];
+						if (up == Wall.NOT_EXISTS && right == Wall.NOT_EXISTS && down == Wall.NOT_EXISTS
+								&& left == Wall.NOT_EXISTS) {
+							str = "┼";
+						} else if (up == Wall.NOT_EXISTS && right == Wall.NOT_EXISTS) {
+							str = "└";
+						} else if (up == Wall.NOT_EXISTS && down == Wall.NOT_EXISTS) {
+							str = "│";
+						} else if (up == Wall.NOT_EXISTS && left == Wall.NOT_EXISTS) {
+							str = "┘";
+						} else if (right == Wall.NOT_EXISTS && down == Wall.NOT_EXISTS) {
+							str = "┌";
+						} else if (right == Wall.NOT_EXISTS && left == Wall.NOT_EXISTS) {
+							str = "─";
+						} else if (down == Wall.NOT_EXISTS && left == Wall.NOT_EXISTS) {
+							str = "┐";
+						} else {
+							str = "　";
+						}
+						String fillColor;
+						fillColor = "black";
+						sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 2 + margin) + "\" x=\""
+								+ (xIndex * baseSize + baseSize) + "\" font-size=\"" + (baseSize) + "\" textLength=\""
+								+ (baseSize) + "\" fill=\"" + fillColor + "\" stroke=\"" + fillColor
+								+ "\" stroke-width=\"1" + "\" lengthAdjust=\"spacingAndGlyphs\">" + str + "</text>");
 					}
 				}
 			}
+
 			sb.append("</svg>");
 			System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
 			System.out.println(level);
@@ -346,6 +368,10 @@ public class WhitelinkSolver implements Solver {
 
 		public Wall[][] getTateWall() {
 			return tateWall;
+		}
+
+		public Set<Position> getFirstPosSet() {
+			return firstPosSet;
 		}
 
 		public int getYLength() {
