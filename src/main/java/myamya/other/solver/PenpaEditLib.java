@@ -643,4 +643,83 @@ public class PenpaEditLib {
 		return new PipelinkWalls(yokoWall, tateWall, firstPosSet);
 	}
 
+	/**
+	 * fieldStrからラインダース向けのライン情報を復元。
+	 */
+	public static List<Set<Position>> getLines(String fieldStr) {
+		List<Set<Position>> result = new ArrayList<>();
+		String[] fieldInfo = fieldStr.split("\n")[0].split(",");
+		Integer yLength = Integer.valueOf(fieldInfo[2]);
+		Integer xLength = Integer.valueOf(fieldInfo[1]);
+		// 左上のインデックスを確定する処理。横列の長さだけで決まる。
+		int firstIndex = 2 * (xLength + 5);
+		Map<Integer, Position> positionMap = new HashMap<>();
+		int keyIndex = firstIndex;
+		for (int yIndex = 0; yIndex < yLength; yIndex++) {
+			for (int xIndex = 0; xIndex < xLength; xIndex++) {
+				positionMap.put(keyIndex, new Position(yIndex, xIndex));
+				keyIndex++;
+			}
+			keyIndex = keyIndex + 4;
+		}
+		Map<String, Map<String, List<Object>>> hintLine = JSON.decode(fieldStr.split("\n")[3]);
+		Map<String, List<Object>> hintInfo = hintLine.get("zL");
+		class x {
+			// posを起点にposMapに含まれる位置を順次continuePosSetに追加する。
+			public void setContinuePosSet(Map<Position, Set<Position>> posMap, Position pos,
+					Set<Position> continuePosSet) {
+				for (Entry<Position, Set<Position>> entry : posMap.entrySet()) {
+					if (entry.getKey().equals(pos)) {
+						for (Position posTo : entry.getValue()) {
+							if (!continuePosSet.contains(posTo)) {
+								continuePosSet.add(posTo);
+								setContinuePosSet(posMap, posTo, continuePosSet);
+							}
+						}
+					} else if (entry.getValue().contains(pos)) {
+						if (!continuePosSet.contains(entry.getKey())) {
+							continuePosSet.add(entry.getKey());
+							setContinuePosSet(posMap, entry.getKey(), continuePosSet);
+						}
+					}
+				}
+			}
+		}
+		Map<Position, Set<Position>> posMap = new HashMap<>();
+		for (Entry<String, List<Object>> entry : hintInfo.entrySet()) {
+			try {
+				String[] posPair = ((String) entry.getKey()).split(",");
+				Position posFrom = positionMap.get(Integer.valueOf(posPair[0]));
+				Position posTo = positionMap.get(Integer.valueOf(posPair[1]));
+				Set<Position> posToSet = posMap.get(posFrom);
+				if (posToSet == null) {
+					posToSet = new HashSet<>();
+					posMap.put(posFrom, posToSet);
+				}
+				posToSet.add(posTo);
+			} catch (ArrayIndexOutOfBoundsException e) {
+				// 作問時に線の引きすぎでOOB発生がありうるので無視
+			}
+		}
+		for (Entry<Position, Set<Position>> entry : posMap.entrySet()) {
+			Position pos = entry.getKey();
+			boolean alreadyLined = false;
+			for (Set<Position> line : result) {
+				if (line.contains(pos)) {
+					alreadyLined = true;
+					break;
+				}
+			}
+			if (!alreadyLined) {
+				Set<Position> continuePosSet = new HashSet<>();
+				continuePosSet.add(pos);
+				new x().setContinuePosSet(posMap, pos, continuePosSet);
+				result.add(continuePosSet);
+			}
+		}
+
+		return result;
+
+	}
+
 }

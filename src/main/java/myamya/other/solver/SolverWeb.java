@@ -83,6 +83,7 @@ import myamya.other.solver.kurochute.KurochuteSolver;
 import myamya.other.solver.kurodoko.KurodokoSolver;
 import myamya.other.solver.kurotto.KurottoSolver;
 import myamya.other.solver.las.LasSolver;
+import myamya.other.solver.linedozen.LinedozenSolver;
 import myamya.other.solver.lits.LitsSolver;
 import myamya.other.solver.lookair.LookairSolver;
 import myamya.other.solver.loopsp.LoopspSolver;
@@ -11839,6 +11840,150 @@ public class SolverWeb extends HttpServlet {
 		}
 	}
 
+	static class LinedozenSolverThread extends AbsSolverThlead {
+		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
+		private static final String FULL_NUMS = "０１２３４５６７８９";
+
+		private final String fieldStr;
+
+		// penpa-edit向けコンストラクタ
+		public LinedozenSolverThread(String fieldStr) {
+			super(0, 0, "");
+			this.fieldStr = fieldStr;
+		}
+
+		@Override
+		protected Solver getSolver() {
+			return new LinedozenSolver(fieldStr);
+		}
+
+		@Override
+		public String makeCambus() {
+			LinedozenSolver.Field field = ((LinedozenSolver) solver).getField();
+			StringBuilder sb = new StringBuilder();
+			int baseSize = 20;
+			int margin = 5;
+			sb.append("<svg xmlns=\"http://www.w3.org/2000/svg\" " + "height=\""
+					+ (field.getYLength() * baseSize + 2 * baseSize) + "\" width=\""
+					+ (field.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			// ライン描画
+			boolean[][] yokoConnect = new boolean[field.getYLength()][field.getXLength() - 1];
+			boolean[][] tateConnect = new boolean[field.getYLength() - 1][field.getXLength()];
+			// 壁セット(表示のため)
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength() - 1; xIndex++) {
+					Position pos = new Position(yIndex, xIndex);
+					boolean isConnect = false;
+					for (Set<Position> line : field.getLines()) {
+						if (line.contains(pos)) {
+							Position rightPos = new Position(yIndex, xIndex + 1);
+							if (line.contains(rightPos)) {
+								isConnect = true;
+								break;
+							}
+						}
+					}
+					yokoConnect[yIndex][xIndex] = isConnect;
+				}
+			}
+			for (int yIndex = 0; yIndex < field.getYLength() - 1; yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					Position pos = new Position(yIndex, xIndex);
+					boolean isConnect = false;
+					for (Set<Position> line : field.getLines()) {
+						if (line.contains(pos)) {
+							Position downPos = new Position(yIndex + 1, xIndex);
+							if (line.contains(downPos)) {
+								isConnect = true;
+								break;
+							}
+						}
+					}
+					tateConnect[yIndex][xIndex] = isConnect;
+				}
+			}
+			// ライン描画
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					boolean forYoko = xIndex != field.getXLength() - 1 && yokoConnect[yIndex][xIndex];
+					boolean forTate = yIndex != field.getYLength() - 1 && tateConnect[yIndex][xIndex];
+					if (forYoko) {
+						sb.append("<line y1=\"" + (yIndex * baseSize + baseSize + margin - 10) + "\" x1=\""
+								+ (xIndex * baseSize + baseSize + 10) + "\" y2=\""
+								+ (yIndex * baseSize + baseSize + margin - 10) + "\" x2=\""
+								+ (xIndex * baseSize + baseSize + baseSize + 10)
+								+ "\" stroke-width=\"2\" fill=\"none\"");
+						sb.append("stroke=\"#888\" ");
+						sb.append(">" + "</line>");
+					}
+					if (forTate) {
+						sb.append("<line y1=\"" + (yIndex * baseSize + margin + 10) + "\" x1=\""
+								+ (xIndex * baseSize + 2 * baseSize - 10) + "\" y2=\""
+								+ (yIndex * baseSize + baseSize + margin + 10) + "\" x2=\""
+								+ (xIndex * baseSize + 2 * baseSize - 10) + "\" stroke-width=\"2\" fill=\"none\"");
+						sb.append("stroke=\"#888\" ");
+						sb.append(">" + "</line>");
+					}
+				}
+			}
+
+			// 数字描画
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					if (field.getNumbersCand()[yIndex][xIndex].size() == 1) {
+						String numberStr = String.valueOf(field.getNumbersCand()[yIndex][xIndex].get(0));
+						String masuStr;
+						int idx = HALF_NUMS.indexOf(numberStr);
+						if (idx >= 0) {
+							masuStr = FULL_NUMS.substring(idx / 2, idx / 2 + 1);
+						} else {
+							masuStr = numberStr;
+						}
+						sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 4 + margin) + "\" x=\""
+								+ (xIndex * baseSize + baseSize + 2) + "\" font-size=\"" + (baseSize - 5)
+								+ "\" textLength=\"" + (baseSize - 5)
+								+ "\" fill=\"green\" lengthAdjust=\"spacingAndGlyphs\">" + masuStr + "</text>");
+					}
+				}
+			}
+			// 横壁描画
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = -1; xIndex < field.getXLength(); xIndex++) {
+					boolean oneYokoWall = xIndex == -1 || xIndex == field.getXLength() - 1
+							|| field.getYokoWall()[yIndex][xIndex];
+					sb.append("<line y1=\"" + (yIndex * baseSize + margin) + "\" x1=\""
+							+ (xIndex * baseSize + 2 * baseSize) + "\" y2=\"" + (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\"" + (xIndex * baseSize + 2 * baseSize) + "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneYokoWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">" + "</line>");
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = -1; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					boolean oneTateWall = yIndex == -1 || yIndex == field.getYLength() - 1
+							|| field.getTateWall()[yIndex][xIndex];
+					sb.append("<line y1=\"" + (yIndex * baseSize + baseSize + margin) + "\" x1=\""
+							+ (xIndex * baseSize + baseSize) + "\" y2=\"" + (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\"" + (xIndex * baseSize + baseSize + baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneTateWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">" + "</line>");
+				}
+			}
+			sb.append("</svg>");
+			return sb.toString();
+		}
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -11860,6 +12005,8 @@ public class SolverWeb extends HttpServlet {
 					t = new LasSolverThread(request.getParameter("fieldStr"));
 				} else if (puzzleType.contains("whitelink")) {
 					t = new WhitelinkSolverThread(request.getParameter("fieldStr"));
+				} else if (puzzleType.contains("linedozen")) {
+					t = new LinedozenSolverThread(request.getParameter("fieldStr"));
 				} else {
 					throw new IllegalArgumentException();
 				}
