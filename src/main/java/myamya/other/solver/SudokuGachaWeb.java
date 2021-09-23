@@ -76,6 +76,7 @@ import myamya.other.solver.tentaisho.TentaishoSolver.TentaishoGenerator;
 import myamya.other.solver.tents.TentsSolver.TentsGenerator;
 import myamya.other.solver.tilepaint.TilepaintSolver.TilepaintGenerator;
 import myamya.other.solver.usoone.UsooneSolver.UsooneGenerator;
+import myamya.other.solver.wafusuma.WafusumaSolver.WafusumaGenerator;
 import myamya.other.solver.walllogic.WalllogicSolver.WalllogicGenerator;
 import myamya.other.solver.whitelink.WhitelinkSolver.WhitelinkGenerator;
 import myamya.other.solver.yajikazu.YajikazuSolver.YajikazuGenerator;
@@ -1231,6 +1232,22 @@ public class SudokuGachaWeb extends HttpServlet {
 
 	}
 
+	static class WafusumaGeneratorThlead extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+
+		WafusumaGeneratorThlead(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new WafusumaGenerator(height, width);
+		}
+
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -1400,6 +1417,8 @@ public class SudokuGachaWeb extends HttpServlet {
 				t = new LasGeneratorThlead(height, width);
 			} else if (type.equals("whitelink")) {
 				t = new WhitelinkGeneratorThlead(height, width);
+			} else if (type.equals("wafusuma")) {
+				t = new WafusumaGeneratorThlead(height, width);
 			} else {
 				throw new IllegalArgumentException();
 			}

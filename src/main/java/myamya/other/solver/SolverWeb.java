@@ -145,6 +145,7 @@ import myamya.other.solver.tents.TentsSolver;
 import myamya.other.solver.tilepaint.TilepaintSolver;
 import myamya.other.solver.usoone.UsooneSolver;
 import myamya.other.solver.view.ViewSolver;
+import myamya.other.solver.wafusuma.WafusumaSolver;
 import myamya.other.solver.walllogic.WalllogicSolver;
 import myamya.other.solver.wblink.WblinkSolver;
 import myamya.other.solver.whitelink.WhitelinkSolver;
@@ -11984,6 +11985,127 @@ public class SolverWeb extends HttpServlet {
 		}
 	}
 
+	static class WafusumaSolverThread extends AbsSolverThlead {
+		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
+		private static final String FULL_NUMS = "０１２３４５６７８９";
+
+		private final String fieldStr;
+
+		// penpa-edit向けコンストラクタ
+		public WafusumaSolverThread(String fieldStr) {
+			super(0, 0, "");
+			this.fieldStr = fieldStr;
+		}
+
+		@Override
+		protected Solver getSolver() {
+			return new WafusumaSolver(fieldStr);
+		}
+
+		@Override
+		public String makeCambus() {
+			WafusumaSolver.Field field = ((WafusumaSolver) solver).getField();
+			StringBuilder sb = new StringBuilder();
+			int baseSize = 20;
+			int margin = 5;
+			sb.append("<svg xmlns=\"http://www.w3.org/2000/svg\" " + "height=\""
+					+ (field.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
+					+ (field.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			// 横壁描画
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = -1; xIndex < field.getXLength(); xIndex++) {
+					boolean oneYokoWall = xIndex == -1 || xIndex == field.getXLength() - 1
+							|| field.getYokoWall()[yIndex][xIndex] == Wall.EXISTS;
+					sb.append("<line y1=\"" + (yIndex * baseSize + margin) + "\" x1=\""
+							+ (xIndex * baseSize + 2 * baseSize) + "\" y2=\"" + (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\"" + (xIndex * baseSize + 2 * baseSize) + "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneYokoWall) {
+						if (xIndex != -1 && xIndex != field.getXLength() - 1
+								&& field.getYokoWall()[yIndex][xIndex] == Wall.EXISTS) {
+							sb.append("stroke=\"green\" ");
+						} else {
+							sb.append("stroke=\"#000\" ");
+						}
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">" + "</line>");
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = -1; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					boolean oneTateWall = yIndex == -1 || yIndex == field.getYLength() - 1
+							|| field.getTateWall()[yIndex][xIndex] == Wall.EXISTS;
+					sb.append("<line y1=\"" + (yIndex * baseSize + baseSize + margin) + "\" x1=\""
+							+ (xIndex * baseSize + baseSize) + "\" y2=\"" + (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\"" + (xIndex * baseSize + baseSize + baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneTateWall) {
+						if (yIndex != -1 && yIndex != field.getYLength() - 1
+								&& field.getTateWall()[yIndex][xIndex] == Wall.EXISTS) {
+							sb.append("stroke=\"green\" ");
+						} else {
+							sb.append("stroke=\"#000\" ");
+
+						}
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">" + "</line>");
+				}
+			}
+			// 数字描画
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength() - 1; xIndex++) {
+					Integer number = field.getYokoNumbers()[yIndex][xIndex];
+					if (number != null) {
+						String numberStr = String.valueOf(number);
+						int numIdx = HALF_NUMS.indexOf(numberStr);
+						String masuStr = null;
+						if (numIdx >= 0) {
+							masuStr = FULL_NUMS.substring(numIdx / 2, numIdx / 2 + 1);
+						} else {
+							masuStr = numberStr;
+						}
+						sb.append("<circle cy=\"" + (yIndex * baseSize + (baseSize / 2) + margin) + "\" cx=\""
+								+ (xIndex * baseSize + baseSize + baseSize) + "\" r=\"" + (baseSize / 2 - 5)
+								+ "\" fill=\"white\", stroke=\"black\">" + "</circle>");
+						sb.append("<text y=\"" + (yIndex * baseSize + baseSize + margin - 7) + "\" x=\""
+								+ (xIndex * baseSize + baseSize + (baseSize / 2) + 5) + "\" font-size=\""
+								+ (baseSize - 11) + "\" textLength=\"" + (baseSize - 11)
+								+ "\" lengthAdjust=\"spacingAndGlyphs\">" + masuStr + "</text>");
+					}
+				}
+			}
+			// 数字描画
+			for (int yIndex = 0; yIndex < field.getYLength() - 1; yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					Integer number = field.getTateNumbers()[yIndex][xIndex];
+					if (number != null) {
+						String numberStr = String.valueOf(number);
+						int numIdx = HALF_NUMS.indexOf(numberStr);
+						String masuStr = null;
+						if (numIdx >= 0) {
+							masuStr = FULL_NUMS.substring(numIdx / 2, numIdx / 2 + 1);
+						} else {
+							masuStr = numberStr;
+						}
+						sb.append("<circle cy=\"" + (yIndex * baseSize + baseSize + margin) + "\" cx=\""
+								+ (xIndex * baseSize + baseSize + (baseSize / 2)) + "\" r=\"" + (baseSize / 2 - 5)
+								+ "\" fill=\"white\", stroke=\"black\">" + "</circle>");
+						sb.append("<text y=\"" + (yIndex * baseSize + baseSize + (baseSize / 2) + margin - 7)
+								+ "\" x=\"" + (xIndex * baseSize + baseSize + 5) + "\" font-size=\"" + (baseSize - 11)
+								+ "\" textLength=\"" + (baseSize - 11) + "\" lengthAdjust=\"spacingAndGlyphs\">"
+								+ masuStr + "</text>");
+					}
+				}
+			}
+			sb.append("</svg>");
+			return sb.toString();
+		}
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -12007,6 +12129,8 @@ public class SolverWeb extends HttpServlet {
 					t = new WhitelinkSolverThread(request.getParameter("fieldStr"));
 				} else if (puzzleType.contains("linedozen")) {
 					t = new LinedozenSolverThread(request.getParameter("fieldStr"));
+				} else if (puzzleType.contains("wafusuma")) {
+					t = new WafusumaSolverThread(request.getParameter("fieldStr"));
 				} else {
 					throw new IllegalArgumentException();
 				}
@@ -12316,6 +12440,8 @@ public class SolverWeb extends HttpServlet {
 			t.join(28000);
 			resultMap.put("result", t.makeCambus());
 			resultMap.put("status", t.getStatus());
+			// あんまり行儀がいいとは言えないが負荷軽減のため試しに入れてみる
+			t.stop();
 		} catch (Exception e) {
 			e.printStackTrace();
 			resultMap.put("result", "");

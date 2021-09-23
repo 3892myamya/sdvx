@@ -354,6 +354,11 @@ var ruleMap = {
 		url : "",
 		source : ""
 	},
+	wafusuma : {
+		name : "和フスマ",
+		url : "",
+		source : ""
+	},
 }
 var regMap = {
 		yajilin:[{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},
@@ -919,6 +924,15 @@ $(function() {
 					$('#sel_size').val(6);
 				} else {
 					$('#sel_size').val(9);
+				}
+			} else if (type == 'wafusuma') {
+				$('#sel_size').append(option.size_3);
+				$('#sel_size').append(option.size_4);
+				$('#sel_size').append(option.size_5);
+				if (nowSelSizeVal > 5) {
+					$('#sel_size').val(5);
+				} else {
+					$('#sel_size').val(nowSelSizeVal);
 				}
 			} else if (type == 'building' || type == 'renban'
 				|| type == 'easyasabc' || type == 'doppelblock' || type == 'simplegako' ) {

@@ -18,6 +18,11 @@ import net.arnx.jsonic.JSON;
 
 public class PenpaEditLib {
 
+	public enum PuzzleType {
+		NONE, YAJILIN, MAKEROOM;
+
+	}
+
 	public static final String PENPA_EDIT_DUMMY_URL = "penpa-edit-dummy-url";
 
 	/**
@@ -80,6 +85,27 @@ public class PenpaEditLib {
 	}
 
 	/**
+	 * 和フスマ向け構造体
+	 */
+	public static class TateYokoNumbers {
+		private final Integer[][] yokoNumbers;
+		private final Integer[][] tateNumbers;
+
+		public TateYokoNumbers(Integer[][] yokoNumbers, Integer[][] tateNumbers) {
+			this.yokoNumbers = yokoNumbers;
+			this.tateNumbers = tateNumbers;
+		}
+
+		public Integer[][] getYokoNumbers() {
+			return yokoNumbers;
+		}
+
+		public Integer[][] getTateNumbers() {
+			return tateNumbers;
+		}
+	}
+
+	/**
 	 * 数字オンリー盤面のPenpaEdit向け文字列を返す。numbersは正方形である前提で、？は未対応 TODO まだ検証していません
 	 */
 	public static String convertNumbersField(Integer[][] numbers) {
@@ -100,7 +126,7 @@ public class PenpaEditLib {
 				}
 			}
 		}
-		return convertFieldBefore(fieldSize, false) + "{zR:{z_:[]},zU:{z_:[]},zS:{},zN:{" + sb.toString()
+		return convertFieldBefore(fieldSize, PuzzleType.NONE) + "{zR:{z_:[]},zU:{z_:[]},zS:{},zN:{" + sb.toString()
 				+ "},z1:{},zY:{},zF:{},z2:{},zT:[],z3:[],zD:[],z0:[],z5:[],zL:{},zE:{},zW:{},zC:{},z4:{}}\n\n"
 				+ convertFieldAfter(fieldSize);
 	}
@@ -141,8 +167,8 @@ public class PenpaEditLib {
 				}
 			}
 		}
-		return convertFieldBefore(fieldSize, false) + "{zR:{z_:[]},zU:{z_:[]},zS:{" + masuSb.toString() + "},zN:{"
-				+ numberSb.toString()
+		return convertFieldBefore(fieldSize, PuzzleType.NONE) + "{zR:{z_:[]},zU:{z_:[]},zS:{" + masuSb.toString()
+				+ "},zN:{" + numberSb.toString()
 				+ "},z1:{},zY:{},zF:{},z2:{},zT:[],z3:[],zD:[],z0:[],z5:[],zL:{},zE:{},zW:{},zC:{},z4:{}}\n\n"
 				+ convertFieldAfter(fieldSize);
 	}
@@ -168,7 +194,7 @@ public class PenpaEditLib {
 				}
 			}
 		}
-		return convertFieldBefore(fieldSize, false) + "{zR:{z_:[]},zU:{z_:[]},zS:{},zN:{" + sb.toString()
+		return convertFieldBefore(fieldSize, PuzzleType.NONE) + "{zR:{z_:[]},zU:{z_:[]},zS:{},zN:{" + sb.toString()
 				+ "},z1:{},zY:{},zF:{},z2:{},zT:[],z3:[],zD:[],z0:[],z5:[],zL:{},zE:{},zW:{},zC:{},z4:{}}\n\n"
 				+ convertFieldAfter(fieldSize);
 	}
@@ -211,15 +237,78 @@ public class PenpaEditLib {
 
 			}
 		}
-		return convertFieldBefore(size, true) + "{zR:{z_:[]},zU:{z_:[]},zS:{},zN:{},z1:{},zY:{" + sb.toString()
-				+ "},zF:{},z2:{},zT:[],z3:[],zD:[],z0:[],z5:[],zL:{},zE:{},zW:{},zC:{},z4:{}}\n\n"
+		return convertFieldBefore(size, PuzzleType.YAJILIN) + "{zR:{z_:[]},zU:{z_:[]},zS:{},zN:{},z1:{},zY:{"
+				+ sb.toString() + "},zF:{},z2:{},zT:[],z3:[],zD:[],z0:[],z5:[],zL:{},zE:{},zW:{},zC:{},z4:{}}\n\n"
+				+ convertFieldAfter(size);
+	}
+
+	/**
+	 * 和フスマのPenpaEdit向け文字列を返す。盤面が正方形である前提
+	 */
+	public static String convertWafusumaField(int size, Integer[][] yokoNumbers, Integer[][] tateNumbers) {
+		// 左上のインデックスを確定する処理
+		int yokoFirstIndex = 58;
+		yokoFirstIndex = yokoFirstIndex + (12 * size);
+		yokoFirstIndex = yokoFirstIndex + (14 + size * 3) * size;
+		Map<Position, Integer> yokoPositionMap = new HashMap<>();
+		int yokoKeyIndex = yokoFirstIndex;
+		for (int yIndex = 0; yIndex < size; yIndex++) {
+			for (int xIndex = 0; xIndex < size - 1; xIndex++) {
+				yokoPositionMap.put(new Position(yIndex, xIndex), yokoKeyIndex);
+				yokoKeyIndex++;
+			}
+			yokoKeyIndex = yokoKeyIndex + 5;
+		}
+		int tateFirstIndex = 42;
+		tateFirstIndex = tateFirstIndex + (8 * size);
+		tateFirstIndex = tateFirstIndex + (10 + size * 2) * size;
+		Map<Position, Integer> tatePositionMap = new HashMap<>();
+		int tateKeyIndex = tateFirstIndex;
+		for (int yIndex = 0; yIndex < size - 1; yIndex++) {
+			for (int xIndex = 0; xIndex < size; xIndex++) {
+				tatePositionMap.put(new Position(yIndex, xIndex), tateKeyIndex);
+				tateKeyIndex++;
+			}
+			tateKeyIndex = tateKeyIndex + 4;
+		}
+		StringBuilder sb = new StringBuilder();
+		for (int yIndex = 0; yIndex < yokoNumbers.length; yIndex++) {
+			for (int xIndex = 0; xIndex < yokoNumbers[0].length; xIndex++) {
+				if (yokoNumbers[yIndex][xIndex] != null) {
+					if (sb.length() != 0) {
+						sb.append(",");
+					}
+					sb.append("\"");
+					sb.append(yokoPositionMap.get(new Position(yIndex, xIndex)));
+					sb.append("\":[\"");
+					sb.append(yokoNumbers[yIndex][xIndex]);
+					sb.append("\",6,\"6\"]");
+				}
+			}
+		}
+		for (int yIndex = 0; yIndex < tateNumbers.length; yIndex++) {
+			for (int xIndex = 0; xIndex < tateNumbers[0].length; xIndex++) {
+				if (tateNumbers[yIndex][xIndex] != null) {
+					if (sb.length() != 0) {
+						sb.append(",");
+					}
+					sb.append("\"");
+					sb.append(tatePositionMap.get(new Position(yIndex, xIndex)));
+					sb.append("\":[\"");
+					sb.append(tateNumbers[yIndex][xIndex]);
+					sb.append("\",6,\"6\"]");
+				}
+			}
+		}
+		return convertFieldBefore(size, PuzzleType.MAKEROOM) + "{zR:{z_:[]},zU:{z_:[]},zS:{},zN:{" + sb.toString()
+				+ "},z1:{},zY:{},zF:{},z2:{},zT:[],z3:[],zD:[],z0:[],z5:[],zL:{},zE:{},zW:{},zC:{},z4:{}}\n\n"
 				+ convertFieldAfter(size);
 	}
 
 	/**
 	 * サイズを指定してPenpaEditの盤面向け文字列のヒントより手前の内容を返す。
 	 */
-	private static String convertFieldBefore(int fieldSize, boolean isYajilin) {
+	private static String convertFieldBefore(int fieldSize, PuzzleType type) {
 		StringBuilder sb = new StringBuilder();
 		sb.append("square,"); // 正方形
 		sb.append(fieldSize + "," + fieldSize + ","); // 横縦の長さ
@@ -235,8 +324,10 @@ public class PenpaEditLib {
 		sb.append("[0,0,0,0]"); // 余白情報
 		sb.append("\n"); // ここまで2行目
 		sb.append("[\"1\",\"2\",\"1\"]"); // 実線・点線・クリック時の情報。とりあえず固定値
-		if (isYajilin) {
+		if (type == PuzzleType.YAJILIN) {
 			sb.append("~\"combi\"~[\"yajilin\",\"\"]");
+		} else if (type == PuzzleType.MAKEROOM) {
+			sb.append("~zE~[\"1\",3]");
 		} else {
 			sb.append("~zS~[\"\",1]");
 		}
@@ -293,9 +384,6 @@ public class PenpaEditLib {
 
 	/**
 	 * ヤジリン系(ループ+黒マス)のPenpaEditの回答情報向け文字列に変換して返す。 sizeは正方形である前提
-	 * 
-	 * @param pipeMap
-	 * @param firstPosSet
 	 */
 	public static String convertSolutionYajilin(int size, Map<Position, Pipemasu> pipeMap, Set<Position> firstPosSet) {
 		List<String> indexStrList = new ArrayList<>();
@@ -360,6 +448,46 @@ public class PenpaEditLib {
 			pipeSb.append("\"");
 		}
 		return "[[" + masuSb.toString() + "],[" + pipeSb.toString() + "],[],[],[],[]]";
+	}
+
+	/**
+	 * 領域分割系のPenpaEditの回答情報向け文字列に変換して返す。盤面は正方形が前提
+	 */
+	public static String convertSolutionRoom(int size, Wall[][] yokoWall, Wall[][] tateWall) {
+		List<String> indexStrList = new ArrayList<>();
+		int idx = (size * size) + (9 * size) + 22;
+		for (int yIndex = 0; yIndex < size; yIndex++) {
+			for (int xIndex = 0; xIndex < size - 1; xIndex++) {
+				if (yokoWall[yIndex][xIndex] == Wall.EXISTS) {
+					indexStrList.add(idx + "," + (idx + size + 4) + ",1");
+				}
+				idx++;
+			}
+			idx = idx + 5;
+		}
+		idx = (size + 5) * (size + 5);
+		for (int yIndex = 0; yIndex < size - 1; yIndex++) {
+			for (int xIndex = 0; xIndex < size; xIndex++) {
+				if (tateWall[yIndex][xIndex] == Wall.EXISTS) {
+					indexStrList.add(idx + "," + (idx + 1) + ",1");
+				}
+				idx++;
+			}
+			idx = idx + 4;
+		}
+		// 文字列ソートがいるっぽい
+		Collections.sort(indexStrList);
+		StringBuilder sb = new StringBuilder();
+		for (String indexStr : indexStrList) {
+			if (sb.length() != 0) {
+				sb.append(",");
+			}
+			sb.append("\"");
+			sb.append(indexStr);
+			sb.append("\"");
+		}
+		return "[[],[],[" + sb.toString() + "],[],[],[]]";
+
 	}
 
 	/**
@@ -574,6 +702,64 @@ public class PenpaEditLib {
 			}
 		}
 		return new RoomWalls(yokoRoomWall, tateRoomWall);
+	}
+
+	/**
+	 * fieldStrから和フスマヒント数字を復元。
+	 */
+	public static TateYokoNumbers getTateYokoNumbers(String fieldStr) {
+		String[] fieldInfo = fieldStr.split("\n")[0].split(",");
+
+		Integer yLength = Integer.valueOf(fieldInfo[2]);
+		Integer xLength = Integer.valueOf(fieldInfo[1]);
+		Integer[][] yokoNumbers = new Integer[yLength][xLength - 1];
+		Integer[][] tateNumbers = new Integer[yLength - 1][xLength];
+
+		// 左上のインデックスを確定する処理
+		int yokoFirstIndex = 58;
+		yokoFirstIndex = yokoFirstIndex + (12 * yLength);
+		yokoFirstIndex = yokoFirstIndex + (14 + yLength * 3) * xLength;
+		Map<Integer, Position> yokoPositionMap = new HashMap<>();
+		int yokoKeyIndex = yokoFirstIndex;
+		for (int yIndex = 0; yIndex < yLength; yIndex++) {
+			for (int xIndex = 0; xIndex < xLength - 1; xIndex++) {
+				yokoPositionMap.put(yokoKeyIndex, new Position(yIndex, xIndex));
+				yokoKeyIndex++;
+			}
+			yokoKeyIndex = yokoKeyIndex + 5;
+		}
+		int tateFirstIndex = 42;
+		tateFirstIndex = tateFirstIndex + (8 * yLength);
+		tateFirstIndex = tateFirstIndex + (10 + yLength * 2) * xLength;
+		Map<Integer, Position> tatePositionMap = new HashMap<>();
+		int tateKeyIndex = tateFirstIndex;
+		for (int yIndex = 0; yIndex < yLength - 1; yIndex++) {
+			for (int xIndex = 0; xIndex < xLength; xIndex++) {
+				tatePositionMap.put(tateKeyIndex, new Position(yIndex, xIndex));
+				tateKeyIndex++;
+			}
+			tateKeyIndex = tateKeyIndex + 4;
+		}
+		Map<String, Map<String, List<Object>>> hintLine = JSON.decode(fieldStr.split("\n")[3]);
+		Map<String, List<Object>> hintInfo = hintLine.get("zN");
+		for (Entry<String, List<Object>> entry : hintInfo.entrySet()) {
+			try {
+				int number = Integer.parseInt((String) entry.getValue().get(0));
+				int idx = Integer.parseInt(entry.getKey());
+				Position pos = yokoPositionMap.get(idx);
+				if (pos != null) {
+					yokoNumbers[pos.getyIndex()][pos.getxIndex()] = number;
+				} else {
+					pos = tatePositionMap.get(idx);
+					if (pos != null) {
+						tateNumbers[pos.getyIndex()][pos.getxIndex()] = number;
+					}
+				}
+			} catch (NumberFormatException e) {
+				// ?を考慮するなら、実装が必要だが、今は握りつぶしている。
+			}
+		}
+		return new TateYokoNumbers(yokoNumbers, tateNumbers);
 	}
 
 	/**
