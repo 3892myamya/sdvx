@@ -359,6 +359,11 @@ var ruleMap = {
 		url : "",
 		source : ""
 	},
+	gaps : {
+		name : "Gaps",
+		url : "",
+		source : ""
+	},
 }
 var regMap = {
 		yajilin:[{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},
@@ -388,6 +393,7 @@ var option = {
 	size_8 : '<option value="8">8 x 8</option>',
 	size_9 : '<option value="9">9 x 9</option>',
 	size_10 : '<option value="10">10 x 10</option>',
+	size_11 : '<option value="11">11 x 11</option>',
 	size_12 : '<option value="12">12 x 12</option>',
 	size_15 : '<option value="15">15 x 15</option>',
 	pattern_0 : '<option value="0">フリー</option>',
@@ -1026,6 +1032,18 @@ $(function() {
 					$('#sel_size').val(5);
 				} else if (nowSelSizeVal > 9) {
 					$('#sel_size').val(9);
+				} else {
+					$('#sel_size').val(nowSelSizeVal);
+				}
+			} else if (type == 'gaps') {
+				$('#sel_size').append(option.size_9);
+				$('#sel_size').append(option.size_10);
+				$('#sel_size').append(option.size_11);
+				$('#sel_size').append(option.size_12);
+				if (nowSelSizeVal < 9) {
+					$('#sel_size').val(9);
+				} else if (nowSelSizeVal > 12) {
+					$('#sel_size').val(12);
 				} else {
 					$('#sel_size').val(nowSelSizeVal);
 				}

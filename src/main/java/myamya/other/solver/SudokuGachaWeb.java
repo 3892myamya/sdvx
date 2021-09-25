@@ -27,6 +27,7 @@ import myamya.other.solver.doppelblock.DoppelblockSolver.DoppelblockGenerator;
 import myamya.other.solver.easyasabc.EasyasabcSolver.EasyasabcGenerator;
 import myamya.other.solver.fillmat.FillmatSolver.FillmatGenerator;
 import myamya.other.solver.fillomino.FillominoSolver.FillominoGenerator;
+import myamya.other.solver.gaps.GapsSolver.GapsGenerator;
 import myamya.other.solver.geradeweg.GeradewegSolver.GeradewegGenerator;
 import myamya.other.solver.gokigen.GokigenSolver.GokigenGenerator;
 import myamya.other.solver.hakoiri.HakoiriSolver.HakoiriGenerator;
@@ -1248,6 +1249,22 @@ public class SudokuGachaWeb extends HttpServlet {
 
 	}
 
+	static class GapsGeneratorThlead extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+
+		GapsGeneratorThlead(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new GapsGenerator(height, width);
+		}
+
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -1259,7 +1276,7 @@ public class SudokuGachaWeb extends HttpServlet {
 			GeneratorThlead t;
 			int height = Integer.parseInt(request.getParameter("height"));
 			int width = Integer.parseInt(request.getParameter("width"));
-			if (!type.equals("tilepaint") && !type.equals("mines") && !type.equals("nonogram")
+			if (!type.equals("tilepaint") && !type.equals("mines") && !type.equals("nonogram") && !type.equals("gaps")
 					&& (height > 10 || width > 10)) {
 				throw new IllegalArgumentException();
 			}
@@ -1419,6 +1436,8 @@ public class SudokuGachaWeb extends HttpServlet {
 				t = new WhitelinkGeneratorThlead(height, width);
 			} else if (type.equals("wafusuma")) {
 				t = new WafusumaGeneratorThlead(height, width);
+			} else if (type.equals("gaps")) {
+				t = new GapsGeneratorThlead(height, width);
 			} else {
 				throw new IllegalArgumentException();
 			}

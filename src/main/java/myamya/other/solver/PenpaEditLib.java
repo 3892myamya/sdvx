@@ -19,7 +19,7 @@ import net.arnx.jsonic.JSON;
 public class PenpaEditLib {
 
 	public enum PuzzleType {
-		NONE, YAJILIN, MAKEROOM;
+		NONE, YAJILIN, MAKEROOM, HINTS_BW;
 
 	}
 
@@ -106,7 +106,28 @@ public class PenpaEditLib {
 	}
 
 	/**
-	 * 数字オンリー盤面のPenpaEdit向け文字列を返す。numbersは正方形である前提で、？は未対応 TODO まだ検証していません
+	 * 左と上にヒントがあるタイプのパズル向けのヒント構造体
+	 */
+	public static class UpLeftHints {
+		private final Integer[] upHints;
+		private final Integer[] leftHints;
+
+		public UpLeftHints(Integer[] upHints, Integer[] leftHints) {
+			this.upHints = upHints;
+			this.leftHints = leftHints;
+		}
+
+		public Integer[] getUpHints() {
+			return upHints;
+		}
+
+		public Integer[] getLeftHints() {
+			return leftHints;
+		}
+	}
+
+	/**
+	 * 数字オンリー盤面のPenpaEdit向け文字列を返す。numbersは正方形である前提で、？は未対応
 	 */
 	public static String convertNumbersField(Integer[][] numbers) {
 		int fieldSize = numbers.length;
@@ -129,6 +150,38 @@ public class PenpaEditLib {
 		return convertFieldBefore(fieldSize, PuzzleType.NONE) + "{zR:{z_:[]},zU:{z_:[]},zS:{},zN:{" + sb.toString()
 				+ "},z1:{},zY:{},zF:{},z2:{},zT:[],z3:[],zD:[],z0:[],z5:[],zL:{},zE:{},zW:{},zC:{},z4:{}}\n\n"
 				+ convertFieldAfter(fieldSize);
+	}
+
+	public static String convertHintsField(int size, Integer[] upHints, Integer[] leftHints) {
+		StringBuilder sb = new StringBuilder();
+		int firstPos = 2 * (size + 6);
+		for (int xIndex = 1; xIndex < size + 1; xIndex++) {
+			if (upHints[xIndex - 1] != null) {
+				if (sb.length() != 0) {
+					sb.append(",");
+				}
+				sb.append("\"");
+				sb.append(firstPos + xIndex);
+				sb.append("\":[\"");
+				sb.append(upHints[xIndex - 1]);
+				sb.append("\",1,\"1\"]");
+			}
+		}
+		for (int yIndex = 1; yIndex < size + 1; yIndex++) {
+			if (leftHints[yIndex - 1] != null) {
+				if (sb.length() != 0) {
+					sb.append(",");
+				}
+				sb.append("\"");
+				sb.append(firstPos + yIndex * (size + 5));
+				sb.append("\":[\"");
+				sb.append(leftHints[yIndex - 1]);
+				sb.append("\",1,\"1\"]");
+			}
+		}
+		return convertFieldBefore(size, PuzzleType.HINTS_BW) + "{zR:{z_:[]},zU:{z_:[]},zS:{},zN:{" + sb.toString()
+				+ "},z1:{},zY:{},zF:{},z2:{},zT:[],z3:[],zD:[],z0:[],z5:[],zL:{},zE:{},zW:{},zC:{},z4:{}}\n\n"
+				+ convertFieldAfterHintsBw(size);
 	}
 
 	/**
@@ -311,6 +364,9 @@ public class PenpaEditLib {
 	private static String convertFieldBefore(int fieldSize, PuzzleType type) {
 		StringBuilder sb = new StringBuilder();
 		sb.append("square,"); // 正方形
+		if (type == PuzzleType.HINTS_BW) {
+			fieldSize++;
+		}
 		sb.append(fieldSize + "," + fieldSize + ","); // 横縦の長さ
 		sb.append("38,0,1,1,"); // 表示サイズ,theta、reflect。とりあえず固定値
 		int canvasSize = 38 * (fieldSize + 1);
@@ -321,7 +377,11 @@ public class PenpaEditLib {
 				: 2 * (centerBase * centerBase + 3 * centerBase + 2);
 		sb.append(center + "," + center); // センター座標
 		sb.append("\n"); // ここまで1行目
-		sb.append("[0,0,0,0]"); // 余白情報
+		if (type == PuzzleType.HINTS_BW) {
+			sb.append("[1,0,1,0]"); // 余白情報
+		} else {
+			sb.append("[0,0,0,0]"); // 余白情報
+		}
 		sb.append("\n"); // ここまで2行目
 		sb.append("[\"1\",\"2\",\"1\"]"); // 実線・点線・クリック時の情報。とりあえず固定値
 		if (type == PuzzleType.YAJILIN) {
@@ -356,6 +416,26 @@ public class PenpaEditLib {
 	}
 
 	/**
+	 * FIXME ↑と統合したいな
+	 */
+	private static String convertFieldAfterHintsBw(int fieldSize) {
+		StringBuilder sb = new StringBuilder();
+		int firstPos = 3 * fieldSize + 18;
+		for (int yIndex = 0; yIndex < fieldSize; yIndex++) {
+			if (sb.length() == 0) {
+				sb.append(firstPos);
+			} else {
+				sb.append("," + 6);
+			}
+			for (int xIndex = 0; xIndex < fieldSize - 1; xIndex++) {
+				sb.append(",");
+				sb.append("1");
+			}
+		}
+		return "[" + sb.toString() + "]";
+	}
+
+	/**
 	 * 黒マスの情報をPenpaEditの回答情報向け文字列に変換して返す。 Masuは正方形である前提
 	 */
 	public static String convertSolutionMasu(Masu[][] masu) {
@@ -365,6 +445,33 @@ public class PenpaEditLib {
 			for (int xIndex = 0; xIndex < masu[0].length; xIndex++) {
 				if (masu[yIndex][xIndex] == Masu.BLACK) {
 					indexStrList.add(String.valueOf(firstPos + yIndex * (masu[0].length + 4) + xIndex));
+				}
+			}
+		}
+		// 文字列ソートがいるっぽい
+		Collections.sort(indexStrList);
+		StringBuilder sb = new StringBuilder();
+		for (String indexStr : indexStrList) {
+			if (sb.length() != 0) {
+				sb.append(",");
+			}
+			sb.append("\"");
+			sb.append(indexStr);
+			sb.append("\"");
+		}
+		return "[[" + sb.toString() + "],[],[],[],[],[]]";
+	}
+
+	/**
+	 * FIXME ↑と統合したいな
+	 */
+	public static String convertSolutionMasuHintsBw(Masu[][] masu) {
+		List<String> indexStrList = new ArrayList<>();
+		int firstPos = 2 * (masu.length + 1 + 5);
+		for (int yIndex = 1; yIndex < masu.length + 1; yIndex++) {
+			for (int xIndex = 1; xIndex < masu[0].length + 1; xIndex++) {
+				if (masu[yIndex - 1][xIndex - 1] == Masu.BLACK) {
+					indexStrList.add(String.valueOf(firstPos + yIndex * (masu[0].length + 5) + xIndex));
 				}
 			}
 		}
@@ -906,6 +1013,40 @@ public class PenpaEditLib {
 
 		return result;
 
+	}
+
+	public static UpLeftHints getUpLeftHints(String fieldStr) {
+		String[] fieldInfo = fieldStr.split("\n")[0].split(",");
+		Integer yLength = Integer.valueOf(fieldInfo[2]);
+		Integer xLength = Integer.valueOf(fieldInfo[1]);
+		Integer[] upHints = new Integer[xLength - 1];
+		Integer[] leftHints = new Integer[yLength - 1];
+		// 左上のインデックスを確定する処理。横列の長さだけで決まる。
+		int firstIndex = 2 * (xLength + 5);
+
+		Map<Integer, Position> positionMap = new HashMap<>();
+		int keyIndex = firstIndex;
+		for (int yIndex = 0; yIndex < yLength; yIndex++) {
+			for (int xIndex = 0; xIndex < xLength; xIndex++) {
+				positionMap.put(keyIndex, new Position(yIndex, xIndex));
+				keyIndex++;
+			}
+			keyIndex = keyIndex + 4;
+		}
+		Map<String, Map<String, List<Object>>> hintLine = JSON.decode(fieldStr.split("\n")[3]);
+		Map<String, List<Object>> hintInfo = hintLine.get("zN");
+		for (Entry<String, List<Object>> entry : hintInfo.entrySet()) {
+			int idx = Integer.parseInt(entry.getKey());
+			Position pos = positionMap.get(idx);
+			int number = Integer.parseInt((String) entry.getValue().get(0));
+			if (pos.getxIndex() == 0) {
+				leftHints[pos.getyIndex() - 1] = number;
+			}
+			if (pos.getyIndex() == 0) {
+				upHints[pos.getxIndex() - 1] = number;
+			}
+		}
+		return new UpLeftHints(upHints, leftHints);
 	}
 
 }
