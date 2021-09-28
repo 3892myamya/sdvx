@@ -364,6 +364,11 @@ var ruleMap = {
 		url : "",
 		source : ""
 	},
+	clouds : {
+		name : "Clouds",
+		url : "",
+		source : ""
+	},
 }
 var regMap = {
 		yajilin:[{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},
@@ -1058,7 +1063,11 @@ $(function() {
 				$('#sel_size').append(option.size_10);
 				$('#sel_size').append(option.size_12);
 				$('#sel_size').append(option.size_15);
-				$('#sel_size').val(nowSelSizeVal);
+				if (nowSelSizeVal == 11) {
+					$('#sel_size').val(10);
+				} else {
+					$('#sel_size').val(nowSelSizeVal);
+				}
 			} else {
 				$('#sel_size').append(option.size_3);
 				$('#sel_size').append(option.size_4);

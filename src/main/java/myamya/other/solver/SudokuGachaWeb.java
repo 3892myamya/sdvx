@@ -20,6 +20,7 @@ import myamya.other.solver.balance.BalanceSolver.BalanceGenerator;
 import myamya.other.solver.barns.BarnsSolver.BarnsGenerator;
 import myamya.other.solver.box.BoxSolver.BoxGenerator;
 import myamya.other.solver.building.BuildingSolver.BuildingGenerator;
+import myamya.other.solver.clouds.CloudsSolver.CloudsGenerator;
 import myamya.other.solver.cojun.CojunSolver.CojunGenerator;
 import myamya.other.solver.country.CountrySolver.CountryGenerator;
 import myamya.other.solver.creek.CreekSolver.CreekGenerator;
@@ -1265,6 +1266,22 @@ public class SudokuGachaWeb extends HttpServlet {
 
 	}
 
+	static class CloudsGeneratorThlead extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+
+		CloudsGeneratorThlead(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new CloudsGenerator(height, width);
+		}
+
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -1277,7 +1294,7 @@ public class SudokuGachaWeb extends HttpServlet {
 			int height = Integer.parseInt(request.getParameter("height"));
 			int width = Integer.parseInt(request.getParameter("width"));
 			if (!type.equals("tilepaint") && !type.equals("mines") && !type.equals("nonogram") && !type.equals("gaps")
-					&& (height > 10 || width > 10)) {
+					&& !type.equals("clouds") && (height > 10 || width > 10)) {
 				throw new IllegalArgumentException();
 			}
 			if (type.equals("sudoku")) {
@@ -1438,6 +1455,8 @@ public class SudokuGachaWeb extends HttpServlet {
 				t = new WafusumaGeneratorThlead(height, width);
 			} else if (type.equals("gaps")) {
 				t = new GapsGeneratorThlead(height, width);
+			} else if (type.equals("clouds")) {
+				t = new CloudsGeneratorThlead(height, width);
 			} else {
 				throw new IllegalArgumentException();
 			}
