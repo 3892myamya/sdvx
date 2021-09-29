@@ -202,7 +202,7 @@ public class CloudsSolver implements Solver {
 //			System.out.println(fieldStr);
 //			System.out.println(solutionStr);
 
-			level = (int) Math.sqrt(level / 5 / 3) + 1;
+			level = (int) Math.sqrt(level / 3 / 3) + 1;
 			String status = "Lv:" + level + "の問題を獲得！(数字：" + wkField.getHintCount().split("/")[0] + ")";
 			String url = wkField.getPuzPreURL();
 			String link = "<a href=\"" + url + "\" target=\"_blank\">penpa-editで解く</a>";
@@ -594,10 +594,9 @@ public class CloudsSolver implements Solver {
 		 * hintsは黒マスの数を示す。
 		 */
 		private boolean hintsSolve() {
-			Masu[][] masu = getMasu();
+//			 縦のヒント
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				if (leftHints[yIndex] != null) {
-					// 横方向調査
 					int blackCnt = 0;
 					int spaceCnt = 0;
 					for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
@@ -607,19 +606,31 @@ public class CloudsSolver implements Solver {
 							spaceCnt++;
 						}
 					}
-					if (blackCnt + spaceCnt < leftHints[yIndex]) {
-						// 黒マス不足
+					if (leftHints[yIndex] < blackCnt) {
 						return false;
 					}
-					if (blackCnt > leftHints[yIndex]) {
-						// 黒マス超過
+					if (leftHints[yIndex] > blackCnt + spaceCnt) {
 						return false;
+					}
+					if (leftHints[yIndex] == blackCnt) {
+						for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+							if (masu[yIndex][xIndex] == Masu.SPACE) {
+								masu[yIndex][xIndex] = Masu.NOT_BLACK;
+							}
+						}
+					}
+					if (leftHints[yIndex] == blackCnt + spaceCnt) {
+						for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+							if (masu[yIndex][xIndex] == Masu.SPACE) {
+								masu[yIndex][xIndex] = Masu.BLACK;
+							}
+						}
 					}
 				}
 			}
+			// 横のヒント
 			for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
 				if (upHints[xIndex] != null) {
-					// 縦方向調査
 					int blackCnt = 0;
 					int spaceCnt = 0;
 					for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
@@ -629,13 +640,25 @@ public class CloudsSolver implements Solver {
 							spaceCnt++;
 						}
 					}
-					if (blackCnt + spaceCnt < upHints[xIndex]) {
-						// 黒マス不足
+					if (upHints[xIndex] < blackCnt) {
 						return false;
 					}
-					if (blackCnt > upHints[xIndex]) {
-						// 黒マス超過
+					if (upHints[xIndex] > blackCnt + spaceCnt) {
 						return false;
+					}
+					if (upHints[xIndex] == blackCnt) {
+						for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+							if (masu[yIndex][xIndex] == Masu.SPACE) {
+								masu[yIndex][xIndex] = Masu.NOT_BLACK;
+							}
+						}
+					}
+					if (upHints[xIndex] == blackCnt + spaceCnt) {
+						for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+							if (masu[yIndex][xIndex] == Masu.SPACE) {
+								masu[yIndex][xIndex] = Masu.BLACK;
+							}
+						}
 					}
 				}
 			}
@@ -721,9 +744,9 @@ public class CloudsSolver implements Solver {
 			}
 		}
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
-		System.out.println("難易度:" + (count / 5));
+		System.out.println("難易度:" + (count / 3));
 		System.out.println(field);
-		int level = (int) Math.sqrt(count / 5 / 3) + 1;
+		int level = (int) Math.sqrt(count / 3 / 3) + 1;
 		return "解けました。推定難易度:" + Difficulty.getByCount(count / 5).toString() + "(Lv:" + level + ")";
 	}
 
