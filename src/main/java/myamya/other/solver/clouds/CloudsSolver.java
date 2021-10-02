@@ -169,7 +169,7 @@ public class CloudsSolver implements Solver {
 					continue;
 				}
 				// 解けるかな？
-				level = new CloudsSolverForGenerator(new CloudsSolver.Field(wkField), 500).solve2();
+				level = new CloudsSolverForGenerator(new CloudsSolver.Field(wkField),1000).solve2();
 				if (level == -1) {
 					// 解けなければやり直し
 					wkField = new CloudsSolver.Field(height, width);
@@ -475,81 +475,57 @@ public class CloudsSolver implements Solver {
 		 * 確定した四角がある場合、それとかぶる・接する候補を消す。
 		 */
 		protected boolean cloudsSolve() {
-			boolean advance = false;
 			for (int yIndex = 0; yIndex < getYLength() - 1; yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength() - 1; xIndex++) {
 					Masu masu1 = masu[yIndex][xIndex];
 					Masu masu2 = masu[yIndex][xIndex + 1];
 					Masu masu3 = masu[yIndex + 1][xIndex];
 					Masu masu4 = masu[yIndex + 1][xIndex + 1];
-					if (masu1 == Masu.BLACK && masu2 == Masu.BLACK && masu3 == Masu.BLACK && masu4 == Masu.NOT_BLACK) {
+					if (masu2 == Masu.BLACK && masu3 == Masu.BLACK && masu4 == Masu.NOT_BLACK) {
 						return false;
 					}
-					if (masu1 == Masu.BLACK && masu2 == Masu.BLACK && masu3 == Masu.NOT_BLACK && masu4 == Masu.BLACK) {
+					if (masu2 == Masu.BLACK && masu3 == Masu.BLACK && masu1 == Masu.NOT_BLACK) {
 						return false;
 					}
-					if (masu1 == Masu.BLACK && masu2 == Masu.NOT_BLACK && masu3 == Masu.BLACK && masu4 == Masu.BLACK) {
+					if (masu1 == Masu.BLACK && masu4 == Masu.BLACK && masu2 == Masu.NOT_BLACK) {
 						return false;
 					}
-					if (masu1 == Masu.NOT_BLACK && masu2 == Masu.BLACK && masu3 == Masu.BLACK && masu4 == Masu.BLACK) {
+					if (masu1 == Masu.BLACK && masu4 == Masu.BLACK && masu3 == Masu.NOT_BLACK) {
 						return false;
 					}
-					if (masu1 == Masu.NOT_BLACK && masu2 == Masu.BLACK && masu3 == Masu.BLACK
-							&& masu4 == Masu.NOT_BLACK) {
-						return false;
-					}
-					if (masu1 == Masu.BLACK && masu2 == Masu.NOT_BLACK && masu3 == Masu.NOT_BLACK
-							&& masu4 == Masu.BLACK) {
-						return false;
-					}
-					if (masu1 == Masu.BLACK && masu2 == Masu.BLACK && masu3 == Masu.BLACK && masu4 == Masu.SPACE) {
-						advance = true;
+					if (masu2 == Masu.BLACK && masu3 == Masu.BLACK) {
+						masu[yIndex][xIndex] = Masu.BLACK;
 						masu[yIndex + 1][xIndex + 1] = Masu.BLACK;
 					}
-					if (masu1 == Masu.BLACK && masu2 == Masu.BLACK && masu3 == Masu.SPACE && masu4 == Masu.BLACK) {
-						advance = true;
+					if (masu1 == Masu.BLACK && masu4 == Masu.BLACK) {
+						masu[yIndex][xIndex + 1] = Masu.BLACK;
 						masu[yIndex + 1][xIndex] = Masu.BLACK;
 					}
-					if (masu1 == Masu.BLACK && masu2 == Masu.SPACE && masu3 == Masu.BLACK && masu4 == Masu.BLACK) {
-						advance = true;
-						masu[yIndex][xIndex + 1] = Masu.BLACK;
-					}
-					if (masu1 == Masu.SPACE && masu2 == Masu.BLACK && masu3 == Masu.BLACK && masu4 == Masu.BLACK) {
-						advance = true;
-						masu[yIndex][xIndex] = Masu.BLACK;
-					}
-					if (masu1 == Masu.NOT_BLACK && masu2 == Masu.BLACK && masu3 == Masu.BLACK && masu4 == Masu.SPACE) {
-						masu[yIndex + 1][xIndex + 1] = Masu.BLACK;
-					}
-					if (masu1 == Masu.NOT_BLACK && masu2 == Masu.BLACK && masu3 == Masu.SPACE
-							&& masu4 == Masu.NOT_BLACK) {
+					if (masu2 == Masu.BLACK && masu4 == Masu.NOT_BLACK) {
 						masu[yIndex + 1][xIndex] = Masu.NOT_BLACK;
 					}
-					if (masu1 == Masu.NOT_BLACK && masu2 == Masu.SPACE && masu3 == Masu.BLACK
-							&& masu4 == Masu.NOT_BLACK) {
+					if (masu3 == Masu.BLACK && masu4 == Masu.NOT_BLACK) {
 						masu[yIndex][xIndex + 1] = Masu.NOT_BLACK;
 					}
-					if (masu1 == Masu.SPACE && masu2 == Masu.BLACK && masu3 == Masu.BLACK && masu4 == Masu.NOT_BLACK) {
-						masu[yIndex][xIndex] = Masu.BLACK;
+					if (masu2 == Masu.BLACK && masu1 == Masu.NOT_BLACK) {
+						masu[yIndex + 1][xIndex] = Masu.NOT_BLACK;
 					}
-					if (masu1 == Masu.BLACK && masu2 == Masu.NOT_BLACK && masu3 == Masu.NOT_BLACK
-							&& masu4 == Masu.SPACE) {
+					if (masu3 == Masu.BLACK && masu1 == Masu.NOT_BLACK) {
+						masu[yIndex][xIndex + 1] = Masu.NOT_BLACK;
+					}
+					if (masu1 == Masu.BLACK && masu2 == Masu.NOT_BLACK) {
 						masu[yIndex + 1][xIndex + 1] = Masu.NOT_BLACK;
 					}
-					if (masu1 == Masu.BLACK && masu2 == Masu.NOT_BLACK && masu3 == Masu.SPACE && masu4 == Masu.BLACK) {
-						masu[yIndex + 1][xIndex] = Masu.BLACK;
+					if (masu4 == Masu.BLACK && masu2 == Masu.NOT_BLACK) {
+						masu[yIndex][xIndex] = Masu.NOT_BLACK;
 					}
-					if (masu1 == Masu.BLACK && masu2 == Masu.SPACE && masu3 == Masu.NOT_BLACK && masu4 == Masu.BLACK) {
-						masu[yIndex][xIndex + 1] = Masu.BLACK;
+					if (masu1 == Masu.BLACK && masu3 == Masu.NOT_BLACK) {
+						masu[yIndex + 1][xIndex + 1] = Masu.NOT_BLACK;
 					}
-					if (masu1 == Masu.SPACE && masu2 == Masu.NOT_BLACK && masu3 == Masu.NOT_BLACK
-							&& masu4 == Masu.BLACK) {
+					if (masu4 == Masu.BLACK && masu3 == Masu.NOT_BLACK) {
 						masu[yIndex][xIndex] = Masu.NOT_BLACK;
 					}
 				}
-			}
-			if (advance) {
-				return cloudsSolve();
 			}
 			// 幅が1になったらアウト
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
@@ -712,11 +688,12 @@ public class CloudsSolver implements Solver {
 	}
 
 	public static void main(String[] args) {
-		String fieldStr = "square,13,13,38,0,1,1,532,532,144,144\n" + "[1,0,1,0]\n"
+		String fieldStr = "square,16,16,38,0,1,1,646,646,589,589\n" + "[1,0,1,0]\n"
 				+ "[\"1\",\"2\",\"1\"]~zS~[\"\",1]\n"
-				+ "{zR:{z_:[]},zU:{z_:[]},zS:{},zN:{\"38\":[\"2\",1,\"1\"],\"42\":[\"3\",1,\"1\"],\"43\":[\"4\",1,\"1\"],\"47\":[\"3\",1,\"1\"],\"48\":[\"4\",1,\"1\"],\"53\":[\"3\",1,\"1\"],\"104\":[\"10\",1,\"1\"],\"155\":[\"4\",1,\"1\"],\"206\":[\"7\",1,\"1\"],\"240\":[\"1\",1,\"1\"]},z1:{},zY:{},zF:{},z2:{},zT:[],z3:[],zD:[],z0:[],z5:[],zL:{},zE:{},zW:{},zC:{},z4:{}}\n"
+				+ "{zR:{z_:[]},zU:{z_:[]},zS:{},zN:{\"43\":[\"8\",1,\"1\"],\"44\":[\"8\",1,\"1\"],\"46\":[\"7\",1,\"1\"],\"47\":[\"2\",1,\"1\"],\"48\":[\"7\",1,\"1\"],\"49\":[\"10\",1,\"1\"],\"50\":[\"8\",1,\"1\"],\"51\":[\"5\",1,\"1\"],\"53\":[\"0\",1,\"1\"],\"54\":[\"7\",1,\"1\"],\"55\":[\"11\",1,\"1\"],\"62\":[\"4\",1,\"1\"],\"102\":[\"6\",1,\"1\"],\"122\":[\"4\",1,\"1\"],\"142\":[\"0\",1,\"1\"],\"162\":[\"9\",1,\"1\"],\"182\":[\"9\",1,\"1\"],\"202\":[\"7\",1,\"1\"],\"222\":[\"8\",1,\"1\"],\"242\":[\"12\",1,\"1\"],\"262\":[\"9\",1,\"1\"],\"302\":[\"7\",1,\"1\"],\"322\":[\"6\",1,\"1\"]},z1:{},zY:{},zF:{},z2:{},zT:[],z3:[],zD:[],z0:[],z5:[],zL:{},zE:{},zW:{},zC:{},z4:{}}\n"
 				+ "\n"
-				+ "[54,1,1,1,1,1,1,1,1,1,1,1,6,1,1,1,1,1,1,1,1,1,1,1,6,1,1,1,1,1,1,1,1,1,1,1,6,1,1,1,1,1,1,1,1,1,1,1,6,1,1,1,1,1,1,1,1,1,1,1,6,1,1,1,1,1,1,1,1,1,1,1,6,1,1,1,1,1,1,1,1,1,1,1,6,1,1,1,1,1,1,1,1,1,1,1,6,1,1,1,1,1,1,1,1,1,1,1,6,1,1,1,1,1,1,1,1,1,1,1,6,1,1,1,1,1,1,1,1,1,1,1,6,1,1,1,1,1,1,1,1,1,1,1]";
+				+ "[63,1,1,1,1,1,1,1,1,1,1,1,1,1,1,6,1,1,1,1,1,1,1,1,1,1,1,1,1,1,6,1,1,1,1,1,1,1,1,1,1,1,1,1,1,6,1,1,1,1,1,1,1,1,1,1,1,1,1,1,6,1,1,1,1,1,1,1,1,1,1,1,1,1,1,6,1,1,1,1,1,1,1,1,1,1,1,1,1,1,6,1,1,1,1,1,1,1,1,1,1,1,1,1,1,6,1,1,1,1,1,1,1,1,1,1,1,1,1,1,6,1,1,1,1,1,1,1,1,1,1,1,1,1,1,6,1,1,1,1,1,1,1,1,1,1,1,1,1,1,6,1,1,1,1,1,1,1,1,1,1,1,1,1,1,6,1,1,1,1,1,1,1,1,1,1,1,1,1,1,6,1,1,1,1,1,1,1,1,1,1,1,1,1,1,6,1,1,1,1,1,1,1,1,1,1,1,1,1,1,6,1,1,1,1,1,1,1,1,1,1,1,1,1,1]\n"
+				+ "";
 		System.out.println(new CloudsSolver(fieldStr).solve());
 	}
 

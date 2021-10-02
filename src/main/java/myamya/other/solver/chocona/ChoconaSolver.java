@@ -127,8 +127,8 @@ public class ChoconaSolver implements Solver {
 						blackCntList.add(-1);
 					}
 				} else {
-					//16 - 255は '-'
-					//256 - 999は '+'
+					// 16 - 255は '-'
+					// 256 - 999は '+'
 					int blackCnt;
 					if (ch == '-') {
 						blackCnt = Integer.parseInt("" + param.charAt(readPos + 1) + param.charAt(readPos + 2), 16);
@@ -311,11 +311,9 @@ public class ChoconaSolver implements Solver {
 		}
 
 		/**
-		 * 黒マスは長方形になるように配置する。
-		 * 長方形にできなかった場合はfalseを返す。
+		 * 黒マスは長方形になるように配置する。 長方形にできなかった場合はfalseを返す。
 		 */
 		public boolean rectSolve() {
-			boolean advance = false;
 			for (int yIndex = 0; yIndex < getYLength() - 1; yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength() - 1; xIndex++) {
 					Masu masu1 = masu[yIndex][xIndex];
@@ -335,25 +333,54 @@ public class ChoconaSolver implements Solver {
 						return false;
 					}
 					if (masu1 == Masu.BLACK && masu2 == Masu.BLACK && masu3 == Masu.BLACK && masu4 == Masu.SPACE) {
-						advance = true;
 						masu[yIndex + 1][xIndex + 1] = Masu.BLACK;
 					}
+					if (masu1 == Masu.BLACK && masu2 == Masu.BLACK && masu3 == Masu.SPACE && masu4 == Masu.NOT_BLACK) {
+						masu[yIndex + 1][xIndex] = Masu.NOT_BLACK;
+					}
+					if (masu1 == Masu.BLACK && masu2 == Masu.SPACE && masu3 == Masu.BLACK && masu4 == Masu.NOT_BLACK) {
+						masu[yIndex][xIndex + 1] = Masu.NOT_BLACK;
+					}
+					if (masu1 == Masu.SPACE && masu2 == Masu.BLACK && masu3 == Masu.BLACK && masu4 == Masu.NOT_BLACK) {
+						masu[yIndex][xIndex] = Masu.NOT_BLACK;
+					}
 					if (masu1 == Masu.BLACK && masu2 == Masu.BLACK && masu3 == Masu.SPACE && masu4 == Masu.BLACK) {
-						advance = true;
 						masu[yIndex + 1][xIndex] = Masu.BLACK;
 					}
+					if (masu1 == Masu.SPACE && masu2 == Masu.BLACK && masu3 == Masu.NOT_BLACK && masu4 == Masu.BLACK) {
+						masu[yIndex][xIndex] = Masu.NOT_BLACK;
+					}
+					if (masu1 == Masu.BLACK && masu2 == Masu.SPACE && masu3 == Masu.NOT_BLACK && masu4 == Masu.BLACK) {
+						masu[yIndex][xIndex + 1] = Masu.NOT_BLACK;
+					}
+					if (masu1 == Masu.BLACK && masu2 == Masu.BLACK && masu3 == Masu.NOT_BLACK && masu4 == Masu.SPACE) {
+						masu[yIndex + 1][xIndex + 1] = Masu.NOT_BLACK;
+					}
 					if (masu1 == Masu.BLACK && masu2 == Masu.SPACE && masu3 == Masu.BLACK && masu4 == Masu.BLACK) {
-						advance = true;
 						masu[yIndex][xIndex + 1] = Masu.BLACK;
 					}
+					if (masu1 == Masu.SPACE && masu2 == Masu.NOT_BLACK && masu3 == Masu.BLACK && masu4 == Masu.BLACK) {
+						masu[yIndex][xIndex] = Masu.NOT_BLACK;
+					}
+					if (masu1 == Masu.BLACK && masu2 == Masu.NOT_BLACK && masu3 == Masu.SPACE && masu4 == Masu.BLACK) {
+						masu[yIndex + 1][xIndex] = Masu.NOT_BLACK;
+					}
+					if (masu1 == Masu.BLACK && masu2 == Masu.NOT_BLACK && masu3 == Masu.BLACK && masu4 == Masu.SPACE) {
+						masu[yIndex + 1][xIndex + 1] = Masu.NOT_BLACK;
+					}
 					if (masu1 == Masu.SPACE && masu2 == Masu.BLACK && masu3 == Masu.BLACK && masu4 == Masu.BLACK) {
-						advance = true;
 						masu[yIndex][xIndex] = Masu.BLACK;
 					}
+					if (masu1 == Masu.NOT_BLACK && masu2 == Masu.SPACE && masu3 == Masu.BLACK && masu4 == Masu.BLACK) {
+						masu[yIndex][xIndex + 1] = Masu.NOT_BLACK;
+					}
+					if (masu1 == Masu.NOT_BLACK && masu2 == Masu.BLACK && masu3 == Masu.SPACE && masu4 == Masu.BLACK) {
+						masu[yIndex + 1][xIndex] = Masu.NOT_BLACK;
+					}
+					if (masu1 == Masu.NOT_BLACK && masu2 == Masu.BLACK && masu3 == Masu.BLACK && masu4 == Masu.SPACE) {
+						masu[yIndex + 1][xIndex + 1] = Masu.NOT_BLACK;
+					}
 				}
-			}
-			if (advance) {
-				return rectSolve();
 			}
 			return true;
 		}
@@ -448,7 +475,7 @@ public class ChoconaSolver implements Solver {
 	}
 
 	public static void main(String[] args) {
-		String url = "https://puzz.link/p?chocona/20/20/gl96i4cdagrcd1n0o0633of67gqof1v51bu0o7c1gri01jl03730c6618e6aqmsgr5d1mlsa4ml48j5s6jtk9fvrvs2cvh82e00130026db0gcj1800cj0g73o00gs0o801f667pr7uehtvsnsfr9b90455052131320h-78h34g0j45g32h1g0g15h3h23k33h101h23143332441"; //urlを入れれば試せる
+		String url = "http://pzv.jp/p.html?chocona/25/25/h12f2u5rvv6lvvtmjfvsu57of80612g0c0700u8e01svs03pvo07u3g0eo700s0e01ofs03m1o07v7g0e3v00vra0186k030jspmtvvvf5nvvsvv6cn9g490n1ekcdihs0al1s0ai2k6dnvsvn7vtvvvvve00000d00004000am000a0000vv0000e000re000ee000el000elvvve47vtvvvvucl120mh005jh126qlrn0c0agaa1gaaa1a1a10100001000010011110aaa1a-65a1aa0100aa100a101a0101000gag01a0a010aaa0ag01101h10a111100"; // urlを入れれば試せる
 		String[] params = url.split("/");
 		int height = Integer.parseInt(params[params.length - 2]);
 		int width = Integer.parseInt(params[params.length - 3]);
@@ -479,8 +506,7 @@ public class ChoconaSolver implements Solver {
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
 		System.out.println("難易度:" + (count));
 		System.out.println(field);
-		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count).toString();
+		return "解けました。推定難易度:" + Difficulty.getByCount(count).toString();
 	}
 
 	/**

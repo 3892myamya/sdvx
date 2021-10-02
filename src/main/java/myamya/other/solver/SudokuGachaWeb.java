@@ -20,6 +20,7 @@ import myamya.other.solver.balance.BalanceSolver.BalanceGenerator;
 import myamya.other.solver.barns.BarnsSolver.BarnsGenerator;
 import myamya.other.solver.box.BoxSolver.BoxGenerator;
 import myamya.other.solver.building.BuildingSolver.BuildingGenerator;
+import myamya.other.solver.canal.CanalSolver.CanalGenerator;
 import myamya.other.solver.clouds.CloudsSolver.CloudsGenerator;
 import myamya.other.solver.cojun.CojunSolver.CojunGenerator;
 import myamya.other.solver.country.CountrySolver.CountryGenerator;
@@ -1282,6 +1283,22 @@ public class SudokuGachaWeb extends HttpServlet {
 
 	}
 
+	static class CanalGeneratorThlead extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+
+		CanalGeneratorThlead(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new CanalGenerator(height, width);
+		}
+
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -1457,6 +1474,8 @@ public class SudokuGachaWeb extends HttpServlet {
 				t = new GapsGeneratorThlead(height, width);
 			} else if (type.equals("clouds")) {
 				t = new CloudsGeneratorThlead(height, width);
+			} else if (type.equals("canal")) {
+				t = new CanalGeneratorThlead(height, width);
 			} else {
 				throw new IllegalArgumentException();
 			}

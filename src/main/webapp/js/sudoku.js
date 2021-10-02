@@ -369,6 +369,11 @@ var ruleMap = {
 		url : "",
 		source : ""
 	},
+	canal : {
+		name : "Canal View",
+		url : "",
+		source : ""
+	},
 }
 var regMap = {
 		yajilin:[{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},
