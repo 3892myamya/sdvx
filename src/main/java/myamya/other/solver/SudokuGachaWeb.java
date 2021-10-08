@@ -15,6 +15,7 @@ import myamya.other.solver.Common.GeneratorResult;
 import myamya.other.solver.Common.PenpaEditGeneratorResult;
 import myamya.other.solver.akari.AkariSolver.AkariGenerator;
 import myamya.other.solver.aqre.AqreSolver.AqreGenerator;
+import myamya.other.solver.archipelago.ArchipelagoSolver.ArchipelagoGenerator;
 import myamya.other.solver.bag.BagSolver.BagGenerator;
 import myamya.other.solver.balance.BalanceSolver.BalanceGenerator;
 import myamya.other.solver.barns.BarnsSolver.BarnsGenerator;
@@ -36,6 +37,7 @@ import myamya.other.solver.hakoiri.HakoiriSolver.HakoiriGenerator;
 import myamya.other.solver.herugolf.HerugolfSolver.HerugolfGenerator;
 import myamya.other.solver.heyawake.HeyawakeSolver.HeyawakeGenerator;
 import myamya.other.solver.hitori.HitoriSolver.HitoriGenerator;
+import myamya.other.solver.hoshizora.HoshizoraSolver.HoshizoraGenerator;
 import myamya.other.solver.icebarn.IcebarnSolver.IcebarnGenerator;
 import myamya.other.solver.kurodoko.KurodokoSolver.KurodokoGenerator;
 import myamya.other.solver.kurotto.KurottoSolver.KurottoGenerator;
@@ -1299,6 +1301,38 @@ public class SudokuGachaWeb extends HttpServlet {
 
 	}
 
+	static class ArchipelagoGeneratorThlead extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+
+		ArchipelagoGeneratorThlead(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new ArchipelagoGenerator(height, width);
+		}
+
+	}
+
+	static class HoshizoraGeneratorThlead extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+
+		HoshizoraGeneratorThlead(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new HoshizoraGenerator(height, width);
+		}
+
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -1310,10 +1344,6 @@ public class SudokuGachaWeb extends HttpServlet {
 			GeneratorThlead t;
 			int height = Integer.parseInt(request.getParameter("height"));
 			int width = Integer.parseInt(request.getParameter("width"));
-			if (!type.equals("tilepaint") && !type.equals("mines") && !type.equals("nonogram") && !type.equals("gaps")
-					&& !type.equals("clouds") && (height > 10 || width > 10)) {
-				throw new IllegalArgumentException();
-			}
 			if (type.equals("sudoku")) {
 				int pattern = Integer.parseInt(request.getParameter("pattern"));
 				t = new SudokuGeneratorThlead(height, width, pattern);
@@ -1476,6 +1506,12 @@ public class SudokuGachaWeb extends HttpServlet {
 				t = new CloudsGeneratorThlead(height, width);
 			} else if (type.equals("canal")) {
 				t = new CanalGeneratorThlead(height, width);
+			} else if (type.equals("canal")) {
+				t = new CanalGeneratorThlead(height, width);
+			} else if (type.equals("archipelago")) {
+				t = new ArchipelagoGeneratorThlead(height, width);
+			} else if (type.equals("hoshizora")) {
+				t = new HoshizoraGeneratorThlead(height, width);
 			} else {
 				throw new IllegalArgumentException();
 			}
@@ -1492,9 +1528,9 @@ public class SudokuGachaWeb extends HttpServlet {
 			}
 			resultMap.put("txt", t.result.getTxt());
 			resultMap.put("level", t.result.getLevel());
-		} catch (
-
-		Exception e) {
+			// あんまり行儀がいいとは言えないが負荷軽減のため試しに入れてみる
+			t.stop();
+		} catch (Exception e) {
 			e.printStackTrace();
 			resultMap.put("status", "予期せぬエラーが発生しました。");
 			resultMap.put("result", "");

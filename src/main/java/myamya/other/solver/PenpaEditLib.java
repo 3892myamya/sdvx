@@ -19,7 +19,7 @@ import net.arnx.jsonic.JSON;
 public class PenpaEditLib {
 
 	public enum PuzzleType {
-		NONE, YAJILIN, MAKEROOM, HINTS_BW;
+		NONE, YAJILIN, EDGESUB, MAKEROOM, HINTS_BW;
 
 	}
 
@@ -152,6 +152,9 @@ public class PenpaEditLib {
 				+ convertFieldAfter(fieldSize);
 	}
 
+	/**
+	 * 上と左にヒントがあるタイプの盤面復元
+	 */
 	public static String convertHintsField(int size, Integer[] upHints, Integer[] leftHints) {
 		StringBuilder sb = new StringBuilder();
 		int firstPos = 2 * (size + 6);
@@ -249,6 +252,29 @@ public class PenpaEditLib {
 		}
 		return convertFieldBefore(fieldSize, PuzzleType.NONE) + "{zR:{z_:[]},zU:{z_:[]},zS:{},zN:{" + sb.toString()
 				+ "},z1:{},zY:{},zF:{},z2:{},zT:[],z3:[],zD:[],z0:[],z5:[],zL:{},zE:{},zW:{},zC:{},z4:{}}\n\n"
+				+ convertFieldAfter(fieldSize);
+	}
+
+	/**
+	 * 星空めぐりのPenpaEdit向け文字列を返す。extraNumbersは正方形である前提
+	 */
+	public static String convertHoshiField(int fieldSize, boolean[][] hoshi) {
+		StringBuilder sb = new StringBuilder();
+		int firstPos = fieldSize * fieldSize + 10 * fieldSize + 26;
+		for (int yIndex = 0; yIndex < hoshi.length; yIndex++) {
+			for (int xIndex = 0; xIndex < hoshi[0].length; xIndex++) {
+				if (hoshi[yIndex][xIndex]) {
+					if (sb.length() != 0) {
+						sb.append(",");
+					}
+					sb.append("\"");
+					sb.append(firstPos + yIndex * (hoshi[0].length + 5) + xIndex);
+					sb.append("\":[1,\"circle_S\",2]");
+				}
+			}
+		}
+		return convertFieldBefore(fieldSize, PuzzleType.EDGESUB) + "{zR:{z_:[]},zU:{z_:[]},zS:{},zN:{},z1:{},zY:{"
+				+ sb.toString() + "},zF:{},z2:{},zT:[],z3:[],zD:[],z0:[],z5:[],zL:{},zE:{},zW:{},zC:{},z4:{}}\n\n"
 				+ convertFieldAfter(fieldSize);
 	}
 
@@ -368,7 +394,7 @@ public class PenpaEditLib {
 			fieldSize++;
 		}
 		sb.append(fieldSize + "," + fieldSize + ","); // 横縦の長さ
-		sb.append("38,0,1,1,"); // 表示サイズ,theta、reflect。とりあえず固定値
+		sb.append("38,0,1,1,"); // 表示サイズ,theta(回転)、reflect(反転)。固定値
 		int canvasSize = 38 * (fieldSize + 1);
 		sb.append(canvasSize + "," + canvasSize + ","); // キャンバスサイズ
 		int centerBase = (fieldSize + 1) / 2;
@@ -383,9 +409,17 @@ public class PenpaEditLib {
 			sb.append("[0,0,0,0]"); // 余白情報
 		}
 		sb.append("\n"); // ここまで2行目
-		sb.append("[\"1\",\"2\",\"1\"]"); // 実線・点線・クリック時の情報。とりあえず固定値
+		// 以下、実線・点線・クリック時の情報
+		if (type == PuzzleType.EDGESUB) {
+			sb.append("[\"2\",\"2\",\"1\"]");
+		} else {
+			sb.append("[\"1\",\"2\",\"1\"]");
+		}
+		// 以下、入力モードの情報
 		if (type == PuzzleType.YAJILIN) {
 			sb.append("~\"combi\"~[\"yajilin\",\"\"]");
+		} else if (type == PuzzleType.EDGESUB) {
+			sb.append("~\"combi\"~[\"edgesub\",\"\"]");
 		} else if (type == PuzzleType.MAKEROOM) {
 			sb.append("~zE~[\"1\",3]");
 		} else {

@@ -374,6 +374,16 @@ var ruleMap = {
 		url : "",
 		source : ""
 	},
+	archipelago : {
+		name : "アーキペラゴ",
+		url : "",
+		source : ""
+	},
+	hoshizora : {
+		name : "星空めぐり",
+		url : "",
+		source : ""
+	},
 }
 var regMap = {
 		yajilin:[{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},
@@ -951,7 +961,7 @@ $(function() {
 					$('#sel_size').val(nowSelSizeVal);
 				}
 			} else if (type == 'building' || type == 'renban'
-				|| type == 'easyasabc' || type == 'doppelblock' || type == 'simplegako' ) {
+				|| type == 'easyasabc' || type == 'doppelblock' || type == 'simplegako' || type == 'archipelago' ) {
 				$('#sel_size').append(option.size_3);
 				$('#sel_size').append(option.size_4);
 				$('#sel_size').append(option.size_5);
@@ -1042,6 +1052,25 @@ $(function() {
 					$('#sel_size').val(5);
 				} else if (nowSelSizeVal > 9) {
 					$('#sel_size').val(9);
+				} else {
+					$('#sel_size').val(nowSelSizeVal);
+				}
+			} else if (type == 'hoshizora') {
+				$('#sel_size').append(option.size_4);
+				$('#sel_size').append(option.size_6);
+				$('#sel_size').append(option.size_8);
+				$('#sel_size').append(option.size_10);
+				$('#sel_size').append(option.size_12);
+				if (nowSelSizeVal == 3 || nowSelSizeVal == 5) {
+					$('#sel_size').val(4);
+				} else if (nowSelSizeVal == 7) {
+					$('#sel_size').val(6);
+				} else if (nowSelSizeVal == 9) {
+					$('#sel_size').val(8);
+				} else if (nowSelSizeVal == 11) {
+					$('#sel_size').val(10);
+				} else if (nowSelSizeVal > 12) {
+					$('#sel_size').val(12);
 				} else {
 					$('#sel_size').val(nowSelSizeVal);
 				}
