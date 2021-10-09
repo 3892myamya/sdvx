@@ -610,7 +610,8 @@ public class LasSolver implements Solver {
 				Position nextPos = new Position(pos.getyIndex() - 1, pos.getxIndex());
 				if ((masu[nextPos.getyIndex()][nextPos.getxIndex()] == target
 						|| masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.SPACE)
-						&& !continuePosSet.contains(nextPos)) {
+						&& !continuePosSet.contains(nextPos)
+						&& numbers[nextPos.getyIndex()][nextPos.getxIndex()] == null) {
 					continuePosSet.add(nextPos);
 					if (setContinueCandPosSet(target, nextPos, continuePosSet, size, Direction.DOWN)) {
 						return true;
@@ -621,7 +622,8 @@ public class LasSolver implements Solver {
 				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() + 1);
 				if ((masu[nextPos.getyIndex()][nextPos.getxIndex()] == target
 						|| masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.SPACE)
-						&& !continuePosSet.contains(nextPos)) {
+						&& !continuePosSet.contains(nextPos)
+						&& numbers[nextPos.getyIndex()][nextPos.getxIndex()] == null) {
 					continuePosSet.add(nextPos);
 					if (setContinueCandPosSet(target, nextPos, continuePosSet, size, Direction.LEFT)) {
 						return true;
@@ -632,7 +634,8 @@ public class LasSolver implements Solver {
 				Position nextPos = new Position(pos.getyIndex() + 1, pos.getxIndex());
 				if ((masu[nextPos.getyIndex()][nextPos.getxIndex()] == target
 						|| masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.SPACE)
-						&& !continuePosSet.contains(nextPos)) {
+						&& !continuePosSet.contains(nextPos)
+						&& numbers[nextPos.getyIndex()][nextPos.getxIndex()] == null) {
 					continuePosSet.add(nextPos);
 					if (setContinueCandPosSet(target, nextPos, continuePosSet, size, Direction.UP)) {
 						return true;
@@ -643,7 +646,8 @@ public class LasSolver implements Solver {
 				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() - 1);
 				if ((masu[nextPos.getyIndex()][nextPos.getxIndex()] == target
 						|| masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.SPACE)
-						&& !continuePosSet.contains(nextPos)) {
+						&& !continuePosSet.contains(nextPos)
+						&& numbers[nextPos.getyIndex()][nextPos.getxIndex()] == null) {
 					continuePosSet.add(nextPos);
 					if (setContinueCandPosSet(target, nextPos, continuePosSet, size, Direction.RIGHT)) {
 						return true;
