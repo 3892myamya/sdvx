@@ -92,7 +92,7 @@ public class LasSolver implements Solver {
 		}
 
 		public static void main(String[] args) {
-			new LasGenerator(8, 8).generate();
+			new LasGenerator(7, 7).generate();
 		}
 
 		@Override
@@ -180,7 +180,7 @@ public class LasSolver implements Solver {
 					wkField.numbers[pos.getyIndex()][pos.getxIndex()] = continueWhitePosSet.size();
 					alreadyPosSet.addAll(continueWhitePosSet);
 				}
-//				System.out.println(wkField);
+				System.out.println(wkField);
 				// 解答の記憶
 				// 既存の黒マスが回答に含まれないようにする。
 				boolean existBlack = false;
@@ -212,7 +212,7 @@ public class LasSolver implements Solver {
 					}
 				}
 				// 解けるかな？
-				level = new LasSolverForGenerator(new LasSolver.Field(wkField), 500).solve2();
+				level = new LasSolverForGenerator(new LasSolver.Field(wkField), 1000).solve2();
 				if (level == -1) {
 					// 解けなければやり直し
 					wkField = new ExtendedField(height, width);
@@ -469,11 +469,12 @@ public class LasSolver implements Solver {
 			if (!countSolve()) {
 				return false;
 			}
-			if (!standAloneSolve()) {
-				return false;
-			}
 			if (!getStateDump().equals(str)) {
 				return solveAndCheck();
+			} else {
+				if (!standAloneSolve()) {
+					return false;
+				}
 			}
 			return true;
 		}
@@ -534,29 +535,55 @@ public class LasSolver implements Solver {
 									alreadyPosSet.add(pivot);
 									for (Position pos : continueCandPosSet) {
 										masu[pos.getyIndex()][pos.getxIndex()] = masu[yIndex][xIndex];
-										if (pos.getyIndex() != 0 && !continueCandPosSet
-												.contains(new Position(pos.getyIndex() - 1, pos.getxIndex()))) {
-											masu[pos.getyIndex() - 1][pos
-													.getxIndex()] = masu[yIndex][xIndex] == Masu.BLACK ? Masu.NOT_BLACK
-															: Masu.BLACK;
+										if (pos.getyIndex() != 0) {
+											if (continueCandPosSet
+													.contains(new Position(pos.getyIndex() - 1, pos.getxIndex()))) {
+												masu[pos.getyIndex() - 1][pos
+														.getxIndex()] = masu[yIndex][xIndex] == Masu.BLACK ? Masu.BLACK
+																: Masu.NOT_BLACK;
+											} else {
+												masu[pos.getyIndex() - 1][pos
+														.getxIndex()] = masu[yIndex][xIndex] == Masu.BLACK
+																? Masu.NOT_BLACK
+																: Masu.BLACK;
+											}
 										}
-										if (pos.getxIndex() != getXLength() - 1 && !continueCandPosSet
-												.contains(new Position(pos.getyIndex(), pos.getxIndex() + 1))) {
-											masu[pos.getyIndex()][pos.getxIndex()
-													+ 1] = masu[yIndex][xIndex] == Masu.BLACK ? Masu.NOT_BLACK
-															: Masu.BLACK;
+										if (pos.getxIndex() != getXLength() - 1) {
+											if (continueCandPosSet
+													.contains(new Position(pos.getyIndex(), pos.getxIndex() + 1))) {
+												masu[pos.getyIndex()][pos.getxIndex()
+														+ 1] = masu[yIndex][xIndex] == Masu.BLACK ? Masu.BLACK
+																: Masu.NOT_BLACK;
+											} else {
+												masu[pos.getyIndex()][pos.getxIndex()
+														+ 1] = masu[yIndex][xIndex] == Masu.BLACK ? Masu.NOT_BLACK
+																: Masu.BLACK;
+											}
 										}
-										if (pos.getyIndex() != getYLength() - 1 && !continueCandPosSet
-												.contains(new Position(pos.getyIndex() + 1, pos.getxIndex()))) {
-											masu[pos.getyIndex() + 1][pos
-													.getxIndex()] = masu[yIndex][xIndex] == Masu.BLACK ? Masu.NOT_BLACK
-															: Masu.BLACK;
+										if (pos.getyIndex() != getYLength() - 1) {
+											if (continueCandPosSet
+													.contains(new Position(pos.getyIndex() + 1, pos.getxIndex()))) {
+												masu[pos.getyIndex() + 1][pos
+														.getxIndex()] = masu[yIndex][xIndex] == Masu.BLACK ? Masu.BLACK
+																: Masu.NOT_BLACK;
+											} else {
+												masu[pos.getyIndex() + 1][pos
+														.getxIndex()] = masu[yIndex][xIndex] == Masu.BLACK
+																? Masu.NOT_BLACK
+																: Masu.BLACK;
+											}
 										}
-										if (pos.getxIndex() != 0 && !continueCandPosSet
-												.contains(new Position(pos.getyIndex(), pos.getxIndex() - 1))) {
-											masu[pos.getyIndex()][pos.getxIndex()
-													- 1] = masu[yIndex][xIndex] == Masu.BLACK ? Masu.NOT_BLACK
-															: Masu.BLACK;
+										if (pos.getxIndex() != 0) {
+											if (continueCandPosSet
+													.contains(new Position(pos.getyIndex(), pos.getxIndex() - 1))) {
+												masu[pos.getyIndex()][pos.getxIndex()
+														- 1] = masu[yIndex][xIndex] == Masu.BLACK ? Masu.BLACK
+																: Masu.NOT_BLACK;
+											} else {
+												masu[pos.getyIndex()][pos.getxIndex()
+														- 1] = masu[yIndex][xIndex] == Masu.BLACK ? Masu.NOT_BLACK
+																: Masu.BLACK;
+											}
 										}
 									}
 								} else {
@@ -583,7 +610,7 @@ public class LasSolver implements Solver {
 				Position nextPos = new Position(pos.getyIndex() - 1, pos.getxIndex());
 				if ((masu[nextPos.getyIndex()][nextPos.getxIndex()] == target
 						|| masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.SPACE)
-						&& !continuePosSet.contains(nextPos) && checkNext(target, nextPos, Direction.DOWN)) {
+						&& !continuePosSet.contains(nextPos)) {
 					continuePosSet.add(nextPos);
 					if (setContinueCandPosSet(target, nextPos, continuePosSet, size, Direction.DOWN)) {
 						return true;
@@ -594,7 +621,7 @@ public class LasSolver implements Solver {
 				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() + 1);
 				if ((masu[nextPos.getyIndex()][nextPos.getxIndex()] == target
 						|| masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.SPACE)
-						&& !continuePosSet.contains(nextPos) && checkNext(target, nextPos, Direction.LEFT)) {
+						&& !continuePosSet.contains(nextPos)) {
 					continuePosSet.add(nextPos);
 					if (setContinueCandPosSet(target, nextPos, continuePosSet, size, Direction.LEFT)) {
 						return true;
@@ -605,7 +632,7 @@ public class LasSolver implements Solver {
 				Position nextPos = new Position(pos.getyIndex() + 1, pos.getxIndex());
 				if ((masu[nextPos.getyIndex()][nextPos.getxIndex()] == target
 						|| masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.SPACE)
-						&& !continuePosSet.contains(nextPos) && checkNext(target, nextPos, Direction.UP)) {
+						&& !continuePosSet.contains(nextPos)) {
 					continuePosSet.add(nextPos);
 					if (setContinueCandPosSet(target, nextPos, continuePosSet, size, Direction.UP)) {
 						return true;
@@ -616,7 +643,7 @@ public class LasSolver implements Solver {
 				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() - 1);
 				if ((masu[nextPos.getyIndex()][nextPos.getxIndex()] == target
 						|| masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.SPACE)
-						&& !continuePosSet.contains(nextPos) && checkNext(target, nextPos, Direction.RIGHT)) {
+						&& !continuePosSet.contains(nextPos)) {
 					continuePosSet.add(nextPos);
 					if (setContinueCandPosSet(target, nextPos, continuePosSet, size, Direction.RIGHT)) {
 						return true;
@@ -624,39 +651,6 @@ public class LasSolver implements Solver {
 				}
 			}
 			return false;
-		}
-
-		// posの前後左右に、targetと同じ色の数字マスがあればfalseを返す。
-		private boolean checkNext(Masu target, Position pos, Direction from) {
-			if (pos.getyIndex() != 0 && from != Direction.UP) {
-				Position nextPos = new Position(pos.getyIndex() - 1, pos.getxIndex());
-				if (masu[nextPos.getyIndex()][nextPos.getxIndex()] == target
-						&& numbers[nextPos.getyIndex()][nextPos.getxIndex()] != null) {
-					return false;
-				}
-			}
-			if (pos.getxIndex() != getXLength() - 1 && from != Direction.RIGHT) {
-				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() + 1);
-				if (masu[nextPos.getyIndex()][nextPos.getxIndex()] == target
-						&& numbers[nextPos.getyIndex()][nextPos.getxIndex()] != null) {
-					return false;
-				}
-			}
-			if (pos.getyIndex() != getYLength() - 1 && from != Direction.DOWN) {
-				Position nextPos = new Position(pos.getyIndex() + 1, pos.getxIndex());
-				if (masu[nextPos.getyIndex()][nextPos.getxIndex()] == target
-						&& numbers[nextPos.getyIndex()][nextPos.getxIndex()] != null) {
-					return false;
-				}
-			}
-			if (pos.getxIndex() != 00 && from != Direction.LEFT) {
-				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() - 1);
-				if (masu[nextPos.getyIndex()][nextPos.getxIndex()] == target
-						&& numbers[nextPos.getyIndex()][nextPos.getxIndex()] != null) {
-					return false;
-				}
-			}
-			return true;
 		}
 
 		/**
@@ -826,7 +820,7 @@ public class LasSolver implements Solver {
 			Set<Position> checkPosSet = new HashSet<>();
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					if (numbers[yIndex][xIndex] == null && masu[yIndex][xIndex] != Masu.SPACE) {
+					if (masu[yIndex][xIndex] != Masu.SPACE) {
 						checkPosSet.add(new Position(yIndex, xIndex));
 					}
 				}
@@ -844,7 +838,7 @@ public class LasSolver implements Solver {
 						new HashSet<>())) {
 					return false;
 				}
-				checkPosSet.remove(pivot);
+				checkPosSet.removeAll(continuePosSet);
 			}
 			return true;
 		}
@@ -879,10 +873,11 @@ public class LasSolver implements Solver {
 	}
 
 	public static void main(String[] args) {
-		String fieldStr = "square,8,8,36,0,1,1,324,324,209,209\n" + "[0,0,0,0]\n" + "[\"1\",\"2\",\"1\"]~zS~[\"\",1]\n"
-				+ "{zR:{z_:[]},zU:{z_:[]},zS:{\"33\":1,\"50\":1,\"55\":1,\"64\":1,\"78\":1,\"101\":1,\"116\":1},zN:{\"27\":[\"?\",1,\"1\"],\"33\":[\"?\",4,\"1\"],\"42\":[\"?\",1,\"1\"],\"50\":[\"3\",4,\"1\"],\"55\":[\"?\",4,\"1\"],\"64\":[\"7\",4,\"1\"],\"65\":[\"6\",1,\"1\"],\"78\":[\"3\",4,\"1\"],\"79\":[\"8\",1,\"1\"],\"88\":[\"?\",1,\"1\"],\"93\":[\"4\",1,\"1\"],\"101\":[\"?\",4,\"1\"],\"110\":[\"?\",1,\"1\"],\"116\":[\"?\",4,\"1\"]},z1:{},zY:{},zF:{},z2:{},zT:[],z3:[],zD:[],z0:[],z5:[],zL:{},zE:{},zW:{},zC:{},z4:{}}\n"
-				+ "\n"
-				+ "[26,1,1,1,1,1,1,1,5,1,1,1,1,1,1,1,5,1,1,1,1,1,1,1,5,1,1,1,1,1,1,1,5,1,1,1,1,1,1,1,5,1,1,1,1,1,1,1,5,1,1,1,1,1,1,1,5,1,1,1,1,1,1,1]"; // urlを入れれば試せる
+		String fieldStr = "square,10,10,38,0,1,1,418,418,286,286\r\n" + "[0,0,0,0]\r\n"
+				+ "[\"1\",\"2\",\"1\"]~zS~[\"\",1]\r\n"
+				+ "{zR:{z_:[]},zU:{z_:[]},zS:{\"30\":1,\"32\":1,\"51\":1,\"77\":1,\"87\":1,\"108\":1,\"118\":1,\"144\":1,\"163\":1},zN:{\"30\":[\"2\",4,\"1\"],\"32\":[\"6\",4,\"1\"],\"37\":[\"6\",1,\"1\"],\"46\":[\"6\",1,\"1\"],\"51\":[\"6\",4,\"1\"],\"76\":[\"6\",1,\"1\"],\"77\":[\"6\",4,\"1\"],\"87\":[\"6\",4,\"1\"],\"94\":[\"6\",1,\"1\"],\"101\":[\"6\",1,\"1\"],\"108\":[\"6\",4,\"1\"],\"118\":[\"6\",4,\"1\"],\"119\":[\"6\",1,\"1\"],\"144\":[\"6\",4,\"1\"],\"149\":[\"6\",1,\"1\"],\"158\":[\"6\",1,\"1\"],\"163\":[\"6\",4,\"1\"],\"165\":[\"2\",1,\"1\"]},z1:{},zY:{},zF:{},z2:{},zT:[],z3:[],zD:[],z0:[],z5:[],zL:{},zE:{},zW:{},zC:{},z4:{}}\r\n"
+				+ "\r\n"
+				+ "[30,1,1,1,1,1,1,1,1,1,5,1,1,1,1,1,1,1,1,1,5,1,1,1,1,1,1,1,1,1,5,1,1,1,1,1,1,1,1,1,5,1,1,1,1,1,1,1,1,1,5,1,1,1,1,1,1,1,1,1,5,1,1,1,1,1,1,1,1,1,5,1,1,1,1,1,1,1,1,1,5,1,1,1,1,1,1,1,1,1,5,1,1,1,1,1,1,1,1,1]"; // urlを入れれば試せる
 		System.out.println(new LasSolver(fieldStr).solve());
 	}
 
