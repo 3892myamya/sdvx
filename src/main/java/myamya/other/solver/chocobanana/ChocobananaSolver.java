@@ -388,9 +388,6 @@ public class ChocobananaSolver implements Solver {
 		 */
 		private boolean solveAndCheck() {
 			String str = getStateDump();
-//			if (!nextSolve()) {
-//				return false;
-//			}
 			if (!countSolve()) {
 				return false;
 			}
@@ -402,72 +399,6 @@ public class ChocobananaSolver implements Solver {
 			}
 			if (!getStateDump().equals(str)) {
 				return solveAndCheck();
-			}
-			return true;
-		}
-
-		// 違う数字が隣り合う場合は必ず違う色になる。
-		private boolean nextSolve() {
-			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
-				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					if (numbers[yIndex][xIndex] != null) {
-						if (masu[yIndex][xIndex] != Masu.SPACE) {
-							if (yIndex != 0) {
-								if (numbers[yIndex - 1][xIndex] != null
-										&& numbers[yIndex - 1][xIndex] != numbers[yIndex][xIndex]) {
-									if (masu[yIndex - 1][xIndex] != Masu.SPACE) {
-										if (masu[yIndex - 1][xIndex] == masu[yIndex][xIndex]) {
-											return false;
-										}
-									} else {
-										masu[yIndex - 1][xIndex] = masu[yIndex][xIndex] == Masu.BLACK ? Masu.NOT_BLACK
-												: Masu.BLACK;
-									}
-								}
-							}
-							if (xIndex != getXLength() - 1) {
-								if (numbers[yIndex][xIndex + 1] != null
-										&& numbers[yIndex][xIndex + 1] != numbers[yIndex][xIndex]) {
-									if (masu[yIndex][xIndex + 1] != Masu.SPACE) {
-										if (masu[yIndex][xIndex + 1] == masu[yIndex][xIndex]) {
-											return false;
-										}
-									} else {
-										masu[yIndex][xIndex + 1] = masu[yIndex][xIndex] == Masu.BLACK ? Masu.NOT_BLACK
-												: Masu.BLACK;
-									}
-								}
-							}
-							if (yIndex != getYLength() - 1) {
-								if (numbers[yIndex + 1][xIndex] != null
-										&& numbers[yIndex + 1][xIndex] != numbers[yIndex][xIndex]) {
-									if (masu[yIndex + 1][xIndex] != Masu.SPACE) {
-										if (masu[yIndex + 1][xIndex] == masu[yIndex][xIndex]) {
-											return false;
-										}
-									} else {
-										masu[yIndex + 1][xIndex] = masu[yIndex][xIndex] == Masu.BLACK ? Masu.NOT_BLACK
-												: Masu.BLACK;
-									}
-								}
-							}
-							if (xIndex != 0) {
-								if (numbers[yIndex][xIndex - 1] != null
-										&& numbers[yIndex][xIndex - 1] != numbers[yIndex][xIndex]) {
-									if (masu[yIndex][xIndex - 1] != Masu.SPACE) {
-										if (masu[yIndex][xIndex - 1] == masu[yIndex][xIndex]) {
-											return false;
-										}
-									} else {
-										masu[yIndex][xIndex - 1] = masu[yIndex][xIndex] == Masu.BLACK ? Masu.NOT_BLACK
-												: Masu.BLACK;
-									}
-								}
-							}
-						}
-
-					}
-				}
 			}
 			return true;
 		}

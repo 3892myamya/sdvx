@@ -384,6 +384,11 @@ var ruleMap = {
 		url : "",
 		source : ""
 	},
+	sukima : {
+		name : "スキマあつめ",
+		url : "",
+		source : ""
+	},
 }
 var regMap = {
 		yajilin:[{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},

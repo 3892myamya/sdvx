@@ -39,19 +39,19 @@ $(function() {
                 $('#loading').hide();
 	            return;
 	        }
+            // 条件をローカルストレージ保存
+            var cond = localStorage.getItem('condyajilin');
+            var condObj = JSON.parse(cond);
+            if (condObj != null) {
+                condObj.type = param.type ;
+            } else {
+                condObj = {
+                    type : param.type ,
+                };
+            }
+            cond = JSON.stringify(condObj);
+            localStorage.setItem('condyajilin', cond);
         }
-		// 条件をローカルストレージ保存
-		var cond = localStorage.getItem('condyajilin');
-		var condObj = JSON.parse(cond);
-		if (condObj != null) {
-			condObj.type = param.type ;
-		} else {
-			condObj = {
-					type : param.type ,
-			};
-		}
-		cond = JSON.stringify(condObj);
-		localStorage.setItem('condyajilin', cond);
         $.ajax({
             url: location.host.indexOf('localhost') == -1 ? 'https://myamyaapi.herokuapp.com/SolverWeb' : 'SolverWeb',
             type: 'POST',

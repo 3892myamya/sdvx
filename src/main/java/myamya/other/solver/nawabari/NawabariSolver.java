@@ -47,8 +47,8 @@ public class NawabariSolver implements Solver {
 				if (interval != -1) {
 					index = index + interval + 1;
 				} else {
-					//16 - 255は '-'
-					//256 - 999は '+'
+					// 16 - 255は '-'
+					// 256 - 999は '+'
 					int num;
 					if (ch == '.') {
 						//
@@ -58,8 +58,7 @@ public class NawabariSolver implements Solver {
 							i++;
 							i++;
 						} else if (ch == '+') {
-							num = Integer.parseInt(
-									"" + param.charAt(i + 1) + param.charAt(i + 2) + param.charAt(i + 3),
+							num = Integer.parseInt("" + param.charAt(i + 1) + param.charAt(i + 2) + param.charAt(i + 3),
 									16);
 							i++;
 							i++;
@@ -202,7 +201,7 @@ public class NawabariSolver implements Solver {
 			return sb.toString();
 		}
 
-		private boolean existTateWall(int yIndex, int xIndex) {
+		public boolean existTateWall(int yIndex, int xIndex) {
 			for (int y = 0; y < getYLength(); y++) {
 				for (int x = 0; x < getXLength(); x++) {
 					if (roomCand[y][x] != null && roomCand[y][x].size() == 1) {
@@ -219,7 +218,7 @@ public class NawabariSolver implements Solver {
 			return false;
 		}
 
-		private boolean existYokoWall(int yIndex, int xIndex) {
+		public boolean existYokoWall(int yIndex, int xIndex) {
 			for (int y = 0; y < getYLength(); y++) {
 				for (int x = 0; x < getXLength(); x++) {
 					if (roomCand[y][x] != null && roomCand[y][x].size() == 1) {
@@ -281,8 +280,7 @@ public class NawabariSolver implements Solver {
 		}
 
 		/**
-		 * 各部屋の他の部屋とかぶる候補を消す。
-		 * 候補の数が0になってしまったらfalseを返す。
+		 * 各部屋の他の部屋とかぶる候補を消す。 候補の数が0になってしまったらfalseを返す。
 		 */
 		public boolean roomSolve() {
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
@@ -291,8 +289,7 @@ public class NawabariSolver implements Solver {
 						Sikaku mySikaku = roomCand[yIndex][xIndex].get(0);
 						for (int otherY = 0; otherY < getYLength(); otherY++) {
 							for (int otherX = 0; otherX < getXLength(); otherX++) {
-								if (roomCand[otherY][otherX] != null
-										&& (yIndex != otherY || xIndex != otherX)) {
+								if (roomCand[otherY][otherX] != null && (yIndex != otherY || xIndex != otherX)) {
 									for (Iterator<Sikaku> iterator = roomCand[otherY][otherX].iterator(); iterator
 											.hasNext();) {
 										Sikaku anotherSikaku = iterator.next();
@@ -353,7 +350,7 @@ public class NawabariSolver implements Solver {
 	}
 
 	public static void main(String[] args) {
-		String url = "http://pzv.jp/p.html?nawabari/5/5/f0a1g2a1f"; //urlを入れれば試せる
+		String url = "http://pzv.jp/p.html?nawabari/10/10/a3d2f4d2a2d1f3d1f3d2a1d0f2d4a2d2f3d2f1d3"; // urlを入れれば試せる
 		String[] params = url.split("/");
 		int height = Integer.parseInt(params[params.length - 2]);
 		int width = Integer.parseInt(params[params.length - 3]);
@@ -395,14 +392,15 @@ public class NawabariSolver implements Solver {
 			}
 		}
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
-		System.out.println("難易度:" + (count * 3));
+		System.out.println("難易度:" + (count));
 		System.out.println(field);
-		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count * 3).toString();
+		int level = (int) Math.sqrt(count / 3);
+		return "解けました。推定難易度:" + Difficulty.getByCount(count).toString() + "(Lv:" + level + ")";
 	}
 
 	/**
 	 * 仮置きして調べる
+	 * 
 	 * @param posSet
 	 */
 	private boolean candSolve(Field field, int recursive) {

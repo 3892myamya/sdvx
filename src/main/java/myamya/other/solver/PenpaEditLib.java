@@ -130,6 +130,10 @@ public class PenpaEditLib {
 	 * 数字オンリー盤面のPenpaEdit向け文字列を返す。numbersは正方形である前提で、？は未対応
 	 */
 	public static String convertNumbersField(Integer[][] numbers) {
+		return convertNumbersField(numbers, PuzzleType.NONE);
+	}
+
+	public static String convertNumbersField(Integer[][] numbers, PuzzleType type) {
 		int fieldSize = numbers.length;
 		StringBuilder sb = new StringBuilder();
 		int firstPos = 2 * (fieldSize + 5);
@@ -147,7 +151,7 @@ public class PenpaEditLib {
 				}
 			}
 		}
-		return convertFieldBefore(fieldSize, PuzzleType.NONE) + "{zR:{z_:[]},zU:{z_:[]},zS:{},zN:{" + sb.toString()
+		return convertFieldBefore(fieldSize, type) + "{zR:{z_:[]},zU:{z_:[]},zS:{},zN:{" + sb.toString()
 				+ "},z1:{},zY:{},zF:{},z2:{},zT:[],z3:[],zD:[],z0:[],z5:[],zL:{},zE:{},zW:{},zC:{},z4:{}}\n\n"
 				+ convertFieldAfter(fieldSize);
 	}
