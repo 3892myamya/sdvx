@@ -698,7 +698,7 @@ public class KurottoSolver implements Solver {
 	}
 
 	public static void main(String[] args) {
-		String url = ""; //urlを入れれば試せる
+		String url = "http://pzv.jp/p.html?kurotto/40/25/q2j3zj.8724g4i1.3663i.ha0gd.ga5g1.g79g.8i3i0r1zh2i5r0h-11y6i2..g32.g...1g.g9i2h4g9.5g2g1k2i.g7g.g1h3g.g42j4h.g.g.g2g.k1i5g.g4g.h4g.g.g.i.h.g.g2g1g1k6i4g.g01.1g.g.g4hai.44g.3.g..54zp3s22.k6..1305.7.57l1j7.6j.3i76j8p6h7h2h4.i42g5m5j.p6h9.h4m11m0k8p5k3m32m7h6bh.p.j7m1g.2i.3h.h.h.p.j17i16j129j5l350-10.-13-13..3.1k1.2s.zp821.g.31g.3ai.h-11g.g.g.1..g.g1i4k1g.g2g.g.h5i0g.g.g.h.g5g.g2i0k6g.g0g4g4h3j9.g.g2h.g1g.g0i2k3g3g1..g4h.i.g.gf.8.ge.2g123i0ydh.r.i2zh0r.i0i35g.1g32g37g01g.dh1i..24.5i2g.2.8.zj0j2q"; //urlを入れれば試せる
 		String[] params = url.split("/");
 		int height = Integer.parseInt(params[params.length - 2]);
 		int width = Integer.parseInt(params[params.length - 3]);

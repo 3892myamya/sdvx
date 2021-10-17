@@ -40,7 +40,7 @@ public class ChocobananaSolver implements Solver {
 						}
 						int recursiveCnt = 0;
 						while (field.getStateDump().equals(befStr) && recursiveCnt < 3) {
-							if (!candSolve(field, recursiveCnt == 2 ? 2 : recursiveCnt)) {
+							if (!candSolve(field, recursiveCnt == 2 ? 2 : recursiveCnt, 0, 0)) {
 								return -1;
 							}
 							recursiveCnt++;
@@ -56,11 +56,11 @@ public class ChocobananaSolver implements Solver {
 			}
 
 			@Override
-			protected boolean candSolve(Field field, int recursive) {
+			protected boolean candSolve(Field field, int recursive, int initY, int initX) {
 				if (this.count >= limit) {
 					throw new CountOverException();
 				} else {
-					return super.candSolve(field, recursive);
+					return super.candSolve(field, recursive, initY, initX);
 				}
 			}
 		}
@@ -172,8 +172,8 @@ public class ChocobananaSolver implements Solver {
 			System.out.println(fieldStr);
 			System.out.println(solutionStr);
 
-			level = (int) Math.sqrt(Math.pow(level, 0.65) / 3) + 1;
-			String status = "Lv:" + (int) (Math.pow(level, 0.65)) + "の問題を獲得！(ヒント数：" + wkField.getHintCount() + ")";
+			level = (int) Math.sqrt(Math.pow(level, 0.7) / 3) + 1;
+			String status = "Lv:" + (int) (Math.pow(level, 0.7)) + "の問題を獲得！(ヒント数：" + wkField.getHintCount() + ")";
 			String url = wkField.getPuzPreURL();
 			String link = "<a href=\"" + url + "\" target=\"_blank\">penpa-editで解く</a>";
 			StringBuilder sb = new StringBuilder();
@@ -874,7 +874,7 @@ public class ChocobananaSolver implements Solver {
 			}
 			int recursiveCnt = 0;
 			while (field.getStateDump().equals(befStr) && recursiveCnt < 3) {
-				if (!candSolve(field, recursiveCnt == 2 ? 2 : recursiveCnt)) {
+				if (!candSolve(field, recursiveCnt == 2 ? 2 : recursiveCnt, 0, 0)) {
 					return "問題に矛盾がある可能性があります。途中経過を返します。";
 				}
 				recursiveCnt++;
@@ -884,19 +884,19 @@ public class ChocobananaSolver implements Solver {
 			}
 		}
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
-		System.out.println("難易度:" + Math.pow(count, 0.65));
+		System.out.println("難易度:" + Math.pow(count, 0.7));
 		System.out.println(field);
-		int level = (int) Math.sqrt(Math.pow(count, 0.65) / 3) + 1;
-		return "解けました。推定難易度:" + Difficulty.getByCount((int) Math.pow(count, 0.65)).toString() + "(Lv:" + level + ")";
+		int level = (int) Math.sqrt(Math.pow(count, 0.7) / 3) + 1;
+		return "解けました。推定難易度:" + Difficulty.getByCount((int) Math.pow(count, 0.7)).toString() + "(Lv:" + level + ")";
 	}
 
 	/**
 	 * 仮置きして調べる
 	 */
-	protected boolean candSolve(Field field, int recursive) {
+	protected boolean candSolve(Field field, int recursive, int initY, int initX) {
 		String str = field.getStateDump();
-		for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
-			for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+		for (int yIndex = initY; yIndex < field.getYLength(); yIndex++) {
+			for (int xIndex = initX; xIndex < field.getXLength(); xIndex++) {
 				if (field.masu[yIndex][xIndex] == Masu.SPACE) {
 					count++;
 					if (!oneCandSolve(field, yIndex, xIndex, recursive)) {
@@ -906,7 +906,7 @@ public class ChocobananaSolver implements Solver {
 			}
 		}
 		if (!field.getStateDump().equals(str)) {
-			return candSolve(field, recursive);
+			return candSolve(field, recursive, 0, 0);
 		}
 		return true;
 	}
@@ -919,7 +919,7 @@ public class ChocobananaSolver implements Solver {
 		virtual.masu[yIndex][xIndex] = Masu.BLACK;
 		boolean allowBlack = virtual.solveAndCheck();
 		if (allowBlack && recursive > 0) {
-			if (!candSolve(virtual, recursive - 1)) {
+			if (!candSolve(virtual, recursive - 1, yIndex, xIndex)) {
 				allowBlack = false;
 			}
 		}
@@ -927,7 +927,7 @@ public class ChocobananaSolver implements Solver {
 		virtual2.masu[yIndex][xIndex] = Masu.NOT_BLACK;
 		boolean allowNotBlack = virtual2.solveAndCheck();
 		if (allowNotBlack && recursive > 0) {
-			if (!candSolve(virtual2, recursive - 1)) {
+			if (!candSolve(virtual2, recursive - 1, yIndex, xIndex)) {
 				allowNotBlack = false;
 			}
 		}

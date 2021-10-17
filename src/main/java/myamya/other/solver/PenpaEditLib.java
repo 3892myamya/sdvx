@@ -19,7 +19,18 @@ import net.arnx.jsonic.JSON;
 public class PenpaEditLib {
 
 	public enum PuzzleType {
-		NONE, YAJILIN, EDGESUB, MAKEROOM, HINTS_BW;
+		// 白黒
+		NONE,
+		// ヤジリン系。黒マス+線のやつ
+		YAJILIN,
+		// 辺を塗るやつ。星空巡りとか
+		EDGESUB,
+		// 辺を塗るやつで丸数字あり。ハードルとか
+		EDGESUB_CIRCLE,
+		// 部屋を作るやつ。
+		MAKEROOM,
+		// clouds、gapsなどイラロジ系のやつ
+		HINTS_BW;
 
 	}
 
@@ -147,7 +158,7 @@ public class PenpaEditLib {
 					sb.append(firstPos + yIndex * (numbers[0].length + 4) + xIndex);
 					sb.append("\":[\"");
 					sb.append(numbers[yIndex][xIndex]);
-					sb.append("\",1,\"1\"]");
+					sb.append("\"," + (type == PuzzleType.EDGESUB_CIRCLE ? "6" : "1") + ",\"1\"]");
 				}
 			}
 		}
@@ -414,7 +425,7 @@ public class PenpaEditLib {
 		}
 		sb.append("\n"); // ここまで2行目
 		// 以下、実線・点線・クリック時の情報
-		if (type == PuzzleType.EDGESUB) {
+		if (type == PuzzleType.EDGESUB || type == PuzzleType.EDGESUB_CIRCLE) {
 			sb.append("[\"2\",\"2\",\"1\"]");
 		} else {
 			sb.append("[\"1\",\"2\",\"1\"]");
@@ -422,7 +433,7 @@ public class PenpaEditLib {
 		// 以下、入力モードの情報
 		if (type == PuzzleType.YAJILIN) {
 			sb.append("~\"combi\"~[\"yajilin\",\"\"]");
-		} else if (type == PuzzleType.EDGESUB) {
+		} else if (type == PuzzleType.EDGESUB || type == PuzzleType.EDGESUB_CIRCLE) {
 			sb.append("~\"combi\"~[\"edgesub\",\"\"]");
 		} else if (type == PuzzleType.MAKEROOM) {
 			sb.append("~zE~[\"1\",3]");

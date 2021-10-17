@@ -389,6 +389,11 @@ var ruleMap = {
 		url : "",
 		source : ""
 	},
+	hurdle : {
+		name : "ハードル",
+		url : "",
+		source : ""
+	},
 }
 var regMap = {
 		yajilin:[{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},
@@ -1057,6 +1062,19 @@ $(function() {
 					$('#sel_size').val(5);
 				} else if (nowSelSizeVal > 9) {
 					$('#sel_size').val(9);
+				} else {
+					$('#sel_size').val(nowSelSizeVal);
+				}
+			} else if (type == 'hurdle') {
+				$('#sel_size').append(option.size_4);
+				$('#sel_size').append(option.size_6);
+				$('#sel_size').append(option.size_8);
+				if (nowSelSizeVal == 3 || nowSelSizeVal == 5) {
+					$('#sel_size').val(4);
+				} else if (nowSelSizeVal == 7) {
+					$('#sel_size').val(6);
+				} else if (nowSelSizeVal > 8) {
+					$('#sel_size').val(8);
 				} else {
 					$('#sel_size').val(nowSelSizeVal);
 				}
