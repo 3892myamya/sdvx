@@ -904,6 +904,7 @@ public class ChocobananaSolver implements Solver {
 					}
 				}
 			}
+			initX = 0;
 		}
 		if (!field.getStateDump().equals(str)) {
 			return candSolve(field, recursive, 0, 0);

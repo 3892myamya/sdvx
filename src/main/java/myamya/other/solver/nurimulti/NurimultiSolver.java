@@ -162,6 +162,7 @@ public class NurimultiSolver implements Solver {
 				// 解答の記憶
 				solutionStr = PenpaEditLib.convertSolutionMasu(wkField.masu);
 //				System.out.println(wkField);
+				wkField.fixedPosSet.clear();
 				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
 					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
 						if (wkField.numbers[yIndex][xIndex] == null) {
@@ -264,7 +265,7 @@ public class NurimultiSolver implements Solver {
 		// 数字の情報
 		protected final Integer[][] numbers;
 		// 確定した部屋の位置情報。再調査しないことでスピードアップ
-		private Set<Position> fixedPosSet;
+		protected Set<Position> fixedPosSet;
 
 		public Masu[][] getMasu() {
 			return masu;
@@ -965,8 +966,8 @@ public class NurimultiSolver implements Solver {
 	 */
 	protected boolean candSolve(Field field, int recursive, int initY, int initX) {
 		String str = field.getStateDump();
-		for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
-			for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+		for (int yIndex = initY; yIndex < field.getYLength(); yIndex++) {
+			for (int xIndex = initX; xIndex < field.getXLength(); xIndex++) {
 				if (field.masu[yIndex][xIndex] == Masu.SPACE) {
 					count++;
 					if (!oneCandSolve(field, yIndex, xIndex, recursive)) {
@@ -974,6 +975,7 @@ public class NurimultiSolver implements Solver {
 					}
 				}
 			}
+			initX = 0;
 		}
 		if (!field.getStateDump().equals(str)) {
 			return candSolve(field, recursive, 0, 0);

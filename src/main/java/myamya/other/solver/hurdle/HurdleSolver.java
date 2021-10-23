@@ -910,9 +910,9 @@ public class HurdleSolver implements Solver {
 						}
 					}
 				}
+				initX = 0;
 			}
 			initY = 0;
-			initX = 0;
 		}
 		for (int yIndex = initY; yIndex < field.getYLength() - 1; yIndex++) {
 			for (int xIndex = initX; xIndex < field.getXLength(); xIndex++) {
@@ -923,6 +923,7 @@ public class HurdleSolver implements Solver {
 					}
 				}
 			}
+			initX = 0;
 		}
 		if (!field.getStateDump().equals(str)) {
 			return candSolve(field, recursive, 0, 0, true);

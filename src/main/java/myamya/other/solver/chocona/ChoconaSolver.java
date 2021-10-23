@@ -513,9 +513,10 @@ public class ChoconaSolver implements Solver {
 	 * 仮置きして調べる
 	 */
 	protected boolean candSolve(Field field, int recursive, int initY, int initX) {
+		System.out.println(field);
 		String str = field.getStateDump();
-		for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
-			for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+		for (int yIndex = initY; yIndex < field.getYLength(); yIndex++) {
+			for (int xIndex = initX; xIndex < field.getXLength(); xIndex++) {
 				if (field.masu[yIndex][xIndex] == Masu.SPACE) {
 					count++;
 					if (!oneCandSolve(field, yIndex, xIndex, recursive)) {
@@ -523,6 +524,7 @@ public class ChoconaSolver implements Solver {
 					}
 				}
 			}
+			initX = 0;
 		}
 		if (!field.getStateDump().equals(str)) {
 			return candSolve(field, recursive, 0, 0);
