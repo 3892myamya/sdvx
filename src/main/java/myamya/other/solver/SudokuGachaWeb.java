@@ -55,9 +55,11 @@ import myamya.other.solver.nanro.NanroSolver.NanroGenerator;
 import myamya.other.solver.nibunnogo.NibunnogoSolver.NibunnogoGenerator;
 import myamya.other.solver.nonogram.NonogramSolver.NonogramGenerator;
 import myamya.other.solver.norinori.NorinoriSolver.NorinoriGenerator;
+import myamya.other.solver.nuribou.NuribouSolver.NuribouGenerator;
 import myamya.other.solver.nurikabe.NurikabeSolver.NurikabeGenerator;
 import myamya.other.solver.nurimaze.NurimazeSolver.NurimazeGenerator;
 import myamya.other.solver.nurimisaki.NurimisakiSolver.NurimisakiGenerator;
+import myamya.other.solver.nurimulti.NurimultiSolver.NurimultiGenerator;
 import myamya.other.solver.pipelink.PipelinkSolver.PipelinkGenerator;
 import myamya.other.solver.putteria.PutteriaSolver.PutteriaGenerator;
 import myamya.other.solver.reflect.ReflectSolver.ReflectGenerator;
@@ -1367,6 +1369,40 @@ public class SudokuGachaWeb extends HttpServlet {
 
 	}
 
+	static class NuribouGeneratorThlead extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+
+		NuribouGeneratorThlead(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new NuribouGenerator(height, width, true);
+		}
+
+	}
+
+	static class NurimultiGeneratorThlead extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+		protected final int blackSize;
+
+		NurimultiGeneratorThlead(int height, int width, int blackSize) {
+			this.height = height;
+			this.width = width;
+			this.blackSize = blackSize;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new NurimultiGenerator(height, width, blackSize);
+		}
+
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -1550,6 +1586,12 @@ public class SudokuGachaWeb extends HttpServlet {
 				t = new SukimaGeneratorThlead(height, width);
 			} else if (type.equals("hurdle")) {
 				t = new HurdleGeneratorThlead(height, width);
+			} else if (type.equals("nuribou")) {
+				t = new NuribouGeneratorThlead(height, width);
+			} else if (type.equals("norinuri")) {
+				t = new NurimultiGeneratorThlead(height, width, 2);
+			} else if (type.equals("nurisan")) {
+				t = new NurimultiGeneratorThlead(height, width, 3);
 			} else {
 				throw new IllegalArgumentException();
 			}

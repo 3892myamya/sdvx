@@ -475,7 +475,7 @@ public class ChoconaSolver implements Solver {
 	}
 
 	public static void main(String[] args) {
-		String url = "http://pzv.jp/p.html?chocona/25/25/h12f2u5rvv6lvvtmjfvsu57of80612g0c0700u8e01svs03pvo07u3g0eo700s0e01ofs03m1o07v7g0e3v00vra0186k030jspmtvvvf5nvvsvv6cn9g490n1ekcdihs0al1s0ai2k6dnvsvn7vtvvvvve00000d00004000am000a0000vv0000e000re000ee000el000elvvve47vtvvvvucl120mh005jh126qlrn0c0agaa1gaaa1a1a10100001000010011110aaa1a-65a1aa0100aa100a101a0101000gag01a0a010aaa0ag01101h10a111100"; // urlを入れれば試せる
+		String url = "http://pzv.jp/p.html?chocona/11/11/2o3jos7hhm1g731olt13ncv94iil68bu42v14r0ph94agf0f00000g0g0-13g-100000000"; // urlを入れれば試せる
 		String[] params = url.split("/");
 		int height = Integer.parseInt(params[params.length - 2]);
 		int width = Integer.parseInt(params[params.length - 3]);
@@ -494,7 +494,7 @@ public class ChoconaSolver implements Solver {
 			}
 			int recursiveCnt = 0;
 			while (field.getStateDump().equals(befStr) && recursiveCnt < 3) {
-				if (!candSolve(field, recursiveCnt)) {
+				if (!candSolve(field, recursiveCnt == 2 ? 999 : recursiveCnt, 0, 0)) {
 					return "問題に矛盾がある可能性があります。途中経過を返します。";
 				}
 				recursiveCnt++;
@@ -512,7 +512,7 @@ public class ChoconaSolver implements Solver {
 	/**
 	 * 仮置きして調べる
 	 */
-	private boolean candSolve(Field field, int recursive) {
+	protected boolean candSolve(Field field, int recursive, int initY, int initX) {
 		String str = field.getStateDump();
 		for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 			for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
@@ -525,7 +525,7 @@ public class ChoconaSolver implements Solver {
 			}
 		}
 		if (!field.getStateDump().equals(str)) {
-			return candSolve(field, recursive);
+			return candSolve(field, recursive, 0, 0);
 		}
 		return true;
 	}
@@ -538,7 +538,7 @@ public class ChoconaSolver implements Solver {
 		virtual.masu[yIndex][xIndex] = Masu.BLACK;
 		boolean allowBlack = virtual.solveAndCheck();
 		if (allowBlack && recursive > 0) {
-			if (!candSolve(virtual, recursive - 1)) {
+			if (!candSolve(virtual, recursive - 1, yIndex, xIndex)) {
 				allowBlack = false;
 			}
 		}
@@ -546,7 +546,7 @@ public class ChoconaSolver implements Solver {
 		virtual2.masu[yIndex][xIndex] = Masu.NOT_BLACK;
 		boolean allowNotBlack = virtual2.solveAndCheck();
 		if (allowNotBlack && recursive > 0) {
-			if (!candSolve(virtual2, recursive - 1)) {
+			if (!candSolve(virtual2, recursive - 1, yIndex, xIndex)) {
 				allowNotBlack = false;
 			}
 		}

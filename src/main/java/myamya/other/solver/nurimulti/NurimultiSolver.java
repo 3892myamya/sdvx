@@ -1,4 +1,4 @@
-package myamya.other.solver.nuribou;
+package myamya.other.solver.nurimulti;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -11,21 +11,22 @@ import myamya.other.solver.Common.Difficulty;
 import myamya.other.solver.Common.Direction;
 import myamya.other.solver.Common.GeneratorResult;
 import myamya.other.solver.Common.Masu;
+import myamya.other.solver.Common.PenpaEditGeneratorResult;
 import myamya.other.solver.Common.Position;
 import myamya.other.solver.Generator;
 import myamya.other.solver.PenpaEditLib;
 import myamya.other.solver.Solver;
 
-public class NuribouSolver implements Solver {
-	public static class NuribouGenerator implements Generator {
+public class NurimultiSolver implements Solver {
+	public static class NurimultiGenerator implements Generator {
 
 		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
 		private static final String FULL_NUMS = "０１２３４５６７８９";
 
-		static class NuribouSolverForGenerator extends NuribouSolver {
+		static class NurimultiSolverForGenerator extends NurimultiSolver {
 			private final int limit;
 
-			public NuribouSolverForGenerator(Field field, int limit) {
+			public NurimultiSolverForGenerator(Field field, int limit) {
 				super(field);
 				this.limit = limit;
 			}
@@ -64,13 +65,13 @@ public class NuribouSolver implements Solver {
 			}
 		}
 
-		static class ExtendedField extends NuribouSolver.Field {
+		static class ExtendedField extends NurimultiSolver.Field {
 			public ExtendedField(Field other) {
 				super(other);
 			}
 
-			public ExtendedField(int height, int width, boolean isNuribou) {
-				super(height, width, isNuribou);
+			public ExtendedField(int height, int width, int blackSize) {
+				super(height, width, blackSize);
 			}
 
 			@Override
@@ -79,26 +80,24 @@ public class NuribouSolver implements Solver {
 			}
 		}
 
-		private final boolean isNuribou;
+		private final int blackSize;
 		private final int height;
 		private final int width;
 
-		public NuribouGenerator(int height, int width, boolean isNuribou) {
-			this.isNuribou = isNuribou;
+		public NurimultiGenerator(int height, int width, int blackSize) {
+			this.blackSize = blackSize;
 			this.height = height;
 			this.width = width;
 		}
 
 		public static void main(String[] args) {
-			new NuribouGenerator(8, 8, false).generate();
+			new NurimultiGenerator(8, 8, 3).generate();
 		}
 
-		/**
-		 * いまのところ、ぬりぼうのみ対応
-		 */
 		@Override
 		public GeneratorResult generate() {
-			ExtendedField wkField = new ExtendedField(height, width, isNuribou);
+			String solutionStr;
+			ExtendedField wkField = new ExtendedField(height, width, blackSize);
 			List<Integer> indexList = new ArrayList<>();
 			for (int i = 0; i < height * width; i++) {
 				indexList.add(i);
@@ -132,7 +131,7 @@ public class NuribouSolver implements Solver {
 						}
 						if (!isOk) {
 							// 破綻したら0から作り直す。
-							wkField = new ExtendedField(height, width, isNuribou);
+							wkField = new ExtendedField(height, width, blackSize);
 							Collections.shuffle(indexList);
 							index = 0;
 							continue;
@@ -157,34 +156,11 @@ public class NuribouSolver implements Solver {
 						continue;
 					}
 					Set<Position> continueWhitePosSet = wkField.getContinueWhitePosSet(pos);
-					if (isNuribou) {
-						wkField.numbers[pos.getyIndex()][pos.getxIndex()] = continueWhitePosSet.size();
-					} else {
-						int blackCnt = 0;
-						Masu masuUp = pos.getyIndex() == 0 ? Masu.NOT_BLACK
-								: wkField.masu[pos.getyIndex() - 1][pos.getxIndex()];
-						Masu masuRight = pos.getxIndex() == wkField.getXLength() - 1 ? Masu.NOT_BLACK
-								: wkField.masu[pos.getyIndex()][pos.getxIndex() + 1];
-						Masu masuDown = pos.getyIndex() == wkField.getYLength() - 1 ? Masu.NOT_BLACK
-								: wkField.masu[pos.getyIndex() + 1][pos.getxIndex()];
-						Masu masuLeft = pos.getxIndex() == 0 ? Masu.NOT_BLACK
-								: wkField.masu[pos.getyIndex()][pos.getxIndex() - 1];
-						if (masuUp == Masu.BLACK) {
-							blackCnt++;
-						}
-						if (masuRight == Masu.BLACK) {
-							blackCnt++;
-						}
-						if (masuDown == Masu.BLACK) {
-							blackCnt++;
-						}
-						if (masuLeft == Masu.BLACK) {
-							blackCnt++;
-						}
-						wkField.numbers[pos.getyIndex()][pos.getxIndex()] = blackCnt;
-					}
+					wkField.numbers[pos.getyIndex()][pos.getxIndex()] = continueWhitePosSet.size();
 					alreadyPosSet.addAll(continueWhitePosSet);
 				}
+				// 解答の記憶
+				solutionStr = PenpaEditLib.convertSolutionMasu(wkField.masu);
 //				System.out.println(wkField);
 				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
 					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
@@ -193,67 +169,31 @@ public class NuribouSolver implements Solver {
 						}
 					}
 				}
-				Field solvingField = new NuribouSolver.Field(wkField);
-				level = new NuribouSolverForGenerator(solvingField, 5000).solve2();
+				Field solvingField = new NurimultiSolver.Field(wkField);
+				level = new NurimultiSolverForGenerator(solvingField, 3000).solve2();
 				if (level == -1) {
 					// 解けなければやり直し
-					wkField = new ExtendedField(height, width, isNuribou);
+					wkField = new ExtendedField(height, width, blackSize);
 					Collections.shuffle(indexList);
 					index = 0;
 				} else {
 					break;
 				}
 			}
-			// System.out.println(level);
-			level = (int) Math.sqrt(level / 3) + 1;
-			String status = "Lv:" + level + "の問題を獲得！(ヒント数：" + wkField.getHintCount() + ")";
+			// ヒント数字を含む盤面変換
+			String fieldStr = PenpaEditLib.convertNumbersField(wkField.numbers);
+//			System.out.println(fieldStr);
+//			System.out.println(solutionStr);
+			level = (int) Math.sqrt(level / 2 / 3) + 1;
+			String status = "Lv:" + level + "の問題を獲得！(数字：" + wkField.getHintCount() + ")";
 			String url = wkField.getPuzPreURL();
-			String link = "<a href=\"" + url + "\" target=\"_blank\">ぱずぷれv3で解く</a>";
+			String link = "<a href=\"" + url + "\" target=\"_blank\">penpa-editで解く</a>";
 			StringBuilder sb = new StringBuilder();
 			int baseSize = 20;
 			int margin = 5;
 			sb.append("<svg xmlns=\"http://www.w3.org/2000/svg\" " + "height=\""
 					+ (wkField.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
 					+ (wkField.getXLength() * baseSize + 2 * baseSize) + "\" >");
-			// 横壁描画
-			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
-				for (int xIndex = -1; xIndex < wkField.getXLength(); xIndex++) {
-					boolean oneYokoWall = xIndex == -1 || xIndex == wkField.getXLength() - 1;
-					sb.append("<line y1=\"" + (yIndex * baseSize + margin) + "\" x1=\""
-							+ (xIndex * baseSize + 2 * baseSize) + "\" y2=\"" + (yIndex * baseSize + baseSize + margin)
-							+ "\" x2=\"" + (xIndex * baseSize + 2 * baseSize) + "\" stroke-width=\"1\" fill=\"none\"");
-					if (oneYokoWall) {
-						if (xIndex == -1 || xIndex == wkField.getXLength() - 1) {
-							sb.append("stroke=\"#000\" ");
-						} else {
-							sb.append("stroke=\"green\" ");
-						}
-					} else {
-						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
-					}
-					sb.append(">" + "</line>");
-				}
-			}
-			// 縦壁描画
-			for (int yIndex = -1; yIndex < wkField.getYLength(); yIndex++) {
-				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
-					boolean oneTateWall = yIndex == -1 || yIndex == wkField.getYLength() - 1;
-					sb.append("<line y1=\"" + (yIndex * baseSize + baseSize + margin) + "\" x1=\""
-							+ (xIndex * baseSize + baseSize) + "\" y2=\"" + (yIndex * baseSize + baseSize + margin)
-							+ "\" x2=\"" + (xIndex * baseSize + baseSize + baseSize)
-							+ "\" stroke-width=\"1\" fill=\"none\"");
-					if (oneTateWall) {
-						if (yIndex == -1 || yIndex == wkField.getYLength() - 1) {
-							sb.append("stroke=\"#000\" ");
-						} else {
-							sb.append("stroke=\"green\" ");
-						}
-					} else {
-						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
-					}
-					sb.append(">" + "</line>");
-				}
-			}
 			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
 					if (wkField.getNumbers()[yIndex][xIndex] != null) {
@@ -272,21 +212,53 @@ public class NuribouSolver implements Solver {
 					}
 				}
 			}
+			// 横壁描画
+			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = -1; xIndex < wkField.getXLength(); xIndex++) {
+					boolean oneYokoWall = xIndex == -1 || xIndex == wkField.getXLength() - 1;
+					sb.append("<line y1=\"" + (yIndex * baseSize + margin) + "\" x1=\""
+							+ (xIndex * baseSize + 2 * baseSize) + "\" y2=\"" + (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\"" + (xIndex * baseSize + 2 * baseSize) + "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneYokoWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">" + "</line>");
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = -1; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+					boolean oneTateWall = yIndex == -1 || yIndex == wkField.getYLength() - 1;
+					sb.append("<line y1=\"" + (yIndex * baseSize + baseSize + margin) + "\" x1=\""
+							+ (xIndex * baseSize + baseSize) + "\" y2=\"" + (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\"" + (xIndex * baseSize + baseSize + baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneTateWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">" + "</line>");
+				}
+			}
 			sb.append("</svg>");
-			System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
-			System.out.println(level + "(nuribou)");
+			System.out.println(((System.nanoTime() - start) / 1000000) + "ms.(nurimulti:" + blackSize + ")");
+			System.out.println(level);
 			System.out.println(wkField.getHintCount());
 			System.out.println(wkField);
-			System.out.println(url);
-			return new GeneratorResult(status, sb.toString(), link, url, level, "");
+			return new PenpaEditGeneratorResult(status, sb.toString(), link, level, "", fieldStr, solutionStr);
 
 		}
 
 	}
 
 	public static class Field {
-		// ぬりぼうならtrue、うめぼうならfalse
-		private final boolean isNuribou;
+		static final String ALPHABET_FROM_G = "ghijklmnopqrstuvwxyz";
+
+		// 黒マスサイズ
+		private final int blackSize;
 		// マスの情報
 		protected Masu[][] masu;
 		// 数字の情報
@@ -321,46 +293,7 @@ public class NuribouSolver implements Solver {
 		}
 
 		public String getPuzPreURL() {
-			if (isNuribou) {
-				StringBuilder sb = new StringBuilder();
-				sb.append("http://pzv.jp/p.html?nuribou/" + getXLength() + "/" + getYLength() + "/");
-				int interval = 0;
-				for (int i = 0; i < getYLength() * getXLength(); i++) {
-					int yIndex = i / getXLength();
-					int xIndex = i % getXLength();
-					if (numbers[yIndex][xIndex] == null) {
-						interval++;
-						if (interval == 20) {
-							sb.append("z");
-							interval = 0;
-						}
-					} else {
-						Integer num = numbers[yIndex][xIndex];
-						String numStr = Integer.toHexString(num);
-						if (numStr.length() == 2) {
-							numStr = "-" + numStr;
-						} else if (numStr.length() == 3) {
-							numStr = "+" + numStr;
-						}
-						if (interval == 0) {
-							sb.append(numStr);
-						} else {
-							sb.append(ALPHABET_FROM_G.substring(interval - 1, interval));
-							sb.append(numStr);
-							interval = 0;
-						}
-					}
-				}
-				if (interval != 0) {
-					sb.append(ALPHABET_FROM_G.substring(interval - 1, interval));
-				}
-				if (sb.charAt(sb.length() - 1) == '.') {
-					sb.append("/");
-				}
-				return sb.toString();
-			} else {
-				return PenpaEditLib.PENPA_EDIT_DUMMY_URL;
-			}
+			return PenpaEditLib.PENPA_EDIT_DUMMY_URL;
 		}
 
 		public Integer[][] getNumbers() {
@@ -375,8 +308,8 @@ public class NuribouSolver implements Solver {
 			return masu[0].length;
 		}
 
-		public Field(int height, int width, boolean isNuribou) {
-			this.isNuribou = isNuribou;
+		public Field(int height, int width, int blackSize) {
+			this.blackSize = blackSize;
 			masu = new Masu[height][width];
 			numbers = new Integer[height][width];
 			fixedPosSet = new HashSet<>();
@@ -387,8 +320,8 @@ public class NuribouSolver implements Solver {
 			}
 		}
 
-		public Field(String fieldStr) {
-			isNuribou = false;
+		public Field(String fieldStr, int blackSize) {
+			this.blackSize = blackSize;
 			masu = PenpaEditLib.getMasu(fieldStr);
 			numbers = PenpaEditLib.getNumbers(fieldStr);
 			fixedPosSet = new HashSet<>();
@@ -403,7 +336,7 @@ public class NuribouSolver implements Solver {
 		}
 
 		public Field(Field other) {
-			isNuribou = other.isNuribou;
+			blackSize = other.blackSize;
 			numbers = other.numbers;
 			masu = new Masu[other.getYLength()][other.getXLength()];
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
@@ -412,55 +345,6 @@ public class NuribouSolver implements Solver {
 				}
 			}
 			fixedPosSet = new HashSet<>(other.fixedPosSet);
-		}
-
-		static final String ALPHABET_FROM_G = "ghijklmnopqrstuvwxyz";
-
-		public Field(int height, int width, String param) {
-			isNuribou = true;
-			masu = new Masu[height][width];
-			numbers = new Integer[height][width];
-			fixedPosSet = new HashSet<>();
-			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
-				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					masu[yIndex][xIndex] = Masu.SPACE;
-				}
-			}
-			int index = 0;
-			for (int i = 0; i < param.length(); i++) {
-				char ch = param.charAt(i);
-				int interval = ALPHABET_FROM_G.indexOf(ch);
-				if (interval != -1) {
-					index = index + interval + 1;
-				} else {
-					// 16 - 255は '-'
-					// 256 - 999は '+'
-					int capacity;
-					if (ch == '.') {
-						Position pos = new Position(index / getXLength(), index % getXLength());
-						masu[pos.getyIndex()][pos.getxIndex()] = Masu.NOT_BLACK;
-						numbers[pos.getyIndex()][pos.getxIndex()] = -1;
-					} else {
-						if (ch == '-') {
-							capacity = Integer.parseInt("" + param.charAt(i + 1) + param.charAt(i + 2), 16);
-							i++;
-							i++;
-						} else if (ch == '+') {
-							capacity = Integer
-									.parseInt("" + param.charAt(i + 1) + param.charAt(i + 2) + param.charAt(i + 3), 16);
-							i++;
-							i++;
-							i++;
-						} else {
-							capacity = Integer.parseInt(String.valueOf(ch), 16);
-						}
-						Position pos = new Position(index / getXLength(), index % getXLength());
-						masu[pos.getyIndex()][pos.getxIndex()] = Masu.NOT_BLACK;
-						numbers[pos.getyIndex()][pos.getxIndex()] = capacity;
-					}
-					index++;
-				}
-			}
 		}
 
 		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
@@ -505,7 +389,7 @@ public class NuribouSolver implements Solver {
 		}
 
 		/**
-		 * ぬりぼうでは、部屋のサイズが超過していたり、別部屋と繋がっていた場合、falseを返す。 部屋が既定サイズに到達している場合、周囲を黒で埋める。
+		 * 部屋のサイズが超過していたり、別部屋と繋がっていた場合、falseを返す。 部屋が既定サイズに到達している場合、周囲を黒で埋める。
 		 */
 		public boolean roomSolve() {
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
@@ -684,215 +568,78 @@ public class NuribouSolver implements Solver {
 		}
 
 		/**
-		 * 黒マスは必ず棒状になる。ならない場合falseを返す。
+		 * 黒マスは必ず3マスつながる
 		 */
-		public boolean stickSolve() {
-			for (int yIndex = 0; yIndex < getYLength() - 1; yIndex++) {
-				for (int xIndex = 0; xIndex < getXLength() - 1; xIndex++) {
-					Masu masu1 = masu[yIndex][xIndex];
-					Masu masu2 = masu[yIndex][xIndex + 1];
-					Masu masu3 = masu[yIndex + 1][xIndex];
-					Masu masu4 = masu[yIndex + 1][xIndex + 1];
-					if (masu1 == Masu.BLACK && masu4 == Masu.BLACK) {
-						if (masu2 == Masu.BLACK || masu3 == Masu.BLACK) {
-							return false;
-						}
-						masu[yIndex][xIndex + 1] = Masu.NOT_BLACK;
-						masu[yIndex + 1][xIndex] = Masu.NOT_BLACK;
-					}
-					if (masu1 == Masu.BLACK && masu4 == Masu.SPACE) {
-						if (masu2 == Masu.BLACK || masu3 == Masu.BLACK) {
-							masu[yIndex + 1][xIndex + 1] = Masu.NOT_BLACK;
-						}
-					}
-					if (masu1 == Masu.SPACE && masu4 == Masu.BLACK) {
-						if (masu2 == Masu.BLACK || masu3 == Masu.BLACK) {
-							masu[yIndex][xIndex] = Masu.NOT_BLACK;
-						}
-					}
-					if (masu2 == Masu.BLACK && masu3 == Masu.BLACK) {
-						if (masu1 == Masu.BLACK || masu4 == Masu.BLACK) {
-							return false;
-						}
-						masu[yIndex][xIndex] = Masu.NOT_BLACK;
-						masu[yIndex + 1][xIndex + 1] = Masu.NOT_BLACK;
-					}
-					if (masu2 == Masu.BLACK && masu3 == Masu.SPACE) {
-						if (masu1 == Masu.BLACK || masu4 == Masu.BLACK) {
-							masu[yIndex + 1][xIndex] = Masu.NOT_BLACK;
-						}
-					}
-					if (masu2 == Masu.SPACE && masu3 == Masu.BLACK) {
-						if (masu1 == Masu.BLACK || masu4 == Masu.BLACK) {
-							masu[yIndex][xIndex + 1] = Masu.NOT_BLACK;
-						}
-					}
-				}
-			}
-			return true;
-		}
-
-		/**
-		 * うめぼうでは、数字は周りのくろますの数。矛盾する場合false。
-		 */
-		private boolean numberSolve() {
-			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
-				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					if (numbers[yIndex][xIndex] != null && numbers[yIndex][xIndex] != -1) {
-						int blackCnt = 0;
-						int whiteCnt = 0;
-						Masu masuUp = yIndex == 0 ? Masu.NOT_BLACK : masu[yIndex - 1][xIndex];
-						Masu masuRight = xIndex == getXLength() - 1 ? Masu.NOT_BLACK : masu[yIndex][xIndex + 1];
-						Masu masuDown = yIndex == getYLength() - 1 ? Masu.NOT_BLACK : masu[yIndex + 1][xIndex];
-						Masu masuLeft = xIndex == 0 ? Masu.NOT_BLACK : masu[yIndex][xIndex - 1];
-						if (masuUp == Masu.BLACK) {
-							blackCnt++;
-						} else if (masuUp == Masu.NOT_BLACK) {
-							whiteCnt++;
-						}
-						if (masuRight == Masu.BLACK) {
-							blackCnt++;
-						} else if (masuRight == Masu.NOT_BLACK) {
-							whiteCnt++;
-						}
-						if (masuDown == Masu.BLACK) {
-							blackCnt++;
-						} else if (masuDown == Masu.NOT_BLACK) {
-							whiteCnt++;
-						}
-						if (masuLeft == Masu.BLACK) {
-							blackCnt++;
-						} else if (masuLeft == Masu.NOT_BLACK) {
-							whiteCnt++;
-						}
-						if (numbers[yIndex][xIndex] < blackCnt) {
-							// 黒マス過剰
-							return false;
-						}
-						if (numbers[yIndex][xIndex] > 4 - whiteCnt) {
-							// 黒マス不足
-							return false;
-						}
-						if (numbers[yIndex][xIndex] == blackCnt) {
-							if (masuUp == Masu.SPACE) {
-								masu[yIndex - 1][xIndex] = Masu.NOT_BLACK;
-							}
-							if (masuRight == Masu.SPACE) {
-								masu[yIndex][xIndex + 1] = Masu.NOT_BLACK;
-							}
-							if (masuDown == Masu.SPACE) {
-								masu[yIndex + 1][xIndex] = Masu.NOT_BLACK;
-							}
-							if (masuLeft == Masu.SPACE) {
-								masu[yIndex][xIndex - 1] = Masu.NOT_BLACK;
-							}
-						}
-						if (numbers[yIndex][xIndex] == 4 - whiteCnt) {
-							if (masuUp == Masu.SPACE) {
-								masu[yIndex - 1][xIndex] = Masu.BLACK;
-							}
-							if (masuRight == Masu.SPACE) {
-								masu[yIndex][xIndex + 1] = Masu.BLACK;
-							}
-							if (masuDown == Masu.SPACE) {
-								masu[yIndex + 1][xIndex] = Masu.BLACK;
-							}
-							if (masuLeft == Masu.SPACE) {
-								masu[yIndex][xIndex - 1] = Masu.BLACK;
-							}
-						}
-					}
-				}
-			}
-			return true;
-		}
-
-		/**
-		 * 同じ長さの棒は角を共有しない。
-		 */
-		public boolean cornerSolve() {
-			Set<Position> alreadyServeyPosSet = new HashSet<>();
+		public boolean kuroSolve() {
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
 					if (masu[yIndex][xIndex] == Masu.BLACK) {
-						Position pos = new Position(yIndex, xIndex);
-						if (alreadyServeyPosSet.contains(pos)) {
+						Position pivot = new Position(yIndex, xIndex);
+						if (fixedPosSet.contains(pivot)) {
 							continue;
 						}
-						Set<Position> continueBlackPosSet = new HashSet<>();
-						continueBlackPosSet.add(pos);
-						if (setContinueBlackPosSet(pos, continueBlackPosSet, null)) {
-							// サイズが決まっている棒
-							for (Position continueBlackPos : continueBlackPosSet) {
-								Masu masuUpRight = continueBlackPos.getyIndex() == 0
-										|| continueBlackPos.getxIndex() == getXLength() - 1 ? Masu.NOT_BLACK
-												: masu[continueBlackPos.getyIndex() - 1][continueBlackPos.getxIndex()
-														+ 1];
-								Masu masuRightDown = continueBlackPos.getxIndex() == getXLength() - 1
-										|| continueBlackPos.getyIndex() == getYLength() - 1 ? Masu.NOT_BLACK
-												: masu[continueBlackPos.getyIndex() + 1][continueBlackPos.getxIndex()
-														+ 1];
-								Masu masuDownLeft = continueBlackPos.getyIndex() == getYLength() - 1
-										|| continueBlackPos.getxIndex() == 0 ? Masu.NOT_BLACK
-												: masu[continueBlackPos.getyIndex() + 1][continueBlackPos.getxIndex()
-														- 1];
-								Masu masuLeftUp = continueBlackPos.getxIndex() == 0 || yIndex == 0 ? Masu.NOT_BLACK
-										: masu[continueBlackPos.getyIndex() - 1][continueBlackPos.getxIndex() - 1];
-								if (masuUpRight == Masu.BLACK) {
-									Position targetPos = new Position(continueBlackPos.getyIndex() - 1,
-											continueBlackPos.getxIndex() + 1);
-									if (!alreadyServeyPosSet.contains(targetPos)) {
-										Set<Position> continueBlackTargetPosSet = new HashSet<>();
-										continueBlackTargetPosSet.add(targetPos);
-										if (setContinueBlackPosSet(targetPos, continueBlackTargetPosSet, null)) {
-											if (continueBlackTargetPosSet.size() == continueBlackPosSet.size()) {
-												return false;
-											}
-										}
-									}
+						Set<Position> continuePosSet = new HashSet<>();
+						continuePosSet.add(pivot);
+						if (!(setContinueBlackPosSet(pivot, continuePosSet, null))) {
+							// サイズ超過
+							return false;
+						} else if (blackSize == continuePosSet.size()) {
+							// サイズ確定。周りを白に
+							fixedPosSet.add(pivot);
+							for (Position pos : continuePosSet) {
+								if (pos.getyIndex() != 0 && !continuePosSet
+										.contains(new Position(pos.getyIndex() - 1, pos.getxIndex()))) {
+									masu[pos.getyIndex() - 1][pos.getxIndex()] = Masu.NOT_BLACK;
 								}
-								if (masuRightDown == Masu.BLACK) {
-									Position targetPos = new Position(continueBlackPos.getyIndex() + 1,
-											continueBlackPos.getxIndex() + 1);
-									if (!alreadyServeyPosSet.contains(targetPos)) {
-										Set<Position> continueBlackTargetPosSet = new HashSet<>();
-										continueBlackTargetPosSet.add(targetPos);
-										if (setContinueBlackPosSet(targetPos, continueBlackTargetPosSet, null)) {
-											if (continueBlackTargetPosSet.size() == continueBlackPosSet.size()) {
-												return false;
-											}
-										}
-									}
+								if (pos.getxIndex() != getXLength() - 1 && !continuePosSet
+										.contains(new Position(pos.getyIndex(), pos.getxIndex() + 1))) {
+									masu[pos.getyIndex()][pos.getxIndex() + 1] = Masu.NOT_BLACK;
 								}
-								if (masuDownLeft == Masu.BLACK) {
-									Position targetPos = new Position(continueBlackPos.getyIndex() + 1,
-											continueBlackPos.getxIndex() - 1);
-									if (!alreadyServeyPosSet.contains(targetPos)) {
-										Set<Position> continueBlackTargetPosSet = new HashSet<>();
-										continueBlackTargetPosSet.add(targetPos);
-										if (setContinueBlackPosSet(targetPos, continueBlackTargetPosSet, null)) {
-											if (continueBlackTargetPosSet.size() == continueBlackPosSet.size()) {
-												return false;
-											}
-										}
-									}
+								if (pos.getyIndex() != getYLength() - 1 && !continuePosSet
+										.contains(new Position(pos.getyIndex() + 1, pos.getxIndex()))) {
+									masu[pos.getyIndex() + 1][pos.getxIndex()] = Masu.NOT_BLACK;
 								}
-								if (masuLeftUp == Masu.BLACK) {
-									Position targetPos = new Position(continueBlackPos.getyIndex() - 1,
-											continueBlackPos.getxIndex() - 1);
-									if (!alreadyServeyPosSet.contains(targetPos)) {
-										Set<Position> continueBlackTargetPosSet = new HashSet<>();
-										continueBlackTargetPosSet.add(targetPos);
-										if (setContinueBlackPosSet(targetPos, continueBlackTargetPosSet, null)) {
-											if (continueBlackTargetPosSet.size() == continueBlackPosSet.size()) {
-												return false;
-											}
+								if (pos.getxIndex() != 0 && !continuePosSet
+										.contains(new Position(pos.getyIndex(), pos.getxIndex() - 1))) {
+									masu[pos.getyIndex()][pos.getxIndex() - 1] = Masu.NOT_BLACK;
+								}
+							}
+						} else {
+							Set<Position> continueCandPosSet = new HashSet<>();
+							continueCandPosSet.add(pivot);
+							if (!setContinueCandBlackPosSet(pivot, continueCandPosSet, null)) {
+								if (blackSize == continueCandPosSet.size()) {
+									// サイズ確定。自分を黒、周りを白に
+									fixedPosSet.add(pivot);
+									for (Position pos : continueCandPosSet) {
+										masu[pos.getyIndex()][pos.getxIndex()] = masu[yIndex][xIndex];
+										if (pos.getyIndex() != 0) {
+											masu[pos.getyIndex() - 1][pos.getxIndex()] = continueCandPosSet.contains(
+													new Position(pos.getyIndex() - 1, pos.getxIndex())) ? Masu.BLACK
+															: Masu.NOT_BLACK;
+										}
+										if (pos.getxIndex() != getXLength() - 1) {
+											masu[pos.getyIndex()][pos.getxIndex() + 1] = continueCandPosSet.contains(
+													new Position(pos.getyIndex(), pos.getxIndex() + 1)) ? Masu.BLACK
+															: Masu.NOT_BLACK;
+										}
+										if (pos.getyIndex() != getYLength() - 1) {
+											masu[pos.getyIndex() + 1][pos.getxIndex()] = continueCandPosSet.contains(
+													new Position(pos.getyIndex() + 1, pos.getxIndex())) ? Masu.BLACK
+															: Masu.NOT_BLACK;
+										}
+										if (pos.getxIndex() != 0) {
+											masu[pos.getyIndex()][pos.getxIndex() - 1] = continueCandPosSet.contains(
+													new Position(pos.getyIndex(), pos.getxIndex() - 1)) ? Masu.BLACK
+															: Masu.NOT_BLACK;
 										}
 									}
+								} else {
+									// サイズ不足
+									return false;
 								}
 							}
 						}
-						alreadyServeyPosSet.addAll(continueBlackPosSet);
 					}
 				}
 			}
@@ -900,58 +647,95 @@ public class NuribouSolver implements Solver {
 		}
 
 		/**
-		 * posを起点に上下左右に黒確定のマスを無制限につなぐが、 不確定マスに隣接したらfalseを返す。
+		 * posを起点に上下左右にtargetと同じ色になりうるマスをつなげていく。 sizeが確保可能とわかった時点でtrueを返す。
 		 */
-		private boolean setContinueBlackPosSet(Position pos, Set<Position> continuePosSet, Direction from) {
+		private boolean setContinueCandBlackPosSet(Position pos, Set<Position> continuePosSet, Direction from) {
+			if (continuePosSet.size() > blackSize) {
+				return true;
+			}
 			if (pos.getyIndex() != 0 && from != Direction.UP) {
 				Position nextPos = new Position(pos.getyIndex() - 1, pos.getxIndex());
-				if (!continuePosSet.contains(nextPos)) {
-					if (masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.SPACE) {
-						return false;
-					} else if (masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.BLACK) {
-						continuePosSet.add(nextPos);
-						if (!setContinueBlackPosSet(nextPos, continuePosSet, Direction.DOWN)) {
-							return false;
-						}
+				if ((masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.NOT_BLACK)
+						&& !continuePosSet.contains(nextPos)) {
+					continuePosSet.add(nextPos);
+					if (setContinueCandBlackPosSet(nextPos, continuePosSet, Direction.DOWN)) {
+						return true;
 					}
 				}
 			}
 			if (pos.getxIndex() != getXLength() - 1 && from != Direction.RIGHT) {
 				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() + 1);
-				if (!continuePosSet.contains(nextPos)) {
-					if (masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.SPACE) {
-						return false;
-					} else if (masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.BLACK) {
-						continuePosSet.add(nextPos);
-						if (!setContinueBlackPosSet(nextPos, continuePosSet, Direction.LEFT)) {
-							return false;
-						}
+				if ((masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.NOT_BLACK)
+						&& !continuePosSet.contains(nextPos)) {
+					continuePosSet.add(nextPos);
+					if (setContinueCandBlackPosSet(nextPos, continuePosSet, Direction.LEFT)) {
+						return true;
 					}
 				}
 			}
 			if (pos.getyIndex() != getYLength() - 1 && from != Direction.DOWN) {
 				Position nextPos = new Position(pos.getyIndex() + 1, pos.getxIndex());
-				if (!continuePosSet.contains(nextPos)) {
-					if (masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.SPACE) {
-						return false;
-					} else if (masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.BLACK) {
-						continuePosSet.add(nextPos);
-						if (!setContinueBlackPosSet(nextPos, continuePosSet, Direction.UP)) {
-							return false;
-						}
+				if ((masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.NOT_BLACK)
+						&& !continuePosSet.contains(nextPos)) {
+					continuePosSet.add(nextPos);
+					if (setContinueCandBlackPosSet(nextPos, continuePosSet, Direction.UP)) {
+						return true;
 					}
 				}
 			}
 			if (pos.getxIndex() != 0 && from != Direction.LEFT) {
 				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() - 1);
-				if (!continuePosSet.contains(nextPos)) {
-					if (masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.SPACE) {
+				if ((masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.NOT_BLACK)
+						&& !continuePosSet.contains(nextPos)) {
+					continuePosSet.add(nextPos);
+					if (setContinueCandBlackPosSet(nextPos, continuePosSet, Direction.RIGHT)) {
+						return true;
+					}
+				}
+			}
+			return false;
+		}
+
+		/**
+		 * posを起点に上下左右にtargetと同じ色が確定しているマスをつなげていく。 sizeが超過すると分かった時点でfalseを返す。
+		 */
+		private boolean setContinueBlackPosSet(Position pos, Set<Position> continuePosSet, Direction from) {
+			if (continuePosSet.size() > blackSize) {
+				return false;
+			}
+			if (pos.getyIndex() != 0 && from != Direction.UP) {
+				Position nextPos = new Position(pos.getyIndex() - 1, pos.getxIndex());
+				if (masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.BLACK && !continuePosSet.contains(nextPos)) {
+					continuePosSet.add(nextPos);
+					if (!setContinueBlackPosSet(nextPos, continuePosSet, Direction.DOWN)) {
 						return false;
-					} else if (masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.BLACK) {
-						continuePosSet.add(nextPos);
-						if (!setContinueBlackPosSet(nextPos, continuePosSet, Direction.RIGHT)) {
-							return false;
-						}
+					}
+				}
+			}
+			if (pos.getxIndex() != getXLength() - 1 && from != Direction.RIGHT) {
+				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() + 1);
+				if (masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.BLACK && !continuePosSet.contains(nextPos)) {
+					continuePosSet.add(nextPos);
+					if (!setContinueBlackPosSet(nextPos, continuePosSet, Direction.LEFT)) {
+						return false;
+					}
+				}
+			}
+			if (pos.getyIndex() != getYLength() - 1 && from != Direction.DOWN) {
+				Position nextPos = new Position(pos.getyIndex() + 1, pos.getxIndex());
+				if (masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.BLACK && !continuePosSet.contains(nextPos)) {
+					continuePosSet.add(nextPos);
+					if (!setContinueBlackPosSet(nextPos, continuePosSet, Direction.UP)) {
+						return false;
+					}
+				}
+			}
+			if (pos.getxIndex() != 0 && from != Direction.LEFT) {
+				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() - 1);
+				if (masu[nextPos.getyIndex()][nextPos.getxIndex()] == Masu.BLACK && !continuePosSet.contains(nextPos)) {
+					continuePosSet.add(nextPos);
+					if (!setContinueBlackPosSet(nextPos, continuePosSet, Direction.RIGHT)) {
+						return false;
 					}
 				}
 			}
@@ -1095,24 +879,17 @@ public class NuribouSolver implements Solver {
 		 */
 		protected boolean solveAndCheck() {
 			String str = getStateDump();
-			if (isNuribou && !roomSolve()) {
+			if (!roomSolve()) {
 				return false;
 			}
-			if (!isNuribou && !numberSolve()) {
+			if (!kuroSolve()) {
 				return false;
 			}
-			if (!stickSolve()) {
+			if (!notStandAloneSolve()) {
 				return false;
 			}
 			if (!getStateDump().equals(str)) {
 				return solveAndCheck();
-			} else {
-				if (!cornerSolve()) {
-					return false;
-				}
-				if (!notStandAloneSolve()) {
-					return false;
-				}
 			}
 			return true;
 		}
@@ -1133,17 +910,13 @@ public class NuribouSolver implements Solver {
 	protected final Field field;
 	protected int count;
 
-	public NuribouSolver(int height, int width, String param) {
-		field = new Field(height, width, param);
-	}
-
-	public NuribouSolver(Field field) {
+	public NurimultiSolver(Field field) {
 		this.field = new Field(field);
 	}
 
 	// penpa-edit向けコンストラクタ
-	public NuribouSolver(String fieldStr) {
-		field = new Field(fieldStr);
+	public NurimultiSolver(String fieldStr, int blackSize) {
+		field = new Field(fieldStr, blackSize);
 	}
 
 	public Field getField() {
@@ -1151,18 +924,13 @@ public class NuribouSolver implements Solver {
 	}
 
 	public static void main(String[] args) {
-//		String fieldStr = "square,9,9,38,0,1,1,380,380,84,84\n" + "[0,0,0,0]\n" + "[\"1\",\"2\",\"1\"]~zS~[\"\",1]\n"
-//				+ "{zR:{z_:[]},zU:{z_:[]},zS:{},zN:{\"35\":[\"\",1,\"1\"],\"36\":[\"1\",1,\"1\"],\"45\":[\"4\",1,\"1\"],\"60\":[\"1\",1,\"1\"],\"70\":[\"3\",1,\"1\"],\"88\":[\"1\",1,\"1\"],\"95\":[\"1\",1,\"1\"],\"127\":[\"3\",1,\"1\"],\"133\":[\"3\",1,\"1\"],\"136\":[\"2\",1,\"1\"]},z1:{},zY:{},zF:{},z2:{},zT:[],z3:[],zD:[],z0:[],z5:[],zL:{},zE:{},zW:{},zC:{},z4:{}}\n"
-//				+ "\n"
-//				+ "[28,1,1,1,1,1,1,1,1,5,1,1,1,1,1,1,1,1,5,1,1,1,1,1,1,1,1,5,1,1,1,1,1,1,1,1,5,1,1,1,1,1,1,1,1,5,1,1,1,1,1,1,1,1,5,1,1,1,1,1,1,1,1,5,1,1,1,1,1,1,1,1,5,1,1,1,1,1,1,1,1]";
-//		System.out.println(new NuribouSolver(fieldStr).solve());
+		String fieldStr = "square,14,13,38,0,1,1,570,532,1070,1070\n" + "[0,0,0,0]\n"
+				+ "[\"1\",\"2\",\"1\"]~zS~[\"\",1]\n"
+				+ "{zR:{z_:[]},zU:{z_:[]},zS:{},zN:{\"38\":[\"6\",1,\"1\"],\"46\":[\"5\",1,\"1\"],\"49\":[\"4\",1,\"1\"],\"74\":[\"5\",1,\"1\"],\"77\":[\"4\",1,\"1\"],\"99\":[\"5\",1,\"1\"],\"123\":[\"6\",1,\"1\"],\"133\":[\"10\",1,\"1\"],\"140\":[\"2\",1,\"1\"],\"155\":[\"11\",1,\"1\"],\"164\":[\"8\",1,\"1\"],\"189\":[\"2\",1,\"1\"],\"191\":[\"5\",1,\"1\"],\"213\":[\"4\",1,\"1\"],\"238\":[\"10\",1,\"1\"],\"249\":[\"4\",1,\"1\"],\"257\":[\"10\",1,\"1\"],\"262\":[\"9\",1,\"1\"]},z1:{},zY:{},zF:{},z2:{},zT:[],z3:[],zD:[],z0:[],z5:[],zL:{},zE:{},zW:{},zC:{},z4:{}}\n"
+				+ "\n"
+				+ "[38,1,1,1,1,1,1,1,1,1,1,1,1,1,5,1,1,1,1,1,1,1,1,1,1,1,1,1,5,1,1,1,1,1,1,1,1,1,1,1,1,1,5,1,1,1,1,1,1,1,1,1,1,1,1,1,5,1,1,1,1,1,1,1,1,1,1,1,1,1,5,1,1,1,1,1,1,1,1,1,1,1,1,1,5,1,1,1,1,1,1,1,1,1,1,1,1,1,5,1,1,1,1,1,1,1,1,1,1,1,1,1,5,1,1,1,1,1,1,1,1,1,1,1,1,1,5,1,1,1,1,1,1,1,1,1,1,1,1,1,5,1,1,1,1,1,1,1,1,1,1,1,1,1,5,1,1,1,1,1,1,1,1,1,1,1,1,1,5,1,1,1,1,1,1,1,1,1,1,1,1,1]"; // urlを入れれば試せる
 
-		String url = "https://puzz.link/p?nuribou/20/15/h5o6zs6k3i3h6zg4p4zi.pbzl7h3zz4k4l9v7zn4h.l4k4o4q7i2"; // urlを入れれば試せる
-		String[] params = url.split("/");
-		int height = Integer.parseInt(params[params.length - 2]);
-		int width = Integer.parseInt(params[params.length - 3]);
-		String param = params[params.length - 1];
-		System.out.println(new NuribouSolver(height, width, param).solve());
+		System.out.println(new NurimultiSolver(fieldStr, 2).solve());
 	}
 
 	@Override
@@ -1186,10 +954,10 @@ public class NuribouSolver implements Solver {
 			}
 		}
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
-		System.out.println("難易度:" + (count));
+		System.out.println("難易度:" + (count / 2));
 		System.out.println(field);
-		int level = (int) Math.sqrt(count / 3) + 1;
-		return "解けました。推定難易度:" + Difficulty.getByCount(count).toString() + "(Lv:" + level + ")";
+		int level = (int) Math.sqrt(count / 2 / 3) + 1;
+		return "解けました。推定難易度:" + Difficulty.getByCount(count / 2).toString() + "(Lv:" + level + ")";
 	}
 
 	/**
