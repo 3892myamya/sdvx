@@ -409,6 +409,11 @@ var ruleMap = {
 		url : "",
 		source : ""
 	},
+	cocktail : {
+		name : "カクテルランプ",
+		url : "",
+		source : ""
+	},
 }
 var regMap = {
 		yajilin:[{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},
@@ -1013,7 +1018,7 @@ $(function() {
 					|| type == 'country' || type == 'meander'
 					|| type == 'fillmat' || type == 'aqre'
 					|| type == 'fillomino' || type == 'lookair'
-					|| type == 'las' || type == 'norinuri' || type == 'nurisan') {
+					|| type == 'las' || type == 'norinuri' || type == 'nurisan' || type == 'cocktail') {
 				$('#sel_size').append(option.size_3);
 				$('#sel_size').append(option.size_4);
 				$('#sel_size').append(option.size_5);

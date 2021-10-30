@@ -168,6 +168,78 @@ public class PenpaEditLib {
 	}
 
 	/**
+	 * 数字+部屋盤面のpenpa-edit向け文字列を返す。
+	 */
+	public static String convertNumbersRoomField(Integer[][] numbers, boolean[][] yokoWall, boolean[][] tateWall) {
+		// 数字
+		int fieldSize = numbers.length;
+		StringBuilder numberSb = new StringBuilder();
+		int firstPos = 2 * (fieldSize + 5);
+		for (int yIndex = 0; yIndex < numbers.length; yIndex++) {
+			for (int xIndex = 0; xIndex < numbers[0].length; xIndex++) {
+				if (numbers[yIndex][xIndex] != null) {
+					if (numberSb.length() != 0) {
+						numberSb.append(",");
+					}
+					numberSb.append("\"");
+					numberSb.append(firstPos + yIndex * (numbers[0].length + 4) + xIndex);
+					numberSb.append("\":[\"");
+					numberSb.append(numbers[yIndex][xIndex]);
+					numberSb.append("\",1,\"1\"]");
+				}
+			}
+		}
+		// 壁
+		int firstIndex = 31;
+		firstIndex = firstIndex + (numbers.length - 1) * 5;
+		firstIndex = firstIndex + (numbers[0].length - 1) * (5 + numbers.length);
+		Map<Position, Integer> positionMap = new HashMap<>();
+		int keyIndex = firstIndex;
+		for (int yIndex = 0; yIndex < numbers.length + 1; yIndex++) {
+			for (int xIndex = 0; xIndex < numbers[0].length + 1; xIndex++) {
+				positionMap.put(new Position(yIndex, xIndex), keyIndex);
+				keyIndex++;
+			}
+			keyIndex = keyIndex + 3;
+		}
+		StringBuilder wallSb = new StringBuilder();
+		// 横壁設定
+		for (int yIndex = 0; yIndex < yokoWall.length; yIndex++) {
+			for (int xIndex = 0; xIndex < yokoWall[0].length; xIndex++) {
+				if (yokoWall[yIndex][xIndex]) {
+					if (wallSb.length() != 0) {
+						wallSb.append(",");
+					}
+					wallSb.append("\"");
+					wallSb.append(positionMap.get(new Position(yIndex, xIndex + 1)));
+					wallSb.append(",");
+					wallSb.append(positionMap.get(new Position(yIndex + 1, xIndex + 1)));
+					wallSb.append("\":2");
+				}
+			}
+		}
+		// 縦壁描画
+		for (int yIndex = 0; yIndex < tateWall.length; yIndex++) {
+			for (int xIndex = 0; xIndex < tateWall[0].length; xIndex++) {
+				Position pos = new Position(yIndex, xIndex);
+				if (tateWall[yIndex][xIndex]) {
+					if (wallSb.length() != 0) {
+						wallSb.append(",");
+					}
+					wallSb.append("\"");
+					wallSb.append(positionMap.get(new Position(yIndex + 1, xIndex)));
+					wallSb.append(",");
+					wallSb.append(positionMap.get(new Position(yIndex + 1, xIndex + 1)));
+					wallSb.append("\":2");
+				}
+			}
+		}
+		return convertFieldBefore(fieldSize, PuzzleType.NONE) + "{zR:{z_:[]},zU:{z_:[]},zS:{},zN:{"
+				+ numberSb.toString() + "},z1:{},zY:{},zF:{},z2:{},zT:[],z3:[],zD:[],z0:[],z5:[],zL:{},zE:{"
+				+ wallSb.toString() + "},zW:{},zC:{},z4:{}}\n\n" + convertFieldAfter(fieldSize);
+	}
+
+	/**
 	 * 上と左にヒントがあるタイプの盤面復元
 	 */
 	public static String convertHintsField(int size, Integer[] upHints, Integer[] leftHints) {
