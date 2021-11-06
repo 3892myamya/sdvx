@@ -1,6 +1,8 @@
 package myamya.other.solver;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 public class Common {
@@ -395,6 +397,148 @@ public class Common {
 			}
 			return result;
 		}
+	}
+
+	/**
+	 * チェンブロ、ダブルチョコ向けの同一形状判定に用いる構造体
+	 */
+	public static class FixedShape {
+
+		private final List<Set<Position>> samePosSetList;
+
+		public FixedShape(Set<Position> posSet) {
+			samePosSetList = new ArrayList<>();
+			int minY = Integer.MAX_VALUE;
+			int maxY = 0;
+			int minX = Integer.MAX_VALUE;
+			int maxX = 0;
+			for (Position pos : posSet) {
+				if (pos.getyIndex() < minY) {
+					minY = pos.getyIndex();
+				}
+				if (pos.getyIndex() > maxY) {
+					maxY = pos.getyIndex();
+				}
+				if (pos.getxIndex() < minX) {
+					minX = pos.getxIndex();
+				}
+				if (pos.getxIndex() > maxX) {
+					maxX = pos.getxIndex();
+				}
+			}
+			Set<Position> samePosSet = new HashSet<>();
+			for (Position pos : posSet) {
+				samePosSet.add(new Position(pos.getyIndex() - minY, pos.getxIndex() - minX));
+			}
+			samePosSetList.add(samePosSet);
+			// x軸y軸入れ替えセット
+			Set<Position> swapSamePosSet = new HashSet<>();
+			for (Position pos : samePosSet) {
+				swapSamePosSet.add(new Position(pos.getxIndex(), pos.getyIndex()));
+			}
+			samePosSetList.add(swapSamePosSet);
+			// 上下、左右、上下左右を入れ替えたposSet
+			Set<Position> wkSamePosSet = new HashSet<>();
+			for (Position pos : samePosSet) {
+				wkSamePosSet.add(new Position((maxY - minY) - pos.getyIndex(), pos.getxIndex()));
+			}
+			samePosSetList.add(wkSamePosSet);
+			wkSamePosSet = new HashSet<>();
+			for (Position pos : samePosSet) {
+				wkSamePosSet.add(new Position(pos.getyIndex(), (maxX - minX) - pos.getxIndex()));
+			}
+			samePosSetList.add(wkSamePosSet);
+			wkSamePosSet = new HashSet<>();
+			for (Position pos : samePosSet) {
+				wkSamePosSet.add(new Position((maxY - minY) - pos.getyIndex(), (maxX - minX) - pos.getxIndex()));
+			}
+			samePosSetList.add(wkSamePosSet);
+			wkSamePosSet = new HashSet<>();
+			for (Position pos : swapSamePosSet) {
+				wkSamePosSet.add(new Position((maxX - minX) - pos.getyIndex(), pos.getxIndex()));
+			}
+			samePosSetList.add(wkSamePosSet);
+			wkSamePosSet = new HashSet<>();
+			for (Position pos : swapSamePosSet) {
+				wkSamePosSet.add(new Position(pos.getyIndex(), (maxY - minY) - pos.getxIndex()));
+			}
+			samePosSetList.add(wkSamePosSet);
+			wkSamePosSet = new HashSet<>();
+			for (Position pos : swapSamePosSet) {
+				wkSamePosSet.add(new Position((maxX - minX) - pos.getyIndex(), (maxY - minY) - pos.getxIndex()));
+			}
+			samePosSetList.add(wkSamePosSet);
+		}
+
+		public boolean isSame(Set<Position> posSet) {
+			int minY = Integer.MAX_VALUE;
+			int maxY = 0;
+			int minX = Integer.MAX_VALUE;
+			int maxX = 0;
+			for (Position pos : posSet) {
+				if (pos.getyIndex() < minY) {
+					minY = pos.getyIndex();
+				}
+				if (pos.getyIndex() > maxY) {
+					maxY = pos.getyIndex();
+				}
+				if (pos.getxIndex() < minX) {
+					minX = pos.getxIndex();
+				}
+				if (pos.getxIndex() > maxX) {
+					maxX = pos.getxIndex();
+				}
+			}
+			Set<Position> wkPosSet = new HashSet<>();
+			for (Position pos : posSet) {
+				wkPosSet.add(new Position(pos.getyIndex() - minY, pos.getxIndex() - minX));
+			}
+			for (Set<Position> samePosSet : samePosSetList) {
+				if (samePosSet.equals(wkPosSet)) {
+					return true;
+				}
+			}
+			return false;
+		}
+
+		@Override
+		public String toString() {
+			return samePosSetList.get(0).toString();
+		}
+
+		public static void main(String[] args) {
+			Set<Position> posSet = new HashSet<>();
+			posSet.add(new Position(2, 2));
+			posSet.add(new Position(3, 2));
+			posSet.add(new Position(4, 2));
+			posSet.add(new Position(2, 3));
+			FixedShape fixedShape = new FixedShape(posSet);
+			posSet = new HashSet<>();
+			posSet.add(new Position(3, 2));
+			posSet.add(new Position(4, 2));
+			posSet.add(new Position(5, 2));
+			posSet.add(new Position(3, 3));
+			System.out.println(fixedShape.isSame(posSet));
+			posSet = new HashSet<>();
+			posSet.add(new Position(0, 0));
+			posSet.add(new Position(0, 1));
+			posSet.add(new Position(0, 2));
+			posSet.add(new Position(1, 0));
+			System.out.println(fixedShape.isSame(posSet));
+			posSet = new HashSet<>();
+			posSet.add(new Position(0, 0));
+			posSet.add(new Position(0, 1));
+			posSet.add(new Position(0, 2));
+			posSet.add(new Position(2, 0));
+			System.out.println(fixedShape.isSame(posSet));
+			posSet = new HashSet<>();
+			posSet.add(new Position(2, 7));
+			posSet.add(new Position(1, 5));
+			posSet.add(new Position(1, 6));
+			posSet.add(new Position(1, 7));
+			System.out.println(fixedShape.isSame(posSet));
+		}
+
 	}
 
 	public static class GeneratorResult {

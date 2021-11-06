@@ -39,11 +39,13 @@ import myamya.other.solver.archipelago.ArchipelagoSolver;
 import myamya.other.solver.bag.BagSolver;
 import myamya.other.solver.balance.BalanceSolver;
 import myamya.other.solver.barns.BarnsSolver;
+import myamya.other.solver.bdblock.BdblockSolver;
 import myamya.other.solver.box.BoxSolver;
 import myamya.other.solver.building.BuildingSolver;
 import myamya.other.solver.canal.CanalSolver;
 import myamya.other.solver.castle.CastleSolver;
 import myamya.other.solver.cells.CellsSolver;
+import myamya.other.solver.chblock.ChblockSolver;
 import myamya.other.solver.chocobanana.ChocobananaSolver;
 import myamya.other.solver.chocona.ChoconaSolver;
 import myamya.other.solver.chocona.ChoconaSolver.Room;
@@ -13229,8 +13231,8 @@ public class SolverWeb extends HttpServlet {
 					Common.Masu oneMasu = field.getMasu()[yIndex][xIndex];
 					if (oneMasu.toString().equals("■")) {
 						sb.append("<rect y=\"" + (yIndex * baseSize + margin) + "\" x=\""
-								+ (xIndex * baseSize + baseSize) + "\" fill=\"" + "#555" + "\" width=\""
-								+ (baseSize) + "\" height=\"" + (baseSize) + "\">" + "</rect>");
+								+ (xIndex * baseSize + baseSize) + "\" fill=\"" + "#555" + "\" width=\"" + (baseSize)
+								+ "\" height=\"" + (baseSize) + "\">" + "</rect>");
 					} else if (oneMasu.toString().equals("・")) {
 						sb.append("<rect y=\"" + (yIndex * baseSize + margin) + "\" x=\""
 								+ (xIndex * baseSize + baseSize) + "\" fill=\"" + "palegreen" + "\" width=\""
@@ -13297,6 +13299,200 @@ public class SolverWeb extends HttpServlet {
 		}
 	}
 
+	static class BdblockSolverThread extends AbsSolverThlead {
+		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
+		private static final String FULL_NUMS = "０１２３４５６７８９";
+
+		private final String hoshiParam;
+
+		BdblockSolverThread(int height, int width, String param, String hoshiParam) {
+			super(height, width, param);
+			this.hoshiParam = hoshiParam;
+		}
+
+		@Override
+		protected Solver getSolver() {
+			return new BdblockSolver(height, width, param, hoshiParam);
+		}
+
+		@Override
+		public String makeCambus() {
+			BdblockSolver.Field field = ((BdblockSolver) solver).getField();
+			StringBuilder sb = new StringBuilder();
+			int baseSize = 20;
+			int margin = 5;
+			sb.append("<svg xmlns=\"http://www.w3.org/2000/svg\" " + "height=\""
+					+ (field.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
+					+ (field.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			// 横壁描画
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = -1; xIndex < field.getXLength(); xIndex++) {
+					boolean oneYokoWall = xIndex == -1 || xIndex == field.getXLength() - 1
+							|| field.getYokoWall()[yIndex][xIndex] == Wall.EXISTS;
+					sb.append("<line y1=\"" + (yIndex * baseSize + margin) + "\" x1=\""
+							+ (xIndex * baseSize + 2 * baseSize) + "\" y2=\"" + (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\"" + (xIndex * baseSize + 2 * baseSize) + "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneYokoWall) {
+						if (xIndex != -1 && xIndex != field.getXLength() - 1
+								&& field.getYokoWall()[yIndex][xIndex] == Wall.EXISTS) {
+							sb.append("stroke=\"#000\" ");
+						} else {
+							sb.append("stroke=\"#000\" ");
+						}
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">" + "</line>");
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = -1; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					boolean oneTateWall = yIndex == -1 || yIndex == field.getYLength() - 1
+							|| field.getTateWall()[yIndex][xIndex] == Wall.EXISTS;
+					sb.append("<line y1=\"" + (yIndex * baseSize + baseSize + margin) + "\" x1=\""
+							+ (xIndex * baseSize + baseSize) + "\" y2=\"" + (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\"" + (xIndex * baseSize + baseSize + baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneTateWall) {
+						if (yIndex != -1 && yIndex != field.getYLength() - 1
+								&& field.getTateWall()[yIndex][xIndex] == Wall.EXISTS) {
+							sb.append("stroke=\"#000\" ");
+						} else {
+							sb.append("stroke=\"#000\" ");
+
+						}
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">" + "</line>");
+				}
+			}
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					if (field.getNumbers()[yIndex][xIndex] != null) {
+						String numberStr = String.valueOf(field.getNumbers()[yIndex][xIndex]);
+						int index = HALF_NUMS.indexOf(numberStr);
+						String masuStr = null;
+						if (index >= 0) {
+							masuStr = FULL_NUMS.substring(index / 2, index / 2 + 1);
+						} else {
+							masuStr = numberStr;
+						}
+						sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 4 + margin) + "\" x=\""
+								+ (xIndex * baseSize + baseSize + 2) + "\" font-size=\"" + (baseSize - 5) + "\" fill=\""
+								+ "black" + "\" textLength=\"" + (baseSize - 5)
+								+ "\" lengthAdjust=\"spacingAndGlyphs\">" + masuStr + "</text>");
+					}
+				}
+			}
+			// 星描画
+			for (int yIndex = 0; yIndex < field.getYLength() + 1; yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength() + 1; xIndex++) {
+					if (field.getHoshi()[yIndex][xIndex]) {
+						sb.append("<circle cy=\"" + (yIndex * baseSize + margin) + "\" cx=\""
+								+ (xIndex * baseSize + baseSize) + "\" r=\"" + (baseSize / 2 - 6)
+								+ "\" fill=\"black\", stroke=\"black\">" + "</circle>");
+					}
+				}
+			}
+			sb.append("</svg>");
+			return sb.toString();
+		}
+	}
+
+	static class ChblockSolverThread extends AbsSolverThlead {
+		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
+		private static final String FULL_NUMS = "０１２３４５６７８９";
+
+		private final String fieldStr;
+
+		// penpa-edit向けコンストラクタ
+		public ChblockSolverThread(String fieldStr) {
+			super(0, 0, "");
+			this.fieldStr = fieldStr;
+		}
+
+		@Override
+		protected Solver getSolver() {
+			return new ChblockSolver(fieldStr);
+		}
+
+		@Override
+		public String makeCambus() {
+			StringBuilder sb = new StringBuilder();
+			ChblockSolver.Field field = ((ChblockSolver) solver).getField();
+			int baseSize = 20;
+			int margin = 5;
+			sb.append("<svg xmlns=\"http://www.w3.org/2000/svg\" " + "height=\""
+					+ (field.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
+					+ (field.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					Masu oneMasu = field.getMasu()[yIndex][xIndex];
+					if (oneMasu.toString().equals("■")) {
+						sb.append(
+								"<rect y=\"" + (yIndex * baseSize + margin) + "\" x=\"" + (xIndex * baseSize + baseSize)
+										+ "\" width=\"" + (baseSize) + "\" height=\"" + (baseSize) + "\">" + "</rect>");
+					} else if (oneMasu.toString().equals("・")) {
+						sb.append("<rect y=\"" + (yIndex * baseSize + margin) + "\" x=\""
+								+ (xIndex * baseSize + baseSize) + "\" fill=\"" + "palegreen" + "\" width=\""
+								+ (baseSize) + "\" height=\"" + (baseSize) + "\">" + "</rect>");
+					}
+					if (field.getNumbers()[yIndex][xIndex] != null) {
+						String numberStr = String.valueOf(field.getNumbers()[yIndex][xIndex]);
+						int index = HALF_NUMS.indexOf(numberStr);
+						String masuStr = null;
+						if (numberStr.equals("-1")) {
+							masuStr = "？";
+						} else if (index >= 0) {
+							masuStr = FULL_NUMS.substring(index / 2, index / 2 + 1);
+						} else {
+							masuStr = numberStr;
+						}
+						sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 4 + margin) + "\" x=\""
+								+ (xIndex * baseSize + baseSize + 2) + "\" font-size=\"" + (baseSize - 5) + "\" fill=\""
+								+ (oneMasu.toString().equals("■") ? "white" : "black") + "\" textLength=\""
+								+ (baseSize - 5) + "\" lengthAdjust=\"spacingAndGlyphs\">" + masuStr + "</text>");
+					}
+				}
+			}
+			// 横壁描画
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = -1; xIndex < field.getXLength(); xIndex++) {
+					boolean oneYokoWall = xIndex == -1 || xIndex == field.getXLength() - 1;
+					sb.append("<line y1=\"" + (yIndex * baseSize + margin) + "\" x1=\""
+							+ (xIndex * baseSize + 2 * baseSize) + "\" y2=\"" + (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\"" + (xIndex * baseSize + 2 * baseSize) + "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneYokoWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">" + "</line>");
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = -1; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					boolean oneTateWall = yIndex == -1 || yIndex == field.getYLength() - 1;
+					sb.append("<line y1=\"" + (yIndex * baseSize + baseSize + margin) + "\" x1=\""
+							+ (xIndex * baseSize + baseSize) + "\" y2=\"" + (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\"" + (xIndex * baseSize + baseSize + baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneTateWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">" + "</line>");
+				}
+			}
+			sb.append("</svg>");
+			return sb.toString();
+		}
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -13346,6 +13542,8 @@ public class SolverWeb extends HttpServlet {
 					t = new NurimultiSolverThread(request.getParameter("fieldStr"), 3);
 				} else if (puzzleType.contains("cocktail")) {
 					t = new CocktailSolverThread(request.getParameter("fieldStr"));
+				} else if (puzzleType.contains("chblock")) {
+					t = new ChblockSolverThread(request.getParameter("fieldStr"));
 				} else {
 					throw new IllegalArgumentException();
 				}
@@ -13648,6 +13846,10 @@ public class SolverWeb extends HttpServlet {
 							|| puzzleType.contains("nibunnnogo")) {
 						// 表記ゆれ対応
 						t = new NibunnogoSolverThread(height, width, param);
+					} else if (puzzleType.contains("bdblock")) {
+						param = parts.get(4).split("@")[0];
+						String hosiparam = parts.get(3).split("@")[0];
+						t = new BdblockSolverThread(height, width, param, hosiparam);
 					} else {
 						throw new IllegalArgumentException();
 					}
