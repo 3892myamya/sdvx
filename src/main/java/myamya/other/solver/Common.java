@@ -471,6 +471,9 @@ public class Common {
 		}
 
 		public boolean isSame(Set<Position> posSet) {
+			if (posSet.size() != samePosSetList.get(0).size()) {
+				return false;
+			}
 			int minY = Integer.MAX_VALUE;
 			int maxY = 0;
 			int minX = Integer.MAX_VALUE;

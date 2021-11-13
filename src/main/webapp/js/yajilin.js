@@ -70,33 +70,32 @@ $(function() {
     $('#div_readme_head').click(function(){
         $('#div_readme_body').slideToggle();
     });
-    $('#edt_url').keyup(function(){
+    var showDivExt = function() {
         if ($('#edt_url').val().indexOf('penpa-edit') > -1){
             $('#div_ext').show();
         } else {
             $('#div_ext').hide();
-        }
+        }	
+    };
+
+    // タイマーループで反映。ずっと裏で流しておく
+    var loopDivExt = function() {
+    	showDivExt();
+	    setTimeout(loopDivExt, 1000);
+	}
+    loopDivExt();
+    
+    $('#edt_url').keyup(function(){
+	    showDivExt();
     });
     $('#edt_url').keydown(function(){
-        if ($('#edt_url').val().indexOf('penpa-edit') > -1){
-            $('#div_ext').show();
-        } else {
-            $('#div_ext').hide();
-        }
+	    showDivExt();
     });
     $('#edt_url').keypress(function(){
-        if ($('#edt_url').val().indexOf('penpa-edit') > -1){
-            $('#div_ext').show();
-        } else {
-            $('#div_ext').hide();
-        }
+	    showDivExt();
     });
     $('#edt_url').change(function(){
-        if ($('#edt_url').val().indexOf('penpa-edit') > -1){
-            $('#div_ext').show();
-        } else {
-            $('#div_ext').hide();
-        }
+	    showDivExt();
     });
 	// 保存された条件があれば読みだす
 	var cond = localStorage.getItem('condyajilin');
@@ -112,5 +111,5 @@ $(function() {
 		$('#sel_type').val('nibunnogo');
 	}
     $('#loading').hide();
-    $('#div_ext').hide();
+    showDivExt();
 });

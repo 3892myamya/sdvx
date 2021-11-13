@@ -30,8 +30,9 @@ public class PenpaEditLib {
 		// 部屋を作るやつ。
 		MAKEROOM,
 		// clouds、gapsなどイラロジ系のやつ
-		HINTS_BW;
-
+		HINTS_BW,
+		// square_block_loop限定かも
+		HINTS_BW_YAJILIN;
 	}
 
 	public static final String PENPA_EDIT_DUMMY_URL = "penpa-edit-dummy-url";
@@ -275,6 +276,55 @@ public class PenpaEditLib {
 	}
 
 	/**
+	 * square-block loop
+	 */
+	public static String convertHintsFieldSBL(int size, Masu[][] masu, Integer[] upHints, Integer[] leftHints) {
+		StringBuilder sb = new StringBuilder();
+		int firstPos = 2 * (size + 6);
+		for (int xIndex = 1; xIndex < size + 1; xIndex++) {
+			if (upHints[xIndex - 1] != null) {
+				if (sb.length() != 0) {
+					sb.append(",");
+				}
+				sb.append("\"");
+				sb.append(firstPos + xIndex);
+				sb.append("\":[\"");
+				sb.append(upHints[xIndex - 1]);
+				sb.append("\",1,\"1\"]");
+			}
+		}
+		for (int yIndex = 1; yIndex < size + 1; yIndex++) {
+			if (leftHints[yIndex - 1] != null) {
+				if (sb.length() != 0) {
+					sb.append(",");
+				}
+				sb.append("\"");
+				sb.append(firstPos + yIndex * (size + 5));
+				sb.append("\":[\"");
+				sb.append(leftHints[yIndex - 1]);
+				sb.append("\",1,\"1\"]");
+			}
+		}
+		StringBuilder masuSb = new StringBuilder();
+		for (int yIndex = 1; yIndex < masu.length + 1; yIndex++) {
+			for (int xIndex = 1; xIndex < masu[0].length + 1; xIndex++) {
+				if (masu[yIndex - 1][xIndex - 1] == Masu.BLACK) {
+					if (masuSb.length() != 0) {
+						masuSb.append(",");
+					}
+					masuSb.append("\"");
+					masuSb.append(firstPos + yIndex * ((masu[0].length + 1) + 4) + xIndex);
+					masuSb.append("\":4");
+				}
+			}
+		}
+		return convertFieldBefore(size, PuzzleType.HINTS_BW_YAJILIN) + "{zR:{z_:[]},zU:{z_:[]},zS:{" + masuSb.toString()
+				+ "},zN:{" + sb.toString()
+				+ "},z1:{},zY:{},zF:{},z2:{},zT:[],z3:[],zD:[],z0:[],z5:[],zL:{},zE:{},zW:{},zC:{},z4:{}}\n\n"
+				+ convertFieldAfterHintsBw(size);
+	}
+
+	/**
 	 * 数字+白黒盤面のPenpaEdit向け文字列を返す。numbersは正方形である前提で、？は未対応
 	 */
 	public static String convertNumbersMasuField(Masu[][] masu, Integer[][] numbers) {
@@ -477,7 +527,7 @@ public class PenpaEditLib {
 	private static String convertFieldBefore(int fieldSize, PuzzleType type) {
 		StringBuilder sb = new StringBuilder();
 		sb.append("square,"); // 正方形
-		if (type == PuzzleType.HINTS_BW) {
+		if (type == PuzzleType.HINTS_BW || type == PuzzleType.HINTS_BW_YAJILIN) {
 			fieldSize++;
 		}
 		sb.append(fieldSize + "," + fieldSize + ","); // 横縦の長さ
@@ -490,7 +540,7 @@ public class PenpaEditLib {
 				: 2 * (centerBase * centerBase + 3 * centerBase + 2);
 		sb.append(center + "," + center); // センター座標
 		sb.append("\n"); // ここまで1行目
-		if (type == PuzzleType.HINTS_BW) {
+		if (type == PuzzleType.HINTS_BW || type == PuzzleType.HINTS_BW_YAJILIN) {
 			sb.append("[1,0,1,0]"); // 余白情報
 		} else {
 			sb.append("[0,0,0,0]"); // 余白情報
@@ -503,7 +553,7 @@ public class PenpaEditLib {
 			sb.append("[\"1\",\"2\",\"1\"]");
 		}
 		// 以下、入力モードの情報
-		if (type == PuzzleType.YAJILIN) {
+		if (type == PuzzleType.YAJILIN || type == PuzzleType.HINTS_BW_YAJILIN) {
 			sb.append("~\"combi\"~[\"yajilin\",\"\"]");
 		} else if (type == PuzzleType.EDGESUB || type == PuzzleType.EDGESUB_CIRCLE) {
 			sb.append("~\"combi\"~[\"edgesub\",\"\"]");
@@ -1159,12 +1209,16 @@ public class PenpaEditLib {
 		for (Entry<String, List<Object>> entry : hintInfo.entrySet()) {
 			int idx = Integer.parseInt(entry.getKey());
 			Position pos = positionMap.get(idx);
-			int number = Integer.parseInt((String) entry.getValue().get(0));
-			if (pos.getxIndex() == 0) {
-				leftHints[pos.getyIndex() - 1] = number;
-			}
-			if (pos.getyIndex() == 0) {
-				upHints[pos.getxIndex() - 1] = number;
+			try {
+				int number = Integer.parseInt((String) entry.getValue().get(0));
+				if (pos.getxIndex() == 0) {
+					leftHints[pos.getyIndex() - 1] = number;
+				}
+				if (pos.getyIndex() == 0) {
+					upHints[pos.getxIndex() - 1] = number;
+				}
+			} catch (NumberFormatException e) {
+				// たまに関係ない文字が入り込むらしい？
 			}
 		}
 		return new UpLeftHints(upHints, leftHints);
