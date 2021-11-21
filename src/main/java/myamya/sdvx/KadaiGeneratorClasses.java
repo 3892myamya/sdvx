@@ -122,9 +122,8 @@ public class KadaiGeneratorClasses {
 		}
 
 		int getOneVolForce() {
-			BigDecimal scoreBase = new BigDecimal(score / 10000);
-			return new BigDecimal(level).multiply(scoreBase).multiply(clear.getVolForceBase())
-					.multiply(ScoreDiv.getByScore(score).getVolForceBase()).divide(new BigDecimal(500)).intValue();
+			return new BigDecimal(level).multiply(new BigDecimal(score)).multiply(clear.getVolForceBase())
+					.multiply(ScoreDiv.getByScore(score).getVolForceBase()).divide(new BigDecimal(500000)).intValue();
 		}
 	}
 
