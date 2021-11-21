@@ -186,9 +186,6 @@ public class KadaiGenerator {
 		if (volForceTarget <= volForceMin) {
 			volForceTarget = volForceMin + 1;
 		}
-		if (title.equals("I")) {
-			System.out.println();
-		}
 		// そのボルフォースに到達が必要なクリアランプとスコアの一覧を作成
 		Map<Entry<ClearLamp, Integer>, BigDecimal> rateAdjustMap = new LinkedHashMap<>();
 		for (int candVolForce = 500; candVolForce >= volForceTarget; candVolForce--) {
@@ -248,7 +245,7 @@ public class KadaiGenerator {
 				for (EstimateInfo already : result) {
 					if (already.getScoreString().equals(scoreString)) {
 						// すでに同じ目標で追加されているものがあれば新規追加しない。
-						// 例えば今995とってて、(995+)UCだけで上がるのに990FCが候補になってた場合。
+						// 例えば今995とってて、(995+)UCだけで上がるのに990UCが候補になってた場合。無理やりだけど…
 						addFlg = false;
 						break;
 					}
