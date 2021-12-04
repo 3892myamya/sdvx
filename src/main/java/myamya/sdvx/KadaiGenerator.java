@@ -253,9 +253,9 @@ public class KadaiGenerator {
 					BigDecimal useValue = new BigDecimal(Math.pow(
 							e.getValue().multiply(new BigDecimal(1000)).setScale(0, RoundingMode.DOWN).doubleValue(),
 							0.6)).setScale(2, RoundingMode.DOWN);
-					System.out.println(title + "(" + statusInfo.getEffectDiv() + ")" + scoreString + "=狙いやすさ:" + rate
-							+ ",上昇:" + e.getValue().multiply(new BigDecimal(1000)).setScale(0, RoundingMode.DOWN)
-							+ ",効能:" + useValue);
+//					System.out.println(title + "(" + statusInfo.getEffectDiv() + ")" + scoreString + "=狙いやすさ:" + rate
+//							+ ",上昇:" + e.getValue().multiply(new BigDecimal(1000)).setScale(0, RoundingMode.DOWN)
+//							+ ",効能:" + useValue);
 					rate = rate.multiply(useValue).divide(new BigDecimal(4)).setScale(2, RoundingMode.DOWN);
 					// scoreString = "(VF+" + e.getValue() + ") " + scoreString;
 					result.add(new EstimateInfo(title, statusInfo.getEffectDiv(), new BigDecimal(0), scoreString,
