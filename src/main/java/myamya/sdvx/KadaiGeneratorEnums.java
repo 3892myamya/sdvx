@@ -8,64 +8,63 @@ import lombok.RequiredArgsConstructor;
 public class KadaiGeneratorEnums {
 
 	/**
-	 * 分析モードを表す列挙型
-	 * TODO 処理内に出てくるModeのIF文を全部こっちに寄せる
+	 * 分析モードを表す列挙型 TODO 処理内に出てくるModeのIF文を全部こっちに寄せる
 	 */
 	@RequiredArgsConstructor
 	@Getter
 	enum Mode {
-	/** スコアが伸びそうな曲 */
-	FOR_SCORE(1) {
-		@Override
-		public String getDispEstimateRate(BigDecimal estimateRate) {
-			return estimateRate.toPlainString() + "%";
-		}
+		/** スコアが伸びそうな曲 */
+		FOR_SCORE(1) {
+			@Override
+			public String getDispEstimateRate(BigDecimal estimateRate) {
+				return estimateRate.toPlainString() + "%";
+			}
 
-	},
-	/** 武器曲 */
-	FOR_WEAPON(2) {
-		@Override
-		public String getDispEstimateRate(BigDecimal estimateRate) {
-			return estimateRate.toPlainString() + "%";
-		}
+		},
+		/** 武器曲 */
+		FOR_WEAPON(2) {
+			@Override
+			public String getDispEstimateRate(BigDecimal estimateRate) {
+				return estimateRate.toPlainString() + "%";
+			}
 
-	},
-	/** 課題曲(目標設定) */
-	FOR_TARGET(3) {
-		@Override
-		public String getDispEstimateRate(BigDecimal estimateRate) {
-			// TODO 自動生成されたメソッド・スタブ
-			if (estimateRate.compareTo(new BigDecimal("100000")) >= 0) {
-				return "99999.99";
-			} else {
+		},
+		/** 課題曲(目標設定) */
+		FOR_TARGET(3) {
+			@Override
+			public String getDispEstimateRate(BigDecimal estimateRate) {
+				// TODO 自動生成されたメソッド・スタブ
+				if (estimateRate.compareTo(new BigDecimal("100000")) >= 0) {
+					return "99999.99";
+				} else {
+					return estimateRate.toPlainString();
+				}
+			}
+		},
+
+		/** ボーダーモード */
+		FOR_BORDER(4) {
+			@Override
+			public String getDispEstimateRate(BigDecimal estimateRate) {
 				return estimateRate.toPlainString();
 			}
-		}
-	},
+		},
 
-	/** ボーダーモード */
-	FOR_BORDER(4) {
-		@Override
-		public String getDispEstimateRate(BigDecimal estimateRate) {
-			return estimateRate.toPlainString();
-		}
-	},
+		/** クリア達成状況モード */
+		FOR_CLEAR(5) {
+			@Override
+			public String getDispEstimateRate(BigDecimal estimateRate) {
+				return estimateRate.toPlainString();
+			}
+		},
 
-	/** クリア達成状況モード */
-	FOR_CLEAR(5) {
-		@Override
-		public String getDispEstimateRate(BigDecimal estimateRate) {
-			return estimateRate.toPlainString();
-		}
-	},
-
-	/** ボルフォースモード */
-	FOR_VOLFORCE(6) {
-		@Override
-		public String getDispEstimateRate(BigDecimal estimateRate) {
-			return estimateRate.toPlainString();
-		}
-	};
+		/** ボルフォースモード */
+		FOR_VOLFORCE(6) {
+			@Override
+			public String getDispEstimateRate(BigDecimal estimateRate) {
+				return estimateRate.toPlainString();
+			}
+		};
 
 		private final int value;
 
@@ -144,8 +143,7 @@ public class KadaiGeneratorEnums {
 	}
 
 	/**
-	 * クリアランプ区分を示す列挙型
-	 * valはClearLampとScoreDivで重複させないこと
+	 * クリアランプ区分を示す列挙型 valはClearLampとScoreDivで重複させないこと
 	 */
 	@RequiredArgsConstructor
 	@Getter
@@ -161,7 +159,7 @@ public class KadaiGeneratorEnums {
 		/** */
 		UC("UC", "UC", 2, new BigDecimal(1.05)),
 		/** */
-		PER("PER", "PER", 1, new BigDecimal(1.1));
+		PUC("PUC", "PUC", 1, new BigDecimal(1.1));
 
 		private final String str;
 		private final String shortStr;
@@ -169,6 +167,10 @@ public class KadaiGeneratorEnums {
 		private final BigDecimal volForceBase;
 
 		public static ClearLamp getByStr(String str) {
+			if (str.equals("PER")) {
+				// PERはPUCのエイリアス
+				return ClearLamp.PUC;
+			}
 			for (ClearLamp clearLamp : ClearLamp.values()) {
 				if (clearLamp.getStr().equalsIgnoreCase(str)) {
 					return clearLamp;
@@ -213,7 +215,7 @@ public class KadaiGeneratorEnums {
 		/** */
 		S_998(9980000, 9999999, 11, new BigDecimal(1.05)),
 		/** */
-		PER(10000000, 10000000, 10, new BigDecimal(1.05));
+		PUC(10000000, 10000000, 10, new BigDecimal(1.05));
 
 		private final int min;
 		private final int max;

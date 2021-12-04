@@ -178,7 +178,7 @@ public class KadaiGenerator {
 			int volForceMin) {
 		List<EstimateInfo> result = new ArrayList<>();
 		// PUCならvolforce伸びる余地なし
-		if (effectInfo.getClear() == ClearLamp.PER) {
+		if (effectInfo.getClear() == ClearLamp.PUC) {
 			return result;
 		}
 		// 現在以上のクリアランプでボルフォース更新に必要な点数を計算
@@ -188,7 +188,7 @@ public class KadaiGenerator {
 		}
 		// そのボルフォースに到達が必要なクリアランプとスコアの一覧を作成
 		Map<Entry<ClearLamp, Integer>, BigDecimal> rateAdjustMap = new LinkedHashMap<>();
-		for (int candVolForce = 500; candVolForce >= volForceTarget; candVolForce--) {
+		for (int candVolForce = 500; candVolForce > volForceTarget; candVolForce--) {
 			Map<ClearLamp, Integer> targetEntry = volforceTargetMap.get(candVolForce).get(effectInfo.getLevel());
 			if (targetEntry != null) {
 				for (Entry<ClearLamp, Integer> e : targetEntry.entrySet()) {
@@ -212,10 +212,10 @@ public class KadaiGenerator {
 			BigDecimal targetClearRate = statusInfo.getPercent(targetClearLamp);
 			BigDecimal rate = null;
 			String scoreString = null;
-			if (effectInfo.getClear() == targetClearLamp || targetClearLamp == ClearLamp.PER) {
+			if (effectInfo.getClear() == targetClearLamp || targetClearLamp == ClearLamp.PUC) {
 				// スコア更新でボルフォース対象入り
-				if (targetClearLamp == ClearLamp.PER) {
-					scoreString = ClearLamp.PER.getShortStr();
+				if (targetClearLamp == ClearLamp.PUC) {
+					scoreString = ClearLamp.PUC.getShortStr();
 				} else {
 					scoreString = String.valueOf(scoreTarget);
 				}
@@ -228,7 +228,7 @@ public class KadaiGenerator {
 					scoreString = targetClearLamp.getShortStr();
 					rate = targetClearRate.multiply(new BigDecimal(100)).divide(scoreBase, 2, RoundingMode.DOWN);
 				}
-			} else {
+			} else if (effectInfo.getClear().getVal() > targetClearLamp.getVal()) {
 				// どっちも更新
 				if (scoreBase.compareTo(BigDecimal.ZERO) != 0) {
 					scoreString = String.valueOf(scoreTarget) + " + " + targetClearLamp.getShortStr();
@@ -240,7 +240,6 @@ public class KadaiGenerator {
 				}
 			}
 			if (rate != null) {
-				rate = rate.multiply(e.getValue()).multiply(new BigDecimal(100)).setScale(2, RoundingMode.DOWN);
 				boolean addFlg = true;
 				for (EstimateInfo already : result) {
 					if (already.getScoreString().equals(scoreString)) {
@@ -251,6 +250,13 @@ public class KadaiGenerator {
 					}
 				}
 				if (addFlg) {
+					BigDecimal useValue = new BigDecimal(Math.pow(
+							e.getValue().multiply(new BigDecimal(1000)).setScale(0, RoundingMode.DOWN).doubleValue(),
+							0.6)).setScale(2, RoundingMode.DOWN);
+					System.out.println(title + "(" + statusInfo.getEffectDiv() + ")" + scoreString + "=狙いやすさ:" + rate
+							+ ",上昇:" + e.getValue().multiply(new BigDecimal(1000)).setScale(0, RoundingMode.DOWN)
+							+ ",効能:" + useValue);
+					rate = rate.multiply(useValue).divide(new BigDecimal(4)).setScale(2, RoundingMode.DOWN);
 					// scoreString = "(VF+" + e.getValue() + ") " + scoreString;
 					result.add(new EstimateInfo(title, statusInfo.getEffectDiv(), new BigDecimal(0), scoreString,
 							effectInfo.getLevel(), rate, String.valueOf(rate) + " p"));
@@ -285,9 +291,9 @@ public class KadaiGenerator {
 					if (targetClearLamp == ClearLamp.NOPLAY) {
 						continue;
 					}
-					if (targetClearLamp == ClearLamp.PER) {
+					if (targetClearLamp == ClearLamp.PUC) {
 						int candidateVolForce = new BigDecimal(level).multiply(new BigDecimal(20))
-								.multiply(ClearLamp.PER.getVolForceBase()).multiply(ScoreDiv.PER.getVolForceBase())
+								.multiply(ClearLamp.PUC.getVolForceBase()).multiply(ScoreDiv.PUC.getVolForceBase())
 								.intValue();
 						if (targetVolForce == candidateVolForce) {
 							mapB.put(targetClearLamp, 10000000);
@@ -376,7 +382,7 @@ public class KadaiGenerator {
 	private int getBorderScore(BigDecimal border, StatusInfo statusInfo) {
 		ScoreDiv scoreDiv;
 		if (statusInfo.getPPer().compareTo(border) >= 0) {
-			scoreDiv = ScoreDiv.PER;
+			scoreDiv = ScoreDiv.PUC;
 		} else if (statusInfo.getPGrade998().compareTo(border) >= 0) {
 			scoreDiv = ScoreDiv.S_998;
 		} else if (statusInfo.getPGrade995().compareTo(border) >= 0) {

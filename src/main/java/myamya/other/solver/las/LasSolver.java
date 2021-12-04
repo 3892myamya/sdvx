@@ -306,7 +306,7 @@ public class LasSolver implements Solver {
 		// マスの情報
 		protected Masu[][] masu;
 		// 数字の情報
-		protected final Integer[][] numbers;
+		protected Integer[][] numbers;
 		// 確定した島の位置情報
 		protected final Set<Position> alreadyPosSet;
 
@@ -411,6 +411,21 @@ public class LasSolver implements Solver {
 		public Field(String fieldStr) {
 			masu = PenpaEditLib.getMasu(fieldStr);
 			numbers = PenpaEditLib.getNumbers(fieldStr);
+			// 余白の切り詰め処理。今は左側の余白が1の場合のみの暫定対応。
+			// TODO 汎用化したいところだがそこまで使うことがあるかどうか
+			String[] yohakuInfo = fieldStr.split("\n")[1].replaceAll("\\[", "").replaceAll("\\]", "").split(",");
+			if (yohakuInfo[2].equals("1")) {
+				Masu[][] wkMasu = new Masu[getYLength()][getXLength() - 1];
+				Integer[][] wkNumbers = new Integer[getYLength()][getXLength() - 1];
+				for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+					for (int xIndex = 1; xIndex < getXLength(); xIndex++) {
+						wkMasu[yIndex][xIndex - 1] = masu[yIndex][xIndex];
+						wkNumbers[yIndex][xIndex - 1] = numbers[yIndex][xIndex];
+					}
+				}
+				masu = wkMasu;
+				numbers = wkNumbers;
+			}
 			alreadyPosSet = new HashSet<>();
 			// 数字のマスで黒でない場合、白確定
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {

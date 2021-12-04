@@ -27,6 +27,7 @@ import myamya.other.solver.cocktail.CocktailSolver.CocktailGenerator;
 import myamya.other.solver.cojun.CojunSolver.CojunGenerator;
 import myamya.other.solver.country.CountrySolver.CountryGenerator;
 import myamya.other.solver.creek.CreekSolver.CreekGenerator;
+import myamya.other.solver.dominofield.DominofieldSolver.DominofieldGenerator;
 import myamya.other.solver.doppelblock.DoppelblockSolver.DoppelblockGenerator;
 import myamya.other.solver.easyasabc.EasyasabcSolver.EasyasabcGenerator;
 import myamya.other.solver.fillmat.FillmatSolver.FillmatGenerator;
@@ -1437,6 +1438,22 @@ public class SudokuGachaWeb extends HttpServlet {
 
 	}
 
+	static class DominofieldGeneratorThlead extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+
+		DominofieldGeneratorThlead(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new DominofieldGenerator(height, width);
+		}
+
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -1630,6 +1647,8 @@ public class SudokuGachaWeb extends HttpServlet {
 				t = new CocktailGeneratorThlead(height, width);
 			} else if (type.equals("sbl")) {
 				t = new SblGeneratorThlead(height, width);
+			} else if (type.equals("dominofield")) {
+				t = new DominofieldGeneratorThlead(height, width);
 			} else {
 				throw new IllegalArgumentException();
 			}

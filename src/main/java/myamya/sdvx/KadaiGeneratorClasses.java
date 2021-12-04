@@ -293,7 +293,7 @@ public class KadaiGeneratorClasses {
 				return new RatePair(getPGrade995(), getPGrade998());
 			} else if (scoreDiv == ScoreDiv.S_998) {
 				return new RatePair(getPGrade998(), getPPer());
-			} else if (scoreDiv == ScoreDiv.PER) {
+			} else if (scoreDiv == ScoreDiv.PUC) {
 				return new RatePair(getPPer(), BigDecimal.valueOf(0));
 			} else {
 				throw new IllegalStateException("invalid scoreDiv:" + scoreDiv);
@@ -304,7 +304,7 @@ public class KadaiGeneratorClasses {
 		 * 指定された目標に対応する割合を返す
 		 */
 		public BigDecimal getPercent(Target target) {
-			if (target == ClearLamp.PER) {
+			if (target == ClearLamp.PUC) {
 				return pPer.setScale(2, RoundingMode.DOWN);
 			} else if (target == ClearLamp.UC) {
 				return pUc.setScale(2, RoundingMode.DOWN);

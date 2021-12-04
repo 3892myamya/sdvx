@@ -419,6 +419,11 @@ var ruleMap = {
 		url : "",
 		source : ""
 	},
+	dominofield : {
+		name : "ドミノフィールド",
+		url : "",
+		source : ""
+	},
 }
 var regMap = {
 		yajilin:[{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},
@@ -1134,7 +1139,7 @@ $(function() {
 				} else {
 					$('#sel_size').val(nowSelSizeVal);
 				}
-			} else if (type == 'tilepaint' || type == 'mines' || type == 'nonogram') {
+			} else if (type == 'tilepaint' || type == 'mines' || type == 'nonogram' || type == 'dominofield') {
 				$('#sel_size').append(option.size_3);
 				$('#sel_size').append(option.size_4);
 				$('#sel_size').append(option.size_5);
