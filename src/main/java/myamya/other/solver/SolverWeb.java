@@ -124,6 +124,7 @@ import myamya.other.solver.nurimaze.NurimazeSolver;
 import myamya.other.solver.nurimaze.NurimazeSolver.Mark;
 import myamya.other.solver.nurimisaki.NurimisakiSolver;
 import myamya.other.solver.nurimulti.NurimultiSolver;
+import myamya.other.solver.ovotovata.OvotovataSolver;
 import myamya.other.solver.pipelink.PipelinkSolver;
 import myamya.other.solver.putteria.PutteriaSolver;
 import myamya.other.solver.rectslider.RectsliderSolver;
@@ -13725,6 +13726,135 @@ public class SolverWeb extends HttpServlet {
 		}
 	}
 
+	static class OvotovataSolverThread extends AbsSolverThlead {
+		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
+		private static final String FULL_NUMS = "０１２３４５６７８９";
+
+		OvotovataSolverThread(int height, int width, String param) {
+			super(height, width, param);
+		}
+
+		@Override
+		protected Solver getSolver() {
+			return new OvotovataSolver(height, width, param);
+		}
+
+		@Override
+		public String makeCambus() {
+			OvotovataSolver.Field field = ((OvotovataSolver) solver).getField();
+			int baseSize = 20;
+			int margin = 5;
+			StringBuilder sb = new StringBuilder();
+			sb.append("<svg xmlns=\"http://www.w3.org/2000/svg\" " + "height=\""
+					+ (field.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
+					+ (field.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			// 数字描画
+			for (OvotovataSolver.Room room : field.getRooms()) {
+				if (room.isGray()) {
+					for (Position pos : room.getMember()) {
+						sb.append("<rect y=\"" + (pos.getyIndex() * baseSize + margin) + "\" x=\""
+								+ (pos.getxIndex() * baseSize + baseSize) + "\" fill=\"" + "lightgray" + "\" width=\""
+								+ (baseSize) + "\" height=\"" + (baseSize) + "\">" + "</rect>");
+					}
+				}
+				int roomWhiteCount = room.getCurveCnt();
+				if (roomWhiteCount != -1) {
+					String roomWhiteCountStr;
+					String wkstr = String.valueOf(roomWhiteCount);
+					int index = HALF_NUMS.indexOf(wkstr);
+					if (index == 0) {
+						roomWhiteCountStr = "？";
+					} else if (index > 0) {
+						roomWhiteCountStr = FULL_NUMS.substring(index / 2, index / 2 + 1);
+					} else {
+						roomWhiteCountStr = wkstr;
+					}
+					Position numberMasuPos = room.getNumberMasuPos();
+					sb.append("<text y=\"" + (numberMasuPos.getyIndex() * baseSize + baseSize + margin - 5) + "\" x=\""
+							+ (numberMasuPos.getxIndex() * baseSize + baseSize + 2) + "\" fill=\"" + "black"
+							+ "\" font-size=\"" + (baseSize - 5) + "\" textLength=\"" + (baseSize - 5)
+							+ "\" lengthAdjust=\"spacingAndGlyphs\">" + roomWhiteCountStr + "</text>");
+				}
+
+			}
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					Masu oneMasu = field.getMasu()[yIndex][xIndex];
+					if (oneMasu.toString().equals("・")) {
+						String str = "";
+						Wall up = yIndex == 0 ? Wall.EXISTS : field.getTateWall()[yIndex - 1][xIndex];
+						Wall right = xIndex == field.getXLength() - 1 ? Wall.EXISTS
+								: field.getYokoWall()[yIndex][xIndex];
+						Wall down = yIndex == field.getYLength() - 1 ? Wall.EXISTS
+								: field.getTateWall()[yIndex][xIndex];
+						Wall left = xIndex == 0 ? Wall.EXISTS : field.getYokoWall()[yIndex][xIndex - 1];
+						if (up == Wall.NOT_EXISTS && right == Wall.NOT_EXISTS && down == Wall.EXISTS
+								&& left == Wall.EXISTS) {
+							str = "└";
+						} else if (up == Wall.NOT_EXISTS && right == Wall.EXISTS && down == Wall.NOT_EXISTS
+								&& left == Wall.EXISTS) {
+							str = "│";
+						} else if (up == Wall.NOT_EXISTS && right == Wall.EXISTS && down == Wall.EXISTS
+								&& left == Wall.NOT_EXISTS) {
+							str = "┘";
+						} else if (up == Wall.EXISTS && right == Wall.NOT_EXISTS && down == Wall.NOT_EXISTS
+								&& left == Wall.EXISTS) {
+							str = "┌";
+						} else if (up == Wall.EXISTS && right == Wall.NOT_EXISTS && down == Wall.EXISTS
+								&& left == Wall.NOT_EXISTS) {
+							str = "─";
+						} else if (up == Wall.EXISTS && right == Wall.EXISTS && down == Wall.NOT_EXISTS
+								&& left == Wall.NOT_EXISTS) {
+							str = "┐";
+						} else {
+							str = oneMasu.toString();
+						}
+						sb.append("<text y=\"" + (yIndex * baseSize + baseSize + margin - 2) + "\" x=\""
+								+ (xIndex * baseSize + baseSize) + "\" font-size=\"" + (baseSize) + "\" textLength=\""
+								+ (baseSize) + "\" fill=\"" + "green" + "\" stroke=\"green\" stroke-width=\"1"
+								+ "\" lengthAdjust=\"spacingAndGlyphs\">" + str + "</text>");
+					}
+				}
+			}
+			// 横壁描画
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = -1; xIndex < field.getXLength(); xIndex++) {
+					boolean oneYokoWall = xIndex == -1 || xIndex == field.getXLength() - 1
+							|| field.getYokoRoomWall()[yIndex][xIndex];
+					sb.append("<line y1=\"" + (yIndex * baseSize + margin) + "\" x1=\""
+							+ (xIndex * baseSize + 2 * baseSize) + "\" y2=\"" + (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\"" + (xIndex * baseSize + 2 * baseSize) + "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneYokoWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">" + "</line>");
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = -1; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					boolean oneTateWall = yIndex == -1 || yIndex == field.getYLength() - 1
+							|| field.getTateRoomWall()[yIndex][xIndex];
+					sb.append("<line y1=\"" + (yIndex * baseSize + baseSize + margin) + "\" x1=\""
+							+ (xIndex * baseSize + baseSize) + "\" y2=\"" + (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\"" + (xIndex * baseSize + baseSize + baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneTateWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">" + "</line>");
+				}
+			}
+
+			sb.append("</svg>");
+			return sb.toString();
+		}
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -14086,6 +14216,16 @@ public class SolverWeb extends HttpServlet {
 						param = parts.get(4).split("@")[0];
 						String hosiparam = parts.get(3).split("@")[0];
 						t = new BdblockSolverThread(height, width, param, hosiparam);
+					} else if (puzzleType.contains("ovotovata")) {
+						t = new OvotovataSolverThread(height, width, param);
+//					} else if (puzzleType.contains("cbanana")) {
+//						t = new ChocobananaSolverThread(height, width, param);
+//					} else if (puzzleType.contains("canal")) {
+//						t = new CanalSolverThread(height, width, param);
+//					} else if (puzzleType.contains("chainedb")) {
+//						t = new ChblockSolverThread(height, width, param);
+//					} else if (puzzleType.contains("dotchi")) {
+//						t = new DotchiloopSolverThread(height, width, param);
 					} else {
 						throw new IllegalArgumentException();
 					}

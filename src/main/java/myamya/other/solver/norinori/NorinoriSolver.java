@@ -95,32 +95,23 @@ public class NorinoriSolver implements Solver {
 			StringBuilder sb = new StringBuilder();
 			int baseSize = 20;
 			int margin = 5;
-			sb.append(
-					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
-							+ "height=\"" + (wkField.getYLength() * baseSize + 2 * baseSize + margin)
-							+ "\" width=\""
-							+ (wkField.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			sb.append("<svg xmlns=\"http://www.w3.org/2000/svg\" " + "height=\""
+					+ (wkField.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
+					+ (wkField.getXLength() * baseSize + 2 * baseSize) + "\" >");
 			// 横壁描画
 			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
 				for (int xIndex = -1; xIndex < wkField.getXLength(); xIndex++) {
 					boolean oneYokoWall = xIndex == -1 || xIndex == wkField.getXLength() - 1
 							|| wkField.isExistYokoWall(yIndex, xIndex);
-					sb.append("<line y1=\""
-							+ (yIndex * baseSize + margin)
-							+ "\" x1=\""
-							+ (xIndex * baseSize + 2 * baseSize)
-							+ "\" y2=\""
-							+ (yIndex * baseSize + baseSize + margin)
-							+ "\" x2=\""
-							+ (xIndex * baseSize + 2 * baseSize)
-							+ "\" stroke-width=\"1\" fill=\"none\"");
+					sb.append("<line y1=\"" + (yIndex * baseSize + margin) + "\" x1=\""
+							+ (xIndex * baseSize + 2 * baseSize) + "\" y2=\"" + (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\"" + (xIndex * baseSize + 2 * baseSize) + "\" stroke-width=\"1\" fill=\"none\"");
 					if (oneYokoWall) {
 						sb.append("stroke=\"#000\" ");
 					} else {
 						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
 					}
-					sb.append(">"
-							+ "</line>");
+					sb.append(">" + "</line>");
 				}
 			}
 			// 縦壁描画
@@ -128,22 +119,16 @@ public class NorinoriSolver implements Solver {
 				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
 					boolean oneTateWall = yIndex == -1 || yIndex == wkField.getYLength() - 1
 							|| wkField.isExistTateWall(yIndex, xIndex);
-					sb.append("<line y1=\""
-							+ (yIndex * baseSize + baseSize + margin)
-							+ "\" x1=\""
-							+ (xIndex * baseSize + baseSize)
-							+ "\" y2=\""
-							+ (yIndex * baseSize + baseSize + margin)
-							+ "\" x2=\""
-							+ (xIndex * baseSize + baseSize + baseSize)
+					sb.append("<line y1=\"" + (yIndex * baseSize + baseSize + margin) + "\" x1=\""
+							+ (xIndex * baseSize + baseSize) + "\" y2=\"" + (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\"" + (xIndex * baseSize + baseSize + baseSize)
 							+ "\" stroke-width=\"1\" fill=\"none\"");
 					if (oneTateWall) {
 						sb.append("stroke=\"#000\" ");
 					} else {
 						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
 					}
-					sb.append(">"
-							+ "</line>");
+					sb.append(">" + "</line>");
 				}
 			}
 			sb.append("</svg>");
@@ -547,151 +532,102 @@ public class NorinoriSolver implements Solver {
 		}
 
 		/**
-		 * のりの周りを白マスに確定する。
-		 * のりの周りに黒マスがあった場合falseを返す。
+		 * 禁止系チェック
 		 */
-		public boolean noriRoundSolve() {
-			// 縦ののり
+		public boolean roundSolve() {
+			// 黒マスは必ず2マスつながる。3つながっている場合、1マス以上伸ばせない場合NG
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					Masu masuPivot = masu[yIndex][xIndex];
+					Masu masuUp = yIndex == 0 ? Masu.NOT_BLACK : masu[yIndex - 1][xIndex];
+					Masu masuRight = xIndex == getXLength() - 1 ? Masu.NOT_BLACK : masu[yIndex][xIndex + 1];
+					Masu masuDown = yIndex == getYLength() - 1 ? Masu.NOT_BLACK : masu[yIndex + 1][xIndex];
+					Masu masuLeft = xIndex == 0 ? Masu.NOT_BLACK : masu[yIndex][xIndex - 1];
+					if (masuUp == Masu.BLACK && masuPivot == Masu.BLACK && masuDown == Masu.BLACK) {
+						return false;
+					}
+					if (masuRight == Masu.BLACK && masuPivot == Masu.BLACK && masuLeft == Masu.BLACK) {
+						return false;
+					}
+					if (masuPivot == Masu.BLACK && masuUp == Masu.NOT_BLACK && masuRight == Masu.NOT_BLACK
+							&& masuDown == Masu.NOT_BLACK && masuLeft == Masu.NOT_BLACK) {
+						return false;
+					}
+					if (masuUp == Masu.BLACK && masuPivot == Masu.SPACE && masuDown == Masu.BLACK) {
+						masu[yIndex][xIndex] = Masu.NOT_BLACK;
+					}
+					if (masuUp == Masu.SPACE && masuPivot == Masu.BLACK && masuDown == Masu.BLACK) {
+						masu[yIndex - 1][xIndex] = Masu.NOT_BLACK;
+					}
+					if (masuUp == Masu.BLACK && masuPivot == Masu.BLACK && masuDown == Masu.SPACE) {
+						masu[yIndex + 1][xIndex] = Masu.NOT_BLACK;
+					}
+					if (masuLeft == Masu.BLACK && masuPivot == Masu.SPACE && masuRight == Masu.BLACK) {
+						masu[yIndex][xIndex] = Masu.NOT_BLACK;
+					}
+					if (masuLeft == Masu.SPACE && masuPivot == Masu.BLACK && masuRight == Masu.BLACK) {
+						masu[yIndex][xIndex - 1] = Masu.NOT_BLACK;
+					}
+					if (masuLeft == Masu.BLACK && masuPivot == Masu.BLACK && masuRight == Masu.SPACE) {
+						masu[yIndex][xIndex + 1] = Masu.NOT_BLACK;
+					}
+					if (masuPivot == Masu.SPACE && masuUp == Masu.NOT_BLACK && masuRight == Masu.NOT_BLACK
+							&& masuDown == Masu.NOT_BLACK && masuLeft == Masu.NOT_BLACK) {
+						masu[yIndex][xIndex] = Masu.NOT_BLACK;
+					}
+					if (masuPivot == Masu.BLACK && masuUp == Masu.SPACE && masuRight == Masu.NOT_BLACK
+							&& masuDown == Masu.NOT_BLACK && masuLeft == Masu.NOT_BLACK) {
+						masu[yIndex - 1][xIndex] = Masu.BLACK;
+					}
+					if (masuPivot == Masu.BLACK && masuUp == Masu.NOT_BLACK && masuRight == Masu.SPACE
+							&& masuDown == Masu.NOT_BLACK && masuLeft == Masu.NOT_BLACK) {
+						masu[yIndex][xIndex + 1] = Masu.BLACK;
+					}
+					if (masuPivot == Masu.BLACK && masuUp == Masu.NOT_BLACK && masuRight == Masu.NOT_BLACK
+							&& masuDown == Masu.SPACE && masuLeft == Masu.NOT_BLACK) {
+						masu[yIndex + 1][xIndex] = Masu.BLACK;
+					}
+					if (masuPivot == Masu.BLACK && masuUp == Masu.NOT_BLACK && masuRight == Masu.NOT_BLACK
+							&& masuDown == Masu.NOT_BLACK && masuLeft == Masu.SPACE) {
+						masu[yIndex][xIndex - 1] = Masu.BLACK;
+					}
+				}
+			}
+			// 黒マスが3つつながるパターンはダメ
 			for (int yIndex = 0; yIndex < getYLength() - 1; yIndex++) {
-				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					Masu masuPivot = masu[yIndex][xIndex];
-					Masu masuDown = masu[yIndex + 1][xIndex];
-					if (masuPivot == Masu.BLACK && masuDown == Masu.BLACK) {
-						if (yIndex != 0) {
-							if (masu[yIndex - 1][xIndex] == Masu.BLACK) {
-								return false;
-							} else {
-								masu[yIndex - 1][xIndex] = Masu.NOT_BLACK;
-							}
-						}
-						if (xIndex != 0) {
-							if (masu[yIndex][xIndex - 1] == Masu.BLACK) {
-								return false;
-							} else {
-								masu[yIndex][xIndex - 1] = Masu.NOT_BLACK;
-							}
-							if (masu[yIndex + 1][xIndex - 1] == Masu.BLACK) {
-								return false;
-							} else {
-								masu[yIndex + 1][xIndex - 1] = Masu.NOT_BLACK;
-							}
-						}
-						if (xIndex != getXLength() - 1) {
-							if (masu[yIndex][xIndex + 1] == Masu.BLACK) {
-								return false;
-							} else {
-								masu[yIndex][xIndex + 1] = Masu.NOT_BLACK;
-							}
-							if (masu[yIndex + 1][xIndex + 1] == Masu.BLACK) {
-								return false;
-							} else {
-								masu[yIndex + 1][xIndex + 1] = Masu.NOT_BLACK;
-							}
-						}
-						if (yIndex != getYLength() - 2) {
-							if (masu[yIndex + 2][xIndex] == Masu.BLACK) {
-								return false;
-							} else {
-								masu[yIndex + 2][xIndex] = Masu.NOT_BLACK;
-							}
-						}
-
-					}
-				}
-			}
-
-			// 横ののり
-			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength() - 1; xIndex++) {
-					Masu masuPivot = masu[yIndex][xIndex];
-					Masu masuRight = masu[yIndex][xIndex + 1];
-					if (masuPivot == Masu.BLACK && masuRight == Masu.BLACK) {
-						if (yIndex != 0) {
-							if (masu[yIndex - 1][xIndex] == Masu.BLACK) {
-								return false;
-							} else {
-								masu[yIndex - 1][xIndex] = Masu.NOT_BLACK;
-							}
-							if (masu[yIndex - 1][xIndex + 1] == Masu.BLACK) {
-								return false;
-							} else {
-								masu[yIndex - 1][xIndex + 1] = Masu.NOT_BLACK;
-							}
-						}
-						if (xIndex != 0) {
-							if (masu[yIndex][xIndex - 1] == Masu.BLACK) {
-								return false;
-							} else {
-								masu[yIndex][xIndex - 1] = Masu.NOT_BLACK;
-							}
-						}
-						if (xIndex != getXLength() - 2) {
-							if (masu[yIndex][xIndex + 2] == Masu.BLACK) {
-								return false;
-							} else {
-								masu[yIndex][xIndex + 2] = Masu.NOT_BLACK;
-							}
-						}
-						if (yIndex != getYLength() - 1) {
-							if (masu[yIndex + 1][xIndex] == Masu.BLACK) {
-								return false;
-							} else {
-								masu[yIndex + 1][xIndex] = Masu.NOT_BLACK;
-							}
-							if (masu[yIndex + 1][xIndex + 1] == Masu.BLACK) {
-								return false;
-							} else {
-								masu[yIndex + 1][xIndex + 1] = Masu.NOT_BLACK;
-							}
-						}
+					int blackCnt = 0;
+					Masu masu1 = masu[yIndex][xIndex];
+					Masu masu2 = masu[yIndex][xIndex + 1];
+					Masu masu3 = masu[yIndex + 1][xIndex];
+					Masu masu4 = masu[yIndex + 1][xIndex + 1];
+					if (masu1 == Masu.BLACK) {
+						blackCnt++;
 					}
-				}
-			}
-			return true;
-		}
-
-		/**
-		 * 1方向だけ伸ばせる黒マスをのりに、どの方向にも伸ばせない空白マスを白に確定する。
-		 * どの方向にも伸ばせない黒マスががあった場合falseを返す。
-		 */
-		public boolean noriSolve() {
-			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
-				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					Masu masuPivot = masu[yIndex][xIndex];
-					if (masuPivot == Masu.BLACK) {
-						Masu masuUp = yIndex == 0 ? Masu.NOT_BLACK : masu[yIndex - 1][xIndex];
-						Masu masuRight = xIndex == getXLength() - 1 ? Masu.NOT_BLACK : masu[yIndex][xIndex + 1];
-						Masu masuDown = yIndex == getYLength() - 1 ? Masu.NOT_BLACK : masu[yIndex + 1][xIndex];
-						Masu masuLeft = xIndex == 0 ? Masu.NOT_BLACK : masu[yIndex][xIndex - 1];
-						if (masuUp == Masu.NOT_BLACK && masuRight == Masu.NOT_BLACK && masuDown == Masu.NOT_BLACK
-								&& masuLeft == Masu.NOT_BLACK) {
-							return false;
-						}
-						if (masuUp == Masu.SPACE && masuRight == Masu.NOT_BLACK && masuDown == Masu.NOT_BLACK
-								&& masuLeft == Masu.NOT_BLACK) {
-							masu[yIndex - 1][xIndex] = Masu.BLACK;
-						}
-						if (masuUp == Masu.NOT_BLACK && masuRight == Masu.SPACE && masuDown == Masu.NOT_BLACK
-								&& masuLeft == Masu.NOT_BLACK) {
-							masu[yIndex][xIndex + 1] = Masu.BLACK;
-						}
-						if (masuUp == Masu.NOT_BLACK && masuRight == Masu.NOT_BLACK && masuDown == Masu.SPACE
-								&& masuLeft == Masu.NOT_BLACK) {
-							masu[yIndex + 1][xIndex] = Masu.BLACK;
-						}
-						if (masuUp == Masu.NOT_BLACK && masuRight == Masu.NOT_BLACK && masuDown == Masu.NOT_BLACK
-								&& masuLeft == Masu.SPACE) {
-							masu[yIndex][xIndex - 1] = Masu.BLACK;
-						}
+					if (masu2 == Masu.BLACK) {
+						blackCnt++;
 					}
-					if (masuPivot == Masu.SPACE) {
-						Masu masuUp = yIndex == 0 ? Masu.NOT_BLACK : masu[yIndex - 1][xIndex];
-						Masu masuRight = xIndex == getXLength() - 1 ? Masu.NOT_BLACK : masu[yIndex][xIndex + 1];
-						Masu masuDown = yIndex == getYLength() - 1 ? Masu.NOT_BLACK : masu[yIndex + 1][xIndex];
-						Masu masuLeft = xIndex == 0 ? Masu.NOT_BLACK : masu[yIndex][xIndex - 1];
-						if (masuUp == Masu.NOT_BLACK && masuRight == Masu.NOT_BLACK && masuDown == Masu.NOT_BLACK
-								&& masuLeft == Masu.NOT_BLACK) {
+					if (masu3 == Masu.BLACK) {
+						blackCnt++;
+					}
+					if (masu4 == Masu.BLACK) {
+						blackCnt++;
+					}
+					if (blackCnt > 2) {
+						return false;
+					}
+					if (blackCnt == 2) {
+						if (masu1 == Masu.SPACE) {
 							masu[yIndex][xIndex] = Masu.NOT_BLACK;
+						}
+						if (masu2 == Masu.SPACE) {
+							masu[yIndex][xIndex + 1] = Masu.NOT_BLACK;
+						}
+						if (masu3 == Masu.SPACE) {
+							masu[yIndex + 1][xIndex] = Masu.NOT_BLACK;
+						}
+						if (masu4 == Masu.SPACE) {
+							masu[yIndex + 1][xIndex + 1] = Masu.NOT_BLACK;
 						}
 					}
 				}
@@ -707,10 +643,7 @@ public class NorinoriSolver implements Solver {
 			if (!roomSolve()) {
 				return false;
 			}
-			if (!noriSolve()) {
-				return false;
-			}
-			if (!noriRoundSolve()) {
+			if (!roundSolve()) {
 				return false;
 			}
 			if (!getStateDump().equals(str)) {
@@ -748,7 +681,7 @@ public class NorinoriSolver implements Solver {
 	}
 
 	public static void main(String[] args) {
-		String url = ""; //urlを入れれば試せる
+		String url = ""; // urlを入れれば試せる
 		String[] params = url.split("/");
 		int height = Integer.parseInt(params[params.length - 2]);
 		int width = Integer.parseInt(params[params.length - 3]);
@@ -780,8 +713,7 @@ public class NorinoriSolver implements Solver {
 		System.out.println("難易度:" + (count * 5));
 		System.out.println(field);
 		int level = (int) Math.sqrt(count * 5 / 3) + 1;
-		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count * 5).toString() + "(Lv:" + level + ")";
+		return "解けました。推定難易度:" + Difficulty.getByCount(count * 5).toString() + "(Lv:" + level + ")";
 	}
 
 	/**
