@@ -101,7 +101,9 @@ public class KadaiGeneratorEnums {
 		/** */
 		HEAVENLY("HEAVENLY", "HVN"),
 		/** */
-		VIVID("VIVID", "VVD");
+		VIVID("VIVID", "VVD"),
+		/** */
+		EXCEED("EXCEED", "XCD");
 
 		private final String str;
 		private final String shortStr;
