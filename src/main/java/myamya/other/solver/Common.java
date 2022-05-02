@@ -385,6 +385,7 @@ public class Common {
 					(int) (getLeftUp().getxIndex() + (Math.random() * xLength)));
 		}
 
+
 		/**
 		 * 自分が包含する位置のセットを返す。
 		 */

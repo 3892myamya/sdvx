@@ -161,6 +161,7 @@ import myamya.other.solver.tents.TentsSolver;
 import myamya.other.solver.tilepaint.TilepaintSolver;
 import myamya.other.solver.usoone.UsooneSolver;
 import myamya.other.solver.view.ViewSolver;
+import myamya.other.solver.voxas.VoxasSolver;
 import myamya.other.solver.wafusuma.WafusumaSolver;
 import myamya.other.solver.walllogic.WalllogicSolver;
 import myamya.other.solver.wblink.WblinkSolver;
@@ -13855,6 +13856,116 @@ public class SolverWeb extends HttpServlet {
 		}
 	}
 
+	static class VoxasSolverThread extends AbsSolverThlead {
+		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
+		private static final String FULL_NUMS = "０１２３４５６７８９";
+
+		VoxasSolverThread(int height, int width, String param) {
+			super(height, width, param);
+		}
+
+		@Override
+		protected Solver getSolver() {
+			return new VoxasSolver(height, width, param);
+		}
+
+		@Override
+		public String makeCambus() {
+			VoxasSolver.Field field = ((VoxasSolver) solver).getField();
+			StringBuilder sb = new StringBuilder();
+			int baseSize = 20;
+			int margin = 5;
+			sb.append("<svg xmlns=\"http://www.w3.org/2000/svg\" " + "height=\""
+					+ (field.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
+					+ (field.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			Wall[][] yokoWall = field.getYokoWall();
+			Wall[][] tateWall = field.getTateWall();
+			// 横壁描画
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = -1; xIndex < field.getXLength(); xIndex++) {
+					boolean oneYokoWall = xIndex == -1 || xIndex == field.getXLength() - 1
+							|| yokoWall[yIndex][xIndex] == Wall.EXISTS
+							|| field.getFirstYokoWall().get(new Position(yIndex, xIndex)) != null;
+					sb.append("<line y1=\"" + (yIndex * baseSize + margin) + "\" x1=\""
+							+ (xIndex * baseSize + 2 * baseSize) + "\" y2=\"" + (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\"" + (xIndex * baseSize + 2 * baseSize) + "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneYokoWall) {
+						if (xIndex != -1 && xIndex != field.getXLength() - 1) {
+							if (field.getFirstYokoWall().get(new Position(yIndex, xIndex)) != null) {
+								sb.append("stroke=\"#000\" ");
+							} else {
+								sb.append("stroke=\"green\" ");
+							}
+						} else {
+							sb.append("stroke=\"#000\" ");
+						}
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">" + "</line>");
+					if (field.getFirstYokoWall().get(new Position(yIndex, xIndex)) != null) {
+						if (field.getFirstYokoWall().get(new Position(yIndex, xIndex)) == 2) {
+							sb.append("<circle cy=\"" + (yIndex * baseSize + (baseSize / 2) + margin) + "\" cx=\""
+									+ (xIndex * baseSize + baseSize + baseSize) + "\" r=\"" + 2
+									+ "\" fill=\"black\", stroke=\"black\">" + "</circle>");
+						} else if (field.getFirstYokoWall().get(new Position(yIndex, xIndex)) == 3) {
+							sb.append("<circle cy=\"" + (yIndex * baseSize + (baseSize / 2) + margin) + "\" cx=\""
+									+ (xIndex * baseSize + baseSize + baseSize) + "\" r=\"" + 2
+									+ "\" fill=\"gray\", stroke=\"black\">" + "</circle>");
+						} else if (field.getFirstYokoWall().get(new Position(yIndex, xIndex)) == 4) {
+							sb.append("<circle cy=\"" + (yIndex * baseSize + (baseSize / 2) + margin) + "\" cx=\""
+									+ (xIndex * baseSize + baseSize + baseSize) + "\" r=\"" + 2
+									+ "\" fill=\"white\", stroke=\"black\">" + "</circle>");
+						}
+					}
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = -1; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					boolean oneTateWall = yIndex == -1 || yIndex == field.getYLength() - 1
+							|| tateWall[yIndex][xIndex] == Wall.EXISTS
+							|| field.getFirstTateWall().get(new Position(yIndex, xIndex)) != null;
+					sb.append("<line y1=\"" + (yIndex * baseSize + baseSize + margin) + "\" x1=\""
+							+ (xIndex * baseSize + baseSize) + "\" y2=\"" + (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\"" + (xIndex * baseSize + baseSize + baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneTateWall) {
+						if (yIndex != -1 && yIndex != field.getYLength() - 1) {
+							if (field.getFirstTateWall().get(new Position(yIndex, xIndex)) != null) {
+								sb.append("stroke=\"#000\" ");
+							} else {
+								sb.append("stroke=\"green\" ");
+							}
+						} else {
+							sb.append("stroke=\"#000\" ");
+						}
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">" + "</line>");
+					if (field.getFirstTateWall().get(new Position(yIndex, xIndex)) != null) {
+						if (field.getFirstTateWall().get(new Position(yIndex, xIndex)) == 2) {
+							sb.append("<circle cy=\"" + (yIndex * baseSize + baseSize + margin) + "\" cx=\""
+									+ (xIndex * baseSize + baseSize + (baseSize / 2)) + "\" r=\"" + 2
+									+ "\" fill=\"black\", stroke=\"black\">" + "</circle>");
+						} else if (field.getFirstTateWall().get(new Position(yIndex, xIndex)) == 3) {
+							sb.append("<circle cy=\"" + (yIndex * baseSize + baseSize + margin) + "\" cx=\""
+									+ (xIndex * baseSize + baseSize + (baseSize / 2)) + "\" r=\"" + 2
+									+ "\" fill=\"gray\", stroke=\"black\">" + "</circle>");
+						} else if (field.getFirstTateWall().get(new Position(yIndex, xIndex)) == 4) {
+							sb.append("<circle cy=\"" + (yIndex * baseSize + baseSize + margin) + "\" cx=\""
+									+ (xIndex * baseSize + baseSize + (baseSize / 2)) + "\" r=\"" + 2
+									+ "\" fill=\"white\", stroke=\"black\">" + "</circle>");
+						}
+					}
+				}
+			}
+			sb.append("</svg>");
+			return sb.toString();
+		}
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -14218,6 +14329,8 @@ public class SolverWeb extends HttpServlet {
 						t = new BdblockSolverThread(height, width, param, hosiparam);
 					} else if (puzzleType.contains("ovotovata")) {
 						t = new OvotovataSolverThread(height, width, param);
+					} else if (puzzleType.contains("voxas")) {
+						t = new VoxasSolverThread(height, width, param);
 //					} else if (puzzleType.contains("cbanana")) {
 //						t = new ChocobananaSolverThread(height, width, param);
 //					} else if (puzzleType.contains("canal")) {

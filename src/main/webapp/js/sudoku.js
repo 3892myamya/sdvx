@@ -424,6 +424,11 @@ var ruleMap = {
 		url : "",
 		source : ""
 	},
+	voxas : {
+		name : "Voxas",
+		url : "https://pzprxs.vercel.app/rules.html?voxas",
+		source : "pzprxsさん"
+	},
 }
 var regMap = {
 		yajilin:[{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},
@@ -739,7 +744,7 @@ $(function() {
 	});
 	$('#btn_next_rta').on('click', function(event) {
 		var now = new Date().getTime();
-		rtaGridInfo[nowIndex].link = linkList[nowIndex].replace('puzz\.linkで', '').replace('ぱずぷれv3で','').replace('penpa-editで','');
+		rtaGridInfo[nowIndex].link = linkList[nowIndex].replace('puzz\.linkで', '').replace('ぱずぷれv3で','').replace('pzprxsで','').replace('penpa-editで','');
 		rtaGridInfo[nowIndex].time = ((now - befTime) / 1000).toFixed(3);
 		rtaGridInfo[nowIndex].totaltime = ((now - firstTime) / 1000).toFixed(3);
 		if (nowIndex == rtaGridInfo.length - 1) {
@@ -1028,7 +1033,8 @@ $(function() {
 					|| type == 'country' || type == 'meander'
 					|| type == 'fillmat' || type == 'aqre'
 					|| type == 'fillomino' || type == 'lookair'
-					|| type == 'las' || type == 'norinuri' || type == 'nurisan' || type == 'cocktail') {
+					|| type == 'las' || type == 'norinuri' 
+					|| type == 'nurisan' || type == 'cocktail' || type == 'voxas') {
 				$('#sel_size').append(option.size_3);
 				$('#sel_size').append(option.size_4);
 				$('#sel_size').append(option.size_5);
@@ -1229,7 +1235,7 @@ $(function() {
 			level : resultObj.level,
 			// TODO むりやり…
 			link : resultObj.link.replace('(波及効果バリアント)', '').replace('puzz\.linkで', '').replace('ぱずぷれv3で',
-					'').replace('penpa-editで',''),
+					'').replace('pzprxsで','').replace('penpa-editで',''),
 		});
 		if (historyObj.length > 20) {
 			historyObj.pop();
