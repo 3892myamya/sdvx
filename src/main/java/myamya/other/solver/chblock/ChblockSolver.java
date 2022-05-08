@@ -404,6 +404,54 @@ public class ChblockSolver implements Solver {
 			fixedPosSet = new HashSet<>();
 		}
 
+		static final String ALPHABET_FROM_G = "ghijklmnopqrstuvwxyz";
+
+		public Field(int height, int width, String param) {
+			masu = new Masu[height][width];
+			numbers = new Integer[height][width];
+			fixedPosSet = new HashSet<>();
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					masu[yIndex][xIndex] = Masu.SPACE;
+				}
+			}
+			int index = 0;
+			for (int i = 0; i < param.length(); i++) {
+				char ch = param.charAt(i);
+				int interval = ALPHABET_FROM_G.indexOf(ch);
+				if (interval != -1) {
+					index = index + interval + 1;
+				} else {
+					// 16 - 255は '-'
+					// 256 - 999は '+'
+					int capacity;
+					if (ch == '.') {
+						Position pos = new Position(index / getXLength(), index % getXLength());
+						masu[pos.getyIndex()][pos.getxIndex()] = Masu.BLACK;
+						numbers[pos.getyIndex()][pos.getxIndex()] = -1;
+					} else {
+						if (ch == '-') {
+							capacity = Integer.parseInt("" + param.charAt(i + 1) + param.charAt(i + 2), 16);
+							i++;
+							i++;
+						} else if (ch == '+') {
+							capacity = Integer
+									.parseInt("" + param.charAt(i + 1) + param.charAt(i + 2) + param.charAt(i + 3), 16);
+							i++;
+							i++;
+							i++;
+						} else {
+							capacity = Integer.parseInt(String.valueOf(ch), 16);
+						}
+						Position pos = new Position(index / getXLength(), index % getXLength());
+						masu[pos.getyIndex()][pos.getxIndex()] = Masu.BLACK;
+						numbers[pos.getyIndex()][pos.getxIndex()] = capacity;
+					}
+					index++;
+				}
+			}
+		}
+
 		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
 		private static final String FULL_NUMS = "０１２３４５６７８９";
 
@@ -924,6 +972,11 @@ public class ChblockSolver implements Solver {
 
 	public ChblockSolver(Field field) {
 		this.field = new Field(field);
+	}
+
+	// pzprxs向けコンストラクタ
+	public ChblockSolver(int height, int width, String param) {
+		this.field = new Field(height, width, param);
 	}
 
 	// penpa-edit向けコンストラクタ

@@ -11506,9 +11506,14 @@ public class SolverWeb extends HttpServlet {
 			this.fieldStr = fieldStr;
 		}
 
+		public ChocobananaSolverThread(int height, int width, String param) {
+			super(height, width, param);
+			this.fieldStr = null;
+		}
+
 		@Override
 		protected Solver getSolver() {
-			return new ChocobananaSolver(fieldStr);
+			return fieldStr == null ? new ChocobananaSolver(height, width, param) : new ChocobananaSolver(fieldStr);
 		}
 
 		@Override
@@ -11594,9 +11599,14 @@ public class SolverWeb extends HttpServlet {
 			this.fieldStr = fieldStr;
 		}
 
+		public DotchiloopSolverThread(int height, int width, String param) {
+			super(height, width, param);
+			this.fieldStr = null;
+		}
+
 		@Override
 		protected Solver getSolver() {
-			return new DotchiloopSolver(fieldStr);
+			return fieldStr == null ? new DotchiloopSolver(height, width, param) : new DotchiloopSolver(fieldStr);
 		}
 
 		@Override
@@ -12383,9 +12393,14 @@ public class SolverWeb extends HttpServlet {
 			this.fieldStr = fieldStr;
 		}
 
+		public CanalSolverThread(int height, int width, String param) {
+			super(height, width, param);
+			this.fieldStr = null;
+		}
+
 		@Override
 		protected Solver getSolver() {
-			return new CanalSolver(fieldStr);
+			return fieldStr == null ? new CanalSolver(height, width, param) : new CanalSolver(fieldStr);
 		}
 
 		@Override
@@ -13423,9 +13438,14 @@ public class SolverWeb extends HttpServlet {
 			this.fieldStr = fieldStr;
 		}
 
+		public ChblockSolverThread(int height, int width, String param) {
+			super(height, width, param);
+			this.fieldStr = null;
+		}
+
 		@Override
 		protected Solver getSolver() {
-			return new ChblockSolver(fieldStr);
+			return fieldStr == null ? new ChblockSolver(height, width, param) : new ChblockSolver(fieldStr);
 		}
 
 		@Override
@@ -14099,8 +14119,8 @@ public class SolverWeb extends HttpServlet {
 				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
 					if (field.getBlackPosSet().contains(new Position(yIndex, xIndex))) {
 						sb.append("<rect y=\"" + (yIndex * baseSize + margin) + "\" x=\""
-								+ (xIndex * baseSize + baseSize) + "\" fill=\"" + "b" + "\" width=\""
-								+ (baseSize) + "\" height=\"" + (baseSize) + "\">" + "</rect>");
+								+ (xIndex * baseSize + baseSize) + "\" fill=\"" + "b" + "\" width=\"" + (baseSize)
+								+ "\" height=\"" + (baseSize) + "\">" + "</rect>");
 					} else {
 						if (field.getMasu()[yIndex][xIndex] == Masu.BLACK) {
 							sb.append("<circle cy=\"" + (yIndex * baseSize + (baseSize / 2) + margin) + "\" cx=\""
@@ -14556,14 +14576,14 @@ public class SolverWeb extends HttpServlet {
 						t = new TrenSolverThread(height, width, param);
 					} else if (puzzleType.contains("rassi")) {
 						t = new RassiSolverThread(height, width, param);
-//					} else if (puzzleType.contains("cbanana")) {
-//						t = new ChocobananaSolverThread(height, width, param);
-//					} else if (puzzleType.contains("canal")) {
-//						t = new CanalSolverThread(height, width, param);
-//					} else if (puzzleType.contains("chainedb")) {
-//						t = new ChblockSolverThread(height, width, param);
-//					} else if (puzzleType.contains("dotchi")) {
-//						t = new DotchiloopSolverThread(height, width, param);
+					} else if (puzzleType.contains("chainedb")) {
+						t = new ChblockSolverThread(height, width, param);
+					} else if (puzzleType.contains("cbanana")) {
+						t = new ChocobananaSolverThread(height, width, param);
+					} else if (puzzleType.contains("canal")) {
+						t = new CanalSolverThread(height, width, param);
+					} else if (puzzleType.contains("dotchi")) {
+						t = new DotchiloopSolverThread(height, width, param);
 					} else {
 						throw new IllegalArgumentException();
 					}
