@@ -2,6 +2,7 @@ package myamya.other.solver.tajmahal;
 
 import java.awt.geom.Line2D;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -10,320 +11,329 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import myamya.other.solver.Common.CountOverException;
 import myamya.other.solver.Common.Difficulty;
+import myamya.other.solver.Common.GeneratorResult;
 import myamya.other.solver.Common.Position;
+import myamya.other.solver.Generator;
 import myamya.other.solver.Solver;
 
 public class TajmahalSolver implements Solver {
-//	public static class TajmahalGenerator implements Generator {
-//		static class TajmahalSolverForGenerator extends TajmahalSolver {
-//			private final int limit;
-//
-//			public TajmahalSolverForGenerator(Field field, int limit) {
-//				super(field);
-//				this.limit = limit;
-//			}
-//
-//			public int solve2() {
-//				try {
-//					while (!field.isSolved()) {
-//						String befStr = field.getStateDump();
-//						if (!field.solveAndCheck()) {
-//							return -1;
-//						}
-//						int recursiveCnt = 0;
-//						while (field.getStateDump().equals(befStr) && recursiveCnt < 3) {
-//							if (!candSolve(field, recursiveCnt == 2 ? 999 : recursiveCnt)) {
-//								return -1;
-//							}
-//							recursiveCnt++;
-//						}
-//						if (recursiveCnt == 3 && field.getStateDump().equals(befStr)) {
-//							return -1;
-//						}
-//					}
-//				} catch (CountOverException e) {
-//					return -1;
-//				}
-//				return count;
-//			}
-//
-//			@Override
-//			protected boolean candSolve(Field field, int recursive) {
-//				if (this.count >= limit) {
-//					throw new CountOverException();
-//				} else {
-//					return super.candSolve(field, recursive);
-//				}
-//			}
-//		}
-//
-//		static class ExtendedField extends TajmahalSolver.Field {
-//			public ExtendedField(Field other) {
-//				super(other);
-//			}
-//
-//			// ヒントを無視して候補初期化
-//			public ExtendedField(int height, int width) {
-//				super(height, width);
-//				for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
-//					for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-//						if (yIndex + 1 < getYLength()) {
-//							TajmahalSikaku sikaku = new TajmahalSikaku(true,
-//									new Sikaku(new Position(yIndex, xIndex), new Position(yIndex + 1, xIndex)));
-//							squareCand.add(sikaku);
-//						}
-//						if (yIndex + 2 < getYLength()) {
-//							TajmahalSikaku sikaku = new TajmahalSikaku(true,
-//									new Sikaku(new Position(yIndex, xIndex), new Position(yIndex + 2, xIndex)));
-//							squareCand.add(sikaku);
-//						}
-//						if (xIndex + 1 < getXLength()) {
-//							TajmahalSikaku sikaku = new TajmahalSikaku(false,
-//									new Sikaku(new Position(yIndex, xIndex), new Position(yIndex, xIndex + 1)));
-//							squareCand.add(sikaku);
-//						}
-//						if (xIndex + 2 < getXLength()) {
-//							TajmahalSikaku sikaku = new TajmahalSikaku(false,
-//									new Sikaku(new Position(yIndex, xIndex), new Position(yIndex, xIndex + 2)));
-//							squareCand.add(sikaku);
-//						}
-//					}
-//				}
-//			}
-//
-//			public ExtendedField(int height, int width, ArrayList<TajmahalSikaku> cacheCand) {
-//				super(height, width, cacheCand);
-//			}
-//
-//			@Override
-//			public boolean allSolve() {
-//				// ヒントがあとから決まるので、ここではじいてしまうとダメ。
-//				// 全通過させる
-//				return true;
-//			}
-//
-//			@Override
-//			public boolean countSolve() {
-//				// ヒントがあとから決まるので、ここではじいてしまうとダメ。
-//				// 全通過させる
-//				return true;
-//			}
-//		}
-//
-//		private final int height;
-//		private final int width;
-//
-//		public TajmahalGenerator(int height, int width) {
-//			this.height = height;
-//			this.width = width;
-//		}
-//
-//		public static void main(String[] args) {
-//			new TajmahalGenerator(7, 7).generate();
-//		}
-//
-//		@Override
-//		public GeneratorResult generate() {
-//			ExtendedField wkField = new ExtendedField(height, width);
-//			ArrayList<TajmahalSikaku> cacheCand = new ArrayList<>(wkField.squareCand);
-//			int candCount = cacheCand.size();
-//			int index = 0;
-//			int level = 0;
-//			long start = System.nanoTime();
-//			while (true) {
-//				List<Integer> indexList = new ArrayList<>();
-//				for (int i = 0; i < cacheCand.size(); i++) {
-//					indexList.add(i);
-//				}
-//				Collections.shuffle(indexList);
-//				// 問題生成部
-//				while (!wkField.isSolved()) {
-//					TajmahalSikaku oneCand = cacheCand.get(index);
-//					if (wkField.squareCand.contains(oneCand)) {
-//						boolean isOk = false;
-//						List<Integer> numIdxList = new ArrayList<>();
-//						if (Math.random() * candCount >= height) {
-//							numIdxList.add(0);
-//							numIdxList.add(1);
-//						} else {
-//							numIdxList.add(1);
-//							numIdxList.add(0);
-//						}
-//						for (int masuNum : numIdxList) {
-//							ExtendedField virtual = new ExtendedField(wkField);
-//							if (masuNum < 1) {
-//								virtual.squareCand.remove(oneCand);
-//							} else if (masuNum < 2) {
-//								virtual.squareCand.remove(oneCand);
-//								virtual.squareFixed.add(oneCand);
-//							}
-//							if (virtual.solveAndCheck()) {
-//								isOk = true;
-//								wkField.squareCand = virtual.squareCand;
-//								wkField.squareFixed = virtual.squareFixed;
-//								break;
-//							}
-//						}
-//						if (!isOk) {
-//							// 破綻したら0から作り直す。
-//							wkField = new ExtendedField(height, width, cacheCand);
-//							index = 0;
-//							continue;
-//						}
-//					}
-//					index++;
-//				}
-//				if (wkField.squareFixed.isEmpty()) {
-//					// 車の数0を禁止する
-//					wkField = new ExtendedField(height, width, cacheCand);
-//					index = 0;
-//					continue;
-//				}
-//				// ヒントを埋める
-//				Masu[][] masuForCount = wkField.getMasu();
-//				for (TajmahalSikaku fixed : wkField.squareFixed) {
-//					int whiteCnt = 0;
-//					if (fixed.isVertical()) {
-//						for (int i = fixed.sikaku.getLeftUp().getyIndex() - 1; i >= 0; i--) {
-//							if (masuForCount[i][fixed.sikaku.getLeftUp().getxIndex()] == Masu.BLACK) {
-//								break;
-//							} else {
-//								whiteCnt++;
-//							}
-//						}
-//						for (int i = fixed.sikaku.getRightDown().getyIndex() + 1; i < wkField.getYLength(); i++) {
-//							if (masuForCount[i][fixed.sikaku.getRightDown().getxIndex()] == Masu.BLACK) {
-//								break;
-//							} else {
-//								whiteCnt++;
-//							}
-//						}
-//					} else {
-//						for (int i = fixed.sikaku.getLeftUp().getxIndex() - 1; i >= 0; i--) {
-//							if (masuForCount[fixed.sikaku.getLeftUp().getyIndex()][i] == Masu.BLACK) {
-//								break;
-//							} else {
-//								whiteCnt++;
-//							}
-//						}
-//						for (int i = fixed.sikaku.getRightDown().getxIndex() + 1; i < wkField.getXLength(); i++) {
-//							if (masuForCount[fixed.sikaku.getRightDown().getyIndex()][i] == Masu.BLACK) {
-//								break;
-//							} else {
-//								whiteCnt++;
-//							}
-//						}
-//					}
-//					List<Position> candPosList = new ArrayList<>(fixed.getPosSet());
-//					Position hintPos = candPosList.get((int) (Math.random() * candPosList.size()));
-//					wkField.numbersMap.put(hintPos, whiteCnt);
-//				}
-//				System.out.println(wkField);
-//				// 候補を戻す
-//				wkField.initCand();
-//				// 解けるかな？
-//				level = new TajmahalSolverForGenerator(wkField, 5000).solve2();
-//				if (level == -1) {
-//					// 解けなければやり直し
-//					wkField = new ExtendedField(height, width, cacheCand);
-//					index = 0;
-//				} else {
-//					break;
-//				}
-//			}
-//			level = (int) Math.sqrt(level / 2 / 3);
-//			String status = "Lv:" + level + "の問題を獲得！(壁(白/灰/黒)：" + wkField.getHintCount() + ")";
-//			String url = wkField.getPuzPreURL();
-//			String link = "<a href=\"" + url + "\" target=\"_blank\">pzprxsで解く</a>";
-//			StringBuilder sb = new StringBuilder();
-//			int baseSize = 20;
-//			int margin = 5;
-//			sb.append("<svg xmlns=\"http://www.w3.org/2000/svg\" " + "height=\""
-//					+ (wkField.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
-//					+ (wkField.getXLength() * baseSize + 2 * baseSize) + "\" >");
-//			// 横壁描画
-//			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
-//				for (int xIndex = -1; xIndex < wkField.getXLength(); xIndex++) {
-//					boolean oneYokoWall = xIndex == -1 || xIndex == wkField.getXLength() - 1
-//							|| wkField.getFirstYokoWall().get(new Position(yIndex, xIndex)) != null;
-//					sb.append("<line y1=\"" + (yIndex * baseSize + margin) + "\" x1=\""
-//							+ (xIndex * baseSize + 2 * baseSize) + "\" y2=\"" + (yIndex * baseSize + baseSize + margin)
-//							+ "\" x2=\"" + (xIndex * baseSize + 2 * baseSize) + "\" stroke-width=\"1\" fill=\"none\"");
-//					if (oneYokoWall) {
-//						if (xIndex != -1 && xIndex != wkField.getXLength() - 1) {
-//							sb.append("stroke=\"#000\" ");
-//						} else {
-//							sb.append("stroke=\"#000\" ");
-//						}
-//					} else {
-//						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
-//					}
-//					sb.append(">" + "</line>");
-//					if (wkField.getFirstYokoWall().get(new Position(yIndex, xIndex)) != null) {
-//						if (wkField.getFirstYokoWall().get(new Position(yIndex, xIndex)) == 2) {
-//							sb.append("<circle cy=\"" + (yIndex * baseSize + (baseSize / 2) + margin) + "\" cx=\""
-//									+ (xIndex * baseSize + baseSize + baseSize) + "\" r=\"" + 2
-//									+ "\" fill=\"black\", stroke=\"black\">" + "</circle>");
-//						} else if (wkField.getFirstYokoWall().get(new Position(yIndex, xIndex)) == 3) {
-//							sb.append("<circle cy=\"" + (yIndex * baseSize + (baseSize / 2) + margin) + "\" cx=\""
-//									+ (xIndex * baseSize + baseSize + baseSize) + "\" r=\"" + 2
-//									+ "\" fill=\"gray\", stroke=\"black\">" + "</circle>");
-//						} else if (wkField.getFirstYokoWall().get(new Position(yIndex, xIndex)) == 4) {
-//							sb.append("<circle cy=\"" + (yIndex * baseSize + (baseSize / 2) + margin) + "\" cx=\""
-//									+ (xIndex * baseSize + baseSize + baseSize) + "\" r=\"" + 2
-//									+ "\" fill=\"white\", stroke=\"black\">" + "</circle>");
-//						}
-//					}
-//				}
-//			}
-//			// 縦壁描画
-//			for (int yIndex = -1; yIndex < wkField.getYLength(); yIndex++) {
-//				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
-//					boolean oneTateWall = yIndex == -1 || yIndex == wkField.getYLength() - 1
-//							|| wkField.getFirstTateWall().get(new Position(yIndex, xIndex)) != null;
-//					sb.append("<line y1=\"" + (yIndex * baseSize + baseSize + margin) + "\" x1=\""
-//							+ (xIndex * baseSize + baseSize) + "\" y2=\"" + (yIndex * baseSize + baseSize + margin)
-//							+ "\" x2=\"" + (xIndex * baseSize + baseSize + baseSize)
-//							+ "\" stroke-width=\"1\" fill=\"none\"");
-//					if (oneTateWall) {
-//						if (yIndex != -1 && yIndex != wkField.getYLength() - 1) {
-//							sb.append("stroke=\"#000\" ");
-//						} else {
-//							sb.append("stroke=\"#000\" ");
-//						}
-//					} else {
-//						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
-//					}
-//					sb.append(">" + "</line>");
-//					if (wkField.getFirstTateWall().get(new Position(yIndex, xIndex)) != null) {
-//						if (wkField.getFirstTateWall().get(new Position(yIndex, xIndex)) == 2) {
-//							sb.append("<circle cy=\"" + (yIndex * baseSize + baseSize + margin) + "\" cx=\""
-//									+ (xIndex * baseSize + baseSize + (baseSize / 2)) + "\" r=\"" + 2
-//									+ "\" fill=\"black\", stroke=\"black\">" + "</circle>");
-//						} else if (wkField.getFirstTateWall().get(new Position(yIndex, xIndex)) == 3) {
-//							sb.append("<circle cy=\"" + (yIndex * baseSize + baseSize + margin) + "\" cx=\""
-//									+ (xIndex * baseSize + baseSize + (baseSize / 2)) + "\" r=\"" + 2
-//									+ "\" fill=\"gray\", stroke=\"black\">" + "</circle>");
-//						} else if (wkField.getFirstTateWall().get(new Position(yIndex, xIndex)) == 4) {
-//							sb.append("<circle cy=\"" + (yIndex * baseSize + baseSize + margin) + "\" cx=\""
-//									+ (xIndex * baseSize + baseSize + (baseSize / 2)) + "\" r=\"" + 2
-//									+ "\" fill=\"white\", stroke=\"black\">" + "</circle>");
-//						}
-//					}
-//				}
-//			}
-//			sb.append("</svg>");
-//			System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
-//			System.out.println(level);
-//			System.out.println(wkField.getHintCount());
-//			System.out.println(wkField);
-//			System.out.println(url);
-//			return new GeneratorResult(status, sb.toString(), link, url, level, "");
-//
-//		}
-//
-//	}
+	public static class TajmahalGenerator implements Generator {
+		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
+		private static final String FULL_NUMS = "０１２３４５６７８９";
+
+		static class TajmahalSolverForGenerator extends TajmahalSolver {
+			private final int limit;
+
+			public TajmahalSolverForGenerator(Field field, int limit) {
+				super(field);
+				this.limit = limit;
+			}
+
+			public int solve2() {
+				try {
+					while (!field.isSolved()) {
+						String befStr = field.getStateDump();
+						if (!field.solveAndCheck()) {
+							return -1;
+						}
+						int recursiveCnt = 0;
+						while (field.getStateDump().equals(befStr) && recursiveCnt < 3) {
+							if (!candSolve(field, recursiveCnt == 2 ? 999 : recursiveCnt)) {
+								return -1;
+							}
+							recursiveCnt++;
+						}
+						if (recursiveCnt == 3 && field.getStateDump().equals(befStr)) {
+							return -1;
+						}
+					}
+				} catch (CountOverException e) {
+					return -1;
+				}
+				return count;
+			}
+
+			@Override
+			protected boolean candSolve(Field field, int recursive) {
+				if (this.count >= limit) {
+					throw new CountOverException();
+				} else {
+					return super.candSolve(field, recursive);
+				}
+			}
+		}
+
+		static class ExtendedField extends TajmahalSolver.Field {
+			public ExtendedField(Field other) {
+				super(other);
+			}
+
+			int maxSize = 0;
+
+			// ヒントを無視して候補初期化
+			public ExtendedField(int height, int width) {
+				super(height, width);
+				for (int yIndex = 1; yIndex < getYLength(); yIndex++) {
+					for (int xIndex = 1; xIndex < getXLength(); xIndex++) {
+						if ((yIndex + xIndex) % 2 != 0) {
+							continue;
+						}
+						Position pos = new Position(yIndex, xIndex);
+						if (pos.getyIndex() % 2 == 0) {
+							// 格子点の建物は、2
+							for (int y = 2; true; y = y + 2) {
+								boolean isFirstBreak = false;
+								for (int x = 0; true; x = x + 2) {
+									if (pos.getyIndex() - y < 0 || pos.getyIndex() - x < 0
+											|| pos.getyIndex() + y >= yLength || pos.getyIndex() + x >= yLength
+											|| pos.getxIndex() - x < 0 || pos.getxIndex() + y >= xLength
+											|| pos.getxIndex() + x >= xLength || pos.getxIndex() - y < 0) {
+										if (x == 0) {
+											isFirstBreak = true;
+										}
+										break;
+									}
+									List<Line2D> myLineList = new ArrayList<Line2D>();
+									myLineList.add(new Line2D.Double(pos.getxIndex() - x, pos.getyIndex() - y,
+											pos.getxIndex() + y, pos.getyIndex() - x));
+									myLineList.add(new Line2D.Double(pos.getxIndex() + y, pos.getyIndex() - x,
+											pos.getxIndex() + x, pos.getyIndex() + y));
+									myLineList.add(new Line2D.Double(pos.getxIndex() + x, pos.getyIndex() + y,
+											pos.getxIndex() - y, pos.getyIndex() + x));
+									myLineList.add(new Line2D.Double(pos.getxIndex() - y, pos.getyIndex() + x,
+											pos.getxIndex() - x, pos.getyIndex() - y));
+									if (maxSize < y + x) {
+										maxSize = y + x;
+									}
+									squareCand.add(new Tatemono(pos, myLineList, y + x));
+								}
+								if (isFirstBreak) {
+									break;
+								}
+							}
+						} else {
+							for (int y = 1; true; y = y + 2) {
+								boolean isFirstBreak = false;
+								for (int x = 1; true; x = x + 2) {
+									if (pos.getyIndex() - y < 0 || pos.getyIndex() - x < 0
+											|| pos.getyIndex() + y >= yLength || pos.getyIndex() + x >= yLength
+											|| pos.getxIndex() - x < 0 || pos.getxIndex() + y >= xLength
+											|| pos.getxIndex() + x >= xLength || pos.getxIndex() - y < 0) {
+										if (x == 1) {
+											isFirstBreak = true;
+										}
+										break;
+									}
+									List<Line2D> myLineList = new ArrayList<Line2D>();
+									myLineList.add(new Line2D.Double(pos.getxIndex() - x, pos.getyIndex() - y,
+											pos.getxIndex() + y, pos.getyIndex() - x));
+									myLineList.add(new Line2D.Double(pos.getxIndex() + y, pos.getyIndex() - x,
+											pos.getxIndex() + x, pos.getyIndex() + y));
+									myLineList.add(new Line2D.Double(pos.getxIndex() + x, pos.getyIndex() + y,
+											pos.getxIndex() - y, pos.getyIndex() + x));
+									myLineList.add(new Line2D.Double(pos.getxIndex() - y, pos.getyIndex() + x,
+											pos.getxIndex() - x, pos.getyIndex() - y));
+									if (maxSize < y + x) {
+										maxSize = y + x;
+									}
+									squareCand.add(new Tatemono(pos, myLineList, y + x));
+								}
+								if (isFirstBreak) {
+									break;
+								}
+							}
+						}
+					}
+				}
+			}
+
+			public ExtendedField(int height, int width, ArrayList<Tatemono> cacheCand) {
+				super(height, width, cacheCand);
+			}
+
+			@Override
+			public boolean allSolve() {
+				// ヒントがあとから決まるので、ここではじいてしまうとダメ。
+				// 全通過させる
+				return true;
+			}
+
+			@Override
+			public boolean countSolve() {
+				// ヒントがあとから決まるので、ここではじいてしまうとダメ。
+				// 全通過させる
+				return true;
+			}
+		}
+
+		private final int height;
+		private final int width;
+
+		public TajmahalGenerator(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		public static void main(String[] args) {
+			new TajmahalGenerator(8, 8).generate();
+		}
+
+		@Override
+		public GeneratorResult generate() {
+			ExtendedField wkField = new ExtendedField(height, width);
+			ArrayList<Tatemono> cacheCand = new ArrayList<>(wkField.squareCand);
+			List<Integer> indexList = new ArrayList<>();
+			for (int i = 0; i < cacheCand.size(); i++) {
+				indexList.add(i);
+			}
+			int index = 0;
+			int level = 0;
+			long start = System.nanoTime();
+			while (true) {
+				Collections.shuffle(indexList);
+				// 問題生成部
+				while (!wkField.isSolved()) {
+					Tatemono oneCand = cacheCand.get(index);
+					if (wkField.squareCand.contains(oneCand)) {
+						boolean isOk = false;
+						List<Integer> numIdxList = new ArrayList<>();
+						if (Math.random() * (height + width) < oneCand.getSize()) {
+							numIdxList.add(1);
+							numIdxList.add(0);
+						} else {
+							numIdxList.add(0);
+							numIdxList.add(1);
+						}
+						for (int masuNum : numIdxList) {
+							ExtendedField virtual = new ExtendedField(wkField);
+							if (masuNum < 1) {
+								virtual.squareCand.remove(oneCand);
+							} else if (masuNum < 2) {
+								virtual.squareCand.remove(oneCand);
+								virtual.squareFixed.add(oneCand);
+							}
+							if (virtual.solveAndCheck()) {
+								isOk = true;
+								wkField.squareCand = virtual.squareCand;
+								wkField.squareFixed = virtual.squareFixed;
+								break;
+							}
+						}
+						if (!isOk) {
+							// 破綻したら0から作り直す。
+							wkField = new ExtendedField(height, width, cacheCand);
+							Collections.shuffle(indexList);
+							index = 0;
+							continue;
+						}
+					}
+					index++;
+				}
+				// ヒントを埋める
+				List<Position> posList = new ArrayList<>();
+				for (Tatemono fixed : wkField.squareFixed) {
+					int cnt = 0;
+					for (Tatemono otherFixed : wkField.squareFixed) {
+						if (fixed != otherFixed) {
+							if (otherFixed.isCross(fixed)) {
+								cnt++;
+							}
+						}
+					}
+					if (cnt == 0) {
+						wkField.squareFixed.clear();
+						break;
+					}
+					wkField.numbersMap.put(fixed.getCenterPos(), cnt);
+					posList.add(fixed.getCenterPos());
+				}
+				if (wkField.squareFixed.isEmpty()) {
+					// 建物の数0を禁止する
+					wkField = new ExtendedField(height, width, cacheCand);
+					Collections.shuffle(indexList);
+					index = 0;
+					continue;
+				}
+				// 候補を戻す
+				wkField.initCand();
+				// 解けるかな？
+				level = new TajmahalSolverForGenerator(wkField, 500).solve2();
+				if (level == -1) {
+					// 解けなければやり直し
+					wkField = new ExtendedField(height, width, cacheCand);
+					Collections.shuffle(indexList);
+					index = 0;
+				} else {
+					// ヒントを限界まで減らす
+					Collections.shuffle(posList);
+					for (Position pos : posList) {
+						Field virtual = new Field(wkField);
+						virtual.numbersMap.put(pos, 0);
+						int solveResult = new TajmahalSolverForGenerator(virtual, 500).solve2();
+						if (solveResult != -1) {
+							wkField.numbersMap.put(pos, 0);
+							level = solveResult;
+						}
+					}
+					break;
+				}
+			}
+			level = (int) Math.sqrt(level / 3) + 1;
+			String status = "Lv:" + level + "の問題を獲得！(建物/数字：" + wkField.getHintCount() + ")";
+			String url = wkField.getPuzPreURL();
+			String link = "<a href=\"" + url + "\" target=\"_blank\">pzprxsで解く</a>";
+			StringBuilder sb = new StringBuilder();
+			int baseSize = 10;
+			int margin = 5;
+			sb.append("<svg xmlns=\"http://www.w3.org/2000/svg\" " + "height=\""
+					+ (wkField.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
+					+ (wkField.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			// 点・●描画
+			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
+					Integer number = wkField.getNumbersMap().get(new Position(yIndex, xIndex));
+					if (number == null) {
+						if (xIndex % 2 == 0 && yIndex % 2 == 0) {
+							sb.append("<circle cy=\"" + (yIndex * baseSize + margin) + "\" cx=\""
+									+ (xIndex * baseSize + baseSize) + "\" r=\"" + 1
+									+ "\" fill=\"black\", stroke=\"black\">" + "</circle>");
+						} else {
+							sb.append("　");
+						}
+					} else {
+						sb.append("<circle cy=\"" + (yIndex * baseSize + margin) + "\" cx=\""
+								+ (xIndex * baseSize + baseSize) + "\" r=\"" + (baseSize - 2)
+								+ "\" fill=\"black\", stroke=\"black\">" + "</circle>");
+						if (number != 0) {
+							String numberStr = String.valueOf(number);
+							int wkIdx = HALF_NUMS.indexOf(numberStr);
+							String masuStr = null;
+							if (wkIdx >= 0) {
+								masuStr = FULL_NUMS.substring(wkIdx / 2, wkIdx / 2 + 1);
+							} else {
+								masuStr = numberStr;
+							}
+							sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 4 + margin) + "\" x=\""
+									+ (xIndex * baseSize + 2) + "\" font-size=\"" + (baseSize + 5) + "\" textLength=\""
+									+ (baseSize + 5) + "\" fill=\"white\", lengthAdjust=\"spacingAndGlyphs\">" + masuStr
+									+ "</text>");
+						}
+					}
+				}
+			}
+			sb.append("</svg>");
+			System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
+			System.out.println(level);
+			System.out.println(wkField.getHintCount());
+			System.out.println(wkField);
+			System.out.println(url);
+			return new GeneratorResult(status, sb.toString(), link, url, level, "");
+
+		}
+
+	}
 
 	// 建物
 	public static class Tatemono {
@@ -337,9 +347,13 @@ public class TajmahalSolver implements Solver {
 		// 中心のマス
 		private final Position centerPos;
 
-		Tatemono(Position centerPos, List<Line2D> myLineList) {
+		// サイズ。中心からのx、yの距離の合計であり厳密な面積ではないので注意
+		private final int size;
+
+		Tatemono(Position centerPos, List<Line2D> myLineList, int size) {
 			this.centerPos = centerPos;
 			this.myLineList = myLineList;
+			this.size = size;
 		}
 
 		/**
@@ -351,9 +365,13 @@ public class TajmahalSolver implements Solver {
 					if (myLine.intersectsLine(otherLine)) {
 						// 接していても、以下の条件の場合は頂点隣接のため継続。
 						// ・myLineとotherLineに同じ座標の点がある。
+						// ・myLineがotherの中心に隣接しない
 						// ・myLine、otherLineともに、同じ座標でない方の点が、他方の線と隣接しない。
 						Line2D myPoint = null;
 						Line2D otherPoint = null;
+						Line2D centerPoint = new Line2D.Double(other.getCenterPos().getxIndex(),
+								other.getCenterPos().getyIndex(), other.getCenterPos().getxIndex(),
+								other.getCenterPos().getyIndex());
 						if (myLine.getY1() == otherLine.getY1() && myLine.getX1() == otherLine.getX1()) {
 							myPoint = new Line2D.Double(myLine.getX2(), myLine.getY2(), myLine.getX2(), myLine.getY2());
 							otherPoint = new Line2D.Double(otherLine.getX2(), otherLine.getY2(), otherLine.getX2(),
@@ -371,8 +389,8 @@ public class TajmahalSolver implements Solver {
 							otherPoint = new Line2D.Double(otherLine.getX1(), otherLine.getY1(), otherLine.getX1(),
 									otherLine.getY1());
 						}
-						if (myPoint == null || otherPoint == null || myPoint.intersectsLine(otherLine)
-								|| otherPoint.intersectsLine(myLine)) {
+						if (myPoint == null || otherPoint == null || centerPoint.intersectsLine(myLine)
+								|| myPoint.intersectsLine(otherLine) || otherPoint.intersectsLine(myLine)) {
 							return true;
 						}
 					}
@@ -391,6 +409,9 @@ public class TajmahalSolver implements Solver {
 					if (myLine.intersectsLine(otherLine)) {
 						Line2D myPoint = null;
 						Line2D otherPoint = null;
+						Line2D centerPoint = new Line2D.Double(other.getCenterPos().getxIndex(),
+								other.getCenterPos().getyIndex(), other.getCenterPos().getxIndex(),
+								other.getCenterPos().getyIndex());
 						if (myLine.getY1() == otherLine.getY1() && myLine.getX1() == otherLine.getX1()) {
 							myPoint = new Line2D.Double(myLine.getX2(), myLine.getY2(), myLine.getX2(), myLine.getY2());
 							otherPoint = new Line2D.Double(otherLine.getX2(), otherLine.getY2(), otherLine.getX2(),
@@ -408,8 +429,8 @@ public class TajmahalSolver implements Solver {
 							otherPoint = new Line2D.Double(otherLine.getX1(), otherLine.getY1(), otherLine.getX1(),
 									otherLine.getY1());
 						}
-						if (myPoint == null || otherPoint == null || myPoint.intersectsLine(otherLine)
-								|| otherPoint.intersectsLine(myLine)) {
+						if (myPoint == null || otherPoint == null || centerPoint.intersectsLine(myLine)
+								|| myPoint.intersectsLine(otherLine) || otherPoint.intersectsLine(myLine)) {
 							return false;
 						} else {
 							crossFlag = true;
@@ -422,6 +443,10 @@ public class TajmahalSolver implements Solver {
 
 		public Position getCenterPos() {
 			return centerPos;
+		}
+
+		public int getSize() {
+			return size;
 		}
 	}
 
@@ -449,108 +474,48 @@ public class TajmahalSolver implements Solver {
 
 		public String getPuzPreURL() {
 			StringBuilder sb = new StringBuilder();
-//			sb.append("https://pzprxs.vercel.app/p?voxas/" + getXLength() + "/" + getYLength() + "/");
-//			// 横壁処理
-//			int interval = 0;
-//			int befWallType = 0;
-//			for (int i = 0; i < getYLength() * (getXLength() - 1); i++) {
-//				int yIndex = i / (getXLength() - 1);
-//				int xIndex = i % (getXLength() - 1);
-//				Integer wallType = firstYokoWall.get(new Position(yIndex, xIndex));
-//				if (wallType == null) {
-//					interval++;
-//					// 今回壁が来なかった場合、壁接近判定中ならインターバル2、違えばインターバル20で精算
-//					if (befWallType != 0 && interval == 2) {
-//						sb.append(ALPHABET_AND_NUMBER.charAt(interval * 5 + (befWallType - 1)));
-//						interval = 0;
-//						befWallType = 0;
-//					} else if (befWallType == 0 && interval == 20) {
-//						sb.append("z");
-//						interval = 0;
-//						befWallType = 0;
-//					}
-//				} else {
-//					// 今回壁が来た場合、インターバルのみ精算。
-//					if (befWallType != 0) {
-//						sb.append(ALPHABET_AND_NUMBER.charAt(interval * 5 + (befWallType - 1)));
-//					} else {
-//						if (interval != 0) {
-//							sb.append(ALPHABET_AND_NUMBER.charAt(interval + 15));
-//						}
-//					}
-//					interval = 0;
-//					befWallType = wallType;
-//				}
-//			}
-//			for (int i = 0; i < (getYLength() - 1) * getXLength(); i++) {
-//				int yIndex = i / getXLength();
-//				int xIndex = i % getXLength();
-//				Integer wallType = firstTateWall.get(new Position(yIndex, xIndex));
-//				if (wallType == null) {
-//					interval++;
-//					// 今回壁が来なかった場合、壁接近判定中ならインターバル2、違えばインターバル20で精算
-//					if (befWallType != 0 && interval == 2) {
-//						sb.append(ALPHABET_AND_NUMBER.charAt(interval * 5 + (befWallType - 1)));
-//						interval = 0;
-//						befWallType = 0;
-//					} else if (befWallType == 0 && interval == 20) {
-//						sb.append("z");
-//						interval = 0;
-//						befWallType = 0;
-//					}
-//				} else {
-//					// 今回壁が来た場合、インターバルのみ精算。
-//					if (befWallType != 0) {
-//						sb.append(ALPHABET_AND_NUMBER.charAt(interval * 5 + (befWallType - 1)));
-//					} else {
-//						if (interval != 0) {
-//							sb.append(ALPHABET_AND_NUMBER.charAt(interval + 15));
-//						}
-//					}
-//					interval = 0;
-//					befWallType = wallType;
-//				}
-//			}
-//			// 最後の一文字
-//			if (befWallType != 0) {
-//				sb.append(ALPHABET_AND_NUMBER.charAt(10 + (befWallType - 1)));
-//			} else {
-//				if (interval != 0) {
-//					sb.append(ALPHABET_AND_NUMBER.charAt(interval + 15));
-//				}
-//			}
-//			if (sb.charAt(sb.length() - 1) == '.') {
-//				sb.append("/");
-//			}
+			sb.append("https://pzprxs.vercel.app/p?tajmahal/" + ((getXLength() - 1) / 2) + "/"
+					+ ((getYLength() - 1) / 2) + "/");
+			// 横壁処理
+			int interval = -1;
+			for (int yIndex = 1; yIndex < getYLength() - 1; yIndex++) {
+				for (int xIndex = 1; xIndex < getXLength() - 1; xIndex++) {
+					Position pos = new Position(yIndex, xIndex);
+					Integer number = numbersMap.get(pos);
+					if (number != null) {
+						if (interval >= 0) {
+							sb.append(ALPHABET.charAt(interval));
+							interval = -1;
+						}
+						sb.append(number);
+					} else {
+						if (interval == 25) {
+							sb.append("z");
+							interval = -1;
+						}
+						interval++;
+					}
+				}
+			}
+			// 最後の一文字
+			if (interval >= 0) {
+				sb.append(ALPHABET.charAt(interval));
+				interval = -1;
+			}
+			if (sb.charAt(sb.length() - 1) == '.') {
+				sb.append("/");
+			}
 			return sb.toString();
 		}
 
 		public String getHintCount() {
-			int wallCnt = 0;
-			int whiteCnt = 0;
-			int grayCnt = 0;
-			int blackCnt = 0;
-//			for (Entry<Position, Integer> entry : firstYokoWall.entrySet()) {
-//				wallCnt++;
-//				if (entry.getValue() == 4) {
-//					whiteCnt++;
-//				} else if (entry.getValue() == 3) {
-//					grayCnt++;
-//				} else if (entry.getValue() == 2) {
-//					blackCnt++;
-//				}
-//			}
-//			for (Entry<Position, Integer> entry : firstTateWall.entrySet()) {
-//				wallCnt++;
-//				if (entry.getValue() == 4) {
-//					whiteCnt++;
-//				} else if (entry.getValue() == 3) {
-//					grayCnt++;
-//				} else if (entry.getValue() == 2) {
-//					blackCnt++;
-//				}
-//			}
-			return wallCnt + "(" + whiteCnt + "/" + grayCnt + "/" + blackCnt + ")";
+			int numberCnt = 0;
+			for (Entry<Position, Integer> entry : numbersMap.entrySet()) {
+				if (entry.getValue() > 0) {
+					numberCnt++;
+				}
+			}
+			return numbersMap.size() + "/" + numberCnt;
 		}
 
 		public int getYLength() {
@@ -565,15 +530,16 @@ public class TajmahalSolver implements Solver {
 		 * プレーンなフィールド作成
 		 */
 		public Field(int height, int width) {
-			yLength = height;
-			xLength = width;
+			yLength = height * 2 + 1;
+			xLength = width * 2 + 1;
 			numbersMap = new HashMap<>();
-			initCand();
+			squareCand = new ArrayList<>();
+			squareFixed = new ArrayList<>();
 		}
 
 		public Field(int height, int width, ArrayList<Tatemono> cacheCand) {
-			yLength = height;
-			xLength = width;
+			yLength = height * 2 + 1;
+			xLength = width * 2 + 1;
 			numbersMap = new HashMap<>();
 			squareCand = new ArrayList<>(cacheCand);
 			squareFixed = new ArrayList<>();
@@ -617,7 +583,7 @@ public class TajmahalSolver implements Solver {
 									pos.getxIndex() - y, pos.getyIndex() + x));
 							myLineList.add(new Line2D.Double(pos.getxIndex() - y, pos.getyIndex() + x,
 									pos.getxIndex() - x, pos.getyIndex() - y));
-							squareCandBase.add(new Tatemono(pos, myLineList));
+							squareCandBase.add(new Tatemono(pos, myLineList, y + x));
 						}
 						if (isFirstBreak) {
 							break;
@@ -645,7 +611,7 @@ public class TajmahalSolver implements Solver {
 									pos.getxIndex() - y, pos.getyIndex() + x));
 							myLineList.add(new Line2D.Double(pos.getxIndex() - y, pos.getyIndex() + x,
 									pos.getxIndex() - x, pos.getyIndex() - y));
-							squareCandBase.add(new Tatemono(pos, myLineList));
+							squareCandBase.add(new Tatemono(pos, myLineList, y + x));
 						}
 						if (isFirstBreak) {
 							break;
@@ -742,6 +708,9 @@ public class TajmahalSolver implements Solver {
 				} else {
 					return solveAndCheck();
 				}
+			}
+			if (!finalSolve()) {
+				return false;
 			}
 			return true;
 		}
@@ -946,7 +915,7 @@ public class TajmahalSolver implements Solver {
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
 		System.out.println("難易度:" + (count));
 		System.out.println(field);
-		int level = (int) Math.sqrt(count / 3);
+		int level = (int) Math.sqrt(count / 3) + 1;
 		return "解けました。推定難易度:" + Difficulty.getByCount(count).toString() + "(Lv:" + level + ")";
 	}
 

@@ -429,6 +429,11 @@ var ruleMap = {
 		url : "https://pzprxs.vercel.app/rules.html?voxas",
 		source : "pzprxsさん"
 	},
+	tajmahal : {
+		name : "タージ・マハル",
+		url : "https://pzprxs.vercel.app/rules.html?tajmahal",
+		source : "pzprxsさん"
+	},
 }
 var regMap = {
 		yajilin:[{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},
