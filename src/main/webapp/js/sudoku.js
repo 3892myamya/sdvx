@@ -434,6 +434,11 @@ var ruleMap = {
 		url : "https://pzprxs.vercel.app/rules.html?tajmahal",
 		source : "pzprxsさん"
 	},
+	lither : {
+		name : "Litherslink",
+		url : "https://pzprxs.vercel.app/rules.html?lither",
+		source : "pzprxsさん"
+	},
 }
 var regMap = {
 		yajilin:[{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},
@@ -874,7 +879,7 @@ $(function() {
 			if (type == 'sudoku' || type == 'akari' || type == 'slither'
 				|| type == 'creek' || type == 'gokigen' || type == 'tapa'
 				|| type == 'bag' || type == 'kurodoko' || type == 'sukoro'
-				|| type == 'walllogic' || type == 'tateyoko') {
+				|| type == 'walllogic' || type == 'tateyoko' || type == 'lither') {
 				$('#lbl_pattern').show();
 				$('#sel_pattern').show();
 			} else {
@@ -1039,7 +1044,8 @@ $(function() {
 					|| type == 'fillmat' || type == 'aqre'
 					|| type == 'fillomino' || type == 'lookair'
 					|| type == 'las' || type == 'norinuri' 
-					|| type == 'nurisan' || type == 'cocktail' || type == 'voxas') {
+					|| type == 'nurisan' || type == 'cocktail' 
+					|| type == 'voxas' || type == 'lither') {
 				$('#sel_size').append(option.size_3);
 				$('#sel_size').append(option.size_4);
 				$('#sel_size').append(option.size_5);

@@ -45,6 +45,7 @@ import myamya.other.solver.icebarn.IcebarnSolver.IcebarnGenerator;
 import myamya.other.solver.kurodoko.KurodokoSolver.KurodokoGenerator;
 import myamya.other.solver.kurotto.KurottoSolver.KurottoGenerator;
 import myamya.other.solver.las.LasSolver.LasGenerator;
+import myamya.other.solver.lither.LitherSolver.LitherGenerator;
 import myamya.other.solver.lookair.LookairSolver.LookairGenerator;
 import myamya.other.solver.masyu.MasyuSolver.MasyuGenerator;
 import myamya.other.solver.meander.MeanderSolver.MeanderGenerator;
@@ -1488,6 +1489,24 @@ public class SudokuGachaWeb extends HttpServlet {
 
 	}
 
+	static class LitherGeneratorThlead extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+		protected final int pattern;
+
+		LitherGeneratorThlead(int height, int width, int pattern) {
+			this.height = height;
+			this.width = width;
+			this.pattern = pattern;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new LitherGenerator(height, width, HintPattern.getByVal(pattern, height, width));
+		}
+
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -1687,6 +1706,9 @@ public class SudokuGachaWeb extends HttpServlet {
 				t = new VoxasGeneratorThlead(height, width);
 			} else if (type.equals("tajmahal")) {
 				t = new TajmahalGeneratorThlead(height, width);
+			} else if (type.equals("lither")) {
+				int pattern = Integer.parseInt(request.getParameter("pattern"));
+				t = new LitherGeneratorThlead(height, width, pattern);
 			} else {
 				throw new IllegalArgumentException();
 			}

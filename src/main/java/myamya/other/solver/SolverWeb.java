@@ -96,6 +96,7 @@ import myamya.other.solver.kurodoko.KurodokoSolver;
 import myamya.other.solver.kurotto.KurottoSolver;
 import myamya.other.solver.las.LasSolver;
 import myamya.other.solver.linedozen.LinedozenSolver;
+import myamya.other.solver.lither.LitherSolver;
 import myamya.other.solver.lits.LitsSolver;
 import myamya.other.solver.lookair.LookairSolver;
 import myamya.other.solver.loopsp.LoopspSolver;
@@ -14269,10 +14270,93 @@ public class SolverWeb extends HttpServlet {
 			for (Tatemono tatemono : field.getSquareFixed()) {
 				for (Line2D myLine : tatemono.getMyLineList()) {
 					sb.append("<line y1=\"" + (myLine.getY1() * baseSize + margin) + "\" x1=\""
-							+ (myLine.getX1() * baseSize + baseSize) + "\" y2=\""
-							+ (myLine.getY2() * baseSize + margin) + "\" x2=\""
-							+ (myLine.getX2() * baseSize + baseSize) + "\" stroke-width=\"2\" fill=\"none\"");
+							+ (myLine.getX1() * baseSize + baseSize) + "\" y2=\"" + (myLine.getY2() * baseSize + margin)
+							+ "\" x2=\"" + (myLine.getX2() * baseSize + baseSize)
+							+ "\" stroke-width=\"2\" fill=\"none\"");
 					sb.append("stroke=\"green\" ");
+					sb.append(">" + "</line>");
+				}
+			}
+			sb.append("</svg>");
+			return sb.toString();
+		}
+
+	}
+
+	static class LitherSolverThread extends AbsSolverThlead {
+		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
+		private static final String FULL_NUMS = "０１２３４５６７８９";
+
+		LitherSolverThread(int height, int width, String param) {
+			super(height, width, param);
+		}
+
+		@Override
+		protected Solver getSolver() {
+			return new LitherSolver(height, width, param);
+		}
+
+		@Override
+		public String makeCambus() {
+			StringBuilder sb = new StringBuilder();
+			LitherSolver.Field field = ((LitherSolver) solver).getField();
+			int baseSize = 20;
+			int margin = 5;
+			sb.append("<svg xmlns=\"http://www.w3.org/2000/svg\" " + "height=\""
+					+ (field.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
+					+ (field.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					Integer number = field.getNumbers()[yIndex][xIndex];
+					if (number != null) {
+						String numberStr = String.valueOf(number);
+						int index = HALF_NUMS.indexOf(numberStr);
+						String masuStr = null;
+						if (index >= 0) {
+							masuStr = FULL_NUMS.substring(index / 2, index / 2 + 1);
+						} else {
+							masuStr = numberStr;
+						}
+						sb.append("<text y=\"" + (yIndex * baseSize + baseSize + margin - 4) + "\" x=\""
+								+ (xIndex * baseSize + baseSize + 2) + "\" font-size=\"" + (baseSize - 5)
+								+ "\" textLength=\"" + (baseSize - 5) + "\" lengthAdjust=\"spacingAndGlyphs\">"
+								+ masuStr + "</text>");
+					}
+				}
+			}
+			// 点描画
+			for (int yIndex = 0; yIndex < field.getYLength() + 1; yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength() + 1; xIndex++) {
+					sb.append(
+							"<circle cy=\"" + (yIndex * baseSize + margin) + "\" cx=\"" + (xIndex * baseSize + baseSize)
+									+ "\" r=\"" + 1 + "\" fill=\"black\", stroke=\"black\">" + "</circle>");
+				}
+			}
+			// 横壁描画
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength() + 1; xIndex++) {
+					boolean oneYokoWall = field.getYokoExtraWall()[yIndex][xIndex] == Wall.EXISTS;
+					if (oneYokoWall) {
+						sb.append("<line y1=\"" + (yIndex * baseSize + margin) + "\" x1=\""
+								+ ((xIndex - 1) * baseSize + 2 * baseSize) + "\" y2=\""
+								+ (yIndex * baseSize + baseSize + margin) + "\" x2=\""
+								+ ((xIndex - 1) * baseSize + 2 * baseSize) + "\" stroke-width=\"1\" fill=\"none\"");
+						sb.append("stroke=\"#000\" ");
+					}
+					sb.append(">" + "</line>");
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = 0; yIndex < field.getYLength() + 1; yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					boolean oneTateWall = field.getTateExtraWall()[yIndex][xIndex] == Wall.EXISTS;
+					if (oneTateWall) {
+						sb.append("<line y1=\"" + (yIndex * baseSize + margin) + "\" x1=\""
+								+ (xIndex * baseSize + baseSize) + "\" y2=\"" + (yIndex * baseSize + margin)
+								+ "\" x2=\"" + (xIndex * baseSize + baseSize + baseSize)
+								+ "\" stroke-width=\"1\" fill=\"none\"");
+						sb.append("stroke=\"#000\" ");
+					}
 					sb.append(">" + "</line>");
 				}
 			}
@@ -14661,6 +14745,8 @@ public class SolverWeb extends HttpServlet {
 						t = new DotchiloopSolverThread(height, width, param);
 					} else if (puzzleType.contains("tajmahal")) {
 						t = new TajmahalSolverThread(height, width, param);
+					} else if (puzzleType.contains("lither") && !puzzleType.contains("slither")) {
+						t = new LitherSolverThread(height, width, param);
 					} else {
 						throw new IllegalArgumentException();
 					}
