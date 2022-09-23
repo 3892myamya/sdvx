@@ -59,6 +59,7 @@ import myamya.other.solver.countlink.CountlinkSolver;
 import myamya.other.solver.country.CountrySolver;
 import myamya.other.solver.creek.CreekSolver;
 import myamya.other.solver.detour.DetourSolver;
+import myamya.other.solver.dominion.DominionSolver;
 import myamya.other.solver.dominofield.DominofieldSolver;
 import myamya.other.solver.doppelblock.DoppelblockSolver;
 import myamya.other.solver.dosufuwa.DosufuwaSolver;
@@ -14366,6 +14367,146 @@ public class SolverWeb extends HttpServlet {
 
 	}
 
+	static class DominionSolverThread extends AbsSolverThlead {
+		private static final HashMap<Integer, String> NUMBER_MAP = new HashMap<>();
+		{
+			NUMBER_MAP.put(-1, "？");
+			NUMBER_MAP.put(1, "Ａ");
+			NUMBER_MAP.put(2, "Ｂ");
+			NUMBER_MAP.put(3, "Ｃ");
+			NUMBER_MAP.put(4, "Ｄ");
+			NUMBER_MAP.put(5, "Ｅ");
+			NUMBER_MAP.put(6, "Ｆ");
+			NUMBER_MAP.put(7, "Ｇ");
+			NUMBER_MAP.put(8, "Ｈ");
+			NUMBER_MAP.put(9, "Ｉ");
+			NUMBER_MAP.put(10, "Ｊ");
+			NUMBER_MAP.put(11, "Ｋ");
+			NUMBER_MAP.put(12, "Ｌ");
+			NUMBER_MAP.put(13, "Ｍ");
+			NUMBER_MAP.put(14, "Ｎ");
+			NUMBER_MAP.put(15, "Ｏ");
+			NUMBER_MAP.put(16, "Ｐ");
+			NUMBER_MAP.put(17, "Ｑ");
+			NUMBER_MAP.put(18, "Ｒ");
+			NUMBER_MAP.put(19, "Ｓ");
+			NUMBER_MAP.put(20, "Ｔ");
+			NUMBER_MAP.put(21, "Ｕ");
+			NUMBER_MAP.put(22, "Ｖ");
+			NUMBER_MAP.put(23, "Ｗ");
+			NUMBER_MAP.put(24, "Ｘ");
+			NUMBER_MAP.put(25, "Ｙ");
+			NUMBER_MAP.put(26, "Ｚ");
+			NUMBER_MAP.put(27, "ａ");
+			NUMBER_MAP.put(28, "ｂ");
+			NUMBER_MAP.put(29, "ｃ");
+			NUMBER_MAP.put(30, "ｄ");
+			NUMBER_MAP.put(31, "ｅ");
+			NUMBER_MAP.put(32, "ｆ");
+			NUMBER_MAP.put(33, "ｇ");
+			NUMBER_MAP.put(34, "ｈ");
+			NUMBER_MAP.put(35, "ｉ");
+			NUMBER_MAP.put(36, "ｊ");
+			NUMBER_MAP.put(37, "ｋ");
+			NUMBER_MAP.put(38, "ｌ");
+			NUMBER_MAP.put(39, "ｍ");
+			NUMBER_MAP.put(40, "ｎ");
+			NUMBER_MAP.put(41, "ｏ");
+			NUMBER_MAP.put(42, "ｐ");
+			NUMBER_MAP.put(43, "ｑ");
+			NUMBER_MAP.put(44, "ｒ");
+			NUMBER_MAP.put(45, "ｓ");
+			NUMBER_MAP.put(46, "ｔ");
+			NUMBER_MAP.put(47, "ｕ");
+			NUMBER_MAP.put(48, "ｖ");
+			NUMBER_MAP.put(49, "ｗ");
+			NUMBER_MAP.put(50, "ｘ");
+			NUMBER_MAP.put(51, "ｙ");
+			NUMBER_MAP.put(52, "ｚ");
+		}
+
+		DominionSolverThread(int height, int width, String param) {
+			super(height, width, param);
+		}
+
+		@Override
+		protected Solver getSolver() {
+			return new DominionSolver(height, width, param);
+		}
+
+		@Override
+		public String makeCambus() {
+			StringBuilder sb = new StringBuilder();
+			DominionSolver.Field field = ((DominionSolver) solver).getField();
+			int baseSize = 20;
+			int margin = 5;
+			sb.append("<svg xmlns=\"http://www.w3.org/2000/svg\" " + "height=\""
+					+ (field.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
+					+ (field.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					Masu oneMasu = field.getMasu()[yIndex][xIndex];
+					if (oneMasu.toString().equals("■")) {
+						sb.append(
+								"<rect y=\"" + (yIndex * baseSize + margin) + "\" x=\"" + (xIndex * baseSize + baseSize)
+										+ "\" width=\"" + (baseSize) + "\" height=\"" + (baseSize) + "\">" + "</rect>");
+					} else if (oneMasu.toString().equals("・")) {
+						sb.append("<rect y=\"" + (yIndex * baseSize + margin) + "\" x=\""
+								+ (xIndex * baseSize + baseSize) + "\" fill=\"" + "palegreen" + "\" width=\""
+								+ (baseSize) + "\" height=\"" + (baseSize) + "\">" + "</rect>");
+					}
+					if (field.getNumbers()[yIndex][xIndex] != null) {
+						sb.append("<text y=\"" + (yIndex * baseSize + baseSize + margin - 4) + "\" x=\""
+								+ (xIndex * baseSize + baseSize + 2) + "\" font-size=\"" + (baseSize - 5)
+								+ "\" textLength=\"" + (baseSize - 5) + "\" lengthAdjust=\"spacingAndGlyphs\">"
+								+ NUMBER_MAP.get(field.getNumbers()[yIndex][xIndex]) + "</text>");
+					}
+				}
+			}
+			// 横壁描画
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = -1; xIndex < field.getXLength(); xIndex++) {
+					boolean oneYokoWall = xIndex == -1 || xIndex == field.getXLength() - 1;
+					sb.append("<line y1=\"" + (yIndex * baseSize + margin) + "\" x1=\""
+							+ (xIndex * baseSize + 2 * baseSize) + "\" y2=\"" + (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\"" + (xIndex * baseSize + 2 * baseSize) + "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneYokoWall) {
+						if (xIndex == -1 || xIndex == field.getXLength() - 1) {
+							sb.append("stroke=\"#000\" ");
+						} else {
+							sb.append("stroke=\"green\" ");
+						}
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">" + "</line>");
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = -1; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					boolean oneTateWall = yIndex == -1 || yIndex == field.getYLength() - 1;
+					sb.append("<line y1=\"" + (yIndex * baseSize + baseSize + margin) + "\" x1=\""
+							+ (xIndex * baseSize + baseSize) + "\" y2=\"" + (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\"" + (xIndex * baseSize + baseSize + baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneTateWall) {
+						if (yIndex == -1 || yIndex == field.getYLength() - 1) {
+							sb.append("stroke=\"#000\" ");
+						} else {
+							sb.append("stroke=\"green\" ");
+						}
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">" + "</line>");
+				}
+			}
+			sb.append("</svg>");
+			return sb.toString();
+		}
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -14747,6 +14888,8 @@ public class SolverWeb extends HttpServlet {
 						t = new TajmahalSolverThread(height, width, param);
 					} else if (puzzleType.contains("lither") && !puzzleType.contains("slither")) {
 						t = new LitherSolverThread(height, width, param);
+					} else if (puzzleType.contains("dominion")) {
+						t = new DominionSolverThread(height, width, param);
 					} else {
 						throw new IllegalArgumentException();
 					}

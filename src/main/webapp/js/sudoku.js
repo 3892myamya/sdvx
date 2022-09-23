@@ -439,6 +439,11 @@ var ruleMap = {
 		url : "https://pzprxs.vercel.app/rules.html?lither",
 		source : "pzprxsさん"
 	},
+	dominion : {
+		name : "ドミニオン",
+		url : "https://pzprxs.vercel.app/rules.html?dominion",
+		source : "pzprxsさん"
+	},
 }
 var regMap = {
 		yajilin:[{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},

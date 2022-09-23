@@ -773,6 +773,37 @@ public class LitherSolver implements Solver {
 		}
 
 		/**
+		 * フィールドに木が2つは必要。めったにないが、一応チェック
+		 */
+		private boolean finalSolve2() {
+			// 1つでも未確定マスがあればスキップ
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength() + 1; xIndex++) {
+					if (yokoExtraWall[yIndex][xIndex] == Wall.SPACE) {
+						return true;
+					}
+				}
+			}
+			for (int yIndex = 0; yIndex < getYLength() + 1; yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					if (tateExtraWall[yIndex][xIndex] == Wall.SPACE) {
+						return true;
+					}
+				}
+			}
+			// 左上のマスからたどる
+			Position pos = new Position(0, 0);
+			Set<Position> continuePosSet = new HashSet<>();
+			continuePosSet.add(pos);
+			setContinuePosSet(pos, continuePosSet, null);
+			// 全マス到達は木が1本なのでアウト
+			if (continuePosSet.size() == (getYLength() + 1) * (getXLength() + 1)) {
+				return false;
+			}
+			return true;
+		}
+
+		/**
 		 * 各種チェックを1セット実行
 		 * 
 		 * @param recursive
@@ -792,6 +823,9 @@ public class LitherSolver implements Solver {
 					return false;
 				}
 				if (!finalSolve()) {
+					return false;
+				}
+				if (!finalSolve2()) {
 					return false;
 				}
 			}
