@@ -444,6 +444,11 @@ var ruleMap = {
 		url : "https://pzprxs.vercel.app/rules.html?dominion",
 		source : "pzprxsさん"
 	},
+	lollipops : {
+		name : "ペロペロキャンディ",
+		url : "https://puzz.link/rules.html?lollipops",
+		source : "puzz.linkさん"
+	},
 }
 var regMap = {
 		yajilin:[{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},
