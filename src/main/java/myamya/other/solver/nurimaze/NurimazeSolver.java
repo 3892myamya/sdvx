@@ -98,8 +98,7 @@ public class NurimazeSolver implements Solver {
 					if (nowPos.getyIndex() != 0) {
 						Position candPos = new Position(nowPos.getyIndex() - 1, nowPos.getxIndex());
 						if (wkField.masu[candPos.getyIndex()][candPos.getxIndex()] == Masu.NOT_BLACK
-								&&
-								!resolvePosSet.contains(candPos)) {
+								&& !resolvePosSet.contains(candPos)) {
 							nextPosList.add(candPos);
 							resolvePosSet.add(candPos);
 						}
@@ -107,8 +106,7 @@ public class NurimazeSolver implements Solver {
 					if (nowPos.getxIndex() != wkField.getXLength() - 1) {
 						Position candPos = new Position(nowPos.getyIndex(), nowPos.getxIndex() + 1);
 						if (wkField.masu[candPos.getyIndex()][candPos.getxIndex()] == Masu.NOT_BLACK
-								&&
-								!resolvePosSet.contains(candPos)) {
+								&& !resolvePosSet.contains(candPos)) {
 							nextPosList.add(candPos);
 							resolvePosSet.add(candPos);
 						}
@@ -116,8 +114,7 @@ public class NurimazeSolver implements Solver {
 					if (nowPos.getyIndex() != wkField.getYLength() - 1) {
 						Position candPos = new Position(nowPos.getyIndex() + 1, nowPos.getxIndex());
 						if (wkField.masu[candPos.getyIndex()][candPos.getxIndex()] == Masu.NOT_BLACK
-								&&
-								!resolvePosSet.contains(candPos)) {
+								&& !resolvePosSet.contains(candPos)) {
 							nextPosList.add(candPos);
 							resolvePosSet.add(candPos);
 						}
@@ -125,8 +122,7 @@ public class NurimazeSolver implements Solver {
 					if (nowPos.getxIndex() != 0) {
 						Position candPos = new Position(nowPos.getyIndex(), nowPos.getxIndex() - 1);
 						if (wkField.masu[candPos.getyIndex()][candPos.getxIndex()] == Masu.NOT_BLACK
-								&&
-								!resolvePosSet.contains(candPos)) {
+								&& !resolvePosSet.contains(candPos)) {
 							nextPosList.add(candPos);
 							resolvePosSet.add(candPos);
 						}
@@ -135,8 +131,7 @@ public class NurimazeSolver implements Solver {
 				if (nextPosList.isEmpty()) {
 					break;
 				} else {
-					distanceMap.put(++distance,
-							nextPosList);
+					distanceMap.put(++distance, nextPosList);
 				}
 			}
 			return distanceMap;
@@ -252,8 +247,7 @@ public class NurimazeSolver implements Solver {
 					}
 					if (!isOk) {
 						// 破綻したら0から作り直す。
-						wkField = new NurimazeSolver.Field(height, width,
-								RoomMaker.roomMake(height, width, -1, 3));
+						wkField = new NurimazeSolver.Field(height, width, RoomMaker.roomMake(height, width, -1, 3));
 					} else {
 						// スタート、ゴール、ルートを決める
 						Position pivot = null;
@@ -327,8 +321,7 @@ public class NurimazeSolver implements Solver {
 				level = new NurimazeSolverForGenerator(wkField, 200).solve2();
 				if (level == -1) {
 					// 解けなければやり直し
-					wkField = new NurimazeSolver.Field(height, width,
-							RoomMaker.roomMake(height, width, -1, 3));
+					wkField = new NurimazeSolver.Field(height, width, RoomMaker.roomMake(height, width, -1, 3));
 				} else {
 					Collections.shuffle(fixedMasuList);
 					for (Position pos : fixedMasuList) {
@@ -381,43 +374,29 @@ public class NurimazeSolver implements Solver {
 					wkField.tateWall[yIndex][xIndex] = isWall;
 				}
 			}
-			level = (int) Math.sqrt(level / 3) + 1;
+			level = (int) Math.sqrt(level * 3 / 3) + 1;
 			String status = "Lv:" + level + "の問題を獲得！(部屋/○/△：" + wkField.getHintCount() + ")";
 			String url = wkField.getPuzPreURL();
 			String link = "<a href=\"" + url + "\" target=\"_blank\">ぱずぷれv3で解く</a>";
 			StringBuilder sb = new StringBuilder();
 			int baseSize = 20;
 			int margin = 5;
-			sb.append(
-					"<svg xmlns=\"http://www.w3.org/2000/svg\" "
-							+ "height=\"" + (wkField.getYLength() * baseSize + 2 * baseSize + margin)
-							+ "\" width=\""
-							+ (wkField.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			sb.append("<svg xmlns=\"http://www.w3.org/2000/svg\" " + "height=\""
+					+ (wkField.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
+					+ (wkField.getXLength() * baseSize + 2 * baseSize) + "\" >");
 			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
 					if (wkField.mark[yIndex][xIndex] != null) {
 						Mark mark = wkField.mark[yIndex][xIndex];
 						if (mark == Mark.OK) {
-							sb.append("<circle cy=\"" + (yIndex * baseSize + (baseSize / 2) + margin)
-									+ "\" cx=\""
-									+ (xIndex * baseSize + baseSize + (baseSize / 2))
-									+ "\" r=\""
-									+ (baseSize / 2 - 3)
-									+ "\" fill=\"white\", stroke=\"black\">"
-									+ "</circle>");
+							sb.append("<circle cy=\"" + (yIndex * baseSize + (baseSize / 2) + margin) + "\" cx=\""
+									+ (xIndex * baseSize + baseSize + (baseSize / 2)) + "\" r=\"" + (baseSize / 2 - 3)
+									+ "\" fill=\"white\", stroke=\"black\">" + "</circle>");
 						} else {
-							sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 4 + margin)
-									+ "\" x=\""
-									+ (xIndex * baseSize + baseSize + 2)
-									+ "\" font-size=\""
-									+ (baseSize - 5)
-									+ "\" textLength=\""
-									+ (baseSize - 5)
-									+ "\" fill=\""
-									+ "black"
-									+ "\" lengthAdjust=\"spacingAndGlyphs\">"
-									+ mark.toString()
-									+ "</text>");
+							sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 4 + margin) + "\" x=\""
+									+ (xIndex * baseSize + baseSize + 2) + "\" font-size=\"" + (baseSize - 5)
+									+ "\" textLength=\"" + (baseSize - 5) + "\" fill=\"" + "black"
+									+ "\" lengthAdjust=\"spacingAndGlyphs\">" + mark.toString() + "</text>");
 						}
 					}
 				}
@@ -427,22 +406,15 @@ public class NurimazeSolver implements Solver {
 				for (int xIndex = -1; xIndex < wkField.getXLength(); xIndex++) {
 					boolean oneYokoWall = xIndex == -1 || xIndex == wkField.getXLength() - 1
 							|| wkField.getYokoWall()[yIndex][xIndex];
-					sb.append("<line y1=\""
-							+ (yIndex * baseSize + margin)
-							+ "\" x1=\""
-							+ (xIndex * baseSize + 2 * baseSize)
-							+ "\" y2=\""
-							+ (yIndex * baseSize + baseSize + margin)
-							+ "\" x2=\""
-							+ (xIndex * baseSize + 2 * baseSize)
-							+ "\" stroke-width=\"1\" fill=\"none\"");
+					sb.append("<line y1=\"" + (yIndex * baseSize + margin) + "\" x1=\""
+							+ (xIndex * baseSize + 2 * baseSize) + "\" y2=\"" + (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\"" + (xIndex * baseSize + 2 * baseSize) + "\" stroke-width=\"1\" fill=\"none\"");
 					if (oneYokoWall) {
 						sb.append("stroke=\"#000\" ");
 					} else {
 						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
 					}
-					sb.append(">"
-							+ "</line>");
+					sb.append(">" + "</line>");
 				}
 			}
 			// 縦壁描画
@@ -450,22 +422,16 @@ public class NurimazeSolver implements Solver {
 				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
 					boolean oneTateWall = yIndex == -1 || yIndex == wkField.getYLength() - 1
 							|| wkField.getTateWall()[yIndex][xIndex];
-					sb.append("<line y1=\""
-							+ (yIndex * baseSize + baseSize + margin)
-							+ "\" x1=\""
-							+ (xIndex * baseSize + baseSize)
-							+ "\" y2=\""
-							+ (yIndex * baseSize + baseSize + margin)
-							+ "\" x2=\""
-							+ (xIndex * baseSize + baseSize + baseSize)
+					sb.append("<line y1=\"" + (yIndex * baseSize + baseSize + margin) + "\" x1=\""
+							+ (xIndex * baseSize + baseSize) + "\" y2=\"" + (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\"" + (xIndex * baseSize + baseSize + baseSize)
 							+ "\" stroke-width=\"1\" fill=\"none\"");
 					if (oneTateWall) {
 						sb.append("stroke=\"#000\" ");
 					} else {
 						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
 					}
-					sb.append(">"
-							+ "</line>");
+					sb.append(">" + "</line>");
 				}
 			}
 			sb.append("</svg>");
@@ -805,9 +771,9 @@ public class NurimazeSolver implements Solver {
 				} else {
 					Position markPos = new Position(index / getXLength(), index % getXLength());
 					mark[markPos.getyIndex()][markPos.getxIndex()] = Mark.getByVal(Character.getNumericValue(ch));
-					if (mark[markPos.getyIndex()][markPos.getxIndex()] == Mark.START ||
-							mark[markPos.getyIndex()][markPos.getxIndex()] == Mark.OK ||
-							mark[markPos.getyIndex()][markPos.getxIndex()] == Mark.GOAL) {
+					if (mark[markPos.getyIndex()][markPos.getxIndex()] == Mark.START
+							|| mark[markPos.getyIndex()][markPos.getxIndex()] == Mark.OK
+							|| mark[markPos.getyIndex()][markPos.getxIndex()] == Mark.GOAL) {
 						route[markPos.getyIndex()][markPos.getxIndex()] = Masu.BLACK;
 					} else if (mark[markPos.getyIndex()][markPos.getxIndex()] == Mark.NG) {
 						route[markPos.getyIndex()][markPos.getxIndex()] = Masu.NOT_BLACK;
@@ -856,8 +822,7 @@ public class NurimazeSolver implements Solver {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
 					for (Set<Position> room : rooms) {
 						ArrayList<Position> target = new ArrayList<>(room);
-						if (room.contains(new Position(yIndex, xIndex)) &&
-								!this.rooms.contains(target)) {
+						if (room.contains(new Position(yIndex, xIndex)) && !this.rooms.contains(target)) {
 							this.rooms.add(target);
 						}
 					}
@@ -977,8 +942,7 @@ public class NurimazeSolver implements Solver {
 		}
 
 		/**
-		 * 同じ部屋のマスは同じ色になる。
-		 * 混在している場合falseを返す。
+		 * 同じ部屋のマスは同じ色になる。 混在している場合falseを返す。
 		 */
 		private boolean roomSolve() {
 			for (List<Position> room : rooms) {
@@ -1010,8 +974,7 @@ public class NurimazeSolver implements Solver {
 		}
 
 		/**
-		 * 置くと池・逆池ができるマスを白・黒マスにする。
-		 * 既に池・逆池ができている場合falseを返す。
+		 * 置くと池・逆池ができるマスを白・黒マスにする。 既に池・逆池ができている場合falseを返す。
 		 */
 		public boolean pondSolve() {
 			for (int yIndex = 0; yIndex < getYLength() - 1; yIndex++) {
@@ -1020,28 +983,23 @@ public class NurimazeSolver implements Solver {
 					Masu masu2 = masu[yIndex][xIndex + 1];
 					Masu masu3 = masu[yIndex + 1][xIndex];
 					Masu masu4 = masu[yIndex + 1][xIndex + 1];
-					if (masu1 == Masu.BLACK && masu2 == Masu.BLACK && masu3 == Masu.BLACK
-							&& masu4 == Masu.BLACK) {
+					if (masu1 == Masu.BLACK && masu2 == Masu.BLACK && masu3 == Masu.BLACK && masu4 == Masu.BLACK) {
 						return false;
 					}
 					if (masu1 == Masu.NOT_BLACK && masu2 == Masu.NOT_BLACK && masu3 == Masu.NOT_BLACK
 							&& masu4 == Masu.NOT_BLACK) {
 						return false;
 					}
-					if (masu1 == Masu.BLACK && masu2 == Masu.BLACK && masu3 == Masu.BLACK
-							&& masu4 == Masu.SPACE) {
+					if (masu1 == Masu.BLACK && masu2 == Masu.BLACK && masu3 == Masu.BLACK && masu4 == Masu.SPACE) {
 						masu[yIndex + 1][xIndex + 1] = Masu.NOT_BLACK;
 					}
-					if (masu1 == Masu.BLACK && masu2 == Masu.BLACK && masu3 == Masu.SPACE
-							&& masu4 == Masu.BLACK) {
+					if (masu1 == Masu.BLACK && masu2 == Masu.BLACK && masu3 == Masu.SPACE && masu4 == Masu.BLACK) {
 						masu[yIndex + 1][xIndex] = Masu.NOT_BLACK;
 					}
-					if (masu1 == Masu.BLACK && masu2 == Masu.SPACE && masu3 == Masu.BLACK
-							&& masu4 == Masu.BLACK) {
+					if (masu1 == Masu.BLACK && masu2 == Masu.SPACE && masu3 == Masu.BLACK && masu4 == Masu.BLACK) {
 						masu[yIndex][xIndex + 1] = Masu.NOT_BLACK;
 					}
-					if (masu1 == Masu.SPACE && masu2 == Masu.BLACK && masu3 == Masu.BLACK
-							&& masu4 == Masu.BLACK) {
+					if (masu1 == Masu.SPACE && masu2 == Masu.BLACK && masu3 == Masu.BLACK && masu4 == Masu.BLACK) {
 						masu[yIndex][xIndex] = Masu.NOT_BLACK;
 					}
 					if (masu1 == Masu.NOT_BLACK && masu2 == Masu.NOT_BLACK && masu3 == Masu.NOT_BLACK
@@ -1109,32 +1067,28 @@ public class NurimazeSolver implements Solver {
 		private void setContinueWhitePosSet(Position pos, Set<Position> continuePosSet, Direction from) {
 			if (pos.getyIndex() != 0 && from != Direction.UP) {
 				Position nextPos = new Position(pos.getyIndex() - 1, pos.getxIndex());
-				if (!continuePosSet.contains(nextPos)
-						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.BLACK) {
+				if (!continuePosSet.contains(nextPos) && masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.BLACK) {
 					continuePosSet.add(nextPos);
 					setContinueWhitePosSet(nextPos, continuePosSet, Direction.DOWN);
 				}
 			}
 			if (pos.getxIndex() != getXLength() - 1 && from != Direction.RIGHT) {
 				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() + 1);
-				if (!continuePosSet.contains(nextPos)
-						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.BLACK) {
+				if (!continuePosSet.contains(nextPos) && masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.BLACK) {
 					continuePosSet.add(nextPos);
 					setContinueWhitePosSet(nextPos, continuePosSet, Direction.LEFT);
 				}
 			}
 			if (pos.getyIndex() != getYLength() - 1 && from != Direction.DOWN) {
 				Position nextPos = new Position(pos.getyIndex() + 1, pos.getxIndex());
-				if (!continuePosSet.contains(nextPos)
-						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.BLACK) {
+				if (!continuePosSet.contains(nextPos) && masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.BLACK) {
 					continuePosSet.add(nextPos);
 					setContinueWhitePosSet(nextPos, continuePosSet, Direction.UP);
 				}
 			}
 			if (pos.getxIndex() != 0 && from != Direction.LEFT) {
 				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() - 1);
-				if (!continuePosSet.contains(nextPos)
-						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.BLACK) {
+				if (!continuePosSet.contains(nextPos) && masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.BLACK) {
 					continuePosSet.add(nextPos);
 					setContinueWhitePosSet(nextPos, continuePosSet, Direction.RIGHT);
 				}
@@ -1224,42 +1178,52 @@ public class NurimazeSolver implements Solver {
 		}
 
 		/**
-		 * 経路には以下の特徴がある。
-		 * ・黒マスは必ず経路外。
-		 * ・白マスで、S、Gに接する経路は必ず1マス。
-		 * ・白マスで、S、G以外の経路内のマスに接する経路は必ず2マス。
+		 * 経路には以下の特徴がある。 <br>
+		 * ・経路は必ず白マス。<br>
+		 * ・黒マスは必ず経路外。 <br>
+		 * ・S、Gに接する経路は必ず1マス。 <br>
+		 * ・S、G以外の経路マスに接する経路は必ず2マス。 <br>
+		 * ・2つの経路マスに接する白マスは必ず経路。 <br>
+		 * ・3つの経路マスに接する白マスはNG。<br>
+		 * ・3つ以上の経路でないマスに接するマスは必ず経路外。<br>
 		 */
 		private boolean mazeSolve() {
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					if (route[yIndex][xIndex] == Masu.BLACK) {
+						if (masu[yIndex][xIndex] == Masu.BLACK) {
+							return false;
+						}
+						masu[yIndex][xIndex] = Masu.NOT_BLACK;
+					}
 					if (masu[yIndex][xIndex] == Masu.NOT_BLACK) {
+						int blackCnt = 0;
+						int whiteCnt = 0;
+						Masu routeUp = yIndex == 0 ? Masu.NOT_BLACK : route[yIndex - 1][xIndex];
+						Masu routeRight = xIndex == getXLength() - 1 ? Masu.NOT_BLACK : route[yIndex][xIndex + 1];
+						Masu routeDown = yIndex == getYLength() - 1 ? Masu.NOT_BLACK : route[yIndex + 1][xIndex];
+						Masu routeLeft = xIndex == 0 ? Masu.NOT_BLACK : route[yIndex][xIndex - 1];
+						if (routeUp == Masu.BLACK) {
+							blackCnt++;
+						} else if (routeUp == Masu.NOT_BLACK) {
+							whiteCnt++;
+						}
+						if (routeRight == Masu.BLACK) {
+							blackCnt++;
+						} else if (routeRight == Masu.NOT_BLACK) {
+							whiteCnt++;
+						}
+						if (routeDown == Masu.BLACK) {
+							blackCnt++;
+						} else if (routeDown == Masu.NOT_BLACK) {
+							whiteCnt++;
+						}
+						if (routeLeft == Masu.BLACK) {
+							blackCnt++;
+						} else if (routeLeft == Masu.NOT_BLACK) {
+							whiteCnt++;
+						}
 						if (route[yIndex][xIndex] == Masu.BLACK) {
-							int blackCnt = 0;
-							int whiteCnt = 0;
-							Masu routeUp = yIndex == 0 ? Masu.NOT_BLACK : route[yIndex - 1][xIndex];
-							Masu routeRight = xIndex == getXLength() - 1 ? Masu.NOT_BLACK : route[yIndex][xIndex + 1];
-							Masu routeDown = yIndex == getYLength() - 1 ? Masu.NOT_BLACK : route[yIndex + 1][xIndex];
-							Masu routeLeft = xIndex == 0 ? Masu.NOT_BLACK : route[yIndex][xIndex - 1];
-							if (routeUp == Masu.BLACK) {
-								blackCnt++;
-							} else if (routeUp == Masu.NOT_BLACK) {
-								whiteCnt++;
-							}
-							if (routeRight == Masu.BLACK) {
-								blackCnt++;
-							} else if (routeRight == Masu.NOT_BLACK) {
-								whiteCnt++;
-							}
-							if (routeDown == Masu.BLACK) {
-								blackCnt++;
-							} else if (routeDown == Masu.NOT_BLACK) {
-								whiteCnt++;
-							}
-							if (routeLeft == Masu.BLACK) {
-								blackCnt++;
-							} else if (routeLeft == Masu.NOT_BLACK) {
-								whiteCnt++;
-							}
 							if (mark[yIndex][xIndex] == Mark.START || mark[yIndex][xIndex] == Mark.GOAL) {
 								if (blackCnt > 1) {
 									return false;
@@ -1330,6 +1294,21 @@ public class NurimazeSolver implements Solver {
 										route[yIndex][xIndex - 1] = Masu.BLACK;
 									}
 								}
+							}
+						} else {
+							if (blackCnt > 2) {
+								return false;
+							} else if (blackCnt == 2) {
+								if (route[yIndex][xIndex] == Masu.NOT_BLACK) {
+									return false;
+								}
+								route[yIndex][xIndex] = Masu.BLACK;
+							} else if (whiteCnt > 2) {
+								if (route[yIndex][xIndex] == Masu.BLACK) {
+									return false;
+								}
+								route[yIndex][xIndex] = Masu.NOT_BLACK;
+
 							}
 						}
 					} else if (masu[yIndex][xIndex] == Masu.BLACK) {
@@ -1436,7 +1415,7 @@ public class NurimazeSolver implements Solver {
 	}
 
 	public static void main(String[] args) {
-		String url = ""; //urlを入れれば試せる
+		String url = ""; // urlを入れれば試せる
 		String[] params = url.split("/");
 		int height = Integer.parseInt(params[params.length - 2]);
 		int width = Integer.parseInt(params[params.length - 3]);
@@ -1465,11 +1444,10 @@ public class NurimazeSolver implements Solver {
 			}
 		}
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
-		System.out.println("難易度:" + (count));
+		System.out.println("難易度:" + (count * 3));
 		System.out.println(field);
-		int level = (int) Math.sqrt(count / 3) + 1;
-		return "解けました。推定難易度:"
-				+ Difficulty.getByCount(count).toString() + "(Lv:" + level + ")";
+		int level = (int) Math.sqrt(count * 3 / 3) + 1;
+		return "解けました。推定難易度:" + Difficulty.getByCount(count * 3).toString() + "(Lv:" + level + ")";
 	}
 
 	/**
@@ -1490,7 +1468,7 @@ public class NurimazeSolver implements Solver {
 		}
 		for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
 			for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
-				if (field.masu[yIndex][xIndex] == Masu.NOT_BLACK && field.route[yIndex][xIndex] == Masu.SPACE) {
+				if (field.route[yIndex][xIndex] == Masu.SPACE) {
 					count++;
 					if (!oneCandRouteSolve(field, yIndex, xIndex, recursive)) {
 						return false;
