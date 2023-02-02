@@ -449,6 +449,11 @@ var ruleMap = {
 		url : "https://puzz.link/rules.html?lollipops",
 		source : "puzz.linkさん"
 	},
+	guidearrow : {
+		name : "ガイドアロー",
+		url : "https://puzz.link/rules.html?guidearrow",
+		source : "puzz.linkさん"
+	},
 }
 var regMap = {
 		yajilin:[{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},

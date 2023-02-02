@@ -74,6 +74,7 @@ import myamya.other.solver.firefly.FireflySolver.Firefly;
 import myamya.other.solver.gaps.GapsSolver;
 import myamya.other.solver.geradeweg.GeradewegSolver;
 import myamya.other.solver.gokigen.GokigenSolver;
+import myamya.other.solver.guidearrow.GuidearrowSolver;
 import myamya.other.solver.hakoiri.HakoiriSolver;
 import myamya.other.solver.hanare.HanareSolver;
 import myamya.other.solver.hashikake.HashikakeSolver;
@@ -14753,8 +14754,8 @@ public class SolverWeb extends HttpServlet {
 				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
 					if (field.getNumbers()[yIndex][xIndex] != null) {
 						sb.append("<rect y=\"" + (yIndex * baseSize + margin) + "\" x=\""
-								+ (xIndex * baseSize + baseSize) + "\" fill=\"" + "black" + "\" width=\""
-								+ (baseSize) + "\" height=\"" + (baseSize) + "\">" + "</rect>");
+								+ (xIndex * baseSize + baseSize) + "\" fill=\"" + "black" + "\" width=\"" + (baseSize)
+								+ "\" height=\"" + (baseSize) + "\">" + "</rect>");
 						String numberStr = String.valueOf(field.getNumbers()[yIndex][xIndex]);
 						int index = HALF_NUMS.indexOf(numberStr);
 						String masuStr = null;
@@ -14827,6 +14828,91 @@ public class SolverWeb extends HttpServlet {
 						sb.append("stroke=\"green\" ");
 						sb.append(">" + "</line>");
 					}
+				}
+			}
+			sb.append("</svg>");
+			return sb.toString();
+		}
+	}
+
+	static class GuidearrowSolverThread extends AbsSolverThlead {
+
+		GuidearrowSolverThread(int height, int width, String param) {
+			super(height, width, param);
+		}
+
+		@Override
+		protected Solver getSolver() {
+			return new GuidearrowSolver(height, width, param);
+		}
+
+		@Override
+		public String makeCambus() {
+			GuidearrowSolver.Field field = ((GuidearrowSolver) solver).getField();
+			StringBuilder sb = new StringBuilder();
+			int baseSize = 20;
+			int margin = 5;
+			sb.append("<svg xmlns=\"http://www.w3.org/2000/svg\" " + "height=\""
+					+ (field.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
+					+ (field.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					if (field.getNumbersCand()[yIndex][xIndex].size() == 1) {
+						int number = field.getNumbersCand()[yIndex][xIndex].get(0);
+						if (number == 0) {
+							sb.append("<rect y=\"" + (yIndex * baseSize + margin) + "\" x=\""
+									+ (xIndex * baseSize + baseSize) + "\" fill=\"" + "black" + "\" width=\""
+									+ (baseSize) + "\" height=\"" + (baseSize) + "\">" + "</rect>");
+						}
+					}
+					if (!field.getNumbersCand()[yIndex][xIndex].contains(0)) {
+						sb.append("<rect y=\"" + (yIndex * baseSize + margin) + "\" x=\""
+								+ (xIndex * baseSize + baseSize) + "\" fill=\"" + "palegreen" + "\" width=\""
+								+ (baseSize) + "\" height=\"" + (baseSize) + "\">" + "</rect>");
+					}
+					if (field.getNumbers()[yIndex][xIndex] != null) {
+						int number = field.getNumbers()[yIndex][xIndex];
+						if (number != 0) {
+							sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 2 + margin) + "\" x=\""
+									+ (xIndex * baseSize + baseSize) + "\" font-size=\"" + (baseSize)
+									+ "\" textLength=\"" + (baseSize) + "\" lengthAdjust=\"spacingAndGlyphs\">"
+									+ (number == 1 ? "↑"
+											: number == 2 ? "↓"
+													: number == 3 ? "←" : number == 4 ? "→" : number == 5 ? "★" : "？")
+									+ "</text>");
+						}
+					}
+				}
+			}
+			// 横壁描画
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = -1; xIndex < field.getXLength(); xIndex++) {
+					boolean oneYokoWall = xIndex == -1 || xIndex == field.getXLength() - 1;
+					sb.append("<line y1=\"" + (yIndex * baseSize + margin) + "\" x1=\""
+							+ (xIndex * baseSize + 2 * baseSize) + "\" y2=\"" + (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\"" + (xIndex * baseSize + 2 * baseSize) + "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneYokoWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">" + "</line>");
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = -1; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					boolean oneTateWall = yIndex == -1 || yIndex == field.getYLength() - 1;
+					sb.append("<line y1=\"" + (yIndex * baseSize + baseSize + margin) + "\" x1=\""
+							+ (xIndex * baseSize + baseSize) + "\" y2=\"" + (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\"" + (xIndex * baseSize + baseSize + baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneTateWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">" + "</line>");
 				}
 			}
 			sb.append("</svg>");
@@ -15223,6 +15309,8 @@ public class SolverWeb extends HttpServlet {
 						t = new FamilyphotoSolverThread(height, width, param);
 					} else if (puzzleType.contains("takoyaki")) {
 						t = new TakoyakiSolverThread(height, width, param);
+					} else if (puzzleType.contains("guidearrow")) {
+						t = new GuidearrowSolverThread(height, width, param);
 					} else {
 						throw new IllegalArgumentException();
 					}
