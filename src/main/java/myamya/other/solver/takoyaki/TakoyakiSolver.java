@@ -864,6 +864,7 @@ public class TakoyakiSolver implements Solver {
 
 		/**
 		 * posを起点に上下左右に壁なし確定マスをつなぎ、 たこ焼きの数が4個以上または同じ行・列になると分かった時点でfalseを返す。
+		 * またループができている場合もfalseを返す。
 		 */
 		private boolean checkAndSetContinueWhitePosSet(Position pos, Set<Position> continuePosSet, Direction from,
 				Set<Position> takoyakiPosSet) {
@@ -887,41 +888,53 @@ public class TakoyakiSolver implements Solver {
 			}
 			if (pos.getyIndex() != 0 && from != Direction.UP) {
 				Position nextPos = new Position(pos.getyIndex() - 1, pos.getxIndex());
-				if (tateWall[pos.getyIndex() - 1][pos.getxIndex()] == Wall.NOT_EXISTS
-						&& !continuePosSet.contains(nextPos)) {
-					continuePosSet.add(nextPos);
-					if (!checkAndSetContinueWhitePosSet(nextPos, continuePosSet, Direction.DOWN, takoyakiPosSet)) {
+				if (tateWall[pos.getyIndex() - 1][pos.getxIndex()] == Wall.NOT_EXISTS) {
+					if (continuePosSet.contains(nextPos)) {
 						return false;
+					} else {
+						continuePosSet.add(nextPos);
+						if (!checkAndSetContinueWhitePosSet(nextPos, continuePosSet, Direction.DOWN, takoyakiPosSet)) {
+							return false;
+						}
 					}
 				}
 			}
 			if (pos.getxIndex() != getXLength() - 1 && from != Direction.RIGHT) {
 				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() + 1);
-				if (yokoWall[pos.getyIndex()][pos.getxIndex()] == Wall.NOT_EXISTS
-						&& !continuePosSet.contains(nextPos)) {
-					continuePosSet.add(nextPos);
-					if (!checkAndSetContinueWhitePosSet(nextPos, continuePosSet, Direction.LEFT, takoyakiPosSet)) {
+				if (yokoWall[pos.getyIndex()][pos.getxIndex()] == Wall.NOT_EXISTS) {
+					if (continuePosSet.contains(nextPos)) {
 						return false;
+					} else {
+						continuePosSet.add(nextPos);
+						if (!checkAndSetContinueWhitePosSet(nextPos, continuePosSet, Direction.LEFT, takoyakiPosSet)) {
+							return false;
+						}
 					}
 				}
 			}
 			if (pos.getyIndex() != getYLength() - 1 && from != Direction.DOWN) {
 				Position nextPos = new Position(pos.getyIndex() + 1, pos.getxIndex());
-				if (tateWall[pos.getyIndex()][pos.getxIndex()] == Wall.NOT_EXISTS
-						&& !continuePosSet.contains(nextPos)) {
-					continuePosSet.add(nextPos);
-					if (!checkAndSetContinueWhitePosSet(nextPos, continuePosSet, Direction.UP, takoyakiPosSet)) {
+				if (tateWall[pos.getyIndex()][pos.getxIndex()] == Wall.NOT_EXISTS) {
+					if (continuePosSet.contains(nextPos)) {
 						return false;
+					} else {
+						continuePosSet.add(nextPos);
+						if (!checkAndSetContinueWhitePosSet(nextPos, continuePosSet, Direction.UP, takoyakiPosSet)) {
+							return false;
+						}
 					}
 				}
 			}
 			if (pos.getxIndex() != 0 && from != Direction.LEFT) {
 				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() - 1);
-				if (yokoWall[pos.getyIndex()][pos.getxIndex() - 1] == Wall.NOT_EXISTS
-						&& !continuePosSet.contains(nextPos)) {
-					continuePosSet.add(nextPos);
-					if (!checkAndSetContinueWhitePosSet(nextPos, continuePosSet, Direction.RIGHT, takoyakiPosSet)) {
+				if (yokoWall[pos.getyIndex()][pos.getxIndex() - 1] == Wall.NOT_EXISTS) {
+					if (continuePosSet.contains(nextPos)) {
 						return false;
+					} else {
+						continuePosSet.add(nextPos);
+						if (!checkAndSetContinueWhitePosSet(nextPos, continuePosSet, Direction.RIGHT, takoyakiPosSet)) {
+							return false;
+						}
 					}
 				}
 			}

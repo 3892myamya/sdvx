@@ -14873,9 +14873,9 @@ public class SolverWeb extends HttpServlet {
 					if (field.getNumbers()[yIndex][xIndex] != null) {
 						int number = field.getNumbers()[yIndex][xIndex];
 						if (number != 0) {
-							sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 2 + margin) + "\" x=\""
-									+ (xIndex * baseSize + baseSize) + "\" font-size=\"" + (baseSize)
-									+ "\" textLength=\"" + (baseSize) + "\" lengthAdjust=\"spacingAndGlyphs\">"
+							sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 4 + margin) + "\" x=\""
+									+ (xIndex * baseSize + baseSize) + "\" font-size=\"" + (baseSize - 1)
+									+ "\" textLength=\"" + (baseSize - 1) + "\" lengthAdjust=\"spacingAndGlyphs\">"
 									+ (number == 1 ? "↑"
 											: number == 2 ? "↓"
 													: number == 3 ? "←" : number == 4 ? "→" : number == 5 ? "★" : "？")
