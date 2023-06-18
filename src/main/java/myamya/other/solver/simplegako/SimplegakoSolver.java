@@ -164,7 +164,7 @@ public class SimplegakoSolver implements Solver {
 			level = (int) Math.sqrt(level * 15 / 3) + 1;
 			String status = "Lv:" + level + "の問題を獲得！(数字:" + wkField.getHintCount() + ")";
 			String url = wkField.getPuzPreURL();
-			String link = "<a href=\"" + url + "\" target=\"_blank\">ぱずぷれv3(波及効果バリアント)で解く</a>";
+			String link = "<a href=\"" + url + "\" target=\"_blank\">puzz.linkで解く</a>";
 			StringBuilder sb = new StringBuilder();
 			int baseSize = 20;
 			int margin = 5;
@@ -281,23 +281,7 @@ public class SimplegakoSolver implements Solver {
 
 		public String getPuzPreURL() {
 			StringBuilder sb = new StringBuilder();
-			sb.append("http://pzv.jp/p.html?ripple/v:/" + getXLength() + "/" + getYLength() + "/");
-			for (int i = 0; i < getYLength() * (getXLength() - 1); i++) {
-				i++;
-				i++;
-				i++;
-				i++;
-				int num = 0;
-				sb.append(ALPHABET_AND_NUMBER.substring(num, num + 1));
-			}
-			for (int i = 0; i < (getYLength() - 1) * getXLength(); i++) {
-				i++;
-				i++;
-				i++;
-				i++;
-				int num = 0;
-				sb.append(ALPHABET_AND_NUMBER.substring(num, num + 1));
-			}
+			sb.append("https://puzz.link/p?simplegako/" + getXLength() + "/" + getYLength() + "/");
 			int interval = 0;
 			for (int i = 0; i < getYLength() * getXLength(); i++) {
 				int yIndex = i / getXLength();
@@ -351,18 +335,6 @@ public class SimplegakoSolver implements Solver {
 			numbers = new Integer[height][width];
 			numbersCand = new ArrayList[height][width];
 			int readPos = 0;
-			for (int cnt = 0; cnt < getYLength() * (getXLength() - 1); cnt++) {
-				int mod = cnt % 5;
-				if (mod == 0) {
-					readPos++;
-				}
-			}
-			for (int cnt = 0; cnt < (getYLength() - 1) * getXLength(); cnt++) {
-				int mod = cnt % 5;
-				if (mod == 0) {
-					readPos++;
-				}
-			}
 			// 1から縦の長さ+横の長さ-1まで候補を決定
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {

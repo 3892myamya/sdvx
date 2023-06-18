@@ -316,8 +316,8 @@ var ruleMap = {
 	},
 	simplegako : {
 		name : "シンプルガコ",
-		url : "",
-		source : ""
+		url : "https://puzz.link/rules.html?simplegako",
+		source : "puzz.linkさん"
 	},
 	nonogram : {
 		name : "ののぐらむ",
@@ -1428,10 +1428,6 @@ $(function() {
 			return;
 		}
 		var type = $('#sel_type').val();
-		if (type == 'simplegako'){
-			alert('申し訳ございません。そのパズルは追加できません。')
-			return;
-		}
 		courseGridInfo.push({
 			pname:ruleMap[type].name,
 			size:$('#sel_size').val(),
