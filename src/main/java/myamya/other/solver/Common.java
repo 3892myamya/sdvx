@@ -385,7 +385,6 @@ public class Common {
 					(int) (getLeftUp().getxIndex() + (Math.random() * xLength)));
 		}
 
-
 		/**
 		 * 自分が包含する位置のセットを返す。
 		 */
@@ -395,6 +394,22 @@ public class Common {
 				for (int x = leftUp.xIndex; x <= rightDown.xIndex; x++) {
 					result.add(new Position(y, x));
 				}
+			}
+			return result;
+		}
+
+		/**
+		 * 自身に縦横が接している位置のセットを返す。indexが0や最大長を越すことがあるので呼び出し元チェック必須
+		 */
+		public Set<Position> getEdgePosSet() {
+			Set<Position> result = new HashSet<>();
+			for (int y = leftUp.yIndex; y <= rightDown.yIndex; y++) {
+				result.add(new Position(y, leftUp.xIndex - 1));
+				result.add(new Position(y, rightDown.xIndex + 1));
+			}
+			for (int x = leftUp.xIndex; x <= rightDown.xIndex; x++) {
+				result.add(new Position(leftUp.yIndex - 1, x));
+				result.add(new Position(rightDown.yIndex + 1, x));
 			}
 			return result;
 		}

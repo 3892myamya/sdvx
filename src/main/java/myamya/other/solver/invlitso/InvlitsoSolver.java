@@ -1,552 +1,24 @@
-package myamya.other.solver.lits;
+package myamya.other.solver.invlitso;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeMap;
 
-import myamya.other.solver.Common.CountOverException;
 import myamya.other.solver.Common.Difficulty;
 import myamya.other.solver.Common.Direction;
-import myamya.other.solver.Common.GeneratorResult;
 import myamya.other.solver.Common.Masu;
 import myamya.other.solver.Common.Position;
-import myamya.other.solver.Generator;
 import myamya.other.solver.Solver;
 
-public class LitsSolver implements Solver {
-
-	enum LITS {
-		/**
-		 * ■<br>
-		 * ■■■<br>
-		 */
-		L1(Arrays.asList(
-				new Position[] { new Position(0, 0), new Position(1, 0), new Position(1, 1), new Position(1, 2) }), 1,
-				2),
-		/**
-		 * ■■<br>
-		 * ■<br>
-		 * ■<br>
-		 */
-		L2(Arrays.asList(
-				new Position[] { new Position(0, 0), new Position(0, 1), new Position(1, 0), new Position(2, 0) }), 2,
-				1),
-		/**
-		 * ■■■<br>
-		 * ○○■<br>
-		 */
-		L3(Arrays.asList(
-				new Position[] { new Position(0, 0), new Position(0, 1), new Position(0, 2), new Position(1, 2) }), 1,
-				2),
-		/**
-		 * ○■<br>
-		 * ○■<br>
-		 * ■■<br>
-		 */
-		L4(Arrays.asList(
-				new Position[] { new Position(0, 1), new Position(1, 1), new Position(2, 1), new Position(2, 0) }), 2,
-				1),
-		/**
-		 * ○○■<br>
-		 * ■■■<br>
-		 */
-		L5(Arrays.asList(
-				new Position[] { new Position(0, 2), new Position(1, 2), new Position(1, 1), new Position(1, 0) }), 1,
-				2),
-		/**
-		 * ■<br>
-		 * ■<br>
-		 * ■■<br>
-		 */
-		L6(Arrays.asList(
-				new Position[] { new Position(0, 0), new Position(1, 0), new Position(2, 0), new Position(2, 1) }), 2,
-				1),
-		/**
-		 * ■■■<br>
-		 * ■<br>
-		 */
-		L7(Arrays.asList(
-				new Position[] { new Position(0, 0), new Position(0, 1), new Position(0, 2), new Position(1, 0) }), 1,
-				2),
-		/**
-		 * ■■<br>
-		 * ○■<br>
-		 * ○■<br>
-		 */
-		L8(Arrays.asList(
-				new Position[] { new Position(0, 0), new Position(0, 1), new Position(1, 1), new Position(2, 1) }), 2,
-				1),
-
-		/**
-		 * ■<br>
-		 * ■<br>
-		 * ■<br>
-		 * ■<br>
-		 */
-		I1(Arrays.asList(
-				new Position[] { new Position(0, 0), new Position(1, 0), new Position(2, 0), new Position(3, 0) }), 3,
-				0),
-
-		/**
-		 * ■■■■<br>
-		 */
-		I2(Arrays.asList(
-				new Position[] { new Position(0, 0), new Position(0, 1), new Position(0, 2), new Position(0, 3) }), 0,
-				3),
-
-		/**
-		 * ■■■<br>
-		 * ○■<br>
-		 */
-		T1(Arrays.asList(
-				new Position[] { new Position(0, 0), new Position(0, 1), new Position(0, 2), new Position(1, 1) }), 1,
-				2),
-
-		/**
-		 * ○■<br>
-		 * ■■<br>
-		 * ○■<br>
-		 */
-		T2(Arrays.asList(
-				new Position[] { new Position(0, 1), new Position(1, 0), new Position(1, 1), new Position(2, 1) }), 2,
-				1),
-
-		/**
-		 * ○■<br>
-		 * ■■■<br>
-		 */
-		T3(Arrays.asList(
-				new Position[] { new Position(0, 1), new Position(1, 0), new Position(1, 1), new Position(1, 2) }), 1,
-				2),
-
-		/**
-		 * ■<br>
-		 * ■■<br>
-		 * ■<br>
-		 */
-		T4(Arrays.asList(
-				new Position[] { new Position(0, 0), new Position(1, 0), new Position(1, 1), new Position(2, 0) }), 2,
-				1),
-		/**
-		 * ■■<br>
-		 * ○■■<br>
-		 */
-		S1(Arrays.asList(
-				new Position[] { new Position(0, 0), new Position(0, 1), new Position(1, 1), new Position(1, 2) }), 1,
-				2),
-
-		/**
-		 * ○■<br>
-		 * ■■<br>
-		 * ■○<br>
-		 */
-		S2(Arrays.asList(
-				new Position[] { new Position(0, 1), new Position(1, 1), new Position(1, 0), new Position(2, 0) }), 2,
-				1),
-
-		/**
-		 * ○■■<br>
-		 * ■■<br>
-		 */
-		S3(Arrays.asList(
-				new Position[] { new Position(0, 2), new Position(0, 1), new Position(1, 1), new Position(1, 0) }), 1,
-				2),
-
-		/**
-		 * ■○<br>
-		 * ■■<br>
-		 * ○■<br>
-		 */
-		S4(Arrays.asList(
-				new Position[] { new Position(0, 0), new Position(1, 0), new Position(1, 1), new Position(2, 1) }), 2,
-				1),;
-
-		List<Position> positionList; // 基準点から見た位置リスト
-		int plusY; // 基準点から見てY方向に何マス必要か
-		int plusX; // 基準点から見てX方向に何マス必要か
-
-		LITS(List<Position> positionList, int plusY, int plusX) {
-			this.positionList = positionList;
-			this.plusY = plusY;
-			this.plusX = plusX;
-		}
-	}
-
-	static class ExtendedField extends LitsSolver.Field {
-		public ExtendedField(Field other) {
-			super(other, true);
-		}
-
-		public ExtendedField(int height, int width) {
-			super(height, width);
-		}
-
-		/**
-		 * 作問段階では2x2チェック、同一形隣接チェックのみする
-		 */
-		protected boolean solveAndCheck() {
-			if (!pondSolve()) {
-				return false;
-			}
-			if (!nextSolve()) {
-				return false;
-			}
-			return true;
-		}
-	}
-
-	public static class LitsGenerator implements Generator {
-
-		static class LitsSolverForGenerator extends LitsSolver {
-			private final int limit;
-
-			public LitsSolverForGenerator(Field field, int limit) {
-				super(field);
-				this.limit = limit;
-			}
-
-			public int solve2() {
-				try {
-					while (!field.isSolved()) {
-						String befStr = field.getStateDump();
-						if (!field.solveAndCheck()) {
-							return -1;
-						}
-						int recursiveCnt = 0;
-						while (field.getStateDump().equals(befStr) && recursiveCnt < 3) {
-							if (!candSolve(field, recursiveCnt == 2 ? 999 : recursiveCnt)) {
-								return -1;
-							}
-							recursiveCnt++;
-						}
-						if (recursiveCnt == 3 && field.getStateDump().equals(befStr)) {
-							return -1;
-						}
-					}
-				} catch (CountOverException e) {
-					return -1;
-				}
-				return count;
-			}
-
-			@Override
-			protected boolean candSolve(Field field, int recursive) {
-				if (this.count >= limit) {
-					throw new CountOverException();
-				} else {
-					return super.candSolve(field, recursive);
-				}
-			}
-		}
-
-		private final int height;
-		private final int width;
-
-		public LitsGenerator(int height, int width) {
-			this.height = height;
-			this.width = width;
-		}
-
-		public static void main(String[] args) {
-			new LitsGenerator(6, 6).generate();
-		}
-
-		@Override
-		public GeneratorResult generate() {
-//			LitsSolver.Field wkField = new LitsSolver.Field(height, width,
-//					RoomMaker.roomMake(height, width, 4, 4));
-//			int level = 0;
-//			long start = System.nanoTime();
-//			while (true) {
-//				System.out.println(wkField);
-//				// 解けるかな？
-//				level = new LitsSolverForGenerator(wkField, 1000).solve2();
-//				if (level == -1) {
-//					// 解けなければやり直し
-//					wkField = new LitsSolverForGenerator.Field(height, width, RoomMaker.roomMake(height, width, 4, 4));
-//				} else {
-//					break;
-//				}
-//			}
-			ExtendedField wkField = new ExtendedField(height, width);
-			// Litsの一覧作成
-			List<Set<Position>> litsList = new ArrayList<>();
-			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
-				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
-					for (LITS lits : LITS.values()) {
-						if (yIndex + lits.plusY < wkField.getYLength() && xIndex + lits.plusX < wkField.getXLength()) {
-							Set<Position> wkSet = new HashSet<>();
-							for (Position pos : lits.positionList) {
-								wkSet.add(new Position(yIndex + pos.getyIndex(), xIndex + pos.getxIndex()));
-							}
-							litsList.add(wkSet);
-						}
-					}
-				}
-			}
-			int level = 0;
-			long start = System.nanoTime();
-			while (true) {
-				// 問題生成部
-				while (true) {
-					boolean isOk = false;
-					Collections.shuffle(litsList);
-					for (Set<Position> lits : litsList) {
-						// ランダムにLITS配置
-						// if (Math.random() * 2 < 1) {
-						isOk = true;
-						for (Set<Position> room : wkField.rooms) {
-							Set<Position> wkLits = new HashSet<>(lits);
-							wkLits.retainAll(room);
-							if (!wkLits.isEmpty()) {
-								// 部屋ががかぶっている場合は置かない
-								isOk = false;
-								break;
-							}
-						}
-						if (isOk) {
-							ExtendedField virtual = new ExtendedField(wkField);
-							virtual.rooms.add(new HashSet<>(lits));
-							for (Position pos : lits) {
-								virtual.masu[pos.getyIndex()][pos.getxIndex()] = Masu.BLACK;
-							}
-							// 置いて矛盾がなければ、その部屋を確定
-							if (virtual.solveAndCheck()) {
-								wkField.masu = virtual.masu;
-								wkField.rooms = virtual.rooms;
-							}
-						}
-						// }
-
-					}
-					for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
-						for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
-							if (wkField.masu[yIndex][xIndex] != Masu.BLACK) {
-								wkField.masu[yIndex][xIndex] = Masu.NOT_BLACK;
-							}
-						}
-					}
-					if (!wkField.connectSolve()) {
-						// Lits置きが終わったら接続チェック。falseなら作りなおし
-						wkField = new ExtendedField(height, width);
-					} else {
-						break;
-					}
-				}
-				// 部屋拡張部
-				List<Position> yetPosList = new ArrayList<>();
-				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
-					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
-						if (wkField.masu[yIndex][xIndex] != Masu.BLACK) {
-							yetPosList.add(new Position(yIndex, xIndex));
-						}
-					}
-				}
-				while (true) {
-					if (yetPosList.isEmpty()) {
-						break;
-					}
-					// 基準部屋をランダムで選ぶ
-					Set<Position> room = wkField.rooms.get((int) (Math.random() * wkField.rooms.size()));
-					// 基準マスをランダムで選ぶ
-					Position targetPos = new ArrayList<Position>(room).get((int) (Math.random() * room.size()));
-					// 基準マスからランダムで1マス伸ばす
-					List<Position> candPosList = new ArrayList<>();
-					if (targetPos.getyIndex() != 0) {
-						Position nextPos = new Position(targetPos.getyIndex() - 1, targetPos.getxIndex());
-						if (yetPosList.contains(nextPos)) {
-							candPosList.add(nextPos);
-						}
-					}
-					if (targetPos.getxIndex() != wkField.getXLength() - 1) {
-						Position nextPos = new Position(targetPos.getyIndex(), targetPos.getxIndex() + 1);
-						if (yetPosList.contains(nextPos)) {
-							candPosList.add(nextPos);
-						}
-					}
-					if (targetPos.getyIndex() != wkField.getYLength() - 1) {
-						Position nextPos = new Position(targetPos.getyIndex() + 1, targetPos.getxIndex());
-						if (yetPosList.contains(nextPos)) {
-							candPosList.add(nextPos);
-						}
-					}
-					if (targetPos.getxIndex() != 0) {
-						Position nextPos = new Position(targetPos.getyIndex(), targetPos.getxIndex() - 1);
-						if (yetPosList.contains(nextPos)) {
-							candPosList.add(nextPos);
-						}
-					}
-					// どの方向にも伸ばせなかったら基準マス選び直し。
-					if (candPosList.isEmpty()) {
-						continue;
-					}
-					Position nextPos = candPosList.get((int) (Math.random() * candPosList.size()));
-					room.add(nextPos);
-					yetPosList.remove(nextPos);
-				}
-				// 壁セット(問題を解くのに壁の情報も使ってるため)
-				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
-					for (int xIndex = 0; xIndex < wkField.getXLength() - 1; xIndex++) {
-						Position pos = new Position(yIndex, xIndex);
-						boolean isWall = true;
-						for (Set<Position> room : wkField.rooms) {
-							if (room.contains(pos)) {
-								Position rightPos = new Position(yIndex, xIndex + 1);
-								if (room.contains(rightPos)) {
-									isWall = false;
-									break;
-								}
-							}
-						}
-						wkField.yokoWall[yIndex][xIndex] = isWall;
-					}
-				}
-				for (int yIndex = 0; yIndex < wkField.getYLength() - 1; yIndex++) {
-					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
-						Position pos = new Position(yIndex, xIndex);
-						boolean isWall = true;
-						for (Set<Position> room : wkField.rooms) {
-							if (room.contains(pos)) {
-								Position downPos = new Position(yIndex + 1, xIndex);
-								if (room.contains(downPos)) {
-									isWall = false;
-									break;
-								}
-							}
-						}
-						wkField.tateWall[yIndex][xIndex] = isWall;
-					}
-				}
-				System.out.println(wkField);
-				// マス戻す
-				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
-					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
-						wkField.masu[yIndex][xIndex] = Masu.SPACE;
-					}
-				}
-				// 解けるかな？
-				level = new LitsSolverForGenerator(wkField, 1000).solve2();
-				if (level == -1) {
-					// 解けなければやり直し
-					wkField = new ExtendedField(height, width);
-				} else {
-					break;
-				}
-			}
-			level = (int) Math.sqrt(level * 5 / 3);
-			String status = "Lv:" + level + "の問題を獲得！(部屋数：" + wkField.getHintCount() + ")";
-			String url = wkField.getPuzPreURL();
-			String link = "<a href=\"" + url + "\" target=\"_blank\">ぱずぷれv3で解く</a>";
-			StringBuilder sb = new StringBuilder();
-			// int baseSize = 20;
-			// int margin = 5;
-			// sb.append(
-			// "<svg xmlns=\"http://www.w3.org/2000/svg\" "
-			// + "height=\"" + (wkField.getYLength() * baseSize + 2 * baseSize + margin) +
-			// "\" width=\""
-			// + (wkField.getXLength() * baseSize + 2 * baseSize) + "\" >");
-			// // 数字描画
-			// for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
-			// for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
-			// if (wkField.getNumbers()[yIndex][xIndex] != null) {
-			// sb.append("<rect y=\"" + (yIndex * baseSize + 2 + margin)
-			// + "\" x=\""
-			// + (xIndex * baseSize + baseSize + 2)
-			// + "\" width=\""
-			// + (baseSize - 4)
-			// + "\" height=\""
-			// + (baseSize - 4)
-			// + "\" fill=\"white\" stroke-width=\"1\" stroke=\"black\">"
-			// + "\">"
-			// + "</rect>");
-			// if (wkField.getNumbers()[yIndex][xIndex] != -1) {
-			// String numberStr = String.valueOf(wkField.getNumbers()[yIndex][xIndex]);
-			// int numIdx = HALF_NUMS.indexOf(numberStr);
-			// String masuStr = null;
-			// if (numIdx >= 0) {
-			// masuStr = FULL_NUMS.substring(numIdx / 2, numIdx / 2 + 1);
-			// } else {
-			// masuStr = numberStr;
-			// }
-			// sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 4 + margin)
-			// + "\" x=\""
-			// + (xIndex * baseSize + baseSize + 2)
-			// + "\" font-size=\""
-			// + (baseSize - 5)
-			// + "\" textLength=\""
-			// + (baseSize - 5)
-			// + "\" lengthAdjust=\"spacingAndGlyphs\">"
-			// + masuStr
-			// + "</text>");
-			// }
-			// }
-			// }
-			// }
-			// // 横壁描画
-			// for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
-			// for (int xIndex = -1; xIndex < wkField.getXLength(); xIndex++) {
-			// boolean oneYokoWall = xIndex == -1 || xIndex == wkField.getXLength() - 1;
-			// sb.append("<line y1=\""
-			// + (yIndex * baseSize + margin)
-			// + "\" x1=\""
-			// + (xIndex * baseSize + 2 * baseSize)
-			// + "\" y2=\""
-			// + (yIndex * baseSize + baseSize + margin)
-			// + "\" x2=\""
-			// + (xIndex * baseSize + 2 * baseSize)
-			// + "\" stroke-width=\"1\" fill=\"none\"");
-			// if (oneYokoWall) {
-			// sb.append("stroke=\"#000\" ");
-			// } else {
-			// sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
-			// }
-			// sb.append(">"
-			// + "</line>");
-			// }
-			// }
-			// // 縦壁描画
-			// for (int yIndex = -1; yIndex < wkField.getYLength(); yIndex++) {
-			// for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
-			// boolean oneTateWall = yIndex == -1 || yIndex == wkField.getYLength() - 1;
-			// sb.append("<line y1=\""
-			// + (yIndex * baseSize + baseSize + margin)
-			// + "\" x1=\""
-			// + (xIndex * baseSize + baseSize)
-			// + "\" y2=\""
-			// + (yIndex * baseSize + baseSize + margin)
-			// + "\" x2=\""
-			// + (xIndex * baseSize + baseSize + baseSize)
-			// + "\" stroke-width=\"1\" fill=\"none\"");
-			// if (oneTateWall) {
-			// sb.append("stroke=\"#000\" ");
-			// } else {
-			// sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
-			// }
-			// sb.append(">"
-			// + "</line>");
-			// }
-			// }
-			// sb.append("</svg>");
-			System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
-			System.out.println(level);
-			System.out.println(wkField.getHintCount());
-			System.out.println(wkField);
-			System.out.println(url);
-			return new GeneratorResult(status, sb.toString(), link, url, level, "");
-
-		}
-
-	}
+public class InvlitsoSolver implements Solver {
 
 	/**
 	 * テトロミノを示す
 	 */
 	enum Tetro {
-		L, I, T, S;
+		L, I, T, S, O;
 
 		/**
 		 * テトロミノの形状を判定する。LITSのどれでもなかったらnullを返す。
@@ -571,7 +43,9 @@ public class LitsSolver implements Solver {
 					xKeyTreeMap.put(Pos.getxIndex(), xcnt + 1);
 				}
 			}
-			if (yKeyTreeMap.size() == 4 || xKeyTreeMap.size() == 4) {
+			if (yKeyTreeMap.size() == 2 && xKeyTreeMap.size() == 2) {
+				return O;
+			} else if (yKeyTreeMap.size() == 4 || xKeyTreeMap.size() == 4) {
 				return I;
 			} else if (yKeyTreeMap.size() == 3 && xKeyTreeMap.size() == 2) {
 				int y0 = (int) yKeyTreeMap.values().toArray()[0];
@@ -609,7 +83,6 @@ public class LitsSolver implements Solver {
 	public static class Field {
 		static final String ALPHABET_FROM_G = "ghijklmnopqrstuvwxyz";
 		static final String ALPHABET_AND_NUMBER = "0123456789abcdefghijklmnopqrstuvwxyz";
-		static final int BLACK_CNT = 4;
 
 		// マスの情報
 		protected Masu[][] masu;
@@ -885,19 +358,6 @@ public class LitsSolver implements Solver {
 			}
 		}
 
-		public Field(Field other) {
-			masu = new Masu[other.getYLength()][other.getXLength()];
-			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
-				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					masu[yIndex][xIndex] = other.masu[yIndex][xIndex];
-				}
-			}
-			// 壁・部屋は参照渡しで使い回し(一度Fieldができたら変化しないはずなので。)
-			yokoWall = other.yokoWall;
-			tateWall = other.tateWall;
-			rooms = other.rooms;
-		}
-
 		/**
 		 * プレーンなフィールド生成
 		 */
@@ -913,17 +373,13 @@ public class LitsSolver implements Solver {
 			rooms = new ArrayList<>();
 		}
 
-		/**
-		 * ジェネレータ用 roomsをイミュータブルに
-		 */
-		public Field(Field other, boolean flag) {
+		public Field(Field other) {
 			masu = new Masu[other.getYLength()][other.getXLength()];
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
 					masu[yIndex][xIndex] = other.masu[yIndex][xIndex];
 				}
 			}
-			// 壁・部屋は参照渡しで使い回し(一度Fieldができたら変化しないはずなので。)
 			yokoWall = other.yokoWall;
 			tateWall = other.tateWall;
 			rooms = new ArrayList<>(other.rooms);
@@ -965,7 +421,7 @@ public class LitsSolver implements Solver {
 			}
 		}
 
-		// posを起点に上下左右に壁または白確定でないマスをposからのdistanceだけつなげていく。
+		// posを起点に上下左右に壁または黒確定でないマスをposからのdistanceだけつなげていく。
 		private void setContinuePosSetUseDistance(Position pos, Set<Position> continuePosSet, int distance,
 				Direction from) {
 			if (distance == 0) {
@@ -974,7 +430,7 @@ public class LitsSolver implements Solver {
 			if (pos.getyIndex() != 0 && from != Direction.UP) {
 				Position nextPos = new Position(pos.getyIndex() - 1, pos.getxIndex());
 				if (!tateWall[pos.getyIndex() - 1][pos.getxIndex()]
-						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.NOT_BLACK) {
+						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.BLACK) {
 					continuePosSet.add(nextPos);
 					setContinuePosSetUseDistance(nextPos, continuePosSet, distance - 1, Direction.DOWN);
 				}
@@ -982,7 +438,7 @@ public class LitsSolver implements Solver {
 			if (pos.getxIndex() != getXLength() - 1 && from != Direction.RIGHT) {
 				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() + 1);
 				if (!yokoWall[pos.getyIndex()][pos.getxIndex()]
-						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.NOT_BLACK) {
+						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.BLACK) {
 					continuePosSet.add(nextPos);
 					setContinuePosSetUseDistance(nextPos, continuePosSet, distance - 1, Direction.LEFT);
 				}
@@ -990,7 +446,7 @@ public class LitsSolver implements Solver {
 			if (pos.getyIndex() != getYLength() - 1 && from != Direction.DOWN) {
 				Position nextPos = new Position(pos.getyIndex() + 1, pos.getxIndex());
 				if (!tateWall[pos.getyIndex()][pos.getxIndex()]
-						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.NOT_BLACK) {
+						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.BLACK) {
 					continuePosSet.add(nextPos);
 					setContinuePosSetUseDistance(nextPos, continuePosSet, distance - 1, Direction.UP);
 				}
@@ -998,7 +454,7 @@ public class LitsSolver implements Solver {
 			if (pos.getxIndex() != 0 && from != Direction.LEFT) {
 				Position nextPos = new Position(pos.getyIndex(), pos.getxIndex() - 1);
 				if (!yokoWall[pos.getyIndex()][pos.getxIndex() - 1]
-						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.NOT_BLACK) {
+						&& masu[nextPos.getyIndex()][nextPos.getxIndex()] != Masu.BLACK) {
 					continuePosSet.add(nextPos);
 					setContinuePosSetUseDistance(nextPos, continuePosSet, distance - 1, Direction.RIGHT);
 				}
@@ -1052,41 +508,41 @@ public class LitsSolver implements Solver {
 		}
 
 		/**
-		 * 部屋のマスを埋める。黒マス不足・過剰はfalseを返す。
+		 * 部屋のマスを埋める。白マス不足・過剰はfalseを返す。
 		 */
 		public boolean roomSolve() {
 			for (Set<Position> room : rooms) {
 				// 部屋に対する調査
-				int blackCnt = 0;
+				int whiteCnt = 0;
 				int spaceCnt = 0;
 				for (Position pos : room) {
-					if (masu[pos.getyIndex()][pos.getxIndex()] == Masu.BLACK) {
-						blackCnt++;
+					if (masu[pos.getyIndex()][pos.getxIndex()] == Masu.NOT_BLACK) {
+						whiteCnt++;
 					} else if (masu[pos.getyIndex()][pos.getxIndex()] == Masu.SPACE) {
 						spaceCnt++;
 					}
 				}
-				if (blackCnt + spaceCnt < BLACK_CNT) {
+				if (whiteCnt + spaceCnt < 4) {
 					// 黒マス不足
 					return false;
 				}
-				// 置かねばならない黒マスの数
-				int retainBlackCnt = BLACK_CNT - blackCnt;
-				if (retainBlackCnt < 0) {
-					// 黒マス超過
+				// 置かねばならない白マスの数
+				int retainWhiteCnt = 4 - whiteCnt;
+				if (retainWhiteCnt < 0) {
+					// 白マス超過
 					return false;
-				} else if (retainBlackCnt == 0) {
-					// 黒マス数が既に部屋の黒マス数に等しければ、部屋の他のマスは白マス
-					for (Position pos : room) {
-						if (masu[pos.getyIndex()][pos.getxIndex()] == Masu.SPACE) {
-							masu[pos.getyIndex()][pos.getxIndex()] = Masu.NOT_BLACK;
-						}
-					}
-				} else if (spaceCnt == retainBlackCnt) {
-					// 未確定マスが置かねばならない黒マスの数に等しければ、未確定マスは黒マス
+				} else if (retainWhiteCnt == 0) {
+					// 白マス数が既に部屋の白マス数に等しければ、部屋の他のマスは黒マス
 					for (Position pos : room) {
 						if (masu[pos.getyIndex()][pos.getxIndex()] == Masu.SPACE) {
 							masu[pos.getyIndex()][pos.getxIndex()] = Masu.BLACK;
+						}
+					}
+				} else if (spaceCnt == retainWhiteCnt) {
+					// 未確定マスが置かねばならない白マスの数に等しければ、未確定マスは白マス
+					for (Position pos : room) {
+						if (masu[pos.getyIndex()][pos.getxIndex()] == Masu.SPACE) {
+							masu[pos.getyIndex()][pos.getxIndex()] = Masu.NOT_BLACK;
 						}
 					}
 				}
@@ -1125,26 +581,26 @@ public class LitsSolver implements Solver {
 		}
 
 		/**
-		 * 既にある黒から届かない領域を白マスにする。 既にある黒から届かない場所に黒を見つけた場合falseを返す。
+		 * 既にある白から届かない領域を黒マスにする。 既にある白から届かない場所に白を見つけた場合falseを返す。
 		 */
 		public boolean capacitySolve() {
 			for (Set<Position> room : rooms) {
 				Set<Position> alreadySurvey = new HashSet<>();
 				for (Position pos : room) {
-					if (masu[pos.getyIndex()][pos.getxIndex()] == Masu.BLACK && !alreadySurvey.contains(pos)) {
+					if (masu[pos.getyIndex()][pos.getxIndex()] == Masu.NOT_BLACK && !alreadySurvey.contains(pos)) {
 						if (!alreadySurvey.isEmpty()) {
 							return false;
 						}
 						Set<Position> continuePosSet = new HashSet<>();
 						continuePosSet.add(pos);
-						setContinuePosSetUseDistance(pos, continuePosSet, BLACK_CNT - 1, null);
+						setContinuePosSetUseDistance(pos, continuePosSet, 4 - 1, null);
 						alreadySurvey.addAll(continuePosSet);
 					}
 				}
 				if (!alreadySurvey.isEmpty()) {
 					for (Position pos : room) {
 						if (!alreadySurvey.contains(pos)) {
-							masu[pos.getyIndex()][pos.getxIndex()] = Masu.NOT_BLACK;
+							masu[pos.getyIndex()][pos.getxIndex()] = Masu.BLACK;
 						}
 					}
 				}
@@ -1218,57 +674,56 @@ public class LitsSolver implements Solver {
 		 */
 		public boolean nextSolve() {
 			for (Set<Position> room : rooms) {
-				Set<Position> myRoomBlackSet = new HashSet<>();
+				Set<Position> myRoomWhiteSet = new HashSet<>();
 				Set<Position> nextRoomPosSet = new HashSet<>();
 				for (Position pos : room) {
-					if (masu[pos.getyIndex()][pos.getxIndex()] == Masu.BLACK) {
-						myRoomBlackSet.add(pos);
+					if (masu[pos.getyIndex()][pos.getxIndex()] == Masu.NOT_BLACK) {
+						myRoomWhiteSet.add(pos);
 						if (pos.getyIndex() != 0) {
-							Position blackPos = new Position(pos.getyIndex() - 1, pos.getxIndex());
-							if (!room.contains(blackPos)
-									&& masu[blackPos.getyIndex()][blackPos.getxIndex()] == Masu.BLACK) {
-								// 隣接マスが黒マスの場合のみ調査
-								nextRoomPosSet.add(blackPos);
+							Position targetPos = new Position(pos.getyIndex() - 1, pos.getxIndex());
+							if (!room.contains(targetPos)
+									&& masu[targetPos.getyIndex()][targetPos.getxIndex()] == Masu.NOT_BLACK) {
+								// 隣接マスが白マスの場合のみ調査
+								nextRoomPosSet.add(targetPos);
 							}
 						}
 						if (pos.getxIndex() != getXLength() - 1) {
-							Position blackPos = new Position(pos.getyIndex(), pos.getxIndex() + 1);
-							if (!room.contains(blackPos)
-									&& masu[blackPos.getyIndex()][blackPos.getxIndex()] == Masu.BLACK) {
-								nextRoomPosSet.add(blackPos);
+							Position targetPos = new Position(pos.getyIndex(), pos.getxIndex() + 1);
+							if (!room.contains(targetPos)
+									&& masu[targetPos.getyIndex()][targetPos.getxIndex()] == Masu.NOT_BLACK) {
+								nextRoomPosSet.add(targetPos);
 							}
 						}
 						if (pos.getyIndex() != getYLength() - 1) {
-							Position blackPos = new Position(pos.getyIndex() + 1, pos.getxIndex());
-							if (!room.contains(blackPos)
-									&& masu[blackPos.getyIndex()][blackPos.getxIndex()] == Masu.BLACK) {
-								nextRoomPosSet.add(blackPos);
+							Position targetPos = new Position(pos.getyIndex() + 1, pos.getxIndex());
+							if (!room.contains(targetPos)
+									&& masu[targetPos.getyIndex()][targetPos.getxIndex()] == Masu.NOT_BLACK) {
+								nextRoomPosSet.add(targetPos);
 							}
 						}
 						if (pos.getxIndex() != 0) {
-							Position blackPos = new Position(pos.getyIndex(), pos.getxIndex() - 1);
-							if (!room.contains(blackPos)
-									&& masu[blackPos.getyIndex()][blackPos.getxIndex()] == Masu.BLACK) {
-								nextRoomPosSet.add(blackPos);
+							Position targetPos = new Position(pos.getyIndex(), pos.getxIndex() - 1);
+							if (!room.contains(targetPos)
+									&& masu[targetPos.getyIndex()][targetPos.getxIndex()] == Masu.NOT_BLACK) {
+								nextRoomPosSet.add(targetPos);
 							}
 						}
 					}
 				}
-				// 自分の部屋の黒が4マスの場合のみ調査
-				if (myRoomBlackSet.size() == BLACK_CNT) {
+				// 自分の部屋の白が4マスの場合のみ調査
+				if (myRoomWhiteSet.size() == 4) {
 					for (Position nextRoomPos : nextRoomPosSet) {
 						for (Set<Position> otherRoom : rooms) {
 							if (otherRoom.contains(nextRoomPos)) {
-								Set<Position> otherRoomBlackSet = new HashSet<>();
+								Set<Position> otherRoomWhiteSet = new HashSet<>();
 								for (Position pos : otherRoom) {
-									if (masu[pos.getyIndex()][pos.getxIndex()] == Masu.BLACK) {
-										otherRoomBlackSet.add(pos);
+									if (masu[pos.getyIndex()][pos.getxIndex()] == Masu.NOT_BLACK) {
+										otherRoomWhiteSet.add(pos);
 									}
 								}
 								// 4マスで同じ形ならfalse
-								if (otherRoomBlackSet.size() == BLACK_CNT
-										&& Tetro.getByPositionSet(myRoomBlackSet) == Tetro
-												.getByPositionSet(otherRoomBlackSet)) {
+								if (otherRoomWhiteSet.size() == 4 && Tetro.getByPositionSet(myRoomWhiteSet) == Tetro
+										.getByPositionSet(otherRoomWhiteSet)) {
 									return false;
 								}
 							}
@@ -1322,11 +777,11 @@ public class LitsSolver implements Solver {
 	protected final Field field;
 	protected int count = 0;
 
-	public LitsSolver(int height, int width, String param) {
+	public InvlitsoSolver(int height, int width, String param) {
 		field = new Field(height, width, param);
 	}
 
-	public LitsSolver(Field field) {
+	public InvlitsoSolver(Field field) {
 		this.field = new Field(field);
 	}
 
@@ -1335,12 +790,12 @@ public class LitsSolver implements Solver {
 	}
 
 	public static void main(String[] args) {
-		String url = ""; // urlを入れれば試せる
+		String url = "https://puzz.link/p?invlitso/15/13/3c0uk2ssrjci974i994mi9b4iu97d4nrbkh9843vosu8qc7vt002c06jvoc07804jvo8cknr8"; // urlを入れれば試せる
 		String[] params = url.split("/");
 		int height = Integer.parseInt(params[params.length - 2]);
 		int width = Integer.parseInt(params[params.length - 3]);
 		String param = params[params.length - 1];
-		System.out.println(new LitsSolver(height, width, param).solve());
+		System.out.println(new InvlitsoSolver(height, width, param).solve());
 	}
 
 	@Override
