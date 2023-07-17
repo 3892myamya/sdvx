@@ -486,6 +486,30 @@ public class Common {
 			samePosSetList.add(wkSamePosSet);
 		}
 
+		/**
+		 * 自身の回転・反転系も含めて同一形状とみなされる形の位置情報を重複を排除したリストで返す。
+		 */
+		public List<Set<Position>> getSamePosSetList() {
+			List<Set<Position>> result = new ArrayList<>();
+			for (Set<Position> posSet : samePosSetList) {
+				boolean already = false;
+				for (Set<Position> added : result) {
+					if (posSet.size() == added.size() && posSet.containsAll(added)) {
+						already = true;
+						break;
+					}
+				}
+				if (!already) {
+					result.add(posSet);
+				}
+			}
+			return result;
+		}
+
+		public boolean isSame(FixedShape other) {
+			return isSame(other.samePosSetList.get(0));
+		}
+
 		public boolean isSame(Set<Position> posSet) {
 			if (posSet.size() != samePosSetList.get(0).size()) {
 				return false;
