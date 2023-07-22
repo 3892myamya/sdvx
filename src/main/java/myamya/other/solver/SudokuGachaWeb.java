@@ -25,6 +25,7 @@ import myamya.other.solver.canal.CanalSolver.CanalGenerator;
 import myamya.other.solver.clouds.CloudsSolver.CloudsGenerator;
 import myamya.other.solver.cocktail.CocktailSolver.CocktailGenerator;
 import myamya.other.solver.cojun.CojunSolver.CojunGenerator;
+import myamya.other.solver.context.ContextSolver.ContextGenerator;
 import myamya.other.solver.country.CountrySolver.CountryGenerator;
 import myamya.other.solver.creek.CreekSolver.CreekGenerator;
 import myamya.other.solver.dominion.DominionSolver.DominionGenerator;
@@ -1558,6 +1559,22 @@ public class SudokuGachaWeb extends HttpServlet {
 
 	}
 
+	static class ContextGeneratorThlead extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+
+		ContextGeneratorThlead(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new ContextGenerator(height, width);
+		}
+
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -1766,6 +1783,8 @@ public class SudokuGachaWeb extends HttpServlet {
 				t = new LollipopsGeneratorThlead(height, width);
 			} else if (type.equals("guidearrow")) {
 				t = new GuidearrowGeneratorThlead(height, width);
+			} else if (type.equals("context")) {
+				t = new ContextGeneratorThlead(height, width);
 			} else {
 				throw new IllegalArgumentException();
 			}

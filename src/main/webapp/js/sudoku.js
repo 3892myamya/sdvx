@@ -454,6 +454,11 @@ var ruleMap = {
 		url : "https://puzz.link/rules.html?guidearrow",
 		source : "puzz.linkさん"
 	},
+	context : {
+		name : "Context",
+		url : "https://puzz.link/rules.html?context",
+		source : "puzz.linkさん"
+	},
 }
 var regMap = {
 		yajilin:[{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},
