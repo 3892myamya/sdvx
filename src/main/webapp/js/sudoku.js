@@ -459,6 +459,11 @@ var ruleMap = {
 		url : "https://puzz.link/rules.html?context",
 		source : "puzz.linkさん"
 	},
+	sashikazune : {
+		name : "さしカズね",
+		url : "https://puzz.link/rules.html?sashikazune",
+		source : "puzz.linkさん"
+	},
 }
 var regMap = {
 		yajilin:[{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},
@@ -1106,7 +1111,7 @@ $(function() {
 				} else {
 					$('#sel_size').val(nowSelSizeVal);
 				}
-			} else if (type == 'norinori') {
+			} else if (type == 'norinori' || type == 'sashikazune') {
 				$('#sel_size').append(option.size_4);
 				$('#sel_size').append(option.size_5);
 				$('#sel_size').append(option.size_6);
