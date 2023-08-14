@@ -464,6 +464,11 @@ var ruleMap = {
 		url : "https://puzz.link/rules.html?sashikazune",
 		source : "puzz.linkさん"
 	},
+	myopia : {
+		name : "Myopia",
+		url : "https://puzz.link/rules.html?myopia",
+		source : "puzz.linkさん"
+	},
 }
 var regMap = {
 		yajilin:[{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},
