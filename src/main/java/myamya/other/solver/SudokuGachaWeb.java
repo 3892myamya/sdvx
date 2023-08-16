@@ -63,6 +63,7 @@ import myamya.other.solver.nanro.NanroSolver.NanroGenerator;
 import myamya.other.solver.nibunnogo.NibunnogoSolver.NibunnogoGenerator;
 import myamya.other.solver.nonogram.NonogramSolver.NonogramGenerator;
 import myamya.other.solver.norinori.NorinoriSolver.NorinoriGenerator;
+import myamya.other.solver.nothree.NothreeSolver.NothreeGenerator;
 import myamya.other.solver.nuribou.NuribouSolver.NuribouGenerator;
 import myamya.other.solver.nurikabe.NurikabeSolver.NurikabeGenerator;
 import myamya.other.solver.nurimaze.NurimazeSolver.NurimazeGenerator;
@@ -1609,6 +1610,22 @@ public class SudokuGachaWeb extends HttpServlet {
 
 	}
 
+	static class NothreeGeneratorThlead extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+
+		NothreeGeneratorThlead(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new NothreeGenerator(height, width);
+		}
+
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -1823,6 +1840,8 @@ public class SudokuGachaWeb extends HttpServlet {
 				t = new SashikazuneGeneratorThlead(height, width);
 			} else if (type.equals("myopia")) {
 				t = new MyopiaGeneratorThlead(height, width);
+			} else if (type.equals("nothree")) {
+				t = new NothreeGeneratorThlead(height, width);
 			} else {
 				throw new IllegalArgumentException();
 			}

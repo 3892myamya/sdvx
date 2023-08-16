@@ -469,6 +469,11 @@ var ruleMap = {
 		url : "https://puzz.link/rules.html?myopia",
 		source : "puzz.linkさん"
 	},
+	nothree : {
+		name : "ノースリー",
+		url : "https://puzz.link/rules.html?nothree",
+		source : "puzz.linkさん"
+	},
 }
 var regMap = {
 		yajilin:[{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},
@@ -1202,6 +1207,19 @@ $(function() {
 				} else {
 					$('#sel_size').val(nowSelSizeVal);
 				}
+			} else if (type == 'nothree') {
+				$('#sel_size').append(option.size_3);
+				$('#sel_size').append(option.size_4);
+				$('#sel_size').append(option.size_5);
+				$('#sel_size').append(option.size_6);
+				$('#sel_size').append(option.size_7);
+				$('#sel_size').append(option.size_8);
+				$('#sel_size').append(option.size_9);
+				$('#sel_size').append(option.size_10);
+				$('#sel_size').append(option.size_11);
+				$('#sel_size').append(option.size_12);
+				$('#sel_size').append(option.size_15);
+				$('#sel_size').val(nowSelSizeVal);
 			} else {
 				$('#sel_size').append(option.size_3);
 				$('#sel_size').append(option.size_4);
