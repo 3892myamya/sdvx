@@ -101,6 +101,7 @@ import myamya.other.solver.voxas.VoxasSolver.VoxasGenerator;
 import myamya.other.solver.wafusuma.WafusumaSolver.WafusumaGenerator;
 import myamya.other.solver.walllogic.WalllogicSolver.WalllogicGenerator;
 import myamya.other.solver.whitelink.WhitelinkSolver.WhitelinkGenerator;
+import myamya.other.solver.wittgen.WittgenSolver.WittgenGenerator;
 import myamya.other.solver.yajikazu.YajikazuSolver.YajikazuGenerator;
 import myamya.other.solver.yajilin.YajilinSolver.YajilinGenerator;
 import myamya.other.solver.yajitatami.YajitatamiSolver.YajitatamiGenerator;
@@ -1626,6 +1627,22 @@ public class SudokuGachaWeb extends HttpServlet {
 
 	}
 
+	static class WittgenGeneratorThlead extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+
+		WittgenGeneratorThlead(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new WittgenGenerator(height, width);
+		}
+
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -1842,6 +1859,8 @@ public class SudokuGachaWeb extends HttpServlet {
 				t = new MyopiaGeneratorThlead(height, width);
 			} else if (type.equals("nothree")) {
 				t = new NothreeGeneratorThlead(height, width);
+			} else if (type.equals("wittgen")) {
+				t = new WittgenGeneratorThlead(height, width);
 			} else {
 				throw new IllegalArgumentException();
 			}

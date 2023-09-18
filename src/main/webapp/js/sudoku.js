@@ -474,6 +474,11 @@ var ruleMap = {
 		url : "https://puzz.link/rules.html?nothree",
 		source : "puzz.linkさん"
 	},
+	wittgen : {
+		name : "Wittgenstein Briquet",
+		url : "https://puzz.link/rules.html?wittgen",
+		source : "puzz.linkさん"
+	},
 }
 var regMap = {
 		yajilin:[{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},
