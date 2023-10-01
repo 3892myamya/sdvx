@@ -15,6 +15,7 @@ import myamya.other.solver.Common.GeneratorResult;
 import myamya.other.solver.Common.PenpaEditGeneratorResult;
 import myamya.other.solver.akari.AkariSolver.AkariGenerator;
 import myamya.other.solver.aqre.AqreSolver.AqreGenerator;
+import myamya.other.solver.aquapelago.AquapelagoSolver.AquapelagoGenerator;
 import myamya.other.solver.archipelago.ArchipelagoSolver.ArchipelagoGenerator;
 import myamya.other.solver.bag.BagSolver.BagGenerator;
 import myamya.other.solver.balance.BalanceSolver.BalanceGenerator;
@@ -1643,6 +1644,22 @@ public class SudokuGachaWeb extends HttpServlet {
 
 	}
 
+	static class AquapelagoGeneratorThread extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+
+		AquapelagoGeneratorThread(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new AquapelagoGenerator(height, width);
+		}
+
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -1861,6 +1878,8 @@ public class SudokuGachaWeb extends HttpServlet {
 				t = new NothreeGeneratorThlead(height, width);
 			} else if (type.equals("wittgen")) {
 				t = new WittgenGeneratorThlead(height, width);
+			} else if (type.equals("aquapelago")) {
+				t = new AquapelagoGeneratorThread(height, width);
 			} else {
 				throw new IllegalArgumentException();
 			}

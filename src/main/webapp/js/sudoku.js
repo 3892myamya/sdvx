@@ -479,6 +479,11 @@ var ruleMap = {
 		url : "https://puzz.link/rules.html?wittgen",
 		source : "puzz.linkさん"
 	},
+	aquapelago : {
+		name : "Aquapelago",
+		url : "https://puzz.link/rules.html?aquapelago",
+		source : "puzz.linkさん"
+	},
 }
 var regMap = {
 		yajilin:[{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},

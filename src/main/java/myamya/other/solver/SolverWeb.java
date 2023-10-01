@@ -35,6 +35,7 @@ import myamya.other.solver.akari.AkariSolver;
 import myamya.other.solver.angleloop.AngleloopSolver;
 import myamya.other.solver.angleloop.AngleloopSolver.Angle;
 import myamya.other.solver.aqre.AqreSolver;
+import myamya.other.solver.aquapelago.AquapelagoSolver;
 import myamya.other.solver.aquarium.AquariumSolver;
 import myamya.other.solver.archipelago.ArchipelagoSolver;
 import myamya.other.solver.bag.BagSolver;
@@ -16252,8 +16253,8 @@ public class SolverWeb extends HttpServlet {
 				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
 					if (field.getNumbers()[yIndex][xIndex] != null) {
 						sb.append("<rect y=\"" + (yIndex * baseSize + margin) + "\" x=\""
-								+ (xIndex * baseSize + baseSize) + "\" fill=\"" + "white" + "\" width=\""
-								+ (baseSize) + "\" height=\"" + (baseSize) + "\">" + "</rect>");
+								+ (xIndex * baseSize + baseSize) + "\" fill=\"" + "white" + "\" width=\"" + (baseSize)
+								+ "\" height=\"" + (baseSize) + "\">" + "</rect>");
 						if (field.getNumbers()[yIndex][xIndex] != -1) {
 							String numberStr = String.valueOf(field.getNumbers()[yIndex][xIndex]);
 							int index = HALF_NUMS.indexOf(numberStr);
@@ -16311,6 +16312,92 @@ public class SolverWeb extends HttpServlet {
 						sb.append("stroke=\"#000\" stroke-width=\"2\" ");
 					} else {
 						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" stroke-width=\"1\" ");
+					}
+					sb.append(">" + "</line>");
+				}
+			}
+			sb.append("</svg>");
+			return sb.toString();
+		}
+	}
+
+	static class AquapelagoSolverThread extends AbsSolverThlead {
+		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
+		private static final String FULL_NUMS = "０１２３４５６７８９";
+
+		public AquapelagoSolverThread(int height, int width, String param) {
+			super(height, width, param);
+		}
+
+		@Override
+		protected Solver getSolver() {
+			return new AquapelagoSolver(height, width, param);
+		}
+
+		@Override
+		public String makeCambus() {
+			StringBuilder sb = new StringBuilder();
+			AquapelagoSolver.Field field = ((AquapelagoSolver) solver).getField();
+			int baseSize = 20;
+			int margin = 5;
+			sb.append("<svg xmlns=\"http://www.w3.org/2000/svg\" " + "height=\""
+					+ (field.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
+					+ (field.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					Masu oneMasu = field.getMasu()[yIndex][xIndex];
+					if (oneMasu.toString().equals("■")) {
+						sb.append(
+								"<rect y=\"" + (yIndex * baseSize + margin) + "\" x=\"" + (xIndex * baseSize + baseSize)
+										+ "\" width=\"" + (baseSize) + "\" height=\"" + (baseSize) + "\">" + "</rect>");
+					} else if (oneMasu.toString().equals("・")) {
+						sb.append("<rect y=\"" + (yIndex * baseSize + margin) + "\" x=\""
+								+ (xIndex * baseSize + baseSize) + "\" fill=\"" + "palegreen" + "\" width=\""
+								+ (baseSize) + "\" height=\"" + (baseSize) + "\">" + "</rect>");
+					}
+					if (field.getNumbers()[yIndex][xIndex] != null && field.getNumbers()[yIndex][xIndex] != -1) {
+						String numberStr = String.valueOf(field.getNumbers()[yIndex][xIndex]);
+						int index = HALF_NUMS.indexOf(numberStr);
+						String masuStr = null;
+						if (index >= 0) {
+							masuStr = FULL_NUMS.substring(index / 2, index / 2 + 1);
+						} else {
+							masuStr = numberStr;
+						}
+						sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 4 + margin) + "\" x=\""
+								+ (xIndex * baseSize + baseSize + 2) + "\" font-size=\"" + (baseSize - 5) + "\" fill=\""
+								+ (oneMasu.toString().equals("■") ? "white" : "black") + "\" textLength=\""
+								+ (baseSize - 5) + "\" lengthAdjust=\"spacingAndGlyphs\">" + masuStr + "</text>");
+					}
+				}
+			}
+			// 横壁描画
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = -1; xIndex < field.getXLength(); xIndex++) {
+					boolean oneYokoWall = xIndex == -1 || xIndex == field.getXLength() - 1;
+					sb.append("<line y1=\"" + (yIndex * baseSize + margin) + "\" x1=\""
+							+ (xIndex * baseSize + 2 * baseSize) + "\" y2=\"" + (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\"" + (xIndex * baseSize + 2 * baseSize) + "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneYokoWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">" + "</line>");
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = -1; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					boolean oneTateWall = yIndex == -1 || yIndex == field.getYLength() - 1;
+					sb.append("<line y1=\"" + (yIndex * baseSize + baseSize + margin) + "\" x1=\""
+							+ (xIndex * baseSize + baseSize) + "\" y2=\"" + (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\"" + (xIndex * baseSize + baseSize + baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneTateWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
 					}
 					sb.append(">" + "</line>");
 				}
@@ -16739,6 +16826,8 @@ public class SolverWeb extends HttpServlet {
 						t = new BrowniesSolverThread(height, width, param);
 					} else if (puzzleType.contains("wittgen")) {
 						t = new WittgenSolverThread(height, width, param);
+					} else if (puzzleType.contains("aquapelago")) {
+						t = new AquapelagoSolverThread(height, width, param);
 					} else {
 						throw new IllegalArgumentException();
 					}
