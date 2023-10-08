@@ -70,6 +70,7 @@ import myamya.other.solver.nurikabe.NurikabeSolver.NurikabeGenerator;
 import myamya.other.solver.nurimaze.NurimazeSolver.NurimazeGenerator;
 import myamya.other.solver.nurimisaki.NurimisakiSolver.NurimisakiGenerator;
 import myamya.other.solver.nurimulti.NurimultiSolver.NurimultiGenerator;
+import myamya.other.solver.oneroom.OneroomSolver.OneroomGenerator;
 import myamya.other.solver.pipelink.PipelinkSolver.PipelinkGenerator;
 import myamya.other.solver.putteria.PutteriaSolver.PutteriaGenerator;
 import myamya.other.solver.reflect.ReflectSolver.ReflectGenerator;
@@ -1660,6 +1661,22 @@ public class SudokuGachaWeb extends HttpServlet {
 
 	}
 
+	static class OneroomGeneratorThread extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+
+		OneroomGeneratorThread(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new OneroomGenerator(height, width);
+		}
+
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -1880,6 +1897,8 @@ public class SudokuGachaWeb extends HttpServlet {
 				t = new WittgenGeneratorThlead(height, width);
 			} else if (type.equals("aquapelago")) {
 				t = new AquapelagoGeneratorThread(height, width);
+			} else if (type.equals("oneroom")) {
+				t = new OneroomGeneratorThread(height, width);
 			} else {
 				throw new IllegalArgumentException();
 			}

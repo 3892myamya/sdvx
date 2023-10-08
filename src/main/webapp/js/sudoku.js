@@ -484,6 +484,11 @@ var ruleMap = {
 		url : "https://puzz.link/rules.html?aquapelago",
 		source : "puzz.linkさん"
 	},
+	oneroom : {
+		name : "ワンルームワンドア",
+		url : "https://puzz.link/rules.html?oneroom",
+		source : "puzz.linkさん"
+	},
 }
 var regMap = {
 		yajilin:[{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},

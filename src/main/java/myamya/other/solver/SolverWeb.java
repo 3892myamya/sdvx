@@ -139,6 +139,7 @@ import myamya.other.solver.nurimaze.NurimazeSolver;
 import myamya.other.solver.nurimaze.NurimazeSolver.Mark;
 import myamya.other.solver.nurimisaki.NurimisakiSolver;
 import myamya.other.solver.nurimulti.NurimultiSolver;
+import myamya.other.solver.oneroom.OneroomSolver;
 import myamya.other.solver.ovotovata.OvotovataSolver;
 import myamya.other.solver.oyakodori.OyakodoriSolver;
 import myamya.other.solver.patchwork.PatchworkSolver;
@@ -16407,6 +16408,100 @@ public class SolverWeb extends HttpServlet {
 		}
 	}
 
+	static class OneroomSolverThread extends AbsSolverThlead {
+		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
+		private static final String FULL_NUMS = "０１２３４５６７８９";
+
+		public OneroomSolverThread(int height, int width, String param) {
+			super(height, width, param);
+		}
+
+		@Override
+		protected Solver getSolver() {
+			return new OneroomSolver(height, width, param);
+		}
+
+		@Override
+		public String makeCambus() {
+			StringBuilder sb = new StringBuilder();
+			OneroomSolver.Field field = ((OneroomSolver) solver).getField();
+			int baseSize = 20;
+			int margin = 5;
+			sb.append("<svg xmlns=\"http://www.w3.org/2000/svg\" " + "height=\""
+					+ (field.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
+					+ (field.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					Common.Masu oneMasu = field.getMasu()[yIndex][xIndex];
+					if (oneMasu.toString().equals("■")) {
+						sb.append("<rect y=\"" + (yIndex * baseSize + margin) + "\" x=\""
+								+ (xIndex * baseSize + baseSize) + "\" fill=\"" + "#444" + "\" width=\"" + (baseSize)
+								+ "\" height=\"" + (baseSize) + "\">" + "</rect>");
+					} else if (oneMasu.toString().equals("・")) {
+						sb.append("<rect y=\"" + (yIndex * baseSize + margin) + "\" x=\""
+								+ (xIndex * baseSize + baseSize) + "\" fill=\"" + "palegreen" + "\" width=\""
+								+ (baseSize) + "\" height=\"" + (baseSize) + "\">" + "</rect>");
+					}
+				}
+			}
+			// 横壁描画
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = -1; xIndex < field.getXLength(); xIndex++) {
+					boolean oneYokoWall = xIndex == -1 || xIndex == field.getXLength() - 1
+							|| field.getYokoWall()[yIndex][xIndex];
+					sb.append("<line y1=\"" + (yIndex * baseSize + margin) + "\" x1=\""
+							+ (xIndex * baseSize + 2 * baseSize) + "\" y2=\"" + (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\"" + (xIndex * baseSize + 2 * baseSize) + "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneYokoWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">" + "</line>");
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = -1; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					boolean oneTateWall = yIndex == -1 || yIndex == field.getYLength() - 1
+							|| field.getTateWall()[yIndex][xIndex];
+					sb.append("<line y1=\"" + (yIndex * baseSize + baseSize + margin) + "\" x1=\""
+							+ (xIndex * baseSize + baseSize) + "\" y2=\"" + (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\"" + (xIndex * baseSize + baseSize + baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneTateWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">" + "</line>");
+				}
+			}
+			// 数字描画
+			for (myamya.other.solver.oneroom.OneroomSolver.Room room : field.getRooms()) {
+				int roomBlackCount = room.getBlackCnt();
+				if (roomBlackCount != -1) {
+					String roomBlackCountStr;
+					String wkstr = String.valueOf(roomBlackCount);
+					int idx = HALF_NUMS.indexOf(wkstr);
+					if (idx >= 0) {
+						roomBlackCountStr = FULL_NUMS.substring(idx / 2, idx / 2 + 1);
+					} else {
+						roomBlackCountStr = wkstr;
+					}
+					Position numberMasuPos = room.getNumberMasuPos();
+					String fillColor = field.getMasu()[numberMasuPos.getyIndex()][numberMasuPos
+							.getxIndex()] == Common.Masu.BLACK ? "white" : "black";
+					sb.append("<text y=\"" + (numberMasuPos.getyIndex() * baseSize + baseSize + margin - 5) + "\" x=\""
+							+ (numberMasuPos.getxIndex() * baseSize + baseSize + 2) + "\" fill=\"" + fillColor
+							+ "\" font-size=\"" + (baseSize - 5) + "\" textLength=\"" + (baseSize - 5)
+							+ "\" lengthAdjust=\"spacingAndGlyphs\">" + roomBlackCountStr + "</text>");
+				}
+			}
+			return sb.toString();
+		}
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -16828,6 +16923,8 @@ public class SolverWeb extends HttpServlet {
 						t = new WittgenSolverThread(height, width, param);
 					} else if (puzzleType.contains("aquapelago")) {
 						t = new AquapelagoSolverThread(height, width, param);
+					} else if (puzzleType.contains("oneroom")) {
+						t = new OneroomSolverThread(height, width, param);
 					} else {
 						throw new IllegalArgumentException();
 					}
