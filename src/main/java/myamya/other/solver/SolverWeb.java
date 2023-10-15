@@ -121,6 +121,7 @@ import myamya.other.solver.minarism.MinarismSolver;
 import myamya.other.solver.mines.MinesSolver;
 import myamya.other.solver.mochikoro.MochikoroSolver;
 import myamya.other.solver.moonsun.MoonsunSolver;
+import myamya.other.solver.mukkonn.MukkonnSolver;
 import myamya.other.solver.myopia.MyopiaSolver;
 import myamya.other.solver.nagare.NagareSolver;
 import myamya.other.solver.nagenawa.NagenawaSolver;
@@ -16502,6 +16503,173 @@ public class SolverWeb extends HttpServlet {
 		}
 	}
 
+	static class MukkonnSolverThread extends AbsSolverThlead {
+		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
+		private static final String FULL_NUMS = "０１２３４５６７８９";
+
+		public MukkonnSolverThread(int height, int width, String param) {
+			super(height, width, param);
+		}
+
+		@Override
+		protected Solver getSolver() {
+			return new MukkonnSolver(height, width, param);
+		}
+
+		@Override
+		public String makeCambus() {
+			StringBuilder sb = new StringBuilder();
+			MukkonnSolver.Field field = ((MukkonnSolver) solver).getField();
+			int baseSize = 27;
+			int margin = 5;
+			sb.append("<svg xmlns=\"http://www.w3.org/2000/svg\" " + "height=\""
+					+ (field.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
+					+ (field.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			// 横壁描画
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = -1; xIndex < field.getXLength(); xIndex++) {
+					boolean oneYokoWall = xIndex == -1 || xIndex == field.getXLength() - 1;
+					sb.append("<line y1=\"" + (yIndex * baseSize + margin) + "\" x1=\""
+							+ (xIndex * baseSize + 2 * baseSize) + "\" y2=\"" + (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\"" + (xIndex * baseSize + 2 * baseSize) + "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneYokoWall) {
+						if (xIndex == -1 || xIndex == field.getXLength() - 1) {
+							sb.append("stroke=\"#000\" ");
+						} else {
+							sb.append("stroke=\"green\" ");
+						}
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">" + "</line>");
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = -1; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					boolean oneTateWall = yIndex == -1 || yIndex == field.getYLength() - 1;
+					sb.append("<line y1=\"" + (yIndex * baseSize + baseSize + margin) + "\" x1=\""
+							+ (xIndex * baseSize + baseSize) + "\" y2=\"" + (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\"" + (xIndex * baseSize + baseSize + baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneTateWall) {
+						if (yIndex == -1 || yIndex == field.getYLength() - 1) {
+							sb.append("stroke=\"#000\" ");
+						} else {
+							sb.append("stroke=\"green\" ");
+						}
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">" + "</line>");
+				}
+			}
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					boolean forYoko = xIndex != field.getXLength() - 1
+							&& field.getYokoWall()[yIndex][xIndex] == Wall.NOT_EXISTS;
+					boolean forTate = yIndex != field.getYLength() - 1
+							&& field.getTateWall()[yIndex][xIndex] == Wall.NOT_EXISTS;
+					if (forYoko) {
+						sb.append("<line y1=\"" + (yIndex * baseSize + baseSize + margin - 13.5) + "\" x1=\""
+								+ (xIndex * baseSize + baseSize + 13.5) + "\" y2=\""
+								+ (yIndex * baseSize + baseSize + margin - 13.5) + "\" x2=\""
+								+ (xIndex * baseSize + baseSize + baseSize + 13.5)
+								+ "\" stroke-width=\"2\" fill=\"none\"");
+						sb.append("stroke=\"green\" ");
+						sb.append(">" + "</line>");
+					}
+					if (forTate) {
+						sb.append("<line y1=\"" + (yIndex * baseSize + margin + 13.5) + "\" x1=\""
+								+ (xIndex * baseSize + 2 * baseSize - 13.5) + "\" y2=\""
+								+ (yIndex * baseSize + baseSize + margin + 13.5) + "\" x2=\""
+								+ (xIndex * baseSize + 2 * baseSize - 13.5) + "\" stroke-width=\"2\" fill=\"none\"");
+						sb.append("stroke=\"green\" ");
+						sb.append(">" + "</line>");
+					}
+				}
+			}
+			// 記号描画
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					myamya.other.solver.mukkonn.MukkonnSolver.Compass compass = field.getCompasses()[yIndex][xIndex];
+					if (compass != null) {
+						sb.append("<line y1=\"" + (yIndex * baseSize + margin) + "\" x1=\""
+								+ (xIndex * baseSize + baseSize) + "\" y2=\"" + (yIndex * baseSize + baseSize + margin)
+								+ "\" x2=\"" + (xIndex * baseSize + baseSize + baseSize)
+								+ "\" stroke-width=\"1\" fill=\"none\"");
+						sb.append("stroke=\"#000\" ");
+						sb.append(">" + "</line>");
+						sb.append("<line y1=\"" + (yIndex * baseSize + margin) + "\" x1=\""
+								+ (xIndex * baseSize + baseSize + baseSize) + "\" y2=\""
+								+ (yIndex * baseSize + baseSize + margin) + "\" x2=\"" + (xIndex * baseSize + baseSize)
+								+ "\" stroke-width=\"1\" fill=\"none\"");
+						sb.append("stroke=\"#000\" ");
+						sb.append(">" + "</line>");
+						if (compass.getLeftCnt() != -1) {
+							String str;
+							String numberStr = String.valueOf(compass.getLeftCnt());
+							int idx = HALF_NUMS.indexOf(numberStr);
+							if (idx >= 0) {
+								str = FULL_NUMS.substring(idx / 2, idx / 2 + 1);
+							} else {
+								str = numberStr;
+							}
+							sb.append("<text y=\"" + (yIndex * baseSize + (baseSize * 2 / 3) + margin - 1) + "\" x=\""
+									+ (xIndex * baseSize + baseSize) + "\" font-size=\"" + (baseSize) / 3
+									+ "\" textLength=\"" + (baseSize) / 3 + "\" lengthAdjust=\"spacingAndGlyphs\">"
+									+ str + "</text>");
+						}
+						if (compass.getUpCnt() != -1) {
+							String str;
+							String numberStr = String.valueOf(compass.getUpCnt());
+							int idx = HALF_NUMS.indexOf(numberStr);
+							if (idx >= 0) {
+								str = FULL_NUMS.substring(idx / 2, idx / 2 + 1);
+							} else {
+								str = numberStr;
+							}
+							sb.append("<text y=\"" + (yIndex * baseSize + (baseSize / 3) + margin - 1) + "\" x=\""
+									+ (xIndex * baseSize + baseSize + (baseSize / 3)) + "\" font-size=\""
+									+ (baseSize) / 3 + "\" textLength=\"" + (baseSize) / 3
+									+ "\" lengthAdjust=\"spacingAndGlyphs\">" + str + "</text>");
+						}
+						if (compass.getDownCnt() != -1) {
+							String str;
+							String numberStr = String.valueOf(compass.getDownCnt());
+							int idx = HALF_NUMS.indexOf(numberStr);
+							if (idx >= 0) {
+								str = FULL_NUMS.substring(idx / 2, idx / 2 + 1);
+							} else {
+								str = numberStr;
+							}
+							sb.append("<text y=\"" + (yIndex * baseSize + baseSize + margin - 1) + "\" x=\""
+									+ (xIndex * baseSize + baseSize + (baseSize / 3)) + "\" font-size=\""
+									+ (baseSize) / 3 + "\" textLength=\"" + (baseSize) / 3
+									+ "\" lengthAdjust=\"spacingAndGlyphs\">" + str + "</text>");
+						}
+						if (compass.getRightCnt() != -1) {
+							String str;
+							String numberStr = String.valueOf(compass.getRightCnt());
+							int idx = HALF_NUMS.indexOf(numberStr);
+							if (idx >= 0) {
+								str = FULL_NUMS.substring(idx / 2, idx / 2 + 1);
+							} else {
+								str = numberStr;
+							}
+							sb.append("<text y=\"" + (yIndex * baseSize + (baseSize * 2 / 3) + margin - 1) + "\" x=\""
+									+ (xIndex * baseSize + baseSize + (baseSize * 2 / 3)) + "\" font-size=\""
+									+ (baseSize) / 3 + "\" textLength=\"" + (baseSize) / 3
+									+ "\" lengthAdjust=\"spacingAndGlyphs\">" + str + "</text>");
+						}
+					}
+				}
+			}
+			sb.append("</svg>");
+			return sb.toString();
+		}
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -16925,6 +17093,8 @@ public class SolverWeb extends HttpServlet {
 						t = new AquapelagoSolverThread(height, width, param);
 					} else if (puzzleType.contains("oneroom")) {
 						t = new OneroomSolverThread(height, width, param);
+					} else if (puzzleType.contains("mukkonn")) {
+						t = new MukkonnSolverThread(height, width, param);
 					} else {
 						throw new IllegalArgumentException();
 					}
