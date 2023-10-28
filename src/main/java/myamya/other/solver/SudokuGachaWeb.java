@@ -14,6 +14,7 @@ import javax.servlet.http.HttpServletResponse;
 import myamya.other.solver.Common.GeneratorResult;
 import myamya.other.solver.Common.PenpaEditGeneratorResult;
 import myamya.other.solver.akari.AkariSolver.AkariGenerator;
+import myamya.other.solver.alter.AlterSolver.AlterGenerator;
 import myamya.other.solver.aqre.AqreSolver.AqreGenerator;
 import myamya.other.solver.aquapelago.AquapelagoSolver.AquapelagoGenerator;
 import myamya.other.solver.archipelago.ArchipelagoSolver.ArchipelagoGenerator;
@@ -1694,6 +1695,22 @@ public class SudokuGachaWeb extends HttpServlet {
 
 	}
 
+	static class AlterGeneratorThread extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+
+		AlterGeneratorThread(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new AlterGenerator(height, width);
+		}
+
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -1918,6 +1935,8 @@ public class SudokuGachaWeb extends HttpServlet {
 				t = new OneroomGeneratorThread(height, width);
 			} else if (type.equals("mukkonn")) {
 				t = new MukkonnGeneratorThread(height, width);
+			} else if (type.equals("alter")) {
+				t = new AlterGeneratorThread(height, width);
 			} else {
 				throw new IllegalArgumentException();
 			}

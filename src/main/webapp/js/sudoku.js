@@ -494,6 +494,11 @@ var ruleMap = {
 		url : "https://puzz.link/rules.html?mukkonn",
 		source : "puzz.linkさん"
 	},
+	alter : {
+		name : "オルタネーション",
+		url : "https://puzz.link/rules.html?alter",
+		source : "puzz.linkさん"
+	},
 }
 var regMap = {
 		yajilin:[{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},
@@ -1070,7 +1075,7 @@ $(function() {
 				} else {
 					$('#sel_size').val(nowSelSizeVal);
 				}
-			} else if (type == 'building' || type == 'renban'
+			} else if (type == 'building' || type == 'renban' || type == 'alter'
 				|| type == 'easyasabc' || type == 'doppelblock' || type == 'simplegako' || type == 'archipelago' ) {
 				$('#sel_size').append(option.size_3);
 				$('#sel_size').append(option.size_4);
