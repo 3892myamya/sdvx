@@ -66,6 +66,7 @@ import myamya.other.solver.nanro.NanroSolver.NanroGenerator;
 import myamya.other.solver.nibunnogo.NibunnogoSolver.NibunnogoGenerator;
 import myamya.other.solver.nonogram.NonogramSolver.NonogramGenerator;
 import myamya.other.solver.norinori.NorinoriSolver.NorinoriGenerator;
+import myamya.other.solver.nothing.NothingSolver.NothingGenerator;
 import myamya.other.solver.nothree.NothreeSolver.NothreeGenerator;
 import myamya.other.solver.nuribou.NuribouSolver.NuribouGenerator;
 import myamya.other.solver.nurikabe.NurikabeSolver.NurikabeGenerator;
@@ -1711,6 +1712,22 @@ public class SudokuGachaWeb extends HttpServlet {
 
 	}
 
+	static class NothingGeneratorThread extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+
+		NothingGeneratorThread(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new NothingGenerator(height, width);
+		}
+
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -1937,6 +1954,8 @@ public class SudokuGachaWeb extends HttpServlet {
 				t = new MukkonnGeneratorThread(height, width);
 			} else if (type.equals("alter")) {
 				t = new AlterGeneratorThread(height, width);
+			} else if (type.equals("nothing")) {
+				t = new NothingGeneratorThread(height, width);
 			} else {
 				throw new IllegalArgumentException();
 			}

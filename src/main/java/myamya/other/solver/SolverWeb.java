@@ -133,6 +133,7 @@ import myamya.other.solver.nibunnogo.NibunnogoSolver;
 import myamya.other.solver.nondango.NondangoSolver;
 import myamya.other.solver.nonogram.NonogramSolver;
 import myamya.other.solver.norinori.NorinoriSolver;
+import myamya.other.solver.nothing.NothingSolver;
 import myamya.other.solver.nothree.NothreeSolver;
 import myamya.other.solver.numlin.NumlinSolver;
 import myamya.other.solver.nuribou.NuribouSolver;
@@ -16760,6 +16761,96 @@ public class SolverWeb extends HttpServlet {
 		}
 	}
 
+	static class NothingSolverThread extends AbsSolverThlead {
+
+		public NothingSolverThread(int height, int width, String param) {
+			super(height, width, param);
+		}
+
+		@Override
+		protected Solver getSolver() {
+			return new NothingSolver(height, width, param);
+		}
+
+		@Override
+		public String makeCambus() {
+			StringBuilder sb = new StringBuilder();
+			NothingSolver.Field field = ((NothingSolver) solver).getField();
+			int baseSize = 20;
+			int margin = 5;
+			sb.append("<svg xmlns=\"http://www.w3.org/2000/svg\" " + "height=\""
+					+ (field.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
+					+ (field.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					if (field.getMasu()[yIndex][xIndex] == Masu.BLACK) {
+						sb.append("<rect y=\"" + (yIndex * baseSize + margin) + "\" x=\""
+								+ (xIndex * baseSize + baseSize) + "\" width=\"" + (baseSize) + "\" height=\""
+								+ (baseSize) + "\" stroke=\"" + "#AAA\"" + "\" fill=\"" + "#AAA" + "\">" + "</rect>");
+					} else {
+						boolean forYoko = xIndex != field.getXLength() - 1
+								&& field.getYokoWall()[yIndex][xIndex] == Wall.NOT_EXISTS;
+						boolean forTate = yIndex != field.getYLength() - 1
+								&& field.getTateWall()[yIndex][xIndex] == Wall.NOT_EXISTS;
+						if (forYoko) {
+							sb.append("<line y1=\"" + (yIndex * baseSize + baseSize + margin - 10) + "\" x1=\""
+									+ (xIndex * baseSize + baseSize + 10) + "\" y2=\""
+									+ (yIndex * baseSize + baseSize + margin - 10) + "\" x2=\""
+									+ (xIndex * baseSize + baseSize + baseSize + 10)
+									+ "\" stroke-width=\"2\" fill=\"none\"");
+							sb.append("stroke=\"green\" ");
+							sb.append(">" + "</line>");
+						}
+						if (forTate) {
+							sb.append("<line y1=\"" + (yIndex * baseSize + margin + 10) + "\" x1=\""
+									+ (xIndex * baseSize + 2 * baseSize - 10) + "\" y2=\""
+									+ (yIndex * baseSize + baseSize + margin + 10) + "\" x2=\""
+									+ (xIndex * baseSize + 2 * baseSize - 10) + "\" stroke-width=\"2\" fill=\"none\"");
+							sb.append("stroke=\"green\" ");
+							sb.append(">" + "</line>");
+						}
+					}
+				}
+			}
+			// 横壁描画
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = -1; xIndex < field.getXLength(); xIndex++) {
+					boolean oneYokoWall = xIndex == -1 || xIndex == field.getXLength() - 1
+							|| field.getYokoRoomWall()[yIndex][xIndex];
+					sb.append("<line y1=\"" + (yIndex * baseSize + margin) + "\" x1=\""
+							+ (xIndex * baseSize + 2 * baseSize) + "\" y2=\"" + (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\"" + (xIndex * baseSize + 2 * baseSize) + "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneYokoWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">" + "</line>");
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = -1; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					boolean oneTateWall = yIndex == -1 || yIndex == field.getYLength() - 1
+							|| field.getTateRoomWall()[yIndex][xIndex];
+					sb.append("<line y1=\"" + (yIndex * baseSize + baseSize + margin) + "\" x1=\""
+							+ (xIndex * baseSize + baseSize) + "\" y2=\"" + (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\"" + (xIndex * baseSize + baseSize + baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneTateWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">" + "</line>");
+				}
+			}
+
+			sb.append("</svg>");
+			return sb.toString();
+		}
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -17187,6 +17278,8 @@ public class SolverWeb extends HttpServlet {
 						t = new MukkonnSolverThread(height, width, param);
 					} else if (puzzleType.contains("alter")) {
 						t = new AlterSolverThread(height, width, param);
+					} else if (puzzleType.contains("nothing")) {
+						t = new NothingSolverThread(height, width, param);
 					} else {
 						throw new IllegalArgumentException();
 					}

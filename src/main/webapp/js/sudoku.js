@@ -499,6 +499,11 @@ var ruleMap = {
 		url : "https://puzz.link/rules.html?alter",
 		source : "puzz.linkさん"
 	},
+	nothing : {
+		name : "オールorナッシング",
+		url : "https://puzz.link/rules.html?nothing",
+		source : "puzz.linkさん"
+	},
 }
 var regMap = {
 		yajilin:[{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},
@@ -1086,7 +1091,7 @@ $(function() {
 				} else {
 					$('#sel_size').val(nowSelSizeVal);
 				}
-			} else if (type == 'minarism' || type == 'sbl') {
+			} else if (type == 'minarism' || type == 'sbl' || type == 'nothing') {
 				$('#sel_size').append(option.size_3);
 				$('#sel_size').append(option.size_4);
 				$('#sel_size').append(option.size_5);
