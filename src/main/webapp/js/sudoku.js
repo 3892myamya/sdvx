@@ -504,6 +504,11 @@ var ruleMap = {
 		url : "https://puzz.link/rules.html?nothing",
 		source : "puzz.linkさん"
 	},
+	mannequin : {
+		name : "マネキンゲート",
+		url : "https://puzz.link/rules.html?mannequin",
+		source : "puzz.linkさん"
+	},
 }
 var regMap = {
 		yajilin:[{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},
@@ -1080,7 +1085,7 @@ $(function() {
 				} else {
 					$('#sel_size').val(nowSelSizeVal);
 				}
-			} else if (type == 'building' || type == 'renban' || type == 'alter'
+			} else if (type == 'building' || type == 'renban' || type == 'alter' ||  type == 'mannequin'
 				|| type == 'easyasabc' || type == 'doppelblock' || type == 'simplegako' || type == 'archipelago' ) {
 				$('#sel_size').append(option.size_3);
 				$('#sel_size').append(option.size_4);

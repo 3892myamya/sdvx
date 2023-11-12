@@ -138,7 +138,7 @@ public class MannequinSolver implements Solver {
 					roomIdxList.add(roomIdxList.size());
 					room.count = wkField.getMyDistance(room);
 				}
-				System.out.println(wkField);
+				// System.out.println(wkField);
 				// マスを戻す
 				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
 					for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
@@ -164,66 +164,7 @@ public class MannequinSolver implements Solver {
 					break;
 				}
 			}
-			// 部屋の並べなおし。
-			List<Room> newRooms = new ArrayList<>();
-			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
-				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
-					Position pos = new Position(yIndex, xIndex);
-					Room myRoom = null;
-					for (Room room : wkField.rooms) {
-						if (room.getMember().contains(pos)) {
-							myRoom = room;
-							break;
-						}
-					}
-					boolean alreadyRoomed = false;
-					for (Room newRoom : newRooms) {
-						if (newRoom.getMember().contains(pos)) {
-							alreadyRoomed = true;
-							break;
-						}
-					}
-					if (!alreadyRoomed) {
-						newRooms.add(myRoom);
-					}
-				}
-			}
-			wkField.rooms = newRooms;
-			// 横壁設定
-			for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
-				for (int xIndex = 0; xIndex < wkField.getXLength() - 1; xIndex++) {
-					boolean isWall = true;
-					Position pos = new Position(yIndex, xIndex);
-					for (Room room : wkField.rooms) {
-						if (room.member.contains(pos)) {
-							Position rightPos = new Position(yIndex, xIndex + 1);
-							if (room.member.contains(rightPos)) {
-								isWall = false;
-								break;
-							}
-						}
-					}
-					wkField.yokoWall[yIndex][xIndex] = isWall;
-				}
-			}
-			// 縦壁設定
-			for (int yIndex = 0; yIndex < wkField.getYLength() - 1; yIndex++) {
-				for (int xIndex = 0; xIndex < wkField.getXLength(); xIndex++) {
-					boolean isWall = true;
-					Position pos = new Position(yIndex, xIndex);
-					for (Room room : wkField.rooms) {
-						if (room.member.contains(pos)) {
-							Position downPos = new Position(yIndex + 1, xIndex);
-							if (room.member.contains(downPos)) {
-								isWall = false;
-								break;
-							}
-						}
-					}
-					wkField.tateWall[yIndex][xIndex] = isWall;
-				}
-			}
-			level = (int) Math.sqrt(level / 3 / 3) + 1;
+			level = (int) Math.sqrt(level / 2 / 3) + 1;
 			String status = "Lv:" + level + "の問題を獲得！(数字/部屋：" + wkField.getHintCount().split("/")[1] + "/"
 					+ wkField.getHintCount().split("/")[0] + ")";
 			String url = wkField.getPuzPreURL();
@@ -268,7 +209,7 @@ public class MannequinSolver implements Solver {
 				}
 			}
 			// 数字描画
-			for (Room room : wkField.rooms) {
+			for (MannequinSolver.Room room : wkField.getRooms()) {
 				int roomBlackCount = room.getCount();
 				if (roomBlackCount != -1) {
 					String roomBlackCountStr;
@@ -282,13 +223,12 @@ public class MannequinSolver implements Solver {
 					Position numberMasuPos = room.getNumberMasuPos();
 					String fillColor = wkField.getMasu()[numberMasuPos.getyIndex()][numberMasuPos
 							.getxIndex()] == Common.Masu.BLACK ? "white" : "black";
-					sb.append("<text y=\"" + (numberMasuPos.getyIndex() * baseSize + baseSize - 5 + margin) + "\" x=\""
+					sb.append("<text y=\"" + (numberMasuPos.getyIndex() * baseSize + baseSize + margin - 5) + "\" x=\""
 							+ (numberMasuPos.getxIndex() * baseSize + baseSize + 2) + "\" fill=\"" + fillColor
 							+ "\" font-size=\"" + (baseSize - 5) + "\" textLength=\"" + (baseSize - 5)
 							+ "\" lengthAdjust=\"spacingAndGlyphs\">" + roomBlackCountStr + "</text>");
 				}
 			}
-			sb.append("</svg>");
 			System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
 			System.out.println(level);
 			System.out.println(wkField.getHintCount());
@@ -1115,6 +1055,30 @@ public class MannequinSolver implements Solver {
 						}
 					}
 				}
+				// 隣の部屋の制約により禁止される距離から、黒マスが置けないマスを除外する
+				Set<Integer> banDistanceList = new HashSet<>();
+				for (int j : nextRoomMap.get(i)) {
+					Room otherRoom = rooms.get(j);
+					int otherDistance = getMyDistance(otherRoom);
+					if (otherDistance != -1) {
+						banDistanceList.add(otherDistance);
+					}
+				}
+				for (Entry<Position, Map<Integer, Set<Position>>> entry : room.getDistanceMap().entrySet()) {
+					Position pos = entry.getKey();
+					boolean isOk = false;
+					for (Integer myDistanceCand : entry.getValue().keySet()) {
+						if (myDistanceCand != -1 && !banDistanceList.contains(myDistanceCand)) {
+							isOk = true;
+						}
+					}
+					if (!isOk) {
+						if (masu[pos.getyIndex()][pos.getxIndex()] == Masu.BLACK) {
+							return false;
+						}
+						masu[pos.getyIndex()][pos.getxIndex()] = Masu.NOT_BLACK;
+					}
+				}
 			}
 			return true;
 		}
@@ -1231,10 +1195,10 @@ public class MannequinSolver implements Solver {
 			}
 		}
 		System.out.println(((System.nanoTime() - start) / 1000000) + "ms.");
-		System.out.println("難易度:" + (count / 3));
+		System.out.println("難易度:" + (count / 2));
 		System.out.println(field);
-		int level = (int) Math.sqrt(count / 3 / 3) + 1;
-		return "解けました。推定難易度:" + Difficulty.getByCount(count / 3).toString() + "(Lv:" + level + ")";
+		int level = (int) Math.sqrt(count / 2 / 3) + 1;
+		return "解けました。推定難易度:" + Difficulty.getByCount(count / 2).toString() + "(Lv:" + level + ")";
 	}
 
 	/**
