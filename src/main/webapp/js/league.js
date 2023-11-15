@@ -1,4 +1,19 @@
 $(function() {
+	let escape = function (string) {
+		if (typeof string !== 'string') {
+			return string;
+		}
+		return string.replace(/[&'`"<>]/g, function(match) {
+			return {
+				'&': '&amp;',
+				"'": '&#x27;',
+				'`': '&#x60;',
+				'"': '&quot;',
+				'<': '&lt;',
+				'>': '&gt;',
+			}[match]
+		});
+	}
 	let showhide = function() {
 		let ninzu = parseInt($('#sel_div').val());
 		$(".member").each(function() {
@@ -17,7 +32,7 @@ $(function() {
 		if (window.confirm('入力された名前をクリアします。よろしいですか？')) {
 			$(".member").each(function() {
 				$(this).val('');
-			});			
+			});
 		}
 	});
 	$('#btn_start').on('click', function() {
@@ -78,7 +93,7 @@ $(function() {
 			if (result == '') {
 				result = "(" + (index + 1) + "人目)"
 			}
-			return result;
+			return escape(result);
 		}
 		let html = '';
 		for (let i = 0; i < battleCnt; i++) {
