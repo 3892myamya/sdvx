@@ -1,0 +1,24 @@
+body{
+  margin:0px;
+}
+
+#div_readme_head {
+    background: #e9ffe9;
+    margin-bottom: 2px;
+}
+
+.subtitle {
+  font-size: 1.25em;
+  font-weight: bold;
+}
+
+#div_title{
+  font-size: 1.5em;
+  font-weight: bold;
+  background: linear-gradient(#404060, #604040);
+  color: #ffffff;
+}
+#btn_submit{
+	width: 80px;
+}
+

@@ -1,0 +1,62 @@
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>リーグ戦ジェネレータ</title>
+    <meta name="description" content="リーグ戦の組み合わせが生成できます。参加人数が奇数の場合の抜け番にも対応しています。"/>
+    <link rel="stylesheet" href="css/league.css?ver=20231114"/>
+    <script src="js/jquery-3.3.1.min.js"></script>
+    <script src="js/league.js?ver=202100503"></script>
+</head>
+<body>
+<div id="div_title">リーグ戦ジェネレータ</div>
+<hr>
+<div>
+<label id="lbl_div" for="sel_div">人数</label>
+<select id="sel_div" name="sel_div">
+	<option value="3">3</option>
+	<option value="4">4</option>
+	<option value="5">5</option>
+	<option value="6">6</option>
+	<option value="7">7</option>
+	<option value="8">8</option>
+	<option value="9">9</option>
+	<option value="10">10</option>
+	<option value="11">11</option>
+	<option value="12">12</option>
+	<option value="13">13</option>
+	<option value="14">14</option>
+	<option value="15">15</option>
+	<option value="16">16</option>
+</select>
+<div><input type="text" class="member" id="edt_1" name="edt_1" placeholder="1人目" maxlength="20"/></div>
+<div><input type="text" class="member" id="edt_2" name="edt_2" placeholder="2人目" maxlength="20"/></div>
+<div><input type="text" class="member" id="edt_3" name="edt_3" placeholder="3人目" maxlength="20"/></div>
+<div><input type="text" class="member" id="edt_4" name="edt_4" placeholder="4人目" maxlength="20"/></div>
+<div><input type="text" class="member" id="edt_5" name="edt_5" placeholder="5人目" maxlength="20"/></div>
+<div><input type="text" class="member" id="edt_6" name="edt_6" placeholder="6人目" maxlength="20"/></div>
+<div><input type="text" class="member" id="edt_7" name="edt_7" placeholder="7人目" maxlength="20"/></div>
+<div><input type="text" class="member" id="edt_8" name="edt_8" placeholder="8人目" maxlength="20"/></div>
+<div><input type="text" class="member" id="edt_9" name="edt_9" placeholder="9人目" maxlength="20"/></div>
+<div><input type="text" class="member" id="edt_10" name="edt_10" placeholder="10人目" maxlength="20"/></div>
+<div><input type="text" class="member" id="edt_11" name="edt_11" placeholder="11人目" maxlength="20"/></div>
+<div><input type="text" class="member" id="edt_12" name="edt_12" placeholder="12人目" maxlength="20"/></div>
+<div><input type="text" class="member" id="edt_13" name="edt_13" placeholder="13人目" maxlength="20"/></div>
+<div><input type="text" class="member" id="edt_14" name="edt_14" placeholder="14人目" maxlength="20"/></div>
+<div><input type="text" class="member" id="edt_15" name="edt_15" placeholder="15人目" maxlength="20"/></div>
+<div><input type="text" class="member" id="edt_16" name="edt_16" placeholder="16人目" maxlength="20"/></div>
+<button type="button" id="btn_clear">名前クリア</button>
+</div>
+<hr>
+<div>
+<button type="button" id="btn_start">生成する</button>
+</div>
+<hr>
+<div id="div_result">
+</div>
+<hr>
+<div style="font-size: x-small;">
+※<a href="https://3892myamya.github.io/introduction/" target="_blank">3892myamya tools</a> developed by <a href="https://twitter.com/3892myamya/" target="_blank">@3892myamya</a>
+</div>
+</body>
+</html>
