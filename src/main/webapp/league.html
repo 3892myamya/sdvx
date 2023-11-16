@@ -6,7 +6,7 @@
     <meta name="description" content="リーグ戦の組み合わせが生成できます。参加人数が奇数の場合の抜け番にも対応しています。"/>
     <link rel="stylesheet" href="css/league.css?ver=20231114"/>
     <script src="js/jquery-3.3.1.min.js"></script>
-    <script src="js/league.js?ver=202100503"></script>
+    <script src="js/league.js?ver=20231116"></script>
 </head>
 <body>
 <div id="div_title">リーグ戦ジェネレータ</div>
@@ -50,8 +50,14 @@
 <hr>
 <div>
 <button type="button" id="btn_start">生成する</button>
+<label id="lbl_shuffle" for="cb_shuffle" >
+<input type="checkbox" id="cb_shuffle" name="cb_shuffle">
+対戦順をランダムにする</label>
 </div>
 <hr>
+<div id="div_button">
+<button type="button" id="btn_copy">クリップボードにコピー</button>
+</div>
 <div id="div_result">
 </div>
 <hr>

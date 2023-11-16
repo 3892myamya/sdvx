@@ -1,5 +1,6 @@
 $(function() {
-	let escape = function (string) {
+	let text = '';
+	let escape = function(string) {
 		if (typeof string !== 'string') {
 			return string;
 		}
@@ -24,7 +25,22 @@ $(function() {
 				$(this).show();
 			}
 		});
+		$('#btn_copy').hide();
 	}
+
+	$('#btn_copy').on('click', function(event) {
+		var textArea = document.createElement("textarea");
+		textArea.value = text;
+		textArea.style.position = "fixed";
+		textArea.style.top = "0";
+		textArea.style.left = "0";
+		textArea.style.opacity = "0";
+		document.body.appendChild(textArea);
+		textArea.select();
+		document.execCommand('copy');
+		document.body.removeChild(textArea);
+	});
+
 	$('#sel_div').on('change', function() {
 		showhide();
 	});
@@ -37,7 +53,9 @@ $(function() {
 	});
 	$('#btn_start').on('click', function() {
 		$('#div_result').text('');
+		$('#btn_copy').show();
 		let ninzu = parseInt($('#sel_div').val());
+		let isShuffle = $('#cb_shuffle').prop('checked');
 		let names = [];
 		$(".member").each(function() {
 			names.push($(this).val());
@@ -48,10 +66,12 @@ $(function() {
 		if (condObj != null) {
 			condObj.ninzu = ninzu;
 			condObj.names = names;
+			condObj.isShuffle = isShuffle;
 		} else {
 			condObj = {
 				ninzu: ninzu,
 				names: names,
+				isShuffle: isShuffle,
 			};
 		}
 		cond = JSON.stringify(condObj);
@@ -95,11 +115,31 @@ $(function() {
 			}
 			return escape(result);
 		}
+		if (isShuffle) {
+			let wkShuffle = [];
+			for (let i = 0; i < battleCnt; i++) {
+				wkShuffle.push(i);
+			}
+			let shuffled = []
+			for (let i = 0; i < ninzu; i++) {
+				shuffled.push([]);
+			}
+			wkShuffle.sort(() => Math.random() - 0.5);
+			for (let i = 0; i < league.length; i++) {
+				for (let j = 0; j < wkShuffle.length; j++) {
+					shuffled[i].push(league[i][(wkShuffle[j])]);
+				}
+			}
+			league = shuffled;
+		}
 		let html = '';
+		text = '';
 		for (let i = 0; i < battleCnt; i++) {
 			html = html + "<strong>" + (i + 1) + '回戦</strong><br>';
+			text = text + (i + 1) + '回戦\n'
 			let already = [];
 			let nukeban = '';
+			let textnukeban = ''
 			for (let j = 0; j < league.length; j++) {
 				if (already.includes(j)) {
 					continue;
@@ -107,17 +147,21 @@ $(function() {
 				let playerName = getName(j);
 				if (league[j][i] == -1) {
 					nukeban = "・(抜け番:" + playerName + ")<br>";
+					textnukeban = "・(抜け番:" + playerName + ")\n";
 				} else {
 					let enemyName = getName(league[j][i]);
 					html = html + "・" + playerName + " - " + enemyName + '<br>';
+					text = text + "・" + playerName + " - " + enemyName + '\n';
 					already.push(j);
 					already.push(league[j][i]);
 				}
 			}
 			html = html + nukeban + "<br>";
+			text = text + textnukeban + "\n";
 		}
 		$('#div_result').html(html);
 	});
+
 	// 保存された条件があれば読みだす
 	var cond = localStorage.getItem('condleague');
 	var condObj = JSON.parse(cond);
@@ -128,12 +172,18 @@ $(function() {
 			$('#sel_div').val(condObj.ninzu);
 		}
 		if (condObj.names === undefined) {
-			$('#sel_type').val('sudoku');
+			//
 		} else {
 			$(".member").each(function() {
 				$(this).val(condObj.names[parseInt($(this).attr('id').replaceAll('edt_', '')) - 1]);
 			});
 		}
+		if (condObj.isShuffle === undefined) {
+			//
+		} else {
+			$('#cb_shuffle').prop("checked", condObj.isShuffle);
+		}
+
 	} else {
 		// 初期条件
 		$('#sel_div').val(6);
