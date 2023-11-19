@@ -509,6 +509,11 @@ var ruleMap = {
 		url : "https://puzz.link/rules.html?mannequin",
 		source : "puzz.linkさん"
 	},
+	tetrochain : {
+		name : "テトロチェーンY",
+		url : "https://puzz.link/rules.html?tetrochain",
+		source : "puzz.linkさん"
+	},
 }
 var regMap = {
 		yajilin:[{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},
@@ -1115,7 +1120,8 @@ $(function() {
 					|| type == 'fillomino' || type == 'lookair'
 					|| type == 'las' || type == 'norinuri' 
 					|| type == 'nurisan' || type == 'cocktail' 
-					|| type == 'voxas' || type == 'lither') {
+					|| type == 'voxas' || type == 'lither'
+					|| type == 'tetrochain' ) {
 				$('#sel_size').append(option.size_3);
 				$('#sel_size').append(option.size_4);
 				$('#sel_size').append(option.size_5);

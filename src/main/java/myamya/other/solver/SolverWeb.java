@@ -185,6 +185,7 @@ import myamya.other.solver.tatamibari.TatamibariSolver;
 import myamya.other.solver.tateyoko.TateyokoSolver;
 import myamya.other.solver.tentaisho.TentaishoSolver;
 import myamya.other.solver.tents.TentsSolver;
+import myamya.other.solver.tetrochain.TetrochainSolver;
 import myamya.other.solver.tilepaint.TilepaintSolver;
 import myamya.other.solver.tren.TrenSolver;
 import myamya.other.solver.usoone.UsooneSolver;
@@ -16947,6 +16948,91 @@ public class SolverWeb extends HttpServlet {
 		}
 	}
 
+	static class TetrochainSolverThread extends AbsSolverThlead {
+		TetrochainSolverThread(int height, int width, String param) {
+			super(height, width, param);
+		}
+
+		@Override
+		protected Solver getSolver() {
+			return new TetrochainSolver(height, width, param);
+		}
+
+		@Override
+		public String makeCambus() {
+			TetrochainSolver.Field field = ((TetrochainSolver) solver).getField();
+			int baseSize = 20;
+			StringBuilder sb = new StringBuilder();
+			int margin = 5;
+			sb.append("<svg xmlns=\"http://www.w3.org/2000/svg\" " + "height=\""
+					+ (field.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
+					+ (field.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			// 横壁描画
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = -1; xIndex < field.getXLength(); xIndex++) {
+					boolean oneYokoWall = xIndex == -1 || xIndex == field.getXLength() - 1;
+					sb.append("<line y1=\"" + (yIndex * baseSize + margin) + "\" x1=\""
+							+ (xIndex * baseSize + 2 * baseSize) + "\" y2=\"" + (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\"" + (xIndex * baseSize + 2 * baseSize) + "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneYokoWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">" + "</line>");
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = -1; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					boolean oneTateWall = yIndex == -1 || yIndex == field.getYLength() - 1;
+					sb.append("<line y1=\"" + (yIndex * baseSize + baseSize + margin) + "\" x1=\""
+							+ (xIndex * baseSize + baseSize) + "\" y2=\"" + (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\"" + (xIndex * baseSize + baseSize + baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneTateWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">" + "</line>");
+				}
+			}
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					Masu oneMasu = field.getMasu()[yIndex][xIndex];
+					TetrochainSolver.Arrow oneArrow = field.getArrows()[yIndex][xIndex];
+					if (oneMasu.toString().equals("■")) {
+						sb.append(
+								"<rect y=\"" + (yIndex * baseSize + margin) + "\" x=\"" + (xIndex * baseSize + baseSize)
+										+ "\" width=\"" + (baseSize) + "\" height=\"" + (baseSize) + "\">" + "</rect>");
+						if (oneArrow != null) {
+							sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 4 + margin) + "\" x=\""
+									+ (xIndex * baseSize + baseSize) + "\" font-size=\"" + (baseSize - 2) + "\" fill=\""
+									+ "gray" + "\" textLength=\"" + (baseSize - 2)
+									+ "\" lengthAdjust=\"spacingAndGlyphs\">" + oneArrow.toStringForweb() + "</text>");
+
+						}
+					} else {
+						sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 4 + margin) + "\" x=\""
+								+ (xIndex * baseSize + baseSize) + "\" font-size=\"" + (baseSize - 2) + "\" fill=\""
+								+ "lime" + "\" textLength=\"" + (baseSize - 2) + "\" lengthAdjust=\"spacingAndGlyphs\">"
+								+ oneMasu.toString() + "</text>");
+						if (oneArrow != null) {
+							sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 4 + margin) + "\" x=\""
+									+ (xIndex * baseSize + baseSize) + "\" font-size=\"" + (baseSize - 2)
+									+ "\" textLength=\"" + (baseSize - 2) + "\" lengthAdjust=\"spacingAndGlyphs\">"
+									+ oneArrow.toStringForweb() + "</text>");
+
+						}
+					}
+				}
+			}
+			sb.append("</svg>");
+			return sb.toString();
+		}
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -17378,6 +17464,8 @@ public class SolverWeb extends HttpServlet {
 						t = new NothingSolverThread(height, width, param);
 					} else if (puzzleType.contains("mannequin")) {
 						t = new MannequinSolverThread(height, width, param);
+					} else if (puzzleType.contains("tetrochain")) {
+						t = new TetrochainSolverThread(height, width, param);
 					} else {
 						throw new IllegalArgumentException();
 					}

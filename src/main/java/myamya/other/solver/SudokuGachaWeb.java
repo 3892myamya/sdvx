@@ -101,6 +101,7 @@ import myamya.other.solver.tatamibari.TatamibariSolver.TatamibariGenerator;
 import myamya.other.solver.tateyoko.TateyokoSolver.TateyokoGenerator;
 import myamya.other.solver.tentaisho.TentaishoSolver.TentaishoGenerator;
 import myamya.other.solver.tents.TentsSolver.TentsGenerator;
+import myamya.other.solver.tetrochain.TetrochainSolver.TetrochainGenerator;
 import myamya.other.solver.tilepaint.TilepaintSolver.TilepaintGenerator;
 import myamya.other.solver.usoone.UsooneSolver.UsooneGenerator;
 import myamya.other.solver.voxas.VoxasSolver.VoxasGenerator;
@@ -1745,6 +1746,22 @@ public class SudokuGachaWeb extends HttpServlet {
 
 	}
 
+	static class TetrochainGeneratorThread extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+
+		TetrochainGeneratorThread(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new TetrochainGenerator(height, width);
+		}
+
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -1975,6 +1992,8 @@ public class SudokuGachaWeb extends HttpServlet {
 				t = new NothingGeneratorThread(height, width);
 			} else if (type.equals("mannequin")) {
 				t = new MannequinGeneratorThread(height, width);
+			} else if (type.equals("tetrochain")) {
+				t = new TetrochainGeneratorThread(height, width);
 			} else {
 				throw new IllegalArgumentException();
 			}
