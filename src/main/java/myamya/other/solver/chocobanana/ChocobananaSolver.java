@@ -453,7 +453,7 @@ public class ChocobananaSolver implements Solver {
 		private boolean countSolve() {
 			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
 				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
-					if (numbers[yIndex][xIndex] != null) {
+					if (numbers[yIndex][xIndex] != null && numbers[yIndex][xIndex] != -1) {
 						if (masu[yIndex][xIndex] == Masu.SPACE) {
 							continue;
 						}

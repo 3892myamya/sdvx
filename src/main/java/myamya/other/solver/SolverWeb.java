@@ -11582,7 +11582,11 @@ public class SolverWeb extends HttpServlet {
 						if (index >= 0) {
 							masuStr = FULL_NUMS.substring(index / 2, index / 2 + 1);
 						} else {
-							masuStr = numberStr;
+							if (numberStr.equals("-1")) {
+								masuStr = "？";
+							} else {
+								masuStr = numberStr;
+							}
 						}
 						sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 4 + margin) + "\" x=\""
 								+ (xIndex * baseSize + baseSize + 2) + "\" font-size=\"" + (baseSize - 5) + "\" fill=\""

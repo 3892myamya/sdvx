@@ -1,0 +1,31 @@
+body{
+  margin:0px;
+}
+
+#div_readme_head {
+    background: #e9ffe9;
+    margin-bottom: 2px;
+}
+
+.subtitle {
+  font-size: 1.25em;
+  font-weight: bold;
+}
+
+#div_title{
+  font-size: 1.5em;
+  font-weight: bold;
+  background: linear-gradient(#D0E0F0, #D0F0E0);
+  color: #404040;
+}
+#btn_start{
+	width: 80px;
+}
+
+.plus {
+  color: rgb(255, 0, 0);
+}
+
+.minus {
+  color: rgb(0, 0, 255);
+}
