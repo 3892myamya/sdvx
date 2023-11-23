@@ -2,7 +2,7 @@ $(function() {
 	let keisan = function (){
 		$('#div_result').text('');
 		let value = $('#edt_1').val();
-		if (isNaN(value) || value < 0 || value > 100){
+		if (value == '' || isNaN(value) || value < 0 || value > 100){
 			$('#lbl_error').show();
 			return;
 		} else {
@@ -94,13 +94,13 @@ $(function() {
 	var condObj = JSON.parse(cond);
 	if (condObj != null) {
 		if (condObj.val === undefined) {
-			$('#edt_1').val(1.234);
+			// $('#edt_1').val(1.234);
 		} else {
 			$('#edt_1').val(condObj.val);
 		}
 	} else {
 		// 初期条件
-		$('#edt_1').val(1.234);
+		// $('#edt_1').val(1.234);
 	}
 	keisan();
 });
