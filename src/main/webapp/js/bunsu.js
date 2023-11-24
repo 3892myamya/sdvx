@@ -17,11 +17,13 @@ $(function() {
 			condObj = {
 				val: value,
 			};
-		}
+		}		
 		cond = JSON.stringify(condObj);
 		localStorage.setItem('condbunsu', cond);
-		let minSabun = Number(value) + 0.0001;
+		let minSabun = Number(value) + 0.00001;
 		let cnt = 0;
+		let seisu = Math.trunc(value);
+		value = Math.round((value - seisu) * 100000000000) / 100000000000;
 		let result = [];
 		let sabun = [];
 		for (let i = 1; i <= 9999; i++) {
@@ -37,13 +39,13 @@ $(function() {
 					if (minus < plus){
 						cnt--;
 						if (minus < minSabun) {
-							result.push(String(cnt).padStart(6,' ') + " / " + String(i).padStart(4,' ') + " : " + (Math.round(cnt / i * 1000000) / 1000000).toFixed(6));
+							result.push(String(cnt + seisu * i).padStart(6,' ') + " / " + String(i).padStart(4,' ') + " : " + (Math.round((cnt + seisu * i) / i * 1000000) / 1000000).toFixed(6));
 							sabun.push(-minus);
 							minSabun = minus;
 						}
 					} else {
 						if (plus < minSabun) {
-							result.push(String(cnt).padStart(6,' ') + " / " + String(i).padStart(4,' ') + " : " + (Math.round(cnt / i * 1000000) / 1000000).toFixed(6));
+							result.push(String(cnt + seisu * i).padStart(6,' ') + " / " + String(i).padStart(4,' ') + " : " + (Math.round((cnt + seisu * i) / i * 1000000) / 1000000).toFixed(6));
 							sabun.push(plus);
 							minSabun = plus;
 						}
