@@ -15,7 +15,7 @@ $(function() {
         param.down = $('#cb_down').prop('checked');
         param.left = $('#cb_left').prop('checked');
         $.ajax({
-            url: location.host.indexOf('localhost') == -1 ? 'https://myamyaapi.herokuapp.com/HeyaWeb' : 'HeyaWeb',
+            url: 'HeyaWeb',
             type: 'POST',
             dataType: 'text',
             data: param

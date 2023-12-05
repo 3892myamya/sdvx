@@ -21,7 +21,7 @@ $(function() {
         var cond = JSON.stringify(param);
         localStorage.setItem('cond', cond);
         $.ajax({
-            url: location.host.indexOf('localhost') == -1 ? 'https://myamyaapi.herokuapp.com/KadaiGeneratorWeb' : 'KadaiGeneratorWeb',
+            url: 'KadaiGeneratorWeb',
             type: 'POST',
             dataType: 'text',
             data: param

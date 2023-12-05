@@ -53,7 +53,7 @@ $(function() {
             localStorage.setItem('condyajilin', cond);
         }
         $.ajax({
-            url: location.host.indexOf('localhost') == -1 ? 'https://myamyaapi.herokuapp.com/SolverWeb' : 'SolverWeb',
+            url: 'SolverWeb',
             type: 'POST',
             dataType: 'text',
             data: param
