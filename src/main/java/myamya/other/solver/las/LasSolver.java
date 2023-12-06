@@ -437,6 +437,53 @@ public class LasSolver implements Solver {
 			}
 		}
 
+		public Field(int height, int width, String param) {
+			masu = new Masu[height][width];
+			numbers = new Integer[height][width];
+			alreadyPosSet = new HashSet<>();
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					masu[yIndex][xIndex] = Masu.SPACE;
+				}
+			}
+			int index = 0;
+			for (int i = 0; i < param.length(); i++) {
+				char ch = param.charAt(i);
+				int interval = ALPHABET_FROM_G.indexOf(ch);
+				if (interval != -1) {
+					index = index + interval + 1;
+				} else {
+					//16 - 255は '-'
+					//256 - 999は '+'
+					int capacity;
+					if (ch == '.') {
+						Position pos = new Position(index / getXLength(), index % getXLength());
+						masu[pos.getyIndex()][pos.getxIndex()] = Masu.NOT_BLACK;
+						numbers[pos.getyIndex()][pos.getxIndex()] = -1;
+					} else {
+						if (ch == '-') {
+							capacity = Integer.parseInt("" + param.charAt(i + 1) + param.charAt(i + 2), 16);
+							i++;
+							i++;
+						} else if (ch == '+') {
+							capacity = Integer.parseInt(
+									"" + param.charAt(i + 1) + param.charAt(i + 2) + param.charAt(i + 3),
+									16);
+							i++;
+							i++;
+							i++;
+						} else {
+							capacity = Integer.parseInt(String.valueOf(ch), 16);
+						}
+						Position pos = new Position(index / getXLength(), index % getXLength());
+						masu[pos.getyIndex()][pos.getxIndex()] = capacity % 2 == 0 ? Masu.NOT_BLACK : Masu.BLACK;
+						numbers[pos.getyIndex()][pos.getxIndex()] = capacity / 2 == 0 ? -1 : capacity / 2;
+					}
+					index++;
+				}
+			}
+		}
+
 		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
 		private static final String FULL_NUMS = "０１２３４５６７８９";
 
@@ -885,6 +932,10 @@ public class LasSolver implements Solver {
 	// penpa-edit向けコンストラクタ
 	public LasSolver(String fieldStr) {
 		field = new Field(fieldStr);
+	}
+
+	public LasSolver(int height, int width, String param) {
+		field = new Field(height, width, param);
 	}
 
 	public Field getField() {

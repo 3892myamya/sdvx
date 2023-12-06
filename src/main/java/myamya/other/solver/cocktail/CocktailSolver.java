@@ -175,8 +175,7 @@ public class CocktailSolver implements Solver {
 					wkField.tateWall);
 //			System.out.println(fieldStr);
 			level = (int) Math.sqrt(level / 3) + 1;
-			String status = "Lv:" + level + "の問題を獲得！(数字/部屋："
-					+ wkField.getHintCount().split("/")[1] + "/"
+			String status = "Lv:" + level + "の問題を獲得！(数字/部屋：" + wkField.getHintCount().split("/")[1] + "/"
 					+ wkField.getHintCount().split("/")[0] + ")";
 			String url = wkField.getPuzPreURL();
 			String link = "<a href=\"" + url + "\" target=\"_blank\">penpa-editで解く</a>";
@@ -307,7 +306,7 @@ public class CocktailSolver implements Solver {
 	}
 
 	public static class Field {
-
+		static final String ALPHABET_FROM_G = "ghijklmnopqrstuvwxyz";
 		// マスの情報
 		private Masu[][] masu;
 		// 横をふさぐ壁が存在するか
@@ -499,6 +498,125 @@ public class CocktailSolver implements Solver {
 			this.rooms = new ArrayList<>();
 			for (int i = 0; i < rooms.size(); i++) {
 				this.rooms.add(new Room(-1, rooms.get(i)));
+			}
+		}
+
+		public Field(int height, int width, String param) {
+			masu = new Masu[height][width];
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					masu[yIndex][xIndex] = Masu.SPACE;
+				}
+			}
+			// パラメータを解釈して壁の有無を入れる
+			yokoWall = new boolean[height][width - 1];
+			tateWall = new boolean[height - 1][width];
+			int readPos = 0;
+			int bit = 0;
+			for (int cnt = 0; cnt < getYLength() * (getXLength() - 1); cnt++) {
+				int mod = cnt % 5;
+				if (mod == 0) {
+					bit = Character.getNumericValue(param.charAt(readPos));
+					readPos++;
+				}
+				if (mod == 4 || cnt == (getYLength() * (getXLength() - 1)) - 1) {
+					if (mod >= 0) {
+						yokoWall[(cnt - mod + 0) / (getXLength() - 1)][(cnt - mod + 0) % (getXLength() - 1)] = bit / 16
+								% 2 == 1;
+					}
+					if (mod >= 1) {
+						yokoWall[(cnt - mod + 1) / (getXLength() - 1)][(cnt - mod + 1) % (getXLength() - 1)] = bit / 8
+								% 2 == 1;
+					}
+					if (mod >= 2) {
+						yokoWall[(cnt - mod + 2) / (getXLength() - 1)][(cnt - mod + 2) % (getXLength() - 1)] = bit / 4
+								% 2 == 1;
+					}
+					if (mod >= 3) {
+						yokoWall[(cnt - mod + 3) / (getXLength() - 1)][(cnt - mod + 3) % (getXLength() - 1)] = bit / 2
+								% 2 == 1;
+					}
+					if (mod >= 4) {
+						yokoWall[(cnt - mod + 4) / (getXLength() - 1)][(cnt - mod + 4) % (getXLength() - 1)] = bit / 1
+								% 2 == 1;
+					}
+				}
+			}
+			for (int cnt = 0; cnt < (getYLength() - 1) * getXLength(); cnt++) {
+				int mod = cnt % 5;
+				if (mod == 0) {
+					bit = Character.getNumericValue(param.charAt(readPos));
+					readPos++;
+				}
+				if (mod == 4 || cnt == ((getYLength() - 1) * getXLength()) - 1) {
+					if (mod >= 0) {
+						tateWall[(cnt - mod + 0) / getXLength()][(cnt - mod + 0) % getXLength()] = bit / 16 % 2 == 1;
+					}
+					if (mod >= 1) {
+						tateWall[(cnt - mod + 1) / getXLength()][(cnt - mod + 1) % getXLength()] = bit / 8 % 2 == 1;
+					}
+					if (mod >= 2) {
+						tateWall[(cnt - mod + 2) / getXLength()][(cnt - mod + 2) % getXLength()] = bit / 4 % 2 == 1;
+					}
+					if (mod >= 3) {
+						tateWall[(cnt - mod + 3) / getXLength()][(cnt - mod + 3) % getXLength()] = bit / 2 % 2 == 1;
+					}
+					if (mod >= 4) {
+						tateWall[(cnt - mod + 4) / getXLength()][(cnt - mod + 4) % getXLength()] = bit / 1 % 2 == 1;
+					}
+				}
+			}
+			// 縦と横の壁の関係からにょろっと部屋を決めていく
+			List<Integer> blackCntList = new ArrayList<>();
+			for (; readPos < param.length(); readPos++) {
+				char ch = param.charAt(readPos);
+				int interval = ALPHABET_FROM_G.indexOf(ch);
+				if (interval != -1) {
+					for (int i = 0; i < interval + 1; i++) {
+						// 数字がない部屋の場合は、部屋の数字は-1として扱う。
+						blackCntList.add(-1);
+					}
+				} else {
+					// 16 - 255は '-'
+					// 256 - 999は '+'
+					int blackCnt;
+					if (ch == '-') {
+						blackCnt = Integer.parseInt("" + param.charAt(readPos + 1) + param.charAt(readPos + 2), 16);
+						readPos++;
+						readPos++;
+					} else if (ch == '+') {
+						blackCnt = Integer.parseInt(
+								"" + param.charAt(readPos + 1) + param.charAt(readPos + 2) + param.charAt(readPos + 3),
+								16);
+						readPos++;
+						readPos++;
+						readPos++;
+					} else {
+						blackCnt = Integer.parseInt(String.valueOf(ch), 16);
+					}
+					blackCntList.add(blackCnt);
+				}
+			}
+			rooms = new ArrayList<>();
+			int blackCntListIndex = 0;
+			for (int yIndex = 0; yIndex < getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < getXLength(); xIndex++) {
+					Position pos = new Position(yIndex, xIndex);
+					boolean alreadyRoomed = false;
+					for (Room room : rooms) {
+						if (room.getMember().contains(pos)) {
+							alreadyRoomed = true;
+							break;
+						}
+					}
+					if (!alreadyRoomed) {
+						Set<Position> continuePosSet = new HashSet<>();
+						continuePosSet.add(pos);
+						setContinuePosSet(pos, continuePosSet);
+						rooms.add(new Room(blackCntList.get(blackCntListIndex), continuePosSet));
+						blackCntListIndex++;
+					}
+				}
 			}
 		}
 
@@ -903,6 +1021,10 @@ public class CocktailSolver implements Solver {
 	// penpa-edit向けコンストラクタ
 	public CocktailSolver(String fieldStr) {
 		field = new Field(fieldStr);
+	}
+
+	public CocktailSolver(int height, int width, String param) {
+		field = new Field(height, width, param);
 	}
 
 	public Field getField() {

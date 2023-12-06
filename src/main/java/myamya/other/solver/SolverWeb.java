@@ -11759,9 +11759,14 @@ public class SolverWeb extends HttpServlet {
 			this.fieldStr = fieldStr;
 		}
 
+		public LasSolverThread(int height, int width, String param) {
+			super(height, width, param);
+			this.fieldStr = null;
+		}
+
 		@Override
 		protected Solver getSolver() {
-			return new LasSolver(fieldStr);
+			return fieldStr == null ? new LasSolver(height, width, param) : new LasSolver(fieldStr);
 		}
 
 		@Override
@@ -13191,9 +13196,16 @@ public class SolverWeb extends HttpServlet {
 			this.blackSize = blackSize;
 		}
 
+		public NurimultiSolverThread(int height, int width, String param, int blackSize) {
+			super(height, width, param);
+			this.fieldStr = null;
+			this.blackSize = blackSize;
+		}
+
 		@Override
 		protected Solver getSolver() {
-			return new NurimultiSolver(fieldStr, blackSize);
+			return fieldStr == null ? new NurimultiSolver(height, width, param, blackSize)
+					: new NurimultiSolver(fieldStr, blackSize);
 		}
 
 		@Override
@@ -13224,7 +13236,11 @@ public class SolverWeb extends HttpServlet {
 						if (index >= 0) {
 							masuStr = FULL_NUMS.substring(index / 2, index / 2 + 1);
 						} else {
-							masuStr = numberStr;
+							if (numberStr.equals("-1")) {
+								masuStr = "？";
+							} else {
+								masuStr = numberStr;
+							}
 						}
 						sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 4 + margin) + "\" x=\""
 								+ (xIndex * baseSize + baseSize + 2) + "\" font-size=\"" + (baseSize - 5) + "\" fill=\""
@@ -13280,9 +13296,14 @@ public class SolverWeb extends HttpServlet {
 			this.fieldStr = fieldStr;
 		}
 
+		public CocktailSolverThread(int height, int width, String param) {
+			super(height, width, param);
+			this.fieldStr = null;
+		}
+
 		@Override
 		protected Solver getSolver() {
-			return new CocktailSolver(fieldStr);
+			return fieldStr == null ? new CocktailSolver(height, width, param) : new CocktailSolver(fieldStr);
 		}
 
 		@Override
@@ -17565,6 +17586,12 @@ public class SolverWeb extends HttpServlet {
 						t = new TetrochainSolverThread(height, width, param);
 					} else if (puzzleType.contains("kissing")) {
 						t = new KissingSolverThread("?" + String.join("/", parts));
+					} else if (puzzleType.contains("lightshadow")) {
+						t = new LasSolverThread(height, width, param);
+					} else if (puzzleType.contains("norinuri")) {
+						t = new NurimultiSolverThread(height, width, param, 2);
+					} else if (puzzleType.contains("cocktail")) {
+						t = new CocktailSolverThread(height, width, param);
 					} else {
 						throw new IllegalArgumentException();
 					}
