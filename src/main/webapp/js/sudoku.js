@@ -514,6 +514,11 @@ var ruleMap = {
 		url : "https://puzz.link/rules.html?tetrochain",
 		source : "puzz.linkさん"
 	},
+	league : {
+		name : "リーグ戦パズル",
+		url : "https://x.com/3892myamya/status/1731644476597404149?s=20",
+		source : "紹介ポスト"
+	},
 }
 var regMap = {
 		yajilin:[{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},
@@ -1217,7 +1222,7 @@ $(function() {
 				} else {
 					$('#sel_size').val(nowSelSizeVal);
 				}
-			} else if (type == 'hoshizora') {
+			} else if (type == 'hoshizora' || type == 'league') {
 				$('#sel_size').append(option.size_4);
 				$('#sel_size').append(option.size_6);
 				$('#sel_size').append(option.size_8);

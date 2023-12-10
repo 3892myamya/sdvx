@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeMap;
 
 import myamya.other.solver.Common.Masu;
 import myamya.other.solver.Common.Pipemasu;
@@ -32,7 +33,9 @@ public class PenpaEditLib {
 		// clouds、gapsなどイラロジ系のやつ
 		HINTS_BW,
 		// square_block_loop限定かも
-		HINTS_BW_YAJILIN;
+		HINTS_BW_YAJILIN,
+		// リーグ戦パズル
+		LEAGUE;
 	}
 
 	public static final String PENPA_EDIT_DUMMY_URL = "penpa-edit-dummy-url";
@@ -522,6 +525,43 @@ public class PenpaEditLib {
 	}
 
 	/**
+	 * リーグ戦パズルのPenpaEdit向け文字列を返す。numbersは正方形である前提で、？は未対応
+	 */
+	public static String convertLeagueField(Integer[][] numbers) {
+		int fieldSize = numbers.length;
+		StringBuilder sb = new StringBuilder();
+		StringBuilder taikakuSb = new StringBuilder();
+		int firstPos = 2 * (fieldSize + 5);
+		int taikakuFitstPos = (fieldSize * fieldSize) + (9 * fieldSize) + 21;
+		for (int yIndex = 0; yIndex < numbers.length; yIndex++) {
+			for (int xIndex = 0; xIndex < numbers[0].length; xIndex++) {
+				if (numbers[yIndex][xIndex] != null) {
+					if (sb.length() != 0) {
+						sb.append(",");
+					}
+					sb.append("\"");
+					sb.append(firstPos + yIndex * (numbers[0].length + 4) + xIndex);
+					sb.append("\":[\"");
+					sb.append(numbers[yIndex][xIndex]);
+					sb.append("\",1,\"1\"]");
+				}
+			}
+			if (taikakuSb.length() != 0) {
+				taikakuSb.append(",");
+			}
+			taikakuSb.append("\"");
+			taikakuSb.append(taikakuFitstPos + (yIndex * (fieldSize + 5)));
+			taikakuSb.append(",");
+			taikakuSb.append(taikakuFitstPos + ((yIndex + 1) * (fieldSize + 5)));
+			taikakuSb.append("\":2");
+		}
+
+		return convertFieldBefore(fieldSize, PuzzleType.LEAGUE) + "{zR:{z_:[]},zU:{z_:[]},zS:{},zN:{" + sb.toString()
+				+ "},z1:{},zY:{},zF:{},z2:{},zT:[],z3:[],zD:[],z0:[],z5:[],zL:{},zE:{" + taikakuSb.toString()
+				+ "},zW:{},zC:{},z4:{}}\n\n" + convertFieldAfter(fieldSize);
+	}
+
+	/**
 	 * サイズを指定してPenpaEditの盤面向け文字列のヒントより手前の内容を返す。
 	 */
 	private static String convertFieldBefore(int fieldSize, PuzzleType type) {
@@ -559,6 +599,8 @@ public class PenpaEditLib {
 			sb.append("~\"combi\"~[\"edgesub\",\"\"]");
 		} else if (type == PuzzleType.MAKEROOM) {
 			sb.append("~zE~[\"1\",3]");
+		} else if (type == PuzzleType.LEAGUE) {
+			sb.append("~zN~[\"1\",2]");
 		} else {
 			sb.append("~zS~[\"\",1]");
 		}
@@ -766,6 +808,41 @@ public class PenpaEditLib {
 		}
 		return "[[],[],[" + sb.toString() + "],[],[],[]]";
 
+	}
+
+	/**
+	 * 数字の情報をPenpaEditの回答情報向け文字列に変換して返す。 Masuは正方形である前提
+	 */
+	public static String convertSolutionNumbers(Integer[][] numbers, PuzzleType type) {
+		List<String> indexStrList = new ArrayList<>();
+		Map<String, Integer> indexStrNumbersMap = new TreeMap<>();
+		int firstPos = 2 * (numbers.length + 5);
+		for (int yIndex = 0; yIndex < numbers.length; yIndex++) {
+			for (int xIndex = 0; xIndex < numbers[0].length; xIndex++) {
+				if (type == PuzzleType.LEAGUE && yIndex == xIndex) {
+					continue;
+				}
+				if (numbers[yIndex][xIndex] != null) {
+					indexStrList.add(String.valueOf(firstPos + yIndex * (numbers[0].length + 4) + xIndex));
+					indexStrNumbersMap.put(String.valueOf(firstPos + yIndex * (numbers[0].length + 4) + xIndex),
+							numbers[yIndex][xIndex]);
+				}
+			}
+		}
+		// 文字列ソートがいるっぽい
+		Collections.sort(indexStrList);
+		StringBuilder sb = new StringBuilder();
+		for (String indexStr : indexStrList) {
+			if (sb.length() != 0) {
+				sb.append(",");
+			}
+			sb.append("\"");
+			sb.append(indexStr);
+			sb.append(",");
+			sb.append(indexStrNumbersMap.get(indexStr));
+			sb.append("\"");
+		}
+		return "[[],[],[],[],[" + sb.toString() + "],[]]";
 	}
 
 	/**

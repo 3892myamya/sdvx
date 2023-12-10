@@ -50,6 +50,7 @@ import myamya.other.solver.icebarn.IcebarnSolver.IcebarnGenerator;
 import myamya.other.solver.kurodoko.KurodokoSolver.KurodokoGenerator;
 import myamya.other.solver.kurotto.KurottoSolver.KurottoGenerator;
 import myamya.other.solver.las.LasSolver.LasGenerator;
+import myamya.other.solver.league.LeagueSolver.LeagueGenerator;
 import myamya.other.solver.lither.LitherSolver.LitherGenerator;
 import myamya.other.solver.lollipops.LollipopsSolver.LollipopsGenerator;
 import myamya.other.solver.lookair.LookairSolver.LookairGenerator;
@@ -1762,6 +1763,22 @@ public class SudokuGachaWeb extends HttpServlet {
 
 	}
 
+	static class LeagueGeneratorThread extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+
+		LeagueGeneratorThread(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new LeagueGenerator(height, width);
+		}
+
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -1994,6 +2011,8 @@ public class SudokuGachaWeb extends HttpServlet {
 				t = new MannequinGeneratorThread(height, width);
 			} else if (type.equals("tetrochain")) {
 				t = new TetrochainGeneratorThread(height, width);
+			} else if (type.equals("league")) {
+				t = new LeagueGeneratorThread(height, width);
 			} else {
 				throw new IllegalArgumentException();
 			}
