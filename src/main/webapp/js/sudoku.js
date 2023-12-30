@@ -524,6 +524,11 @@ var ruleMap = {
 		url : "https://puzz.link/rules.html?squarejam",
 		source : "puzz.linkさん"
 	},
+	koburin : {
+		name : "コブリン",
+		url : "https://puzz.link/rules.html?koburin",
+		source : "puzz.linkさん"
+	},
 }
 var regMap = {
 		yajilin:[{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},

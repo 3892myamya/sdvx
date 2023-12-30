@@ -101,6 +101,7 @@ import myamya.other.solver.kakuro.KakuroSolver;
 import myamya.other.solver.kakuro.KakuroSolver.Block;
 import myamya.other.solver.kazunori.KazunoriSolver;
 import myamya.other.solver.kissing.KissingSolver;
+import myamya.other.solver.koburin.KoburinSolver;
 import myamya.other.solver.kropki.KropkiSolver;
 import myamya.other.solver.kurochute.KurochuteSolver;
 import myamya.other.solver.kurodoko.KurodokoSolver;
@@ -17332,6 +17333,122 @@ public class SolverWeb extends HttpServlet {
 		}
 	}
 
+	static class KoburinSolverThread extends AbsSolverThlead {
+		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
+		private static final String FULL_NUMS = "０１２３４５６７８９";
+
+		KoburinSolverThread(int height, int width, String param) {
+			super(height, width, param);
+		}
+
+		@Override
+		protected Solver getSolver() {
+			return new KoburinSolver(height, width, param, false);
+		}
+
+		@Override
+		public String makeCambus() {
+			KoburinSolver.Field field = ((KoburinSolver) solver).getField();
+			StringBuilder sb = new StringBuilder();
+			int baseSize = 20;
+			int margin = 5;
+			sb.append("<svg xmlns=\"http://www.w3.org/2000/svg\" " + "height=\""
+					+ (field.getYLength() * baseSize + 1 * baseSize + margin) + "\" width=\""
+					+ (field.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			// 数字描画
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					if (field.getNumbers()[yIndex][xIndex] != null) {
+						sb.append("<rect y=\"" + (yIndex * baseSize + margin) + "\" x=\""
+								+ (xIndex * baseSize + baseSize) + "\" fill=\"" + "white" + "\" width=\"" + (baseSize)
+								+ "\" height=\"" + (baseSize) + "\">" + "</rect>");
+						if (field.getNumbers()[yIndex][xIndex] != null) {
+							String numberStr = String.valueOf(field.getNumbers()[yIndex][xIndex]);
+							int wkIndex = HALF_NUMS.indexOf(numberStr);
+							String masuStr = null;
+							if (wkIndex >= 0) {
+								masuStr = FULL_NUMS.substring(wkIndex / 2, wkIndex / 2 + 1);
+							} else {
+								if (numberStr.equals("-1")) {
+									masuStr = "？";
+								} else {
+									masuStr = numberStr;
+								}
+							}
+							sb.append("<text y=\"" + (yIndex * baseSize + baseSize - 4 + margin) + "\" x=\""
+									+ (xIndex * baseSize + baseSize + 2) + "\" font-size=\"" + (baseSize - 5)
+									+ "\" fill=\"" + "black" + "\" textLength=\"" + (baseSize - 5)
+									+ "\" lengthAdjust=\"spacingAndGlyphs\">" + masuStr + "</text>");
+						}
+					} else {
+						if (field.getMasu()[yIndex][xIndex].toString().equals("■")) {
+							sb.append("<rect y=\"" + (yIndex * baseSize + margin) + "\" x=\""
+									+ (xIndex * baseSize + baseSize) + "\" fill=\"" + "#222" + "\" width=\""
+									+ (baseSize) + "\" height=\"" + (baseSize) + "\">" + "</rect>");
+						}
+					}
+				}
+			}
+			// 横壁描画
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = -1; xIndex < field.getXLength(); xIndex++) {
+					boolean oneYokoWall = xIndex == -1 || xIndex == field.getXLength() - 1;
+					sb.append("<line y1=\"" + (yIndex * baseSize + margin) + "\" x1=\""
+							+ (xIndex * baseSize + 2 * baseSize) + "\" y2=\"" + (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\"" + (xIndex * baseSize + 2 * baseSize) + "\" fill=\"none\"");
+					if (oneYokoWall) {
+						sb.append("stroke=\"#000\" stroke-width=\"2\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" stroke-width=\"1\" ");
+					}
+					sb.append(">" + "</line>");
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = -1; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					boolean oneTateWall = yIndex == -1 || yIndex == field.getYLength() - 1;
+					sb.append("<line y1=\"" + (yIndex * baseSize + baseSize + margin) + "\" x1=\""
+							+ (xIndex * baseSize + baseSize) + "\" y2=\"" + (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\"" + (xIndex * baseSize + baseSize + baseSize) + "\" fill=\"none\" ");
+					if (oneTateWall) {
+						sb.append("stroke=\"#000\" stroke-width=\"2\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" stroke-width=\"1\" ");
+					}
+					sb.append(">" + "</line>");
+				}
+			}
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					boolean forYoko = xIndex != field.getXLength() - 1
+							&& field.getYokoWall()[yIndex][xIndex] == Wall.NOT_EXISTS;
+					boolean forTate = yIndex != field.getYLength() - 1
+							&& field.getTateWall()[yIndex][xIndex] == Wall.NOT_EXISTS;
+					if (forYoko) {
+						sb.append("<line y1=\"" + (yIndex * baseSize + baseSize + margin - 10) + "\" x1=\""
+								+ (xIndex * baseSize + baseSize + 10) + "\" y2=\""
+								+ (yIndex * baseSize + baseSize + margin - 10) + "\" x2=\""
+								+ (xIndex * baseSize + baseSize + baseSize + 10)
+								+ "\" stroke-width=\"2\" fill=\"none\"");
+						sb.append("stroke=\"green\" ");
+						sb.append(">" + "</line>");
+					}
+					if (forTate) {
+						sb.append("<line y1=\"" + (yIndex * baseSize + margin + 10) + "\" x1=\""
+								+ (xIndex * baseSize + 2 * baseSize - 10) + "\" y2=\""
+								+ (yIndex * baseSize + baseSize + margin + 10) + "\" x2=\""
+								+ (xIndex * baseSize + 2 * baseSize - 10) + "\" stroke-width=\"2\" fill=\"none\"");
+						sb.append("stroke=\"green\" ");
+						sb.append(">" + "</line>");
+					}
+				}
+			}
+			sb.append("</svg>");
+			return sb.toString();
+		}
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -17446,6 +17563,15 @@ public class SolverWeb extends HttpServlet {
 						t = new YajilinRegionsSolverThlead(height, width, param, puzzleType.contains("out"));
 					} else {
 						t = new YajilinSolverThlead(height, width, param, puzzleType.contains("out"));
+					}
+				} else if (puzzleType.contains("koburin")) {
+					boolean isGray = parts.get(1).equals("b");
+					if (isGray) {
+						t = new KoburinSolverThread(Integer.parseInt(parts.get(3)), Integer.parseInt(parts.get(2)),
+								parts.get(4));
+					} else {
+						t = new KoburinSolverThread(Integer.parseInt(parts.get(2)), Integer.parseInt(parts.get(1)),
+								parts.get(3));
 					}
 				} else {
 					int width = Integer.parseInt(parts.get(1));
