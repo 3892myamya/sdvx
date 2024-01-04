@@ -66,6 +66,7 @@ import myamya.other.solver.moonsun.MoonsunSolver.MoonsunGenerator;
 import myamya.other.solver.mukkonn.MukkonnSolver.MukkonnGenerator;
 import myamya.other.solver.myopia.MyopiaSolver.MyopiaGenerator;
 import myamya.other.solver.nanro.NanroSolver.NanroGenerator;
+import myamya.other.solver.news.NewsSolver.NewsGenerator;
 import myamya.other.solver.nibunnogo.NibunnogoSolver.NibunnogoGenerator;
 import myamya.other.solver.nonogram.NonogramSolver.NonogramGenerator;
 import myamya.other.solver.norinori.NorinoriSolver.NorinoriGenerator;
@@ -1813,6 +1814,22 @@ public class SudokuGachaWeb extends HttpServlet {
 
 	}
 
+	static class NewsGeneratorThread extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+
+		NewsGeneratorThread(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new NewsGenerator(height, width);
+		}
+
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -2051,6 +2068,8 @@ public class SudokuGachaWeb extends HttpServlet {
 				t = new SquarejamGeneratorThread(height, width);
 			} else if (type.equals("koburin")) {
 				t = new KoburinGeneratorThread(height, width);
+			} else if (type.equals("news")) {
+				t = new NewsGeneratorThread(height, width);
 			} else {
 				throw new IllegalArgumentException();
 			}

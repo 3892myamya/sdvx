@@ -133,6 +133,7 @@ import myamya.other.solver.nagenawa.NagenawaSolver;
 import myamya.other.solver.nanameguri.NanameguriSolver;
 import myamya.other.solver.nanro.NanroSolver;
 import myamya.other.solver.nawabari.NawabariSolver;
+import myamya.other.solver.news.NewsSolver;
 import myamya.other.solver.nibunnogo.NibunnogoSolver;
 import myamya.other.solver.nondango.NondangoSolver;
 import myamya.other.solver.nonogram.NonogramSolver;
@@ -17449,6 +17450,93 @@ public class SolverWeb extends HttpServlet {
 		}
 	}
 
+	static class NewsSolverThread extends AbsSolverThlead {
+
+		NewsSolverThread(int height, int width, String param) {
+			super(height, width, param);
+		}
+
+		@Override
+		protected Solver getSolver() {
+			return new NewsSolver(height, width, param);
+		}
+
+		@Override
+		public String makeCambus() {
+			NewsSolver.Field field = ((NewsSolver) solver).getField();
+			StringBuilder sb = new StringBuilder();
+			int baseSize = 20;
+			int margin = 5;
+			sb.append("<svg xmlns=\"http://www.w3.org/2000/svg\" " + "height=\""
+					+ (field.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
+					+ (field.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					if (field.getNumbersCand()[yIndex][xIndex].size() == 1) {
+						int number = field.getNumbersCand()[yIndex][xIndex].get(0);
+						String masuStr = null;
+						if (number == 1) {
+							masuStr = "Ｎ";
+						} else if (number == 2) {
+							masuStr = "Ｓ";
+						} else if (number == 3) {
+							masuStr = "Ｗ";
+						} else if (number == 4) {
+							masuStr = "Ｅ";
+						} else if (field.getNumbers()[yIndex][xIndex] != null
+								&& field.getNumbers()[yIndex][xIndex] == 0) {
+							masuStr = "×";
+						} else if (number == 0) {
+							masuStr = "・";
+						}
+						if (masuStr != null) {
+							sb.append("<text y=\"" + (yIndex * baseSize + baseSize + margin - 4) + "\" x=\""
+									+ (xIndex * baseSize + baseSize + 2) + "\" font-size=\"" + (baseSize - 5)
+									+ "\" fill=\"" + (field.getNumbers()[yIndex][xIndex] == null ? "green" : "black")
+									+ "\" textLength=\"" + (baseSize - 5) + "\" lengthAdjust=\"spacingAndGlyphs\">"
+									+ masuStr + "</text>");
+						} 
+					}
+				}
+			}
+			// 横壁描画
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = -1; xIndex < field.getXLength(); xIndex++) {
+					boolean oneYokoWall = xIndex == -1 || xIndex == field.getXLength() - 1
+							|| field.getYokoWall()[yIndex][xIndex];
+					sb.append("<line y1=\"" + (yIndex * baseSize + margin) + "\" x1=\""
+							+ (xIndex * baseSize + 2 * baseSize) + "\" y2=\"" + (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\"" + (xIndex * baseSize + 2 * baseSize) + "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneYokoWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">" + "</line>");
+				}
+			}
+			// 縦壁描画
+			for (int yIndex = -1; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					boolean oneTateWall = yIndex == -1 || yIndex == field.getYLength() - 1
+							|| field.getTateWall()[yIndex][xIndex];
+					sb.append("<line y1=\"" + (yIndex * baseSize + baseSize + margin) + "\" x1=\""
+							+ (xIndex * baseSize + baseSize) + "\" y2=\"" + (yIndex * baseSize + baseSize + margin)
+							+ "\" x2=\"" + (xIndex * baseSize + baseSize + baseSize)
+							+ "\" stroke-width=\"1\" fill=\"none\"");
+					if (oneTateWall) {
+						sb.append("stroke=\"#000\" ");
+					} else {
+						sb.append("stroke=\"#AAA\" stroke-dasharray=\"2\" ");
+					}
+					sb.append(">" + "</line>");
+				}
+			}
+			sb.append("</svg>");
+			return sb.toString();
+		}
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -17903,6 +17991,8 @@ public class SolverWeb extends HttpServlet {
 						t = new CocktailSolverThread(height, width, param);
 					} else if (puzzleType.contains("squarejam")) {
 						t = new SquarejamSolverThread(height, width, param);
+					} else if (puzzleType.contains("news")) {
+						t = new NewsSolverThread(height, width, param);
 					} else {
 						throw new IllegalArgumentException();
 					}

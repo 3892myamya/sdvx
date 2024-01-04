@@ -529,6 +529,11 @@ var ruleMap = {
 		url : "https://puzz.link/rules.html?koburin",
 		source : "puzz.linkさん"
 	},
+	news : {
+		name : "NEWS",
+		url : "https://puzz.link/rules.html?news",
+		source : "puzz.linkさん"
+	},
 }
 var regMap = {
 		yajilin:[{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},
@@ -1136,7 +1141,7 @@ $(function() {
 					|| type == 'las' || type == 'norinuri' 
 					|| type == 'nurisan' || type == 'cocktail' 
 					|| type == 'voxas' || type == 'lither'
-					|| type == 'tetrochain' ) {
+					|| type == 'tetrochain' || type == 'news') {
 				$('#sel_size').append(option.size_3);
 				$('#sel_size').append(option.size_4);
 				$('#sel_size').append(option.size_5);
