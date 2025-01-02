@@ -10,7 +10,6 @@ import myamya.other.solver.Common.CountOverException;
 import myamya.other.solver.Common.Direction;
 import myamya.other.solver.Common.GeneratorResult;
 import myamya.other.solver.Common.Masu;
-import myamya.other.solver.Common.PenpaEditGeneratorResult;
 import myamya.other.solver.Common.Position;
 import myamya.other.solver.Generator;
 import myamya.other.solver.PenpaEditLib;
@@ -80,7 +79,6 @@ public class NibunnogoSolver implements Solver {
 
 		@Override
 		public GeneratorResult generate() {
-			String solutionStr;
 			NibunnogoSolver.Field wkField = new NibunnogoSolver.Field(height, width);
 			List<Integer> indexList = new ArrayList<>();
 			for (int i = 0; i < height * width; i++) {
@@ -153,8 +151,6 @@ public class NibunnogoSolver implements Solver {
 						wkField.extraNumbers[yIndex][xIndex] = blackCnt;
 					}
 				}
-				// 解答の記憶
-				solutionStr = PenpaEditLib.convertSolutionMasu(wkField.masu);
 //				System.out.println(wkField);
 				// マスを戻す
 				for (int yIndex = 0; yIndex < wkField.getYLength(); yIndex++) {
@@ -196,14 +192,13 @@ public class NibunnogoSolver implements Solver {
 				}
 			}
 			// ヒント数字を含む盤面変換
-			String fieldStr = PenpaEditLib.convertExtraNumbersField(wkField.extraNumbers);
 //			System.out.println(fieldStr);
 //			System.out.println(solutionStr);
 
 			level = (int) Math.sqrt(level / 3) + 1;
 			String status = "Lv:" + level + "の問題を獲得！(ヒント数：" + wkField.getHintCount() + ")";
 			String url = wkField.getPuzPreURL();
-			String link = "<a href=\"" + url + "\" target=\"_blank\">penpa-editで解く</a>";
+			String link = "<a href=\"" + url + "\" target=\"_blank\">pzprxsで解く</a>";
 			StringBuilder sb = new StringBuilder();
 			int baseSize = 20;
 			int margin = 5;
@@ -263,7 +258,7 @@ public class NibunnogoSolver implements Solver {
 			System.out.println(level);
 			System.out.println(wkField.getHintCount());
 			System.out.println(wkField);
-			return new PenpaEditGeneratorResult(status, sb.toString(), link, level, "", fieldStr, solutionStr);
+			return new GeneratorResult(status, sb.toString(), link, url, level, "");
 
 		}
 
@@ -283,84 +278,83 @@ public class NibunnogoSolver implements Solver {
 		}
 
 		public String getPuzPreURL() {
-			return PenpaEditLib.PENPA_EDIT_DUMMY_URL;
-//			StringBuilder sb = new StringBuilder();
-//			sb.append("http://pzv.jp/p.html?nibunnogo/" + getXLength() + "/" + getYLength() + "/");
-//			int interval = 0;
-//			for (int i = 0; i < (getYLength() + 1) * (getXLength() + 1); i++) {
-//				int yIndex = i / (getXLength() + 1);
-//				int xIndex = i % (getXLength() + 1);
-//				if (extraNumbers[yIndex][xIndex] == null) {
-//					interval++;
-//					if (interval == 20) {
-//						sb.append("z");
-//						interval = 0;
-//					}
-//				} else {
-//					Integer num = extraNumbers[yIndex][xIndex];
-//					String numStr = null;
-//					if (num == -1) {
-//						numStr = ".";
-//					} else {
-//						Integer numP1 = null;
-//						if (i + 1 < (getYLength() + 1) * (getXLength() + 1)) {
-//							int yIndexP1 = (i + 1) / (getXLength() + 1);
-//							int xIndexP1 = (i + 1) % (getXLength() + 1);
-//							numP1 = extraNumbers[yIndexP1][xIndexP1];
-//						}
-//						Integer numP2 = null;
-//						if (numP1 == null && i + 2 < (getYLength() + 1) * (getXLength() + 1)) {
-//							int yIndexP2 = (i + 2) / (getXLength() + 1);
-//							int xIndexP2 = (i + 2) % (getXLength() + 1);
-//							numP2 = extraNumbers[yIndexP2][xIndexP2];
-//						}
-//						if (numP1 == null && numP2 == null) {
-//							if (num == 0) {
-//								numStr = "a";
-//							} else if (num == 1) {
-//								numStr = "b";
-//							} else if (num == 2) {
-//								numStr = "c";
-//							} else if (num == 3) {
-//								numStr = "d";
-//							} else if (num == 4) {
-//								numStr = "e";
-//							}
-//							i++;
-//							i++;
-//						} else if (numP1 == null) {
-//							if (num == 0) {
-//								numStr = "5";
-//							} else if (num == 1) {
-//								numStr = "6";
-//							} else if (num == 2) {
-//								numStr = "7";
-//							} else if (num == 3) {
-//								numStr = "8";
-//							} else if (num == 4) {
-//								numStr = "9";
-//							}
-//							i++;
-//						} else {
-//							numStr = String.valueOf(num);
-//						}
-//					}
-//					if (interval == 0) {
-//						sb.append(numStr);
-//					} else {
-//						sb.append(ALPHABET_FROM_G.substring(interval - 1, interval));
-//						sb.append(numStr);
-//						interval = 0;
-//					}
-//				}
-//			}
-//			if (interval != 0) {
-//				sb.append(ALPHABET_FROM_G.substring(interval - 1, interval));
-//			}
-//			if (sb.charAt(sb.length() - 1) == '.') {
-//				sb.append("/");
-//			}
-//			return sb.toString();
+			StringBuilder sb = new StringBuilder();
+			sb.append("https://pzprxs.vercel.app/p.html?nibunnogo/" + getXLength() + "/" + getYLength() + "/");
+			int interval = 0;
+			for (int i = 0; i < (getYLength() + 1) * (getXLength() + 1); i++) {
+				int yIndex = i / (getXLength() + 1);
+				int xIndex = i % (getXLength() + 1);
+				if (extraNumbers[yIndex][xIndex] == null) {
+					interval++;
+					if (interval == 20) {
+						sb.append("z");
+						interval = 0;
+					}
+				} else {
+					Integer num = extraNumbers[yIndex][xIndex];
+					String numStr = null;
+					if (num == -1) {
+						numStr = ".";
+					} else {
+						Integer numP1 = null;
+						if (i + 1 < (getYLength() + 1) * (getXLength() + 1)) {
+							int yIndexP1 = (i + 1) / (getXLength() + 1);
+							int xIndexP1 = (i + 1) % (getXLength() + 1);
+							numP1 = extraNumbers[yIndexP1][xIndexP1];
+						}
+						Integer numP2 = null;
+						if (numP1 == null && i + 2 < (getYLength() + 1) * (getXLength() + 1)) {
+							int yIndexP2 = (i + 2) / (getXLength() + 1);
+							int xIndexP2 = (i + 2) % (getXLength() + 1);
+							numP2 = extraNumbers[yIndexP2][xIndexP2];
+						}
+						if (numP1 == null && numP2 == null) {
+							if (num == 0) {
+								numStr = "a";
+							} else if (num == 1) {
+								numStr = "b";
+							} else if (num == 2) {
+								numStr = "c";
+							} else if (num == 3) {
+								numStr = "d";
+							} else if (num == 4) {
+								numStr = "e";
+							}
+							i++;
+							i++;
+						} else if (numP1 == null) {
+							if (num == 0) {
+								numStr = "5";
+							} else if (num == 1) {
+								numStr = "6";
+							} else if (num == 2) {
+								numStr = "7";
+							} else if (num == 3) {
+								numStr = "8";
+							} else if (num == 4) {
+								numStr = "9";
+							}
+							i++;
+						} else {
+							numStr = String.valueOf(num);
+						}
+					}
+					if (interval == 0) {
+						sb.append(numStr);
+					} else {
+						sb.append(ALPHABET_FROM_G.substring(interval - 1, interval));
+						sb.append(numStr);
+						interval = 0;
+					}
+				}
+			}
+			if (interval != 0) {
+				sb.append(ALPHABET_FROM_G.substring(interval - 1, interval));
+			}
+			if (sb.charAt(sb.length() - 1) == '.') {
+				sb.append("/");
+			}
+			return sb.toString();
 		}
 
 		public String getHintCount() {
