@@ -24,6 +24,7 @@ import myamya.other.solver.barns.BarnsSolver.BarnsGenerator;
 import myamya.other.solver.box.BoxSolver.BoxGenerator;
 import myamya.other.solver.building.BuildingSolver.BuildingGenerator;
 import myamya.other.solver.canal.CanalSolver.CanalGenerator;
+import myamya.other.solver.cityspace.CityspaceSolver.CityspaceGenerator;
 import myamya.other.solver.clouds.CloudsSolver.CloudsGenerator;
 import myamya.other.solver.cocktail.CocktailSolver.CocktailGenerator;
 import myamya.other.solver.cojun.CojunSolver.CojunGenerator;
@@ -1881,6 +1882,22 @@ public class SudokuGachaWeb extends HttpServlet {
 
 	}
 
+	static class CityspaceGeneratorThread extends GeneratorThlead {
+		protected final int height;
+		protected final int width;
+
+		CityspaceGeneratorThread(int height, int width) {
+			this.height = height;
+			this.width = width;
+		}
+
+		@Override
+		Generator getGenerator() {
+			return new CityspaceGenerator(height, width);
+		}
+
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -2127,6 +2144,8 @@ public class SudokuGachaWeb extends HttpServlet {
 				t = new SansaroadGeneratorThread(height, width);
 			} else if (type.equals("keywest")) {
 				t = new KeywestGeneratorThread(height, width);
+			} else if (type.equals("cityspace")) {
+				t = new CityspaceGeneratorThread(height, width);
 			} else {
 				throw new IllegalArgumentException();
 			}
