@@ -534,6 +534,11 @@ var ruleMap = {
 		url : "https://puzz.link/rules.html?news",
 		source : "puzz.linkさん"
 	},
+	kurarin : {
+		name : "クラリン",
+		url : "https://pzprxs.vercel.app/rules.html?kurarin",
+		source : "pzprxsさん"
+	},
 }
 var regMap = {
 		yajilin:[{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},
