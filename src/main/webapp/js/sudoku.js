@@ -539,6 +539,11 @@ var ruleMap = {
 		url : "https://pzprxs.vercel.app/rules.html?kurarin",
 		source : "pzprxsさん"
 	},
+	sansaroad : {
+		name : "サンサロード",
+		url : "https://pzprxs.vercel.app/rules.html?sansaroad",
+		source : "pzprxsさん"
+	},
 }
 var regMap = {
 		yajilin:[{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},
@@ -1285,6 +1290,24 @@ $(function() {
 				$('#sel_size').append(option.size_12);
 				$('#sel_size').append(option.size_15);
 				if (nowSelSizeVal == 11) {
+					$('#sel_size').val(10);
+				} else {
+					$('#sel_size').val(nowSelSizeVal);
+				}
+			} else if (type == 'sansaroad') {
+				$('#sel_size').append(option.size_4);
+				$('#sel_size').append(option.size_5);
+				$('#sel_size').append(option.size_6);
+				$('#sel_size').append(option.size_7);
+				$('#sel_size').append(option.size_8);
+				$('#sel_size').append(option.size_9);
+				$('#sel_size').append(option.size_10);
+				$('#sel_size').append(option.size_12);
+				$('#sel_size').append(option.size_15);
+				$('#sel_size').val(nowSelSizeVal);
+				if (nowSelSizeVal == 3) {
+					$('#sel_size').val(4);
+				} else if (nowSelSizeVal == 11) {
 					$('#sel_size').val(10);
 				} else {
 					$('#sel_size').val(nowSelSizeVal);
