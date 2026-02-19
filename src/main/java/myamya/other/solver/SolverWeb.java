@@ -100,6 +100,7 @@ import myamya.other.solver.juosan.JuosanSolver;
 import myamya.other.solver.kakuro.KakuroSolver;
 import myamya.other.solver.kakuro.KakuroSolver.Block;
 import myamya.other.solver.kazunori.KazunoriSolver;
+import myamya.other.solver.keywest.KeywestSolver;
 import myamya.other.solver.kissing.KissingSolver;
 import myamya.other.solver.koburin.KoburinSolver;
 import myamya.other.solver.kropki.KropkiSolver;
@@ -17744,6 +17745,82 @@ public class SolverWeb extends HttpServlet {
 		}
 	}
 
+	static class KeywestSolverThread extends AbsSolverThlead {
+		private static final String HALF_NUMS = "0 1 2 3 4 5 6 7 8 9";
+		private static final String FULL_NUMS = "０１２３４５６７８９";
+
+		KeywestSolverThread(int height, int width, String param) {
+			super(height, width, param);
+		}
+
+		@Override
+		protected Solver getSolver() {
+			return new KeywestSolver(height, width, param);
+		}
+
+		@Override
+		public String makeCambus() {
+			KeywestSolver.Field field = ((KeywestSolver) solver).getField();
+			StringBuilder sb = new StringBuilder();
+			int baseSize = 20;
+			int margin = 5;
+			sb.append("<svg xmlns=\"http://www.w3.org/2000/svg\" " + "height=\""
+					+ (field.getYLength() * baseSize + 2 * baseSize + margin) + "\" width=\""
+					+ (field.getXLength() * baseSize + 2 * baseSize) + "\" >");
+			// 描画
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					sb.append("<circle cy=\"" + (yIndex * baseSize + (baseSize / 2) + margin) + "\" cx=\""
+							+ (xIndex * baseSize + baseSize + (baseSize / 2)) + "\" r=\"" + (baseSize / 2 - 2)
+							+ "\" fill=\"white\", stroke=\"black\">" + "</circle>");
+					if (field.getNumbersCand()[yIndex][xIndex].size() == 1) {
+						String numberStr = String.valueOf(field.getNumbersCand()[yIndex][xIndex].get(0));
+						String masuStr;
+						int idx = HALF_NUMS.indexOf(numberStr);
+						if (idx >= 0) {
+							masuStr = FULL_NUMS.substring(idx / 2, idx / 2 + 1);
+						} else {
+							masuStr = numberStr;
+						}
+						sb.append("<text y=\"" + (yIndex * baseSize + baseSize + margin - 5) + "\" x=\""
+								+ (xIndex * baseSize + baseSize + 2) + "\" font-size=\"" + (baseSize - 5)
+								+ "\" fill=\"" + (field.getNumbers()[yIndex][xIndex] == null ? "green" : "black")
+								+ "\" textLength=\"" + (baseSize - 5) + "\" lengthAdjust=\"spacingAndGlyphs\">"
+								+ masuStr + "</text>");
+					}
+				}
+			}
+			// 橋描画
+			for (int yIndex = 0; yIndex < field.getYLength(); yIndex++) {
+				for (int xIndex = 0; xIndex < field.getXLength(); xIndex++) {
+					boolean forYoko = xIndex != field.getXLength() - 1
+							&& field.getYokoWall()[yIndex][xIndex] == Wall.NOT_EXISTS;
+					boolean forTate = yIndex != field.getYLength() - 1
+							&& field.getTateWall()[yIndex][xIndex] == Wall.NOT_EXISTS;
+					if (forYoko) {
+						sb.append("<line y1=\"" + (yIndex * baseSize + baseSize + margin - 10) + "\" x1=\""
+								+ (xIndex * baseSize + baseSize + 17) + "\" y2=\""
+								+ (yIndex * baseSize + baseSize + margin - 10) + "\" x2=\""
+								+ (xIndex * baseSize + baseSize + baseSize + 3)
+								+ "\" stroke-width=\"2\" fill=\"none\"");
+						sb.append("stroke=\"green\" ");
+						sb.append(">" + "</line>");
+					}
+					if (forTate) {
+						sb.append("<line y1=\"" + (yIndex * baseSize + margin + 17) + "\" x1=\""
+								+ (xIndex * baseSize + 2 * baseSize - 10) + "\" y2=\""
+								+ (yIndex * baseSize + baseSize + margin + 3) + "\" x2=\""
+								+ (xIndex * baseSize + 2 * baseSize - 10) + "\" stroke-width=\"2\" fill=\"none\"");
+						sb.append("stroke=\"green\" ");
+						sb.append(">" + "</line>");
+					}
+				}
+			}
+			sb.append("</svg>");
+			return sb.toString();
+		}
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -18204,6 +18281,8 @@ public class SolverWeb extends HttpServlet {
 						t = new KurarinSolverThread(height, width, param);
 					} else if (puzzleType.contains("sansaroad")) {
 						t = new SansaroadSolverThread(height, width, param);
+					} else if (puzzleType.contains("keywest")) {
+						t = new KeywestSolverThread(height, width, param);
 					} else {
 						throw new IllegalArgumentException();
 					}

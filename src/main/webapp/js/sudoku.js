@@ -544,6 +544,11 @@ var ruleMap = {
 		url : "https://pzprxs.vercel.app/rules.html?sansaroad",
 		source : "pzprxsさん"
 	},
+	keywest : {
+		name : "キーウエスト",
+		url : "https://pzprxs.vercel.app/rules.html?keywest",
+		source : "pzprxsさん"
+	},
 }
 var regMap = {
 		yajilin:[{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},{type:'yajilin',size:10},
@@ -1151,7 +1156,8 @@ $(function() {
 					|| type == 'las' || type == 'norinuri' 
 					|| type == 'nurisan' || type == 'cocktail' 
 					|| type == 'voxas' || type == 'lither'
-					|| type == 'tetrochain' || type == 'news') {
+					|| type == 'tetrochain' || type == 'news'
+					|| type == 'keywest' ) {
 				$('#sel_size').append(option.size_3);
 				$('#sel_size').append(option.size_4);
 				$('#sel_size').append(option.size_5);
